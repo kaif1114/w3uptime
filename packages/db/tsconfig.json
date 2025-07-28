@@ -1,10 +1,9 @@
 {
-  "compilerOptions": {
+ "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
     "esModuleInterop": true,
-    "module": "Node16",
-    "moduleResolution": "node16",
+    "module": "commonjs",
     "resolveJsonModule": true,
     "lib": ["es2022"],
     "target": "es2022",
@@ -17,5 +16,5 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
-, "config.ts"  ]
+, "src/index.ts"  ]
 } 
