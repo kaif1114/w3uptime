@@ -12,6 +12,7 @@ yarn-error.log*
 # Build output
 dist/
 build/
+
 *.tsbuildinfo
 
 # IDE and editor files
