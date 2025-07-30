@@ -15,5 +15,14 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
+  monitors  Monitor[]
+}
+
+model Monitor{
+  id        String   @id @default(uuid())
   name      String
+  url       String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
