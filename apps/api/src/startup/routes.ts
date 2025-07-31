@@ -1,6 +1,7 @@
 import { Express } from "express";
-import exampleRouter from "../routes/example";
+import monitorRouter from "../routes/monitor";
+import authMiddleware  from "../middleware/auth";
 
 export function routes(app: Express) {
-  app.use("/example", exampleRouter);
+  app.use("/monitor", authMiddleware, monitorRouter);
 }
