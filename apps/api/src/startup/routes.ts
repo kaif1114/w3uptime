@@ -1,6 +1,6 @@
 import { Express } from "express";
-import exampleRouter from "../routes/example";
+import monitorRouter from "../routes/monitor";
 
 export function routes(app: Express) {
-  app.use("/example", exampleRouter);
+  app.use("/monitor", monitorRouter);
 }
