@@ -1,6 +1,6 @@
 import express from "express";
 // import { database } from "./startup/database.js";
-// import { routes } from "./startup/routes.js";
+import { routes } from "./startup/routes";
 import dotenv from "dotenv";
 import "express-async-errors";
 import { prisma } from "db/client";
@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(errorHandler);
 
 // database();
-// routes(app);
+routes(app);
 
 
 app.get("/", (req, res) => {

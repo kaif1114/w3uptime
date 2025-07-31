@@ -4,7 +4,7 @@ import { createMonitor, deleteMonitor, getMonitor, getMonitors, patchMonitor } f
 const router = Router();
 
 
-router.post("/create", createMonitor)
+router.post("/", createMonitor)
 router.get("/:id", getMonitor)
 router.get("/", getMonitors)
 router.patch("/:monitorId", patchMonitor)
