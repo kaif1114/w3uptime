@@ -1,3 +1,4 @@
+/// <reference path="./types/global.d.ts" />
 import express from "express";
 // import { database } from "./startup/database.js";
 import { routes } from "./startup/routes";
