@@ -14,15 +14,211 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   monitors  Monitor[]
+  comments  Comment[]
 }
 
-model Monitor{
-  id        String   @id @default(uuid())
-  name      String
-  url       String
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+model Monitor {
+  id                  String   @id @default(uuid())
+  name                String
+  url                 String
+  
+  // Configuration
+  checkInterval       Int      @default(300) // seconds
+  timeout             Int      @default(30)  // seconds
+  expectedStatusCodes Int[]    @default([200, 201, 202, 204])
+  
+  // Status
+  status              MonitorStatus @default(ACTIVE)
+  isUp                Boolean  @default(true)
+  lastCheckedAt       DateTime?
+  
+  createdAt           DateTime @default(now())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
+  
+  // Relations
+  alerts              Alert[]
+  escalation          Escalation?
+  incidents           Incident[]
+}
+
+model Alert {
+  id                  String   @id @default(uuid())
+  severity            AlertSeverity @default(MEDIUM)
+  title               String
+  message             String
+  
+  // Status code that triggered the alert
+  triggerStatusCode   Int?    // The actual status code received (404, 500, etc.)
+  expectedStatusCode  Int?    // What was expected (200, etc.)
+  
+  status              AlertStatus @default(PENDING)
+  triggeredAt         DateTime @default(now())
+  acknowledgedAt      DateTime?
+  acknowledgedBy      String?  // User ID who acknowledged the alert
+  
+  // Track escalation progress
+  currentEscalationLevel Int   @default(1)  // Which level is currently active
+  escalationCompleted    Boolean @default(false)
+  
+  // Relations
+  monitorId           String
+  monitor             Monitor  @relation(fields: [monitorId], references: [id])
+  escalationLogs      EscalationLog[]
+}
+
+model Escalation {
+  id              String   @id @default(uuid())
+  monitorId       String   @unique
+  monitor         Monitor  @relation(fields: [monitorId], references: [id])
+  
+  name            String   // e.g., "Basic Plan", "Premium Plan"
+  enabled         Boolean  @default(true)
+  
+  // One-to-many relationship with escalation levels
+  levels          EscalationLevel[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EscalationLevel {
+  id              String   @id @default(uuid())
+  escalationId    String
+  escalation      Escalation @relation(fields: [escalationId], references: [id])
+  
+  // Level configuration
+  levelOrder      Int      // 1, 2, 3, 4, etc. (escalation sequence)
+  waitMinutes     Int      // Wait time if no response from previous level
+  
+  // Contact information
+  contacts        String[] // emails, usernames, phone numbers
+  channel         EscalationChannel @default(EMAIL)
+  
+  
+  // Optional level naming
+  name            String?  // e.g., "Email to Admin", "Slack to Team", "WEBHOOK"
+  message         String?  // Custom message for this escalation level
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Ensure unique ordering within an escalation policy
+  @@unique([escalationId, levelOrder])
+  @@index([escalationId, levelOrder])
+}
+
+model EscalationLog {
+  id              String   @id @default(uuid())
+  alertId         String
+  alert           Alert    @relation(fields: [alertId], references: [id])
+  
+  // Which escalation level was triggered
+  levelOrder      Int
+  levelName       String?
+  
+  // Execution details
+  triggeredAt     DateTime @default(now())
+  sentTo          String[] // Who received the notification
+  channel         EscalationChannel
+  
+  // Response tracking
+  wasAcknowledged Boolean  @default(false)
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?  // User ID
+  
+  // Whether this level resolved the issue
+  resolvedIssue   Boolean  @default(false)
+  
+  @@index([alertId, levelOrder])
+}
+
+model Incident {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  severity        IncidentSeverity @default(MINOR)
+  status          IncidentStatus @default(INVESTIGATING)
+  
+  monitorId       String   @unique
+  monitor         Monitor  @relation(fields: [monitorId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  resolvedAt      DateTime?
+  downtime        Int?     // Duration in seconds
+  escalated       Boolean  @default(false)
+  
+  postmortemId    String?  @unique
+  postmortem      Postmortem?
+  comments        Comment[]
+}
+
+model Comment {
+  id              String   @id @default(uuid())
+  description     String
+  
+  incidentId      String
+  incident        Incident @relation(fields: [incidentId], references: [id])
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime @default(now())
+}
+
+model Postmortem {
+  id              String   @id @default(uuid())
+  resolutionTime  Int      // Time to resolve in minutes
+  rootCause       String
+  resolution      String
+  
+  incidentId      String   @unique
+  incident        Incident @relation(fields: [incidentId], references: [id])
+  
+  createdAt       DateTime @default(now())
+}
+
+// Enums
+enum MonitorStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  PENDING
+  SENT
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+  POSTMORTEM
+}
+
+enum IncidentSeverity {
+  CRITICAL
+  MAJOR
+  MINOR
+  MAINTENANCE
+}
+
+enum EscalationChannel {
+  EMAIL
+  SLACK
+  WEBHOOK
 }
