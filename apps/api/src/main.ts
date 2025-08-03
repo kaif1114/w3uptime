@@ -3,8 +3,8 @@ import express from "express";
 import { connectDatabase } from "./startup/database";
 import { routes } from "./startup/routes";
 import dotenv from "dotenv";
-import "express-async-errors";
 import { prisma } from "db/client";
+import { errorHandler } from "./middleware/error";
 
 dotenv.config();
 
@@ -51,6 +51,8 @@ async function startServer() {
 
   const port = process.env.PORT || 4000;
 
+
+  app.use(errorHandler);
 
   app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

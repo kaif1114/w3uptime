@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { prisma } from "db/client";
 import { z } from "zod";
 
@@ -12,11 +12,12 @@ const patchMonitorSchema = z.object({
   url: z.url().min(1),
 });
 
-export async function createMonitor(req: Request, res: Response) {
+export async function createMonitor(req: Request, res: Response , next: NextFunction) {
   const validation = createMonitorSchema.safeParse(req.body);
 
   if (!validation.success) {
-    return res.status(400).json({ error: validation.error.message });
+    res.status(400).json({ error: validation.error.message });
+    return;
   }
 
   const { name, url } = validation.data;
@@ -29,7 +30,7 @@ export async function createMonitor(req: Request, res: Response) {
     },
   });
 
-  return res.status(201).json({
+  res.status(201).json({
     message: "Monitor created successfully",
     monitor: {
       id: monitor.id,
@@ -38,6 +39,7 @@ export async function createMonitor(req: Request, res: Response) {
       createdAt: monitor.createdAt,
     },
   });
+  return;
 }
 
 export async function getMonitor(req: Request, res: Response) {
@@ -50,15 +52,17 @@ export async function getMonitor(req: Request, res: Response) {
   });
 
   if (!monitor) {
-    return res.status(404).json({ error: "Monitor not found" });
+    res.status(404).json({ error: "Monitor not found" });
+    return;
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     id: monitor.id,
     name: monitor.name,
     url: monitor.url,
     createdAt: monitor.createdAt,
   });
+  return;
 }
 
 export async function getMonitors(req: Request, res: Response) {
@@ -69,19 +73,22 @@ export async function getMonitors(req: Request, res: Response) {
     },
   });
 
-  return res.status(200).json({ monitors });
+  res.status(200).json({ monitors });
+  return;
 }
 
 export async function patchMonitor(req: Request, res: Response) {
   const { monitorId } = req.params;
   if (!monitorId) {
-    return res.status(400).json({ error: "Monitor ID is required" });
+    res.status(400).json({ error: "Monitor ID is required" });
+    return;
   }
 
   const validation = patchMonitorSchema.safeParse(req.body);
 
   if (!validation.success) {
-    return res.status(400).json({ error: validation.error.message });
+    res.status(400).json({ error: validation.error.message });
+    return;
   }
 
   const { name, url } = validation.data;
@@ -97,7 +104,7 @@ export async function patchMonitor(req: Request, res: Response) {
     },
   });
 
-  return res.status(200).json({
+  res.status(200).json({
     message: "Monitor updated successfully",
     monitor: {
       id: monitor.id,
@@ -106,12 +113,14 @@ export async function patchMonitor(req: Request, res: Response) {
       createdAt: monitor.createdAt,
     },
   });
+  return;
 }
 
 export async function deleteMonitor(req: Request, res: Response) {
   const { monitorId } = req.params;
   if (!monitorId) {
-    return res.status(400).json({ error: "Monitor ID is required" });
+    res.status(400).json({ error: "Monitor ID is required" });
+    return;
   }
 
   const monitor = await prisma.monitor.findUnique({
@@ -121,12 +130,14 @@ export async function deleteMonitor(req: Request, res: Response) {
   });
 
   if (!monitor) {
-    return res.status(404).json({ error: "Monitor not found" });
+    res.status(404).json({ error: "Monitor not found" });
+    return;
   }
   await prisma.monitor.delete({
     where: {
       id: monitorId,
     },
   });
-  return res.status(200).json({ message: "Monitor deleted successfully" });
+  res.status(200).json({ message: "Monitor deleted successfully" });
+  return;
 }
