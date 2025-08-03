@@ -68,15 +68,18 @@ async function handleValidate(
       return;
     }
 
-    console.log("Validated data:", {
-      status: data.status,
-      latency: data.latency,
-      monitorId: data.monitorId,
-      validatorId: data.validatorId,
-    });
+    console.log("Validated data:", data);
+
 
      
-    //process the validation data here
+    await prisma.monitorTick.create({
+        data: {
+            status: data.status,
+            latency: data.latency,
+            monitorId: data.monitorId,
+            validatorId: data.validatorId,
+        }
+    })
 
     socket.send(
       JSON.stringify({

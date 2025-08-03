@@ -7,7 +7,7 @@ export interface SignupIncomingMessage {
 export interface ValidateIncomingMessage {
   callbackId: string;
   publicKey: string;
-  status: "Good" | "Bad";
+  status: MonitorTickStatus;
   latency: number;
   monitorId: string;
   validatorId: string;
@@ -60,3 +60,8 @@ export type OutgoingMessage =
       type: "error";
       data: ErrorMessage;
     }
+
+export enum MonitorTickStatus {
+  GOOD = "GOOD",
+  BAD = "BAD",
+}

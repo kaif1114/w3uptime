@@ -18,6 +18,7 @@ model Validator {
   publicKey String    @unique
   ip        String
   balance   Int       @default(0)
+  monitorTicks        monitorTick[]
 }
 
 model User {
@@ -38,7 +39,7 @@ model Monitor {
   
   // Status
   status              MonitorStatus @default(ACTIVE)
-  isUp                Boolean  @default(true)
+
   lastCheckedAt       DateTime?
   
   createdAt           DateTime @default(now())
@@ -49,6 +50,19 @@ model Monitor {
   alerts              Alert[]
   escalation          Escalation?
   incidents           Incident[]
+  monitorTicks        monitorTick[]
+}
+
+model monitorTick{
+  id                  String   @id @default(uuid())
+  monitorId           String
+  validatorId         String
+  status              MonitorTickStatus
+  latency             Float
+  createdAt           DateTime @default(now())
+  
+  monitor             Monitor  @relation(fields: [monitorId], references: [id])
+  validator           Validator  @relation(fields: [validatorId], references: [id])
 }
 
 model Alert {
@@ -228,4 +242,9 @@ enum EscalationChannel {
   EMAIL
   SLACK
   WEBHOOK
+}
+
+enum MonitorTickStatus {
+  GOOD
+  BAD
 }
