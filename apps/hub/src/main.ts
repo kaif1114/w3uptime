@@ -5,8 +5,8 @@ import {
   ValidateIncomingMessage,
 } from "./types";
 import { prisma } from "db/client";
-import { randomUUID, UUID } from "crypto";
 import { ethers } from "ethers";
+import { v7 as uuidv7 } from "uuid";
 
 const ws = new WebSocketServer({ port: 8080 });
 
@@ -56,7 +56,7 @@ setInterval(async () => {
 
   for (const monitor of monitorsToValidate) {
     validators.forEach((validator) => {
-      const callbackId = randomUUID();
+      const callbackId = uuidv7();
       console.log(
         `Sending validate to ${validator.validatorId} ${monitor.url}`
       );
@@ -140,7 +140,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
           type: "signup",
           data: {
             validatorId: newValidator.id,
-            callbackId: randomUUID(),
+            callbackId: uuidv7(),
           },
         })
       );
@@ -158,7 +158,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
         type: "signup",
         data: {
           validatorId: validator.id,
-          callbackId: randomUUID(),
+          callbackId: uuidv7(),
         },
       })
     );
