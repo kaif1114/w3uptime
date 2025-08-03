@@ -1,0 +1,16 @@
+{
+ "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "lib": ["es2022"],
+    "target": "es2022",
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+
+  },
+} 

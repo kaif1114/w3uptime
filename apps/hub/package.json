@@ -28,6 +28,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "common": "^1.0.0",
     "db": "^1.0.0",
     "ethers": "^6.15.0",
     "uuid": "^11.1.0",

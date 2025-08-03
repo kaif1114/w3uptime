@@ -2,7 +2,7 @@ import { prisma } from "db/client";
 import { ethers } from "ethers";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
-import { IncomingMessage, SignupIncomingMessage } from "./types";
+import { IncomingMessage, SignupIncomingMessage } from "common/types";
 
 const ws = new WebSocketServer({ port: 8080 });
 
