@@ -1,12 +1,8 @@
-import { WebSocketServer, WebSocket } from "ws";
-import {
-  IncomingMessage,
-  SignupIncomingMessage,
-  ValidateIncomingMessage,
-} from "./types";
 import { prisma } from "db/client";
 import { ethers } from "ethers";
 import { v7 as uuidv7 } from "uuid";
+import { WebSocket, WebSocketServer } from "ws";
+import { IncomingMessage, SignupIncomingMessage } from "./types";
 
 const ws = new WebSocketServer({ port: 8080 });
 
@@ -21,7 +17,7 @@ const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
 
 const COST_PER_VALIDATION = 1;
 
-ws.on("connection", (socket) => {
+ws.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
   socket.on("message", (messageRaw) => {
     const message: IncomingMessage = JSON.parse(messageRaw.toString());
@@ -43,8 +39,17 @@ ws.on("connection", (socket) => {
     if (message.type === "signup") {
       handleSignup(message.data, socket);
     } else if (message.type === "validate") {
+      CALLBACKS[message.data.callbackId](message);
+      delete CALLBACKS[message.data.callbackId];
     }
   });
+});
+
+ws.on("close", (socket: WebSocket) => {
+  validators.splice(
+    validators.findIndex((v) => v.socket === socket),
+    1
+  );
 });
 
 setInterval(async () => {
