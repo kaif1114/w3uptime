@@ -12,3 +12,4 @@ function asyncMiddleware(handler: (req: Request, res: Response, next: NextFuncti
   };
 }
 export default asyncMiddleware;
+
