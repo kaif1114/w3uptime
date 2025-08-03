@@ -5,7 +5,7 @@ import {
   ValidateIncomingMessage,
 } from "./types";
 import { prisma } from "db/client";
-import { randomUUID } from "crypto";
+import { randomUUID, UUID } from "crypto";
 import { ethers } from "ethers";
 
 const ws = new WebSocketServer({ port: 8080 });
@@ -16,11 +16,10 @@ const validators: {
   socket: WebSocket;
   ip: string;
 }[] = [];
-const callbacks: {
-  [callbackId: string]: { callback: (data: IncomingMessage) => void };
-}[] = [];
+const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
+  {};
 
-
+const COST_PER_VALIDATION = 1;
 
 ws.on("connection", (socket) => {
   console.log("Client connected");
@@ -40,66 +39,63 @@ ws.on("connection", (socket) => {
       );
       return;
     }
-    
+
     if (message.type === "signup") {
       handleSignup(message.data, socket);
     } else if (message.type === "validate") {
-      handleValidate(message.data, socket);
     }
   });
 });
 
-async function handleValidate(
-  data: ValidateIncomingMessage,
-  socket: WebSocket
-) {
-  try {
+setInterval(async () => {
+  const monitorsToValidate = await prisma.monitor.findMany({
+    where: {
+      status: "ACTIVE",
+    },
+  });
 
-    const validator = validators.find(
-      (v) => v.validatorId === data.validatorId
-    );
-    if (!validator) {
-      socket.send(
+  for (const monitor of monitorsToValidate) {
+    validators.forEach((validator) => {
+      const callbackId = randomUUID();
+      console.log(
+        `Sending validate to ${validator.validatorId} ${monitor.url}`
+      );
+      validator.socket.send(
         JSON.stringify({
-          type: "error",
-          data: { message: "Validator not found" },
+          type: "validate",
+          data: {
+            url: monitor.url,
+            callbackId,
+          },
         })
       );
-      return;
-    }
 
-    console.log("Validated data:", data);
+      CALLBACKS[callbackId] = async (message: IncomingMessage) => {
+        if (message.type === "validate") {
+          const { validatorId, status, latency } = message.data;
+          await prisma.$transaction(async (tx) => {
+            await tx.monitorTick.create({
+              data: {
+                monitorId: monitor.id,
+                validatorId,
+                status,
+                latency,
+                createdAt: new Date(),
+              },
+            });
 
-
-     
-    await prisma.monitorTick.create({
-        data: {
-            status: data.status,
-            latency: data.latency,
-            monitorId: data.monitorId,
-            validatorId: data.validatorId,
+            await tx.validator.update({
+              where: { id: validatorId },
+              data: {
+                balance: { increment: COST_PER_VALIDATION },
+              },
+            });
+          });
         }
-    })
-
-    socket.send(
-      JSON.stringify({
-        type: "validate",
-        data: {
-          success: true,
-          message: "Validation data received and verified",
-        },
-      })
-    );
-  } catch (error) {
-    console.error("Error handling validation:", error);
-    socket.send(
-      JSON.stringify({
-        type: "error",
-        data: { message: "Internal server error" },
-      })
-    );
+      };
+    });
   }
-}
+}, 60 * 1000);
 
 function verifyMessage(
   signature: string,

@@ -21,7 +21,6 @@ export interface SignupOutgoingMessage {
 export interface ValidateOutgoingMessage {
   url: string;
   callbackId: string;
-  monitorId: string;
 }
 
 export interface ErrorMessage {
@@ -49,12 +48,12 @@ export type OutgoingMessage =
   {
       type: "signup";
       data: SignupOutgoingMessage;
-      signedMessage: string;
+     
     }
   | {
       type: "validate";
       data: ValidateOutgoingMessage;
-      signedMessage: string;
+    
     }
   | {
       type: "error";
