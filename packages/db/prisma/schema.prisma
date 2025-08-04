@@ -65,6 +65,44 @@ model monitorTick{
   validator           Validator  @relation(fields: [validatorId], references: [id])
 }
 
+model Escalation {
+  id              String   @id @default(uuid())
+  monitorId       String   @unique
+  monitor         Monitor  @relation(fields: [monitorId], references: [id])
+  
+  name            String   // e.g., "Basic Plan", "Premium Plan"
+  enabled         Boolean  @default(true)
+  
+  // One-to-many relationship with escalation levels
+  levels          EscalationLevel[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EscalationLevel {
+  id              String   @id @default(uuid())
+  escalationId    String
+  escalation      Escalation @relation(fields: [escalationId], references: [id])
+  
+  levelOrder      Int      
+  waitMinutes     Int      
+  channel         EscalationChannel @default(EMAIL)
+  contacts        String[] // For webhooks: URLs, for email: addresses, for slack: channels
+  message         String?  
+  
+  // Optional: webhook-specific configuration
+  webhookMethod   String?  @default("POST") // GET, POST, PUT
+  webhookHeaders  Json?    // Custom headers for webhook requests
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([escalationId, levelOrder])
+  @@index([escalationId, levelOrder])
+}
+
+
 model Alert {
   id                  String   @id @default(uuid())
   severity            AlertSeverity @default(MEDIUM)
@@ -87,73 +125,7 @@ model Alert {
   // Relations
   monitorId           String
   monitor             Monitor  @relation(fields: [monitorId], references: [id])
-  escalationLogs      EscalationLog[]
-}
-
-model Escalation {
-  id              String   @id @default(uuid())
-  monitorId       String   @unique
-  monitor         Monitor  @relation(fields: [monitorId], references: [id])
-  
-  name            String   // e.g., "Basic Plan", "Premium Plan"
-  enabled         Boolean  @default(true)
-  
-  // One-to-many relationship with escalation levels
-  levels          EscalationLevel[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model EscalationLevel {
-  id              String   @id @default(uuid())
-  escalationId    String
-  escalation      Escalation @relation(fields: [escalationId], references: [id])
-  
-  // Level configuration
-  levelOrder      Int      // 1, 2, 3, 4, etc. (escalation sequence)
-  waitMinutes     Int      // Wait time if no response from previous level
-  
-  // Contact information
-  contacts        String[] // emails, usernames, phone numbers
-  channel         EscalationChannel @default(EMAIL)
-  
-  
-  // Optional level naming
-  name            String?  // e.g., "Email to Admin", "Slack to Team", "WEBHOOK"
-  message         String?  // Custom message for this escalation level
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Ensure unique ordering within an escalation policy
-  @@unique([escalationId, levelOrder])
-  @@index([escalationId, levelOrder])
-}
-
-model EscalationLog {
-  id              String   @id @default(uuid())
-  alertId         String
-  alert           Alert    @relation(fields: [alertId], references: [id])
-  
-  // Which escalation level was triggered
-  levelOrder      Int
-  levelName       String?
-  
-  // Execution details
-  triggeredAt     DateTime @default(now())
-  sentTo          String[] // Who received the notification
-  channel         EscalationChannel
-  
-  // Response tracking
-  wasAcknowledged Boolean  @default(false)
-  acknowledgedAt  DateTime?
-  acknowledgedBy  String?  // User ID
-  
-  // Whether this level resolved the issue
-  resolvedIssue   Boolean  @default(false)
-  
-  @@index([alertId, levelOrder])
+ 
 }
 
 model Incident {
@@ -222,6 +194,7 @@ enum AlertStatus {
   ACKNOWLEDGED
   RESOLVED
 }
+
 
 enum IncidentStatus {
   INVESTIGATING
