@@ -31,6 +31,7 @@ export async function createMonitor(req: Request, res: Response) {
 
   return res.status(201).json({
     message: "Monitor created successfully",
+    
     monitor: {
       id: monitor.id,
       name: monitor.name,
@@ -40,6 +41,7 @@ export async function createMonitor(req: Request, res: Response) {
   });
 }
 
+// for one monitor
 export async function getMonitor(req: Request, res: Response) {
   const { id } = req.params;
 
@@ -61,6 +63,7 @@ export async function getMonitor(req: Request, res: Response) {
   });
 }
 
+// for more than one monitor
 export async function getMonitors(req: Request, res: Response) {
   const { id: userId } = req.user;
   const monitors = await prisma.monitor.findMany({
