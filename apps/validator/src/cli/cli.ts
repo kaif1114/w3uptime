@@ -4,12 +4,12 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import * as inquirer from 'inquirer';
 import * as path from 'path';
-import { ConfigManager } from '../config/config-manager';
-import { KeystoreManager } from '../crypto/keystore';
-import { SecureMessageSigner, ParanoidMessageSigner } from '../crypto/signer';
-import { ValidatorWebSocketClient } from '../network/websocket-client';
-import { WebsiteMonitor } from '../monitoring/monitor';
-import { ValidatorService } from '../services/validator-service';
+import { ConfigManager } from '../config/config-manager.js';
+import { KeystoreManager } from '../crypto/keystore.js';
+import { SecureMessageSigner, ParanoidMessageSigner } from '../crypto/signer.js';
+import { ValidatorWebSocketClient } from '../network/websocket-client.js';
+import { WebsiteMonitor } from '../monitoring/monitor.js';
+import { ValidatorService } from '../services/validator-service.js';
 
 const program = new Command();
 
@@ -158,7 +158,7 @@ program
       if (wallets.length === 0) {
         console.log('  No wallets found');
       } else {
-        wallets.forEach(wallet => {
+        wallets.forEach((wallet: { name: string; address: string; path: string }) => {
           const isDefault = wallet.name === config.validator.defaultWallet;
           console.log(`  ${isDefault ? '🔹' : '  '} ${wallet.name}: ${wallet.address}`);
         });
@@ -199,7 +199,7 @@ walletCmd
       
       const defaultWallet = configManager.getValidatorConfig().defaultWallet;
       
-      wallets.forEach((wallet, index) => {
+      wallets.forEach((wallet: { name: string; address: string; path: string }, index: number) => {
         const isDefault = wallet.name === defaultWallet;
         const marker = isDefault ? chalk.green('🔹 [DEFAULT]') : '  ';
         console.log(`${marker} ${wallet.name}`);

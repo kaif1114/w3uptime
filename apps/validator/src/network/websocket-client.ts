@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { IncomingMessage, OutgoingMessage } from 'common/types';
-import { SecureMessageSigner } from '../crypto/signer';
+import { SecureMessageSigner } from '../crypto/signer.js';
 
 export interface WebSocketConfig {
   url: string;

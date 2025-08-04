@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import * as crypto from 'crypto';
-import { KeystoreManager, DecryptedWallet } from './keystore';
+import { KeystoreManager, DecryptedWallet } from './keystore.js';
 
 export interface SignedMessage {
   signature: string;

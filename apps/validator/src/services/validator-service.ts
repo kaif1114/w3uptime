@@ -1,11 +1,11 @@
 import chalk from 'chalk';
 import * as inquirer from 'inquirer';
 import { EventEmitter } from 'events';
-import { ConfigManager } from '../config/config-manager';
-import { KeystoreManager } from '../crypto/keystore';
-import { SecureMessageSigner, ParanoidMessageSigner } from '../crypto/signer';
-import { ValidatorWebSocketClient, WebSocketConfig } from '../network/websocket-client';
-import { WebsiteMonitor, MonitoringRequest, MonitoringResult } from '../monitoring/monitor';
+import { ConfigManager } from '../config/config-manager.js';
+import { KeystoreManager } from '../crypto/keystore.js';
+import { SecureMessageSigner, ParanoidMessageSigner } from '../crypto/signer.js';
+import { ValidatorWebSocketClient, WebSocketConfig } from '../network/websocket-client.js';
+import { WebsiteMonitor, MonitoringRequest, MonitoringResult } from '../monitoring/monitor.js';
 
 export interface ValidatorStats {
   startTime: Date;
@@ -207,19 +207,19 @@ export class ValidatorService extends EventEmitter {
       console.log(chalk.green('🔄 Reconnected to hub'));
     });
 
-    this.websocketClient.on('registered', (data) => {
+    this.websocketClient.on('registered', (data: { validatorId: string }) => {
       console.log(chalk.green(`✅ Registered as validator: ${data.validatorId}`));
     });
 
-    this.websocketClient.on('validationRequest', async (data) => {
+    this.websocketClient.on('validationRequest', async (data: { url: string; callbackId: string; monitorId?: string }) => {
       await this.handleValidationRequest(data);
     });
 
-    this.websocketClient.on('hubError', (error) => {
+    this.websocketClient.on('hubError', (error: { message: string }) => {
       console.error(chalk.red(`❌ Hub error: ${error.message}`));
     });
 
-    this.websocketClient.on('error', (error) => {
+    this.websocketClient.on('error', (error: Error) => {
       console.error(chalk.red(`❌ WebSocket error: ${error.message}`));
     });
 
@@ -230,7 +230,7 @@ export class ValidatorService extends EventEmitter {
   /**
    * Handle validation request from hub
    */
-  private async handleValidationRequest(data: any): Promise<void> {
+  private async handleValidationRequest(data: { url: string; callbackId: string; monitorId?: string }): Promise<void> {
     try {
       console.log(chalk.blue(`🔍 Validating: ${data.url}`));
       
@@ -292,7 +292,7 @@ export class ValidatorService extends EventEmitter {
    * Setup event handlers
    */
   private setupEventHandlers(): void {
-    this.monitor.on('monitoringComplete', (result) => {
+    this.monitor.on('monitoringComplete', (result: MonitoringResult) => {
       this.emit('validationComplete', result);
     });
   }
