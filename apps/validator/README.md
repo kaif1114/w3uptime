@@ -5,7 +5,8 @@ A secure, decentralized validator CLI application for the W3Uptime monitoring ne
 ## Features
 
 ### 🔐 Security-First Design
-- **Encrypted Keystore**: Private keys stored using AES-256-GCM encryption with PBKDF2 key derivation
+- **Import-Only Wallets**: Users import existing private keys from their own wallets
+- **Encrypted Keystore**: Private keys stored using AES-128-CTR encryption with scrypt key derivation
 - **Signed Messages**: All communications use cryptographic signatures with nonce/timestamp protection
 - **Session Management**: Configurable session timeouts with secure memory cleanup
 - **Paranoid Mode**: Optional mode requiring password for each signing operation
@@ -52,11 +53,8 @@ npm link
 
 ### 1. Initialize Validator
 ```bash
-# Create a new wallet and configuration
-w3uptime-validator init
-
-# Or import existing private key
-w3uptime-validator init --import-key <private-key> --wallet-name my-validator
+# Import existing private key and create configuration
+w3uptime-validator init --private-key <your-private-key> --wallet-name my-validator
 ```
 
 ### 2. Configure Hub Connection
@@ -80,14 +78,14 @@ w3uptime-validator start --paranoid
 ## Commands Reference
 
 ### `init` - Initialize Validator
-Initialize validator configuration and create/import wallet.
+Initialize validator configuration and import existing wallet.
 
 ```bash
 w3uptime-validator init [options]
 
 Options:
   -w, --wallet-name <name>  Name for the wallet
-  -i, --import-key <key>    Import existing private key
+  -k, --private-key <key>   Private key to import (required)
   --hub-url <url>          Hub WebSocket URL (default: ws://localhost:8080)
 ```
 
@@ -116,9 +114,6 @@ Manage validator wallets.
 ```bash
 # List all wallets
 w3uptime-validator wallet list
-
-# Create new wallet
-w3uptime-validator wallet create <name>
 
 # Import wallet from private key
 w3uptime-validator wallet import <name>
@@ -210,7 +205,8 @@ export W3UPTIME_LOG_FILE="/var/log/w3uptime-validator.log"
 ## Security Considerations
 
 ### Private Key Management
-- Private keys are encrypted using AES-256-GCM with PBKDF2 key derivation
+- Users must provide their own existing private keys from external wallets
+- Private keys are encrypted using AES-128-CTR with scrypt key derivation  
 - Keys are stored in the keystore directory with restrictive file permissions
 - Memory containing private keys is cleared after session timeout
 - Use strong passwords (minimum 8 characters recommended)

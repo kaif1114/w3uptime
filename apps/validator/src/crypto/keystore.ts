@@ -45,31 +45,6 @@ export class KeystoreManager {
     }
   }
 
-  /**
-   * Create a new wallet and save it to encrypted keystore
-   */
-  async createWallet(password: string, walletName?: string): Promise<{ address: string; keystorePath: string }> {
-    if (!password || password.length < 8) {
-      throw new Error('Password must be at least 8 characters long');
-    }
-
-    // Generate a new random wallet
-    const wallet = ethers.Wallet.createRandom();
-    
-    // Create keystore
-    const keystore = await this.createKeystore(wallet.privateKey, password);
-    
-    // Save to file
-    const filename = walletName ? `${walletName}.json` : `validator-${Date.now()}.json`;
-    const keystorePath = path.join(this.keystoreDir, filename);
-    
-    await fs.writeJson(keystorePath, keystore, { spaces: 2 });
-    
-    return {
-      address: keystore.address,
-      keystorePath
-    };
-  }
 
   /**
    * Import an existing private key and save it to encrypted keystore

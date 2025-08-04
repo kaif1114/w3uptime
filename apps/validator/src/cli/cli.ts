@@ -24,13 +24,19 @@ async function initializeConfig(): Promise<void> {
 // Initialize command
 program
   .command('init')
-  .description('Initialize validator configuration and create a new wallet')
-  .option('-w, --wallet-name <name>', 'Name for the new wallet')
-  .option('-i, --import-key <key>', 'Import existing private key')
+  .description('Initialize validator configuration and import an existing wallet')
+  .option('-w, --wallet-name <name>', 'Name for the wallet')
+  .option('-k, --private-key <key>', 'Private key to import (required)')
   .option('--hub-url <url>', 'Hub WebSocket URL', 'ws://localhost:8080')
   .action(async (options) => {
     try {
       console.log(chalk.blue('🚀 Initializing W3Uptime Validator'));
+      
+      // Private key is required
+      if (!options.privateKey) {
+        console.error(chalk.red('❌ Private key is required. Use --private-key option to provide your existing wallet private key.'));
+        process.exit(1);
+      }
       
       await initializeConfig();
       
@@ -41,39 +47,22 @@ program
 
       const keystoreManager = new KeystoreManager(configManager.getSecurityConfig().keystoreDir);
       
-      let walletResult;
+      // Import existing private key
+      const password = await promptPassword('Enter password to encrypt your wallet:');
+      const confirmPassword = await promptPassword('Confirm password:');
       
-      if (options.importKey) {
-        // Import existing private key
-        const password = await promptPassword('Enter password to encrypt your wallet:');
-        const confirmPassword = await promptPassword('Confirm password:');
-        
-        if (password !== confirmPassword) {
-          console.error(chalk.red('❌ Passwords do not match'));
-          process.exit(1);
-        }
-        
-        walletResult = await keystoreManager.importWallet(
-          options.importKey,
-          password,
-          options.walletName
-        );
-        
-        console.log(chalk.green('✅ Wallet imported successfully'));
-      } else {
-        // Create new wallet
-        const password = await promptPassword('Enter password to encrypt your new wallet:');
-        const confirmPassword = await promptPassword('Confirm password:');
-        
-        if (password !== confirmPassword) {
-          console.error(chalk.red('❌ Passwords do not match'));
-          process.exit(1);
-        }
-        
-        walletResult = await keystoreManager.createWallet(password, options.walletName);
-        
-        console.log(chalk.green('✅ New wallet created successfully'));
+      if (password !== confirmPassword) {
+        console.error(chalk.red('❌ Passwords do not match'));
+        process.exit(1);
       }
+      
+      const walletResult = await keystoreManager.importWallet(
+        options.privateKey,
+        password,
+        options.walletName
+      );
+      
+      console.log(chalk.green('✅ Wallet imported successfully'));
       
       // Set as default wallet
       const walletName = path.basename(walletResult.keystorePath, '.json');
@@ -214,40 +203,6 @@ walletCmd
     }
   });
 
-walletCmd
-  .command('create <name>')
-  .description('Create a new wallet')
-  .action(async (name) => {
-    try {
-      await initializeConfig();
-      
-      const keystoreManager = new KeystoreManager(configManager.getSecurityConfig().keystoreDir);
-      
-      // Check if wallet already exists
-      if (keystoreManager.keystoreExists(name)) {
-        console.error(chalk.red(`❌ Wallet "${name}" already exists`));
-        process.exit(1);
-      }
-      
-      const password = await promptPassword('Enter password for new wallet:');
-      const confirmPassword = await promptPassword('Confirm password:');
-      
-      if (password !== confirmPassword) {
-        console.error(chalk.red('❌ Passwords do not match'));
-        process.exit(1);
-      }
-      
-      const result = await keystoreManager.createWallet(password, name);
-      
-      console.log(chalk.green('✅ Wallet created successfully'));
-      console.log(chalk.cyan(`📋 Address: ${result.address}`));
-      console.log(chalk.cyan(`📁 Path: ${result.keystorePath}`));
-      
-    } catch (error) {
-      console.error(chalk.red(`❌ Failed to create wallet: ${error instanceof Error ? error.message : String(error)}`));
-      process.exit(1);
-    }
-  });
 
 walletCmd
   .command('import <name>')
