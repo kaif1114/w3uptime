@@ -21,6 +21,9 @@ ws.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
   socket.on("message", (messageRaw) => {
     const message: IncomingMessage = JSON.parse(messageRaw.toString());
+    
+
+    
     const verified = verifyMessage(
       message.signature,
       JSON.stringify(message.data),
@@ -114,8 +117,6 @@ function verifyMessage(
     const recoveredAddress = ethers.verifyMessage(message, signature);
 
     // Convert the public key to an address for comparison
-    // Note: This assumes the public key is in the correct format
-    // You might need to adjust this based on your public key format
     const publicKeyAddress = ethers.computeAddress(publicKey);
 
     // Compare the recovered address with the public key address

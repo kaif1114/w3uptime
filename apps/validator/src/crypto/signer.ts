@@ -65,26 +65,15 @@ export class SecureMessageSigner {
   }
 
   /**
-   * Sign a message with timestamp and nonce for replay attack prevention
+   * Sign a message with the original data only, later on we will add timestamp and nonce to the message for replay attack prevention
    */
   async signMessage(messageData: MessageToSign): Promise<SignedMessage> {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated. Please authenticate first.');
     }
 
-    // Generate nonce and timestamp
-    const timestamp = Date.now();
-    const nonce = crypto.randomBytes(16).toString('hex');
-
-    // Create the message with anti-replay protection
-    const messageWithSecurity = {
-      ...messageData,
-      timestamp,
-      nonce,
-      publicKey: this.wallet!.publicKey
-    };
-
-    const messageString = JSON.stringify(messageWithSecurity);
+    // Sign only the original message data
+    const messageString = JSON.stringify(messageData);
 
     try {
       // Sign the message using ethers
@@ -93,8 +82,8 @@ export class SecureMessageSigner {
       return {
         signature,
         message: messageString,
-        timestamp,
-        nonce,
+        timestamp: Date.now(), // Keep for compatibility but not used in signing, we will add these to signing logic later for replay attack prevention
+        nonce: crypto.randomBytes(16).toString('hex'), // Keep for compatibility but not used in signing, we will add these to signing logic later for replay attack prevention
         publicKey: this.wallet!.publicKey
       };
     } catch (error) {
