@@ -21,6 +21,7 @@ export async function createMonitor(req: Request, res: Response , next: NextFunc
   }
 
   const { name, url } = validation.data;
+  console.log("user id", req.user.id);
 
   const monitor = await prisma.monitor.create({
     data: {
