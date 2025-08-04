@@ -2,6 +2,7 @@
   "name": "validator",
   "version": "1.0.0",
   "description": "W3Uptime decentralized validator CLI application",
+  "type": "module",
   "main": "build/main.js",
   "bin": {
     "w3uptime-validator": "./build/main.js"

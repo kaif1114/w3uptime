@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
+import * as inquirer from 'inquirer';
 import * as path from 'path';
 import { ConfigManager } from '../config/config-manager';
 import { KeystoreManager } from '../crypto/keystore';
@@ -88,7 +88,7 @@ program
       console.log(chalk.yellow('🔐 Keep your password safe - it cannot be recovered!'));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Initialization failed: ${error.message}`));
+      console.error(chalk.red(`❌ Initialization failed: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -125,7 +125,7 @@ program
       await validatorService.start(walletName);
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to start validator: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to start validator: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -169,7 +169,7 @@ program
       console.log('  Status: Not running (use "start" command)');
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to get status: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to get status: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -209,7 +209,7 @@ walletCmd
       });
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to list wallets: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to list wallets: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -244,7 +244,7 @@ walletCmd
       console.log(chalk.cyan(`📁 Path: ${result.keystorePath}`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to create wallet: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to create wallet: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -280,7 +280,7 @@ walletCmd
       console.log(chalk.cyan(`📁 Path: ${result.keystorePath}`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to import wallet: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to import wallet: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -304,7 +304,7 @@ configCmd
       console.log(JSON.stringify(config, null, 2));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to show config: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to show config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -321,7 +321,7 @@ configCmd
       const config = configManager.getConfig();
       
       // Simple nested object setter
-      let target = config;
+      let target: any = config;
       for (let i = 0; i < keys.length - 1; i++) {
         if (!(keys[i] in target)) {
           target[keys[i]] = {};
@@ -336,7 +336,7 @@ configCmd
       console.log(chalk.green(`✅ Configuration updated: ${key} = ${value}`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to set config: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to set config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -346,7 +346,7 @@ configCmd
   .description('Reset configuration to defaults')
   .action(async () => {
     try {
-      const { confirm } = await inquirer.prompt([
+      const { confirm } = await inquirer.default.prompt([
         {
           type: 'confirm',
           name: 'confirm',
@@ -367,31 +367,31 @@ configCmd
       console.log(chalk.green('✅ Configuration reset to defaults'));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to reset config: ${error.message}`));
+      console.error(chalk.red(`❌ Failed to reset config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
 
 // Utility functions
 async function promptPassword(message: string): Promise<string> {
-  const { password } = await inquirer.prompt([
+  const { password } = await inquirer.default.prompt([
     {
       type: 'password',
       name: 'password',
       message,
-      validate: (input) => input.length >= 8 || 'Password must be at least 8 characters long'
+      validate: (input: string) => input.length >= 8 || 'Password must be at least 8 characters long'
     }
   ]);
   return password;
 }
 
 async function promptPrivateKey(message: string): Promise<string> {
-  const { privateKey } = await inquirer.prompt([
+  const { privateKey } = await inquirer.default.prompt([
     {
       type: 'password',
       name: 'privateKey',
       message,
-      validate: (input) => {
+      validate: (input: string) => {
         if (!input) return 'Private key is required';
         if (!input.match(/^(0x)?[a-fA-F0-9]{64}$/)) {
           return 'Invalid private key format';

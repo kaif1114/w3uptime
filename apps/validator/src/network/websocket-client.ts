@@ -86,7 +86,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
 
       await this.sendMessage(message);
     } catch (error) {
-      throw new Error(`Failed to send signed message: ${error.message}`);
+      throw new Error(`Failed to send signed message: ${error}`);
     }
   }
 
@@ -108,7 +108,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
     } catch (error) {
       // Queue the message for retry
       this.queueMessage(messageId, message);
-      throw new Error(`Failed to send message: ${error.message}`);
+      throw new Error(`Failed to send message: ${error}`);
     }
   }
 
@@ -252,7 +252,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
           break;
           
         default:
-          console.warn('Unknown message type:', message.type);
+          console.warn('Unknown message type in message:', message);
       }
     } catch (error) {
       console.error('Failed to parse message:', error);

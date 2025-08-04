@@ -84,7 +84,7 @@ export class WebsiteMonitor extends EventEmitter {
         url: request.url,
         status: 'BAD',
         latency,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: Date.now()
       };
 
@@ -138,7 +138,7 @@ export class WebsiteMonitor extends EventEmitter {
         throw new Error('URL must use HTTP or HTTPS protocol');
       }
     } catch (error) {
-      throw new Error(`Invalid URL format: ${error.message}`);
+      throw new Error(`Invalid URL format: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -168,7 +168,7 @@ export class WebsiteMonitor extends EventEmitter {
         const response = await axios(config);
         return response;
       } catch (error) {
-        lastError = error;
+        lastError = error as Error;
         
         if (attempt < this.config.retryAttempts) {
           await this.delay(this.config.retryDelay * (attempt + 1));
@@ -276,7 +276,7 @@ export class AdvancedWebsiteMonitor extends WebsiteMonitor {
     if (result.status === 'GOOD' && (request.expectedContent || request.contentRegex)) {
       try {
         const response = await axios.get(request.url, {
-          timeout: this.config.defaultTimeout,
+          timeout: 30000,
           maxContentLength: 1024 * 1024 // 1MB for content check
         });
 
@@ -298,7 +298,7 @@ export class AdvancedWebsiteMonitor extends WebsiteMonitor {
 
       } catch (error) {
         result.status = 'BAD';
-        result.error = `Content check failed: ${error.message}`;
+        result.error = `Content check failed: ${error instanceof Error ? error.message : String(error)}`;
       }
     }
 
@@ -321,7 +321,7 @@ export class AdvancedWebsiteMonitor extends WebsiteMonitor {
         console.log(`SSL check for ${url.hostname} - placeholder implementation`);
       } catch (error) {
         result.status = 'BAD';
-        result.error = `SSL check failed: ${error.message}`;
+        result.error = `SSL check failed: ${error instanceof Error ? error.message : String(error)}`;
       }
     }
 

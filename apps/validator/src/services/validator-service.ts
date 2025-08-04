@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import inquirer from 'inquirer';
+import * as inquirer from 'inquirer';
 import { EventEmitter } from 'events';
 import { ConfigManager } from '../config/config-manager';
 import { KeystoreManager } from '../crypto/keystore';
@@ -97,7 +97,7 @@ export class ValidatorService extends EventEmitter {
       
     } catch (error) {
       this.isRunning = false;
-      throw new Error(`Failed to start validator service: ${error.message}`);
+      throw new Error(`Failed to start validator service: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -132,7 +132,7 @@ export class ValidatorService extends EventEmitter {
       this.emit('stopped');
       
     } catch (error) {
-      console.error(chalk.red(`❌ Error during shutdown: ${error.message}`));
+      console.error(chalk.red(`❌ Error during shutdown: ${error instanceof Error ? error.message : String(error)}`));
     } finally {
       this.shutdownInProgress = false;
     }
@@ -146,7 +146,7 @@ export class ValidatorService extends EventEmitter {
     stats: ValidatorStats;
     connection?: any;
   } {
-    const status = {
+    const status: any = {
       running: this.isRunning,
       stats: {
         ...this.stats,
@@ -256,7 +256,7 @@ export class ValidatorService extends EventEmitter {
       console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Validation failed for ${data.url}: ${error.message}`));
+      console.error(chalk.red(`❌ Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
       
       // Send error result
       try {
@@ -267,7 +267,7 @@ export class ValidatorService extends EventEmitter {
           monitorId: data.monitorId || 'unknown'
         });
       } catch (sendError) {
-        console.error(chalk.red(`❌ Failed to send error result: ${sendError.message}`));
+        console.error(chalk.red(`❌ Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`));
       }
       
       this.stats.failedValidations++;
@@ -366,12 +366,12 @@ export class ValidatorService extends EventEmitter {
    * Prompt for password (handles both normal and paranoid mode)
    */
   private async promptPassword(message: string): Promise<string> {
-    const { password } = await inquirer.prompt([
+    const { password } = await inquirer.default.prompt([
       {
         type: 'password',
         name: 'password',
         message,
-        validate: (input) => input.length > 0 || 'Password is required'
+        validate: (input: string) => input.length > 0 || 'Password is required'
       }
     ]);
     return password;

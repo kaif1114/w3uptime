@@ -172,7 +172,7 @@ export class KeystoreManager {
     });
     
     // Encrypt private key using AES-128-CTR (compatible with web3 standard)
-    const cipher = crypto.createCipher('aes-128-ctr', derivedKey.slice(0, 16));
+    const cipher = crypto.createCipheriv('aes-128-ctr', derivedKey.slice(0, 16), iv);
     const ciphertext = Buffer.concat([
       cipher.update(privateKeyBuffer),
       cipher.final()
@@ -225,7 +225,8 @@ export class KeystoreManager {
     }
     
     // Decrypt private key
-    const decipher = crypto.createDecipher('aes-128-ctr', derivedKey.slice(0, 16));
+    const iv = Buffer.from(cryptoData.cipherparams.iv, 'hex');
+    const decipher = crypto.createDecipheriv('aes-128-ctr', derivedKey.slice(0, 16), iv);
     const privateKeyBuffer = Buffer.concat([
       decipher.update(ciphertext),
       decipher.final()
@@ -242,7 +243,7 @@ export class KeystoreManager {
     
     return {
       privateKey,
-      publicKey: wallet.publicKey,
+      publicKey: wallet.signingKey.publicKey,
       address: wallet.address
     };
   }

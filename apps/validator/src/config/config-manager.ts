@@ -102,7 +102,7 @@ export class ConfigManager {
         await this.saveConfig();
       }
     } catch (error) {
-      console.warn(`Failed to load config from ${this.configPath}: ${error.message}`);
+      console.warn(`Failed to load config from ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`);
       console.warn('Using default configuration');
       this.config = { ...this.defaultConfig };
     }
@@ -118,7 +118,7 @@ export class ConfigManager {
       await fs.ensureDir(path.dirname(this.configPath));
       await fs.writeJson(this.configPath, this.config, { spaces: 2 });
     } catch (error) {
-      throw new Error(`Failed to save config to ${this.configPath}: ${error.message}`);
+      throw new Error(`Failed to save config to ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -320,8 +320,11 @@ export class EnvironmentConfigLoader {
     // Hub settings
     if (process.env.W3UPTIME_HUB_URL) {
       config.hub = {
-        ...config.hub,
-        url: process.env.W3UPTIME_HUB_URL
+        url: process.env.W3UPTIME_HUB_URL,
+        reconnectInterval: 5000,
+        maxReconnectAttempts: 10,
+        pingInterval: 30000,
+        connectionTimeout: 10000
       };
     }
 
@@ -330,16 +333,20 @@ export class EnvironmentConfigLoader {
       const timeout = parseInt(process.env.W3UPTIME_SESSION_TIMEOUT);
       if (!isNaN(timeout)) {
         config.security = {
-          ...config.security,
-          sessionTimeoutMinutes: timeout
+          sessionTimeoutMinutes: timeout,
+          keystoreDir: path.join(process.cwd(), '.w3uptime', 'keystore'),
+          paranoidMode: false,
+          secureMemory: true
         };
       }
     }
 
     if (process.env.W3UPTIME_PARANOID_MODE === 'true') {
       config.security = {
-        ...config.security,
-        paranoidMode: true
+        sessionTimeoutMinutes: 30,
+        keystoreDir: path.join(process.cwd(), '.w3uptime', 'keystore'),
+        paranoidMode: true,
+        secureMemory: true
       };
     }
 
@@ -348,16 +355,19 @@ export class EnvironmentConfigLoader {
       const level = process.env.W3UPTIME_LOG_LEVEL as any;
       if (['error', 'warn', 'info', 'debug'].includes(level)) {
         config.logging = {
-          ...config.logging,
-          level
+          level,
+          maxFileSize: '10MB',
+          maxFiles: 5
         };
       }
     }
 
     if (process.env.W3UPTIME_LOG_FILE) {
       config.logging = {
-        ...config.logging,
-        file: process.env.W3UPTIME_LOG_FILE
+        level: 'info',
+        file: process.env.W3UPTIME_LOG_FILE,
+        maxFileSize: '10MB',
+        maxFiles: 5
       };
     }
 

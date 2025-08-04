@@ -39,7 +39,7 @@ export class SecureMessageSigner {
       
       console.log(`Authenticated with wallet: ${this.wallet.address}`);
     } catch (error) {
-      throw new Error(`Authentication failed: ${error.message}`);
+      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -98,7 +98,7 @@ export class SecureMessageSigner {
         publicKey: this.wallet!.publicKey
       };
     } catch (error) {
-      throw new Error(`Failed to sign message: ${error.message}`);
+      throw new Error(`Failed to sign message: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
