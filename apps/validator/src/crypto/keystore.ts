@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as path from 'path';
 import { ethers } from 'ethers';
 
@@ -84,7 +84,9 @@ export class KeystoreManager {
       if (error instanceof Error && error.message === 'Private key and public key do not form a valid pair') {
         throw error;
       }
-      throw new Error('Invalid private key or public key format');
+      // Preserve the actual error message for debugging
+      console.error('Actual error in importWallet:', error);
+      throw new Error(`Invalid private key or public key format: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -146,9 +148,9 @@ export class KeystoreManager {
     const kdfParams = {
       dklen: 32,
       salt: salt.toString('hex'),
-      n: 262144, // CPU/memory cost parameter
-      r: 8,      // Block size parameter
-      p: 1       // Parallelization parameter
+      n: 16384, // CPU/memory cost parameter (reduced for compatibility)
+      r: 8,     // Block size parameter
+      p: 1      // Parallelization parameter
     };
     
     // Derive key using scrypt
