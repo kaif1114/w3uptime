@@ -12,10 +12,9 @@
       "strict": true,
       "noImplicitAny": true,
       "strictNullChecks": true,
-      "noEmit": true
-    },
+      },
     "include": [
       "src/**/*.ts",
       "test/**/*.ts"
-  , "config.ts"  ]
+    ]
   } 
