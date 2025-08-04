@@ -2,6 +2,7 @@ import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { IncomingMessage, OutgoingMessage } from 'common/types';
 import { SecureMessageSigner } from '../crypto/signer.js';
+import { v7 as uuidv7 } from 'uuid';
 
 export interface WebSocketConfig {
   url: string;
@@ -81,7 +82,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
       const message: IncomingMessage = {
         type: type as any,
         data: data,
-        signedMessage: signedMessage.signature
+        signature: signedMessage.signature
       };
 
       await this.sendMessage(message);
@@ -359,7 +360,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
    * Generate callback ID
    */
   private generateCallbackId(): string {
-    return `cb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv7();
   }
 
   /**

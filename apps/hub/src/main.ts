@@ -22,7 +22,7 @@ ws.on("connection", (socket: WebSocket) => {
   socket.on("message", (messageRaw) => {
     const message: IncomingMessage = JSON.parse(messageRaw.toString());
     const verified = verifyMessage(
-      message.signedMessage,
+      message.signature,
       JSON.stringify(message.data),
       message.data.publicKey
     );
