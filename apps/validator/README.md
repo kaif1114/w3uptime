@@ -5,8 +5,8 @@ A secure, decentralized validator CLI application for the W3Uptime monitoring ne
 ## Features
 
 ### 🔐 Security-First Design
-- **Import-Only Wallets**: Users import existing private-public key pairs from their own wallets
-- **Key Pair Validation**: Private and public keys are validated to ensure they form a correct pair
+- **Import-Only Wallets**: Users import existing private keys from their own wallets (MetaMask, etc.)
+- **Automatic Key Derivation**: Public keys are automatically derived from private keys
 - **Encrypted Keystore**: Private keys stored using AES-128-CTR encryption with scrypt key derivation
 - **Signed Messages**: All communications use cryptographic signatures with nonce/timestamp protection
 - **Session Management**: Configurable session timeouts with secure memory cleanup
@@ -54,8 +54,8 @@ npm link
 
 ### 1. Initialize Validator
 ```bash
-# Import existing private-public key pair and create configuration
-w3uptime-validator init --private-key <your-private-key> --public-key <your-public-key> --wallet-name my-validator
+# Import existing private key and create configuration (public key derived automatically)
+w3uptime-validator init --private-key <your-private-key> --wallet-name my-validator
 ```
 
 ### 2. Configure Hub Connection
@@ -87,7 +87,6 @@ w3uptime-validator init [options]
 Options:
   -w, --wallet-name <name>  Name for the wallet
   -k, --private-key <key>   Private key to import (required)
-  -p, --public-key <key>    Public key to import (required)
   --hub-url <url>          Hub WebSocket URL (default: ws://localhost:8080)
 ```
 
@@ -117,7 +116,7 @@ Manage validator wallets.
 # List all wallets
 w3uptime-validator wallet list
 
-# Import wallet from private-public key pair
+# Import wallet from private key (public key derived automatically)
 w3uptime-validator wallet import <name>
 ```
 
@@ -207,7 +206,8 @@ export W3UPTIME_LOG_FILE="/var/log/w3uptime-validator.log"
 ## Security Considerations
 
 ### Private Key Management
-- Users must provide their own existing private-public key pairs from external wallets
+- Users must provide their own existing private key from external wallets (e.g., MetaMask)
+- Public key is automatically derived from the private key using elliptic curve cryptography
 - Private keys are used locally for message signing, public keys are sent to hub for verification
 - Private keys are encrypted using AES-128-CTR with scrypt key derivation  
 - Keys are stored in the keystore directory with restrictive file permissions

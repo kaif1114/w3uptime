@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { ethers } from 'ethers';
+import chalk from 'chalk';
 
 export interface KeystoreV3 {
   version: 3;
@@ -48,27 +49,26 @@ export class KeystoreManager {
 
 
   /**
-   * Import an existing private-public key pair and save it to encrypted keystore
+   * Import an existing private key and save it to encrypted keystore (public key derived automatically)
    */
-  async importWallet(privateKey: string, publicKey: string, password: string, walletName?: string): Promise<{ address: string; keystorePath: string }> {
+  async importWallet(privateKey: string, password: string, walletName?: string): Promise<{ address: string; keystorePath: string }> {
     if (!password || password.length < 8) {
       throw new Error('Password must be at least 8 characters long');
     }
 
-    // Validate private key and public key pair
+    // Validate private key and derive public key
     try {
       const wallet = new ethers.Wallet(privateKey);
       
-      // Validate that the private key corresponds to the provided public key
+      // Derive public key from private key
       const derivedPublicKey = wallet.signingKey.publicKey;
-      const normalizedProvidedPublicKey = publicKey.startsWith('0x') ? publicKey : '0x' + publicKey;
       
-      if (derivedPublicKey.toLowerCase() !== normalizedProvidedPublicKey.toLowerCase()) {
-        throw new Error('Private key and public key do not form a valid pair');
-      }
+      console.log(chalk.green(`✅ Derived public key from private key`));
+      console.log(chalk.gray(`   Address: ${wallet.address}`));
+      console.log(chalk.gray(`   Public Key: ${derivedPublicKey}`));
       
-      // Create keystore with both keys
-      const keystore = await this.createKeystore(privateKey, publicKey, password);
+      // Create keystore with derived public key
+      const keystore = await this.createKeystore(privateKey, derivedPublicKey, password);
       
       // Save to file
       const filename = walletName ? `${walletName}.json` : `validator-${Date.now()}.json`;
@@ -81,12 +81,9 @@ export class KeystoreManager {
         keystorePath
       };
     } catch (error) {
-      if (error instanceof Error && error.message === 'Private key and public key do not form a valid pair') {
-        throw error;
-      }
       // Preserve the actual error message for debugging
       console.error('Actual error in importWallet:', error);
-      throw new Error(`Invalid private key or public key format: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Invalid private key format: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
