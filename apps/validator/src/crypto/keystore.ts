@@ -7,6 +7,7 @@ export interface KeystoreV3 {
   version: 3;
   id: string;
   address: string;
+  publicKey: string;
   crypto: {
     ciphertext: string;
     cipherparams: {
@@ -47,19 +48,27 @@ export class KeystoreManager {
 
 
   /**
-   * Import an existing private key and save it to encrypted keystore
+   * Import an existing private-public key pair and save it to encrypted keystore
    */
-  async importWallet(privateKey: string, password: string, walletName?: string): Promise<{ address: string; keystorePath: string }> {
+  async importWallet(privateKey: string, publicKey: string, password: string, walletName?: string): Promise<{ address: string; keystorePath: string }> {
     if (!password || password.length < 8) {
       throw new Error('Password must be at least 8 characters long');
     }
 
-    // Validate private key
+    // Validate private key and public key pair
     try {
       const wallet = new ethers.Wallet(privateKey);
       
-      // Create keystore
-      const keystore = await this.createKeystore(privateKey, password);
+      // Validate that the private key corresponds to the provided public key
+      const derivedPublicKey = wallet.signingKey.publicKey;
+      const normalizedProvidedPublicKey = publicKey.startsWith('0x') ? publicKey : '0x' + publicKey;
+      
+      if (derivedPublicKey.toLowerCase() !== normalizedProvidedPublicKey.toLowerCase()) {
+        throw new Error('Private key and public key do not form a valid pair');
+      }
+      
+      // Create keystore with both keys
+      const keystore = await this.createKeystore(privateKey, publicKey, password);
       
       // Save to file
       const filename = walletName ? `${walletName}.json` : `validator-${Date.now()}.json`;
@@ -72,7 +81,10 @@ export class KeystoreManager {
         keystorePath
       };
     } catch (error) {
-      throw new Error('Invalid private key format');
+      if (error instanceof Error && error.message === 'Private key and public key do not form a valid pair') {
+        throw error;
+      }
+      throw new Error('Invalid private key or public key format');
     }
   }
 
@@ -115,9 +127,9 @@ export class KeystoreManager {
   }
 
   /**
-   * Create encrypted keystore from private key
+   * Create encrypted keystore from private key and public key
    */
-  private async createKeystore(privateKey: string, password: string): Promise<KeystoreV3> {
+  private async createKeystore(privateKey: string, publicKey: string, password: string): Promise<KeystoreV3> {
     // Ensure private key is in correct format
     const cleanPrivateKey = privateKey.startsWith('0x') ? privateKey.slice(2) : privateKey;
     const privateKeyBuffer = Buffer.from(cleanPrivateKey, 'hex');
@@ -158,10 +170,14 @@ export class KeystoreManager {
       .update(Buffer.concat([derivedKey.slice(16, 32), ciphertext]))
       .digest('hex');
     
+    // Ensure public key is in correct format
+    const normalizedPublicKey = publicKey.startsWith('0x') ? publicKey : '0x' + publicKey;
+
     return {
       version: 3,
       id: crypto.randomUUID(),
       address,
+      publicKey: normalizedPublicKey,
       crypto: {
         ciphertext: ciphertext.toString('hex'),
         cipherparams: {
@@ -218,7 +234,7 @@ export class KeystoreManager {
     
     return {
       privateKey,
-      publicKey: wallet.signingKey.publicKey,
+      publicKey: keystore.publicKey, // Use the stored public key
       address: wallet.address
     };
   }

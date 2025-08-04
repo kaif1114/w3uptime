@@ -27,14 +27,20 @@ program
   .description('Initialize validator configuration and import an existing wallet')
   .option('-w, --wallet-name <name>', 'Name for the wallet')
   .option('-k, --private-key <key>', 'Private key to import (required)')
+  .option('-p, --public-key <key>', 'Public key to import (required)')
   .option('--hub-url <url>', 'Hub WebSocket URL', 'ws://localhost:8080')
   .action(async (options) => {
     try {
       console.log(chalk.blue('🚀 Initializing W3Uptime Validator'));
       
-      // Private key is required
+      // Both private and public keys are required
       if (!options.privateKey) {
         console.error(chalk.red('❌ Private key is required. Use --private-key option to provide your existing wallet private key.'));
+        process.exit(1);
+      }
+      
+      if (!options.publicKey) {
+        console.error(chalk.red('❌ Public key is required. Use --public-key option to provide your existing wallet public key.'));
         process.exit(1);
       }
       
@@ -58,6 +64,7 @@ program
       
       const walletResult = await keystoreManager.importWallet(
         options.privateKey,
+        options.publicKey,
         password,
         options.walletName
       );
@@ -206,7 +213,7 @@ walletCmd
 
 walletCmd
   .command('import <name>')
-  .description('Import wallet from private key')
+  .description('Import wallet from private-public key pair')
   .action(async (name) => {
     try {
       await initializeConfig();
@@ -220,6 +227,7 @@ walletCmd
       }
       
       const privateKey = await promptPrivateKey('Enter private key:');
+      const publicKey = await promptPublicKey('Enter public key:');
       const password = await promptPassword('Enter password to encrypt wallet:');
       const confirmPassword = await promptPassword('Confirm password:');
       
@@ -228,7 +236,7 @@ walletCmd
         process.exit(1);
       }
       
-      const result = await keystoreManager.importWallet(privateKey, password, name);
+      const result = await keystoreManager.importWallet(privateKey, publicKey, password, name);
       
       console.log(chalk.green('✅ Wallet imported successfully'));
       console.log(chalk.cyan(`📋 Address: ${result.address}`));
@@ -356,6 +364,24 @@ async function promptPrivateKey(message: string): Promise<string> {
     }
   ]);
   return privateKey;
+}
+
+async function promptPublicKey(message: string): Promise<string> {
+  const { publicKey } = await inquirer.default.prompt([
+    {
+      type: 'input',
+      name: 'publicKey',
+      message,
+      validate: (input: string) => {
+        if (!input) return 'Public key is required';
+        if (!input.match(/^(0x)?04[a-fA-F0-9]{128}$/)) {
+          return 'Invalid public key format (should be uncompressed format starting with 04)';
+        }
+        return true;
+      }
+    }
+  ]);
+  return publicKey;
 }
 
 // Global error handler
