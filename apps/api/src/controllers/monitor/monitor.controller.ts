@@ -10,7 +10,7 @@ const createMonitorSchema = z.object({
   timeout: z.number().int().positive().default(30), // seconds
   checkInterval: z.number().int().positive().default(300), //seconds hee hain
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
-  status: z.enum(["Active","Paused", "Disabled"]).default("Active"),
+  status: z.enum(["ACTIVE","PAUSED", "DISABLED"]).default("ACTIVE"),
 });
 
 const patchMonitorSchema = z.object({
@@ -18,9 +18,14 @@ const patchMonitorSchema = z.object({
   url: z.url().min(1),
   timeout: z.number().int().positive().default(30), // seconds
   checkInterval: z.number().int().positive().default(300), //seconds hee hain
-  status: z.enum(["Active","Paused", "Disabled"]).default("Active"),
+  status: z.enum(["ACTIVE","PAUSED", "DISABLED"]).default("ACTIVE"),
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
 });
+
+const pauseMonitorSchema = z.object({
+  status: z.enum(["ACTIVE","PAUSED", "DISABLED"]).default("PAUSED"),
+});
+
 
 export async function createMonitor(req: Request, res: Response , next: NextFunction) {
   const validation = createMonitorSchema.safeParse(req.body);
@@ -104,6 +109,55 @@ export async function getMonitors(req: Request, res: Response) {
   res.status(200).json({ monitors });
   return;
 }
+
+// pause monitor 
+export async function pauseMonitor(req: Request, res: Response) {
+  const {monitorId} = req.params;
+if(!monitorId){
+  return res.status(400).json({error: "Monitor ID is required"});
+}
+
+const validation = pauseMonitorSchema.safeParse(req.body);
+if (!validation.success) {
+  return res.status(400).json({ error: validation.error.message });
+}
+
+
+//i dont think this is needed neechy wala function
+//check if the monitor exists and belongs to the user
+const existingMonitor = await prisma.monitor.findFirst({
+  where: {
+    id: monitorId,
+    userId: req.user.id, // Add user authorization
+  },
+});
+
+if (!existingMonitor) {
+  return res.status(404).json({ error: "Monitor not found" });
+}
+
+const pausedMonitor = await prisma.monitor.update({
+  where: {
+    id: monitorId,
+  },
+  data: {
+    status: validation.data.status,
+  },
+});
+
+res.status(200).json({
+  message: "Monitor paused successfully",
+  monitor: {
+    id: pausedMonitor.id,
+    name: pausedMonitor.name,
+    status: pausedMonitor.status,
+
+  },
+});
+return;
+} 
+
+
 
 export async function patchMonitor(req: Request, res: Response) {
   const { monitorId } = req.params;
