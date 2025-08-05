@@ -2,14 +2,24 @@ import { NextFunction, Request, Response } from "express";
 import { prisma } from "db/client";
 import { z } from "zod";
 
+
 const createMonitorSchema = z.object({
   name: z.string().min(1),
   url: z.url().min(1),
+  userId: z.string().min(1),
+  timeout: z.number().int().positive().default(30), // seconds
+  checkInterval: z.number().int().positive().default(300), //seconds hee hain
+  expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
+  status: z.enum(["Active","Paused", "Disabled"]).default("Active"),
 });
 
 const patchMonitorSchema = z.object({
   name: z.string().min(1),
   url: z.url().min(1),
+  timeout: z.number().int().positive().default(30), // seconds
+  checkInterval: z.number().int().positive().default(300), //seconds hee hain
+  status: z.enum(["Active","Paused", "Disabled"]).default("Active"),
+  expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
 });
 
 export async function createMonitor(req: Request, res: Response , next: NextFunction) {
@@ -20,13 +30,17 @@ export async function createMonitor(req: Request, res: Response , next: NextFunc
     return;
   }
 
-  const { name, url } = validation.data;
+  const { name, url, timeout, checkInterval, expectedStatusCodes, status } = validation.data;
 
   const monitor = await prisma.monitor.create({
     data: {
       name,
       url,
       userId: req.user.id!,
+      timeout,
+      checkInterval,
+      expectedStatusCodes,
+      status,
     },
   });
 
@@ -37,7 +51,11 @@ export async function createMonitor(req: Request, res: Response , next: NextFunc
       id: monitor.id,
       name: monitor.name,
       url: monitor.url,
-      createdAt: monitor.createdAt,
+      status: monitor.status,
+      timeout: monitor.timeout,
+      checkInterval: monitor.checkInterval,
+      expectedStatusCodes: monitor.expectedStatusCodes,
+
     },
   });
   return;
@@ -45,12 +63,12 @@ export async function createMonitor(req: Request, res: Response , next: NextFunc
 
 // for one monitor
 export async function getMonitor(req: Request, res: Response) {
-  const { id } = req.params;
+  const { id} = req.params;
 
   const monitor = await prisma.monitor.findUnique({
     where: {
-      id,
-    },
+        id
+    }
   });
 
   if (!monitor) {
@@ -62,6 +80,9 @@ export async function getMonitor(req: Request, res: Response) {
     id: monitor.id,
     name: monitor.name,
     url: monitor.url,
+    status: monitor.status,
+    checkInterval: monitor.checkInterval,
+    expectedStatusCodes: monitor.expectedStatusCodes,
     createdAt: monitor.createdAt,
   });
   return;
@@ -70,9 +91,13 @@ export async function getMonitor(req: Request, res: Response) {
 // for more than one monitor
 export async function getMonitors(req: Request, res: Response) {
   const { id: userId } = req.user;
+  if(!userId){
+    return res.status(401).json({ error: "Unauthorized" }); 
+  }
   const monitors = await prisma.monitor.findMany({
     where: {
       userId,
+            
     },
   });
 
@@ -82,41 +107,53 @@ export async function getMonitors(req: Request, res: Response) {
 
 export async function patchMonitor(req: Request, res: Response) {
   const { monitorId } = req.params;
+
   if (!monitorId) {
-    res.status(400).json({ error: "Monitor ID is required" });
-    return;
+    return res.status(400).json({ error: "Monitor ID is required" });
   }
 
   const validation = patchMonitorSchema.safeParse(req.body);
-
   if (!validation.success) {
-    res.status(400).json({ error: validation.error.message });
-    return;
+    return res.status(400).json({ error: validation.error.message });
   }
 
-  const { name, url } = validation.data;
+  const { name, url, timeout, checkInterval, status, expectedStatusCodes } = validation.data;
 
-  const monitor = await prisma.monitor.update({
+  const existingMonitor = await prisma.monitor.findFirst({
     where: {
       id: monitorId,
       userId: req.user.id,
     },
+  });
+
+  if (!existingMonitor) {
+    return res.status(404).json({ error: "Monitor not found" });
+  }
+
+  const updatedMonitor = await prisma.monitor.update({
+    where: {
+      id: monitorId,
+    },
     data: {
       name,
       url,
+      timeout,
+      checkInterval,
+      expectedStatusCodes,
+      status,
+
     },
   });
 
   res.status(200).json({
     message: "Monitor updated successfully",
     monitor: {
-      id: monitor.id,
-      name: monitor.name,
-      url: monitor.url,
-      createdAt: monitor.createdAt,
+      id: updatedMonitor.id,
+      name: updatedMonitor.name,
+      url: updatedMonitor.url,
+      createdAt: updatedMonitor.createdAt,
     },
   });
-  return;
 }
 
 export async function deleteMonitor(req: Request, res: Response) {
