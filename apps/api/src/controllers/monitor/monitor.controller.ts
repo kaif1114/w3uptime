@@ -27,7 +27,7 @@ const pauseMonitorSchema = z.object({
 });
 
 
-export async function createMonitor(req: Request, res: Response , next: NextFunction) {
+export async function createMonitor(req: Request, res: Response , next: NextFunction): Promise<void> {
   const validation = createMonitorSchema.safeParse(req.body);
 
   if (!validation.success) {
@@ -67,7 +67,7 @@ export async function createMonitor(req: Request, res: Response , next: NextFunc
 }
 
 // for one monitor
-export async function getMonitor(req: Request, res: Response) {
+export async function getMonitor(req: Request, res: Response): Promise<void> {
   const { id} = req.params;
 
   const monitor = await prisma.monitor.findUnique({
@@ -94,10 +94,11 @@ export async function getMonitor(req: Request, res: Response) {
 }
 
 // for more than one monitor
-export async function getMonitors(req: Request, res: Response) {
+export async function getMonitors(req: Request, res: Response): Promise<void> {
   const { id: userId } = req.user;
   if(!userId){
-    return res.status(401).json({ error: "Unauthorized" }); 
+    res.status(401).json({ error: "Unauthorized" }); 
+    return;
   }
   const monitors = await prisma.monitor.findMany({
     where: {
@@ -111,16 +112,18 @@ export async function getMonitors(req: Request, res: Response) {
 }
 
 // pause monitor 
-export async function pauseMonitor(req: Request, res: Response) {
+export async function pauseMonitor(req: Request, res: Response): Promise<void> {
   const {monitorId} = req.params;
 if(!monitorId){
-  return res.status(400).json({error: "Monitor ID is required"});
+  res.status(400).json({error: "Monitor ID is required"});
+    return;
 }
 
 const validation = pauseMonitorSchema.safeParse(req.body);
 if (!validation.success) {
-  return res.status(400).json({ error: validation.error.message });
-}
+   res.status(400).json({ error: validation.error.message });
+  return;
+  }
 
 
 //i dont think this is needed neechy wala function
@@ -133,7 +136,7 @@ const existingMonitor = await prisma.monitor.findFirst({
 });
 
 if (!existingMonitor) {
-  return res.status(404).json({ error: "Monitor not found" });
+  res.status(404).json({ error: "Monitor not found" });
 }
 
 const pausedMonitor = await prisma.monitor.update({
@@ -159,16 +162,17 @@ return;
 
 
 
-export async function patchMonitor(req: Request, res: Response) {
+export async function patchMonitor(req: Request, res: Response): Promise<void> {
   const { monitorId } = req.params;
 
   if (!monitorId) {
-    return res.status(400).json({ error: "Monitor ID is required" });
+     res.status(400).json({ error: "Monitor ID is required" });
   }
 
   const validation = patchMonitorSchema.safeParse(req.body);
   if (!validation.success) {
-    return res.status(400).json({ error: validation.error.message });
+    res.status(400).json({ error: validation.error.message });
+    return; 
   }
 
   const { name, url, timeout, checkInterval, status, expectedStatusCodes } = validation.data;
@@ -181,7 +185,8 @@ export async function patchMonitor(req: Request, res: Response) {
   });
 
   if (!existingMonitor) {
-    return res.status(404).json({ error: "Monitor not found" });
+    res.status(404).json({ error: "Monitor not found" });  
+    return;
   }
 
   const updatedMonitor = await prisma.monitor.update({
@@ -210,7 +215,7 @@ export async function patchMonitor(req: Request, res: Response) {
   });
 }
 
-export async function deleteMonitor(req: Request, res: Response) {
+export async function deleteMonitor(req: Request, res: Response): Promise<void> {
   const { monitorId } = req.params;
   if (!monitorId) {
     res.status(400).json({ error: "Monitor ID is required" });
