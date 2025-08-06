@@ -1,11 +1,7 @@
 "use client";
 import {
-  IconSatellite,
-  Icon as TablerIcon
+  IconSatellite
 } from "@tabler/icons-react";
-
-
-import { IconInnerShadowTop } from "@tabler/icons-react";
 import * as React from "react";
 
 
@@ -26,6 +22,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { AlertTriangleIcon, ChartBar, Shield, Users } from "lucide-react";
+import { ModeToggle } from "@/components/mode-toggle";
 
 // Menu items.
 const items = [
@@ -93,13 +90,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
        
       </SidebarContent>
       <SidebarFooter>
-        <NavUser
-          user={{
-            name: "Muhammad Kaif",
-            email: "kaif@w3uptime.com",
-            avatar: "https://github.com/shadcn.png",
-          }}
-        />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-2">
+            <span className="text-sm text-sidebar-foreground/70">Theme</span>
+            <ModeToggle />
+          </div>
+          <NavUser
+            user={{
+              name: "Muhammad Kaif",
+              email: "kaif@w3uptime.com",
+              avatar: "https://github.com/shadcn.png",
+            }}
+          />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
