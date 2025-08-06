@@ -5,7 +5,7 @@ import asyncMiddleware from "../middleware/async";
 const router = Router();
 
 router.post("/", asyncMiddleware(createMonitor));
-router.get("/", asyncMiddleware(getMonitors)); // Move this before :monitorId to avoid conflicts
+router.get("/", asyncMiddleware(getMonitors)); 
 router.get("/:monitorId", asyncMiddleware(getMonitor));
 router.patch("/:monitorId", asyncMiddleware(patchMonitor));
 router.patch("/:monitorId/pause", asyncMiddleware(pauseMonitor));
