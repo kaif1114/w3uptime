@@ -63,7 +63,6 @@ setInterval(async () => {
       status: "ACTIVE",
     },
   });
-  console.log("Validators:", validators)
 
   for (const monitor of monitorsToValidate) {
     validators.forEach((validator) => {
