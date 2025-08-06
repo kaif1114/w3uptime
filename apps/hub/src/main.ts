@@ -46,13 +46,14 @@ ws.on("connection", (socket: WebSocket) => {
       delete CALLBACKS[message.data.callbackId];
     }
   });
-});
 
-ws.on("close", (socket: WebSocket) => {
-  validators.splice(
-    validators.findIndex((v) => v.socket === socket),
-    1
-  );
+  socket.on("close", () => {
+    console.log("Client disconnected");
+    validators.splice(
+      validators.findIndex((v) => v.socket === socket),
+      1
+    );
+  });
 });
 
 
@@ -63,6 +64,7 @@ setInterval(async () => {
       status: "ACTIVE",
     },
   });
+  console.log("Validators:", validators);
 
   for (const monitor of monitorsToValidate) {
     validators.forEach((validator) => {

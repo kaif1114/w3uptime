@@ -205,6 +205,7 @@ export class ValidatorService extends EventEmitter {
 
     this.websocketClient.on('reconnected', () => {
       console.log(chalk.green('🔄 Reconnected to hub'));
+      // Registration will be handled automatically by the WebSocket client
     });
 
     this.websocketClient.on('registered', (data: { validatorId: string }) => {
