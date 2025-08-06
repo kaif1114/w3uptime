@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "exports": {
-    "./client": "./src/index.ts"
+    "./client": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
