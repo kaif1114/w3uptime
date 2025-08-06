@@ -36,12 +36,12 @@ export type IncomingMessage =
   {
       type: "signup";
       data: SignupIncomingMessage;
-      signedMessage: string;
+      signature: string;
     }
   | {
       type: "validate";
       data: ValidateIncomingMessage;
-      signedMessage: string;
+      signature: string;
     };
 
 export type OutgoingMessage =

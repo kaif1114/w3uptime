@@ -6,7 +6,6 @@ import { z } from "zod";
 const createMonitorSchema = z.object({
   name: z.string().min(1),
   url: z.url().min(1),
-  userId: z.string().min(1),
   timeout: z.number().int().positive().default(30), // seconds
   checkInterval: z.number().int().positive().default(300), //seconds hee hain
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
