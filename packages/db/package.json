@@ -1,7 +1,6 @@
 {
   "name": "db",
   "version": "1.0.0",
-  "description": "",
   "exports": {
     "./client": {
       "types": "./src/index.d.ts",
@@ -16,7 +15,9 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.12.0",
-    "prisma": "^6.12.0",
+    "prisma": "^6.13.0",
     "typescript": "^5.8.3"
-  }
+  },
+  "main": "index.js",
+  "description": ""
 }
