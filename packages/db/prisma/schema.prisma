@@ -43,11 +43,12 @@ model Monitor {
   lastCheckedAt       DateTime?
   
   createdAt           DateTime @default(now())
-  userId              String
-  user                User     @relation(fields: [userId], references: [id])
   
-  // Relations
-  alerts              Alert[]
+  userId              String
+  
+  //relations
+  user                User     @relation(fields: [userId], references: [id])
+  alerts              Alert[] 
   escalation          Escalation?
   incidents           Incident[]
   monitorTicks        monitorTick[]
@@ -135,7 +136,7 @@ model Incident {
   severity        IncidentSeverity @default(MINOR)
   status          IncidentStatus @default(INVESTIGATING)
   
-  monitorId       String   @unique
+  monitorId       String
   monitor         Monitor  @relation(fields: [monitorId], references: [id])
   
   createdAt       DateTime @default(now())
