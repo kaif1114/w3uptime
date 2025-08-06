@@ -295,6 +295,17 @@ export class ValidatorWebSocketClient extends EventEmitter {
       try {
         await this.createConnection();
         this.emit('reconnected');
+        
+        // Automatically send signup message after successful reconnection
+        if (this.signer.isAuthenticated()) {
+          try {
+            await this.signup();
+            console.log('Re-registered with hub after reconnection');
+          } catch (signupError) {
+            console.error('Failed to re-register after reconnection:', signupError);
+            // Don't fail the reconnection, but log the error
+          }
+        }
       } catch (error) {
         console.error('Reconnection failed:', error);
         this.scheduleReconnect();
