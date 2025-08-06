@@ -136,7 +136,7 @@ model Incident {
   severity        IncidentSeverity @default(MINOR)
   status          IncidentStatus @default(INVESTIGATING)
   
-  monitorId       String   @unique
+  monitorId       String
   monitor         Monitor  @relation(fields: [monitorId], references: [id])
   
   createdAt       DateTime @default(now())
