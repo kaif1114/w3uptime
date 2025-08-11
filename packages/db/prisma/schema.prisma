@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,168 +8,134 @@ datasource db {
 }
 
 model Validator {
-  id        String    @id @default(uuid())
-  publicKey String    @unique
-  ip        String
-  balance   Int       @default(0)
-  monitorTicks        monitorTick[]
+  id           String        @id @default(uuid())
+  publicKey    String        @unique
+  ip           String
+  balance      Int           @default(0)
+  monitorTicks monitorTick[]
 }
 
 model User {
-  id        String    @id @default(uuid())
-  monitors  Monitor[]
-  comments  Comment[]
+  id       String    @id @default(uuid())
+  comments Comment[]
+  monitors Monitor[]
 }
 
 model Monitor {
-  id                  String   @id @default(uuid())
+  id                  String        @id @default(uuid())
   name                String
   url                 String
-  
-  // Configuration
-  checkInterval       Int      @default(300) // seconds
-  timeout             Int      @default(30)  // seconds
-  expectedStatusCodes Int[]    @default([200, 201, 202, 204])
-  
-  // Status
+  checkInterval       Int           @default(300)
+  timeout             Int           @default(30)
+  expectedStatusCodes Int[]         @default([200, 201, 202, 204])
   status              MonitorStatus @default(ACTIVE)
-
   lastCheckedAt       DateTime?
-  
-  createdAt           DateTime @default(now())
-  
+  createdAt           DateTime      @default(now())
   userId              String
-  
-  //relations
-  user                User     @relation(fields: [userId], references: [id])
-  alerts              Alert[] 
+  alerts              Alert[]
   escalation          Escalation?
   incidents           Incident[]
+  user                User          @relation(fields: [userId], references: [id])
   monitorTicks        monitorTick[]
 }
 
-model monitorTick{
-  id                  String   @id @default(uuid())
-  monitorId           String
-  validatorId         String
-  status              MonitorTickStatus
-  latency             Float
-  createdAt           DateTime @default(now())
-  
-  monitor             Monitor  @relation(fields: [monitorId], references: [id])
-  validator           Validator  @relation(fields: [validatorId], references: [id])
+model monitorTick {
+  id          String            @id @default(uuid())
+  monitorId   String
+  validatorId String
+  status      MonitorTickStatus
+  latency     Float
+  createdAt   DateTime          @default(now())
+  monitor     Monitor           @relation(fields: [monitorId], references: [id])
+  validator   Validator         @relation(fields: [validatorId], references: [id])
 }
 
 model Escalation {
-  id              String   @id @default(uuid())
-  monitorId       String   @unique
-  monitor         Monitor  @relation(fields: [monitorId], references: [id])
-  
-  name            String   // e.g., "Basic Plan", "Premium Plan"
-  enabled         Boolean  @default(true)
-  
-  // One-to-many relationship with escalation levels
-  levels          EscalationLevel[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String            @id @default(uuid())
+  monitorId String            @unique
+  name      String
+  enabled   Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  monitor   Monitor           @relation(fields: [monitorId], references: [id])
+  levels    EscalationLevel[]
 }
 
 model EscalationLevel {
-  id              String   @id @default(uuid())
-  escalationId    String
-  escalation      Escalation @relation(fields: [escalationId], references: [id])
-  
-  levelOrder      Int      
-  waitMinutes     Int      
-  channel         EscalationChannel @default(EMAIL)
-  contacts        String[] // For webhooks: URLs, for email: addresses, for slack: channels
-  message         String?  
-  
-  // Optional: webhook-specific configuration
-  webhookMethod   String?  @default("POST") // GET, POST, PUT
-  webhookHeaders  Json?    // Custom headers for webhook requests
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id             String            @id @default(uuid())
+  escalationId   String
+  levelOrder     Int
+  waitMinutes    Int
+  channel        EscalationChannel @default(EMAIL)
+  contacts       String[]
+  message        String?
+  webhookMethod  String?           @default("POST")
+  webhookHeaders Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  escalation     Escalation        @relation(fields: [escalationId], references: [id])
+
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
 }
 
-
 model Alert {
-  id                  String   @id @default(uuid())
-  severity            AlertSeverity @default(MEDIUM)
-  title               String
-  message             String
-  
-  // Status code that triggered the alert
-  triggerStatusCode   Int?    // The actual status code received (404, 500, etc.)
-  expectedStatusCode  Int?    // What was expected (200, etc.)
-  
-  status              AlertStatus @default(PENDING)
-  triggeredAt         DateTime @default(now())
-  acknowledgedAt      DateTime?
-  acknowledgedBy      String?  // User ID who acknowledged the alert
-  
-  // Track escalation progress
-  currentEscalationLevel Int   @default(1)  // Which level is currently active
-  escalationCompleted    Boolean @default(false)
-  
-  // Relations
-  monitorId           String
-  monitor             Monitor  @relation(fields: [monitorId], references: [id])
- 
+  id                     String        @id @default(uuid())
+  severity               AlertSeverity @default(MEDIUM)
+  title                  String
+  message                String
+  triggerStatusCode      Int?
+  expectedStatusCode     Int?
+  status                 AlertStatus   @default(PENDING)
+  triggeredAt            DateTime      @default(now())
+  acknowledgedAt         DateTime?
+  acknowledgedBy         String?
+  currentEscalationLevel Int           @default(1)
+  escalationCompleted    Boolean       @default(false)
+  monitorId              String
+  monitor                Monitor       @relation(fields: [monitorId], references: [id])
 }
 
 model Incident {
-  id              String   @id @default(uuid())
-  title           String
-  description     String?
-  severity        IncidentSeverity @default(MINOR)
-  status          IncidentStatus @default(INVESTIGATING)
-  
-  monitorId       String
-  monitor         Monitor  @relation(fields: [monitorId], references: [id])
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  resolvedAt      DateTime?
-  downtime        Int?     // Duration in seconds
-  escalated       Boolean  @default(false)
-  
-  postmortemId    String?  @unique
-  postmortem      Postmortem?
-  comments        Comment[]
+  id           String           @id @default(uuid())
+  title        String
+  description  String?
+  severity     IncidentSeverity @default(MINOR)
+  status       IncidentStatus   @default(INVESTIGATING)
+  monitorId    String          @map("monitor_id")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  resolvedAt   DateTime?
+  downtime     Int?
+  escalated    Boolean          @default(false)
+  postmortemId String?          @unique
+  comments     Comment[]
+  monitor      Monitor          @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  postmortem   Postmortem?
+
+  @@index([monitorId])
 }
 
 model Comment {
-  id              String   @id @default(uuid())
-  description     String
-  
-  incidentId      String
-  incident        Incident @relation(fields: [incidentId], references: [id])
-  
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  
-  createdAt       DateTime @default(now())
+  id          String   @id @default(uuid())
+  description String
+  incidentId  String
+  userId      String
+  createdAt   DateTime @default(now())
+  incident    Incident @relation(fields: [incidentId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 model Postmortem {
-  id              String   @id @default(uuid())
-  resolutionTime  Int      // Time to resolve in minutes
-  rootCause       String
-  resolution      String
-  
-  incidentId      String   @unique
-  incident        Incident @relation(fields: [incidentId], references: [id])
-  
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  resolutionTime Int
+  rootCause      String
+  resolution     String
+  incidentId     String   @unique
+  createdAt      DateTime @default(now())
+  incident       Incident @relation(fields: [incidentId], references: [id])
 }
 
-// Enums
 enum MonitorStatus {
   ACTIVE
   PAUSED
@@ -195,7 +155,6 @@ enum AlertStatus {
   ACKNOWLEDGED
   RESOLVED
 }
-
 
 enum IncidentStatus {
   INVESTIGATING
