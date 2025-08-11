@@ -1,21 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from 'db/client';
+import { AuthenticatedUser, SessionData } from '@/types/auth';
 
-export interface AuthenticatedUser {
-  id: string;
-  walletAddress: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
-export interface SessionData {
-  id: string;
-  walletAddress: string;
-  createdAt: Date;
-  expiresAt: Date;
-  userAgent?: string;
-  ipAddress?: string;
-}
 
 export interface AuthResult {
   authenticated: boolean;
@@ -30,7 +17,6 @@ export interface AuthResult {
  */
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
   try {
-    // Get session ID from cookie
     const sessionId = request.cookies.get('sessionId')?.value;
 
     if (!sessionId) {
@@ -42,7 +28,6 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       };
     }
 
-    // Find session in database
     const session = await prisma.session.findUnique({
       where: { sessionId },
       include: {
@@ -66,9 +51,8 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       };
     }
 
-    // Check if session has expired
+
     if (new Date() > session.expiresAt) {
-      // Clean up expired session
       await prisma.session.delete({
         where: { sessionId }
       });
@@ -80,8 +64,6 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
         error: 'Session expired'
       };
     }
-
-    // Session is valid
     return {
       authenticated: true,
       user: session.user as AuthenticatedUser,
@@ -142,7 +124,7 @@ export function withAuth<T extends any[]>(
 }
 
 /**
- * Clean up expired sessions (call this periodically, e.g., via a cron job)
+ * Clean up expired sessions (we will call this periodically, e.g., via a cron job)
  */
 export async function cleanupExpiredSessions(): Promise<number> {
   try {
