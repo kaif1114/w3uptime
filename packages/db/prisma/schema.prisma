@@ -16,25 +16,31 @@ model Validator {
 }
 
 model User {
-  id       String    @id @default(uuid())
-  comments Comment[]
-  monitors Monitor[]
+  id            String    @id @default(uuid())
+  walletAddress String?   @unique
+  nonce         String?
+  nonceExpiry   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  comments      Comment[]
+  monitors      Monitor[]
 }
 
 model Monitor {
   id                  String        @id @default(uuid())
   name                String
   url                 String
-  checkInterval       Int           @default(300)
-  timeout             Int           @default(30)
-  expectedStatusCodes Int[]         @default([200, 201, 202, 204])
-  status              MonitorStatus @default(ACTIVE)
-  lastCheckedAt       DateTime?
   createdAt           DateTime      @default(now())
   userId              String
+  checkInterval       Int           @default(300)
+  expectedStatusCodes Int[]         @default([200, 201, 202, 204])
+  lastCheckedAt       DateTime?
+  status              MonitorStatus @default(ACTIVE)
+  timeout             Int           @default(30)
   alerts              Alert[]
   escalation          Escalation?
-  incidents           Incident[]
+  Incident            Incident?
   user                User          @relation(fields: [userId], references: [id])
   monitorTicks        monitorTick[]
 }
@@ -62,38 +68,38 @@ model Escalation {
 }
 
 model EscalationLevel {
-  id             String            @id @default(uuid())
-  escalationId   String
-  levelOrder     Int
-  waitMinutes    Int
-  channel        EscalationChannel @default(EMAIL)
-  contacts       String[]
-  message        String?
-  webhookMethod  String?           @default("POST")
-  webhookHeaders Json?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  escalation     Escalation        @relation(fields: [escalationId], references: [id])
+  id           String            @id @default(uuid())
+  escalationId String
+  levelOrder   Int
+  waitMinutes  Int
+  contacts     String[]
+  channel      EscalationChannel @default(EMAIL)
+  name         String?
+  message      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  escalation   Escalation        @relation(fields: [escalationId], references: [id])
 
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
 }
 
 model Alert {
-  id                     String        @id @default(uuid())
-  severity               AlertSeverity @default(MEDIUM)
+  id                     String          @id @default(uuid())
+  severity               AlertSeverity   @default(MEDIUM)
   title                  String
   message                String
   triggerStatusCode      Int?
   expectedStatusCode     Int?
-  status                 AlertStatus   @default(PENDING)
-  triggeredAt            DateTime      @default(now())
+  status                 AlertStatus     @default(PENDING)
+  triggeredAt            DateTime        @default(now())
   acknowledgedAt         DateTime?
   acknowledgedBy         String?
-  currentEscalationLevel Int           @default(1)
-  escalationCompleted    Boolean       @default(false)
+  currentEscalationLevel Int             @default(1)
+  escalationCompleted    Boolean         @default(false)
   monitorId              String
-  monitor                Monitor       @relation(fields: [monitorId], references: [id])
+  monitor                Monitor         @relation(fields: [monitorId], references: [id])
+  EscalationLog          EscalationLog[]
 }
 
 model Incident {
@@ -102,7 +108,7 @@ model Incident {
   description  String?
   severity     IncidentSeverity @default(MINOR)
   status       IncidentStatus   @default(INVESTIGATING)
-  monitorId    String          @map("monitor_id")
+  monitorId    String           @unique
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   resolvedAt   DateTime?
@@ -110,10 +116,8 @@ model Incident {
   escalated    Boolean          @default(false)
   postmortemId String?          @unique
   comments     Comment[]
-  monitor      Monitor          @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  Monitor      Monitor          @relation(fields: [monitorId], references: [id])
   postmortem   Postmortem?
-
-  @@index([monitorId])
 }
 
 model Comment {
@@ -134,6 +138,23 @@ model Postmortem {
   incidentId     String   @unique
   createdAt      DateTime @default(now())
   incident       Incident @relation(fields: [incidentId], references: [id])
+}
+
+model EscalationLog {
+  id              String            @id
+  alertId         String
+  levelOrder      Int
+  levelName       String?
+  triggeredAt     DateTime          @default(now())
+  sentTo          String[]
+  channel         EscalationChannel
+  wasAcknowledged Boolean           @default(false)
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?
+  resolvedIssue   Boolean           @default(false)
+  Alert           Alert             @relation(fields: [alertId], references: [id])
+
+  @@index([alertId, levelOrder])
 }
 
 enum MonitorStatus {
@@ -180,4 +201,20 @@ enum EscalationChannel {
 enum MonitorTickStatus {
   GOOD
   BAD
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  userId        String
+  sessionId     String   @unique
+  walletAddress String   // Store wallet address directly in session for quick access
+  userAgent     String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([userId])
+  @@index([walletAddress])
 }
