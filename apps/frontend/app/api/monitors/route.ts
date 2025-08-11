@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
+import { withAuth } from "@/lib/auth";
 
 const createMonitorSchema = z.object({
   name: z.string().min(1),
@@ -11,11 +12,8 @@ const createMonitorSchema = z.object({
   status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
 });
 
-// Hardcoded user ID as requested
-const HARDCODED_USER_ID = "user-123";
-
 // POST /api/monitors - Create monitor
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
     const validation = createMonitorSchema.safeParse(body);
@@ -33,7 +31,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         url,
-        userId: HARDCODED_USER_ID,
+        userId: user.id, // Use authenticated user's ID
         timeout,
         checkInterval,
         expectedStatusCodes,
@@ -63,18 +61,25 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // GET /api/monitors - Get all monitors for user
-export async function GET(req: NextRequest) {
-  try {
+export const GET = withAuth(async (req: NextRequest, user) => {
+    try {
+      // Now you can access wallet address from both user and session:
+      // - user.walletAddress (from user table)
+      // - session.walletAddress (from session table)
+    
     const monitors = await prisma.monitor.findMany({
       where: {
-        userId: HARDCODED_USER_ID,
+        userId: user.id, // Use authenticated user's ID
       },
     });
 
-    return NextResponse.json({ monitors }, { status: 200 });
+    return NextResponse.json({ 
+      monitors,
+      walletAddress: user.walletAddress // Include wallet address in response
+    }, { status: 200 });
   } catch (error) {
     console.error("Error fetching monitors:", error);
     return NextResponse.json(
@@ -82,4 +87,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
