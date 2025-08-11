@@ -158,7 +158,7 @@ export async function PATCH(
     }
 
     const existingAlert = await prisma.alert.findFirst({
-      where: {
+      where: { 
         id: alertid,
         monitor: {
           userId: HARDCODED_USER_ID,
@@ -168,7 +168,7 @@ export async function PATCH(
 
     if (!existingAlert) {
       return NextResponse.json(
-        { error: "Alert not found" },
+        { error: "Alert not found.." },
         { status: 404 }
       );
     }
