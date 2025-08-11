@@ -21,10 +21,10 @@ const HARDCODED_USER_ID = "user-123";
 // GET /api/monitors/[monitorid] - Get single monitor
 export async function GET(
   req: NextRequest,
-  { params }: { params: { monitorid: string } }
+  { params }: { params: Promise<{ monitorid: string }> }
 ) {
   try {
-    const { monitorid } = params;
+    const { monitorid } = await params;
 
     const monitor = await prisma.monitor.findFirst({
       where: {
@@ -64,10 +64,10 @@ export async function GET(
 // PATCH /api/monitors/[monitorid] - Update monitor
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { monitorid: string } }
+  { params }: { params: Promise<{ monitorid: string }> }
 ) {
   try {
-    const { monitorid } = params;
+    const { monitorid } = await params;
     const body = await req.json();
 
     if (!monitorid) {
@@ -139,10 +139,10 @@ export async function PATCH(
 // DELETE /api/monitors/[monitorid] - Delete monitor
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { monitorid: string } }
+  { params }: { params: Promise<{ monitorid: string }> }
 ) {
   try {
-    const { monitorid } = params;
+    const { monitorid } = await params;
 
     if (!monitorid) {
       return NextResponse.json(

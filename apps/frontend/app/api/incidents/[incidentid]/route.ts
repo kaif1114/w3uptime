@@ -13,15 +13,16 @@ const updateIncidentSchema = z.object({
 
 // Hardcoded user ID (matching monitors API)
 const HARDCODED_USER_ID = "user-123";
-
+// Hardcoded monitor ID for testing - REPLACE THIS WITH ACTUAL MONITOR ID FROM POST /api/monitors
+const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49s";
 
 // GET /api/incidents/[incidentid] - Get specific incident
 export async function GET(
   req: NextRequest,
-  { params }: { params: { incidentid: string } }
+  { params }: { params: Promise<{ incidentid: string }> }
 ) {
   try {
-    const { incidentid } = params;
+    const { incidentid } = await params;
 
     const incident = await prisma.incident.findFirst({
       where: {
@@ -74,10 +75,10 @@ export async function GET(
 // PUT /api/incidents/[incidentid] - Update incident
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { incidentid: string } }
+  { params }: { params: Promise<{ incidentid: string }> }
 ) {
   try {
-    const { incidentid } = params;
+    const { incidentid } = await params;
     const body = await req.json();
 
     const validation = updateIncidentSchema.safeParse(body);
@@ -152,10 +153,10 @@ export async function PUT(
 // DELETE /api/incidents/[incidentid] - Delete incident
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { incidentid: string } }
+  { params }: { params: Promise<{ incidentid: string }> }
 ) {
   try {
-    const { incidentid } = params;
+    const { incidentid } = await params;
 
     const incident = await prisma.incident.findFirst({
       where: {

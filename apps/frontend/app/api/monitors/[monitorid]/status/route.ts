@@ -12,10 +12,10 @@ const HARDCODED_USER_ID = "user-123";
 // PATCH /api/monitors/[monitorid]/status - Update monitor status
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { monitorid: string } }
+  { params }: { params: Promise<{ monitorid: string }> }
 ) {
   try {
-    const { monitorid } = params;
+    const { monitorid } = await params;
     const body = await req.json();
 
     if (!monitorid) {

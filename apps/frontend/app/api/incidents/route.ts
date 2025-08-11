@@ -14,7 +14,7 @@ const createIncidentSchema = z.object({
 // Hardcoded user ID (matching monitors API)
 const HARDCODED_USER_ID = "user-123";
 // Hardcoded monitor ID for testing
-const HARDCODED_MONITOR_ID = "8d75bad6-fabc-435c-8247-7ae47b636a9c";
+const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49s";
 
 // GET /api/incidents - Get all incidents (with optional monitor filter)
 export async function GET(req: NextRequest) {
