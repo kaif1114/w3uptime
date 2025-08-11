@@ -4,11 +4,17 @@
   "exports": {
     "./client": {
       "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.cjs",
       "default": "./src/index.js"
     }
   },
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "db:seed": "prisma db seed"
   },
   "keywords": [],
   "author": "",
@@ -19,5 +25,8 @@
     "typescript": "^5.8.3"
   },
   "main": "index.js",
-  "description": ""
+  "description": "",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
 }

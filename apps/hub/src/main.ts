@@ -1,5 +1,9 @@
-import { prisma } from "db/client";
+// Use CommonJS require so ts-node (CJS) resolves the CJS export of db/client
+// This avoids TS1479 when importing an ESM package from a CJS module
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { prisma } = require("db/client");
 import { ethers } from "ethers";
+import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage, SignupIncomingMessage } from "common/types";
@@ -85,7 +89,7 @@ setInterval(async () => {
       CALLBACKS[callbackId] = async (message: IncomingMessage) => {
         if (message.type === "validate") {
           const { validatorId, status, latency } = message.data;
-          await prisma.$transaction(async (tx) => {
+          await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await tx.monitorTick.create({
               data: {
                 monitorId: monitor.id,
