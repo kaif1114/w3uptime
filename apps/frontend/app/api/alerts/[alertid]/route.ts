@@ -16,15 +16,17 @@ const acknowledgeAlertSchema = z.object({
 // Hardcoded user ID (matching other APIs)
 const HARDCODED_USER_ID = "user-123";
 // Hardcoded monitor ID for testing
-const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49s";
+const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49";
 
-// GET /api/alerts/[alertid] - Get specific alert
+
+//get specific alert
+// Check and working fine on Postman
 export async function GET(
   req: NextRequest,
-  { params }: { params: { alertid: string } }
+  { params }: { params: Promise<{ alertid: string }> }
 ) {
   try {
-    const { alertid } = params;
+    const { alertid } = await params;
 
     const alert = await prisma.alert.findFirst({
       where: {
@@ -61,7 +63,7 @@ export async function GET(
   }
 }
 
-// PUT /api/alerts/[alertid] - Update alert (general update)
+// Update alert (general update)
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ alertid: string }> }
@@ -104,6 +106,7 @@ export async function PUT(
         updateData.acknowledgedBy = HARDCODED_USER_ID;
       }
     }
+    // FOR NOW HARDCODED USER ID IS USED FOR AcknowledgedBy BUT IN FUTURE IT WILL BE CHANGED TO THE ACTUAL USER ID
 
     // Auto-set resolvedAt-like behavior when status changes to RESOLVED
     if (validation.data.status === "RESOLVED" && existingAlert.status !== "RESOLVED") {

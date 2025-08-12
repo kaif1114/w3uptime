@@ -14,7 +14,7 @@ const createAlertSchema = z.object({
 // Hardcoded user ID (matching other APIs)
 const HARDCODED_USER_ID = "user-123";
 // Hardcoded monitor ID for testing (same as incidents)
-const HARDCODED_MONITOR_ID = "sleeptight-monitor";
+const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49";
 
 // GET /api/alerts - Get all alerts (with optional monitor filter)
 export async function GET(req: NextRequest) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const queryMonitorId = searchParams.get("monitorId");
     const status = searchParams.get("status");
 
-    const whereClause: any = {
+    const whereClause:any = {
       monitor: {
         userId: HARDCODED_USER_ID,
       },
