@@ -39,7 +39,8 @@ model Monitor {
   status              MonitorStatus @default(ACTIVE)
   timeout             Int           @default(30)
   alerts              Alert[]
-  escalation          Escalation?
+  escalationPolicyId  String?
+  escalationPolicy    EscalationPolicy? @relation(fields: [escalationPolicyId], references: [id])
   Incident            Incident?
   user                User          @relation(fields: [userId], references: [id])
   monitorTicks        monitorTick[]
@@ -56,15 +57,14 @@ model monitorTick {
   validator   Validator         @relation(fields: [validatorId], references: [id])
 }
 
-model Escalation {
+model EscalationPolicy {
   id        String            @id @default(uuid())
-  monitorId String            @unique
   name      String
   enabled   Boolean           @default(true)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-  monitor   Monitor           @relation(fields: [monitorId], references: [id])
   levels    EscalationLevel[]
+  monitors  Monitor[]
 }
 
 model EscalationLevel {
@@ -78,7 +78,7 @@ model EscalationLevel {
   message      String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
-  escalation   Escalation        @relation(fields: [escalationId], references: [id])
+  escalation   EscalationPolicy        @relation(fields: [escalationId], references: [id])
 
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
