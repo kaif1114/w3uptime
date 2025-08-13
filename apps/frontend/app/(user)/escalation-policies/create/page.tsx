@@ -1,4 +1,4 @@
-import { CreateEscalationPolicyForm } from "./create-escalation-policy-form";
+import { CreateEscalationPolicyForm } from "./CreateEscalationPolicy";
 
 export default function CreateEscalationPolicyPage() {
   return (

@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { EscalationLevelItem } from "./escalation-level-item";
+import { EscalationLevelItem } from "./EscalationlevelItem";
 import { useCreateEscalationPolicy } from "@/hooks/useEscalationPolicies";
 import { EscalationMethod } from "@/types/escalation-policy";
 import { Plus, Save, AlertCircle } from "lucide-react";

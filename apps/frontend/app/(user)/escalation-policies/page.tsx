@@ -1,4 +1,4 @@
-import { EscalationPoliciesContent } from "./escalation-policies-content";
+import { EscalationPoliciesContent } from "./EscalationPoliciesContent";
 
 export default function EscalationPoliciesPage() {
   return (
