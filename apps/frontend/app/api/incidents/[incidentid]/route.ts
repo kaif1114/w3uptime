@@ -27,7 +27,9 @@ export async function GET(
     const incident = await prisma.incident.findFirst({
       where: {
         id: incidentid,
-      
+        Monitor: {
+          userId: HARDCODED_USER_ID,
+        },
       },
       include: {
         Monitor: {
@@ -72,7 +74,7 @@ export async function GET(
 
 // PUT /api/incidents/[incidentid] - Update incident
 export async function PUT(
-  req: NextRequest,user,
+  req: NextRequest,
   { params }: { params: Promise<{ incidentid: string }> }
 ) {
   try {
@@ -92,7 +94,7 @@ export async function PUT(
       where: {
         id: incidentid,
         Monitor: {
-          userId: user.id,
+          userId: HARDCODED_USER_ID,
         },
       },
     });
@@ -150,7 +152,7 @@ export async function PUT(
 
 // DELETE /api/incidents/[incidentid] - Delete incident
 export async function DELETE(
-  req: NextRequest,user,
+  req: NextRequest,
   { params }: { params: Promise<{ incidentid: string }> }
 ) {
   try {
@@ -160,7 +162,7 @@ export async function DELETE(
       where: {
         id: incidentid,
         Monitor: {
-          userId: user.id,
+          userId: HARDCODED_USER_ID,
         },
       },
     });
