@@ -15,6 +15,7 @@ model User {
   type          UserType  @default(USER)
   balance       Int       @default(0)
   nonce         String?
+  ip            String?
   nonceExpiry   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
