@@ -20,7 +20,7 @@ export function SiteHeader() {
               target="_blank"
               className="dark:text-foreground"
             >
-              Sab dekh raha hon
+              Sab dekh raha hon (lol)
             </a>
           </Button>
         </div>

@@ -14,7 +14,7 @@ const createMonitorSchema = z.object({
 
 // POST /api/monitors - Create monitor
 export const POST = withAuth(async (req: NextRequest, user) => {
-  try {
+  try { 
     const body = await req.json();
     const validation = createMonitorSchema.safeParse(body);
 
@@ -65,21 +65,33 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 
 // GET /api/monitors - Get all monitors for user
 export const GET = withAuth(async (req: NextRequest, user) => {
-    try {
-      // Now you can access wallet address from both user and session:
-      // - user.walletAddress (from user table)
-      // - session.walletAddress (from session table)
-    
+  try {
     const monitors = await prisma.monitor.findMany({
       where: {
         userId: user.id, // Use authenticated user's ID
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    return NextResponse.json({ 
-      monitors,
-      walletAddress: user.walletAddress // Include wallet address in response
-    }, { status: 200 });
+    // Format monitors to match frontend interface
+    const formattedMonitors = monitors.map(monitor => ({
+      id: monitor.id,
+      name: monitor.name,
+      url: monitor.url,
+      status: monitor.status,
+      timeout: monitor.timeout,
+      checkInterval: monitor.checkInterval,
+      expectedStatusCodes: monitor.expectedStatusCodes,
+      createdAt: monitor.createdAt.toISOString(),
+      updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist
+    }));
+
+    return NextResponse.json({
+      monitors: formattedMonitors,
+      walletAddress: user.walletAddress,
+    });
   } catch (error) {
     console.error("Error fetching monitors:", error);
     return NextResponse.json(

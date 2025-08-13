@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         escalated,
       },
       include: {
-        monitor: {
+        Monitor: {
           select: {
             id: true,
             name: true,
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     const incidents = await prisma.incident.findMany({
       where: whereClause,
       include: {
-        monitor: {
+        Monitor: {
           select: {
             id: true,
             name: true,
