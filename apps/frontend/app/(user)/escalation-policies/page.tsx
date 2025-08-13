@@ -1,10 +1,11 @@
+import { EscalationPoliciesContent } from "./EscalationPoliciesContent";
 
-function page() {
+export default function EscalationPoliciesPage() {
   return (
-    <div>
-        <h1>Escalation Policies</h1>
+    <div className="container mx-auto px-4 py-6">
+      <EscalationPoliciesContent />
     </div>
-  )
+  );
 }
 
-export default page
+
