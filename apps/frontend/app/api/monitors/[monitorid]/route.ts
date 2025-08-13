@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
+import { withAuth } from "@/lib/auth";
 
 const patchMonitorSchema = z.object({
   name: z.string().min(1),
@@ -15,21 +16,20 @@ const pauseMonitorSchema = z.object({
   status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("PAUSED"),
 });
 
-// Hardcoded user ID as requested
-const HARDCODED_USER_ID = "user-123";
-
 // GET /api/monitors/[monitorid] - Get single monitor
-export async function GET(
+export const GET = withAuth(async (
   req: NextRequest,
+  user,
+  session,
   { params }: { params: Promise<{ monitorid: string }> }
-) {
+) => {
   try {
     const { monitorid } = await params;
 
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
-        userId: HARDCODED_USER_ID,
+        userId: user.id,
       },
     });
 
@@ -46,9 +46,11 @@ export async function GET(
         name: monitor.name,
         url: monitor.url,
         status: monitor.status,
+        timeout: monitor.timeout,
         checkInterval: monitor.checkInterval,
         expectedStatusCodes: monitor.expectedStatusCodes,
-        createdAt: monitor.createdAt,
+        createdAt: monitor.createdAt.toISOString(),
+        updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
       },
       { status: 200 }
     );
@@ -59,13 +61,15 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});
 
 // PATCH /api/monitors/[monitorid] - Update monitor
-export async function PATCH(
+export const PATCH = withAuth(async (
   req: NextRequest,
+  user,
+  session,
   { params }: { params: Promise<{ monitorid: string }> }
-) {
+) => {
   try {
     const { monitorid } = await params;
     const body = await req.json();
@@ -90,7 +94,7 @@ export async function PATCH(
     const existingMonitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
-        userId: HARDCODED_USER_ID,
+        userId: user.id,
       },
     });
 
@@ -134,13 +138,15 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/monitors/[monitorid] - Delete monitor
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: NextRequest,
+  user,
+  session,
   { params }: { params: Promise<{ monitorid: string }> }
-) {
+) => {
   try {
     const { monitorid } = await params;
 
@@ -154,7 +160,7 @@ export async function DELETE(
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
-        userId: HARDCODED_USER_ID,
+        userId: user.id,
       },
     });
 
@@ -182,4 +188,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
