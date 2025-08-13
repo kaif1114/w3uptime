@@ -7,54 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Validator {
-  id           String        @id @default(uuid())
-  publicKey    String        @unique
-  ip           String
-  balance      Int           @default(0)
-  monitorTicks monitorTick[]
-}
+
 
 model User {
   id            String    @id @default(uuid())
   walletAddress String?   @unique
+  type          UserType  @default(USER)
+  balance       Int       @default(0)
   nonce         String?
+  ip            String?
   nonceExpiry   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   comments      Comment[]
   monitors      Monitor[]
+  monitorTicks  monitorTick[]
 }
 
 model Monitor {
-  id                  String        @id @default(uuid())
+  id                  String            @id @default(uuid())
   name                String
   url                 String
-  createdAt           DateTime      @default(now())
+  createdAt           DateTime          @default(now())
   userId              String
-  checkInterval       Int           @default(300)
-  expectedStatusCodes Int[]         @default([200, 201, 202, 204])
+  checkInterval       Int               @default(300)
+  expectedStatusCodes Int[]             @default([200, 201, 202, 204])
   lastCheckedAt       DateTime?
-  status              MonitorStatus @default(ACTIVE)
-  timeout             Int           @default(30)
+  status              MonitorStatus     @default(ACTIVE)
+  timeout             Int               @default(30)
   alerts              Alert[]
   escalationPolicyId  String?
   escalationPolicy    EscalationPolicy? @relation(fields: [escalationPolicyId], references: [id])
   Incident            Incident?
-  user                User          @relation(fields: [userId], references: [id])
+  user                User              @relation(fields: [userId], references: [id])
   monitorTicks        monitorTick[]
 }
 
 model monitorTick {
   id          String            @id @default(uuid())
   monitorId   String
-  validatorId String
+  userId String
   status      MonitorTickStatus
   latency     Float
   createdAt   DateTime          @default(now())
   monitor     Monitor           @relation(fields: [monitorId], references: [id])
-  validator   Validator         @relation(fields: [validatorId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
 }
 
 model EscalationPolicy {
@@ -78,7 +76,7 @@ model EscalationLevel {
   message      String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
-  escalation   EscalationPolicy        @relation(fields: [escalationId], references: [id])
+  escalation   EscalationPolicy  @relation(fields: [escalationId], references: [id])
 
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
@@ -157,6 +155,23 @@ model EscalationLog {
   @@index([alertId, levelOrder])
 }
 
+model Session {
+  id            String   @id @default(uuid())
+  userId        String
+  sessionId     String   @unique
+  walletAddress String // Store wallet address directly in session for quick access
+  userAgent     String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([walletAddress])
+}
+
+
 enum MonitorStatus {
   ACTIVE
   PAUSED
@@ -203,18 +218,8 @@ enum MonitorTickStatus {
   BAD
 }
 
-model Session {
-  id            String   @id @default(uuid())
-  userId        String
-  sessionId     String   @unique
-  walletAddress String   // Store wallet address directly in session for quick access
-  userAgent     String?
-  ipAddress     String?
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([sessionId])
-  @@index([userId])
-  @@index([walletAddress])
+enum UserType {
+  USER
+  VALIDATOR
 }
+
