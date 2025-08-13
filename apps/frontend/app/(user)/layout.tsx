@@ -1,12 +1,18 @@
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/ui/site-header";
+import { getSessionOnServer } from "@/lib/get-session-on-server";
+import { redirect } from "next/navigation";
 
-export default function UserLayout({
+export default async function UserLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSessionOnServer();
+  if (!session?.authenticated) {
+    redirect("/login");
+  }
   return  <SidebarProvider
   style={
     {

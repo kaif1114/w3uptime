@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const ipAddress = forwarded?.split(',')[0] || realIp || 'Unknown';
 
     // Create session in database
-         await prisma.session.create({
+       await prisma.session.create({
        data: {
          sessionId,
          userId: user.id,
