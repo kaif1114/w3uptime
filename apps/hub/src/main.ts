@@ -93,14 +93,14 @@ setInterval(async () => {
             await tx.monitorTick.create({
               data: {
                 monitorId: monitor.id,
-                validatorId,
+                userId: validatorId,
                 status,
                 latency,
                 createdAt: new Date(),
               },
             });
 
-            await tx.validator.update({
+            await tx.user.update({
               where: { id: validatorId },
               data: {
                 balance: { increment: COST_PER_VALIDATION },
@@ -135,16 +135,16 @@ function verifyMessage(
 
 async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
   try {
-    const validator = await prisma.validator.findUnique({
+    const validator = await prisma.user.findUnique({
       where: {
-        publicKey: message.publicKey,
+        walletAddress: message.publicKey,
       },
     });
 
     if (!validator) {
-      const newValidator = await prisma.validator.create({
+      const newValidator = await prisma.user.create({
         data: {
-          publicKey: message.publicKey,
+          walletAddress: message.publicKey,
           ip: message.ip,
         },
       });
@@ -160,7 +160,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       );
       validators.push({
         validatorId: newValidator.id,
-        publicKey: newValidator.publicKey,
+        publicKey: newValidator.walletAddress,
         socket: socket,
         ip: message.ip,
       });
@@ -178,7 +178,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
     );
     validators.push({
       validatorId: validator.id,
-      publicKey: validator.publicKey,
+      publicKey: validator.walletAddress,
       socket: socket,
       ip: message.ip,
     });
@@ -193,4 +193,11 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
   }
 }
 
-console.log("Server is running on port 8080");
+ws.on("error", (error) => {
+  console.error("WebSocket error:", error);
+});
+
+ws.on("listening", () => {
+  console.log("Server is running on port 8080");
+});
+
