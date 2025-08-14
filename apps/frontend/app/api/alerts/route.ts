@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
+import { withAuth } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 const createAlertSchema = z.object({
   title: z.string().min(1),
@@ -8,34 +10,39 @@ const createAlertSchema = z.object({
   severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
   triggerStatusCode: z.number().int().optional(),
   expectedStatusCode: z.number().int().optional(),
-  monitorId: z.string().min(1).optional(), // foriegn key to monitor table (not required for create)
+  triggeredAt: z.date().default(new Date()),
+  monitorId: z.string().min(1).optional(), 
+  status: z.enum(["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"]).default("PENDING"),
 });
 
-// Hardcoded user ID (matching other APIs)
-const HARDCODED_USER_ID = "user-123";
-// Hardcoded monitor ID for testing (same as incidents)
-const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49";
-
 // GET /api/alerts - Get all alerts (with optional monitor filter)
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const queryMonitorId = searchParams.get("monitorId");
-    const status = searchParams.get("status");
 
-    const whereClause:any = {
+export const GET = withAuth(async (req: NextRequest, user) =>
+{
+  const body = await req.json();
+  const validation = createAlertSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: validation.error.message },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const whereClause: Prisma.AlertWhereInput = {
       monitor: {
-        userId: HARDCODED_USER_ID,
+        userId: user.id,  
       },
     };
 
     // Use query parameter if provided, otherwise use hardcoded monitor ID
-    const targetMonitorId = queryMonitorId || HARDCODED_MONITOR_ID;
+    const targetMonitorId = validation.data.monitorId || user.id;
     whereClause.monitorId = targetMonitorId;
 
     // Filter by status if provided
-    if (status && ["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"].includes(status)) {
-      whereClause.status = status;
+    if (validation.data.status && ["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"].includes(validation.data.status)) {
+      whereClause.status = validation.data.status;
     }
 
     const alerts = await prisma.alert.findMany({
@@ -62,30 +69,28 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST /api/alerts - Create new alert
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const validation = createAlertSchema.safeParse(body);
+export const POST = withAuth(async (req: NextRequest, user) =>
+{
+  const body = await req.json();
+  const validation = createAlertSchema.safeParse(body);
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: validation.error.message },
+      { status: 400 }
+    );
+  } 
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.message },
-        { status: 400 }
-      );
-    }
-
+  try{
     const { title, message, severity, triggerStatusCode, expectedStatusCode } = validation.data;
-    // Use hardcoded monitor ID instead of from request body
-    const monitorId = HARDCODED_MONITOR_ID;
-
+    const monitorId = validation.data.monitorId || user.id;
     // Check if monitor exists and belongs to user
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorId,
-        userId: HARDCODED_USER_ID,
+        userId: user.id,
       },
     });
 
@@ -125,7 +130,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Alert created successfully",
+        message: "Alert sent successfully",
         alert,
       },
       { status: 201 }
@@ -137,4 +142,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
