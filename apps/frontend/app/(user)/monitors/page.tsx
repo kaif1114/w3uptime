@@ -1,4 +1,3 @@
-"use client";
 
 import { useMonitors } from "@/hooks/useMonitors";
 import { MonitorsList } from "./MonitorList";

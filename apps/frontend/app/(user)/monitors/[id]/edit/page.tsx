@@ -5,11 +5,12 @@ import { EditMonitorForm } from "./EditMonitorForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EditMonitorPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function EditMonitorPage({ params }: EditMonitorPageProps) {
-  const monitorId = params.id;
+export default async function EditMonitorPage({ params }: EditMonitorPageProps) {
+  const { id } = await params;
+  const monitorId = id;
 
   if (!monitorId) {
     return (
