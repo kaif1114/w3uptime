@@ -4,6 +4,7 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const updateIncidentSchema = z.object({
+  id: z.string().min(1),
   title: z.string().min(1).optional(),
   description: z.string(),
   severity: z.enum(["CRITICAL", "MAJOR", "MINOR", "MAINTENANCE"]).optional(),
@@ -12,15 +13,24 @@ const updateIncidentSchema = z.object({
   downtime: z.number().int().positive().optional(),
 });
 
+
 // GET /api/incidents/[incidentid] - Get specific incident
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
-    const incidentid = body.incidentid;
+    const validation = updateIncidentSchema.safeParse(body);
+
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.message },
+        { status: 400 }
+      );
+    }
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentid as string,
+        id: validation.data.id,
         Monitor: {
           userId: user.id,
         },
@@ -71,7 +81,6 @@ export const GET = withAuth(async (req: NextRequest, user) => {
 export const PUT = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
-    const incidentid = body.incidentid;
     const validation = updateIncidentSchema.safeParse(body);
 
     if (!validation.success) {
@@ -83,7 +92,7 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 
     const existingIncident = await prisma.incident.findFirst({
       where: {
-        id: incidentid,
+        id: validation.data.id,
         Monitor: {
           userId: user.id,
         },
@@ -113,7 +122,7 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 
     const updatedIncident = await prisma.incident.update({
       where: {
-        id: incidentid,
+        id: validation.data.id,
       },
       data: updateData,
       include: {
@@ -145,11 +154,18 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 export const DELETE = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
-    const incidentid = body.incidentid;
+    const validation = updateIncidentSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.message },
+        { status: 400 }
+      );
+    }
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentid as string,
+        id: validation.data.id,
         Monitor: {
           userId: user.id,
         },
@@ -165,7 +181,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
 
     await prisma.incident.delete({
       where: {
-        id: incidentid as string,
+        id: validation.data.id,
       },
     });
 

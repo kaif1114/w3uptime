@@ -99,9 +99,15 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 // GET /api/incidents - Get all incidents (with optional monitor filter)
 export const GET = withAuth(async (req: NextRequest,user) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const queryMonitorId = searchParams.get("monitorId");
+    const body = await req.json();
+    const validation = createIncidentSchema.safeParse(body);
 
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.message },
+        { status: 400 }
+      );
+    }
     const whereClause: Prisma.IncidentWhereInput = {
       Monitor: {
         userId: user.id,
@@ -109,7 +115,7 @@ export const GET = withAuth(async (req: NextRequest,user) => {
     };
 
     // Use query parameter if provided, otherwise use hardcoded monitor ID
-    const targetMonitorId = queryMonitorId || user.id;
+    const targetMonitorId = validation.data.monitorId || user.id;
     whereClause.monitorId = targetMonitorId;
 
     const incidents = await prisma.incident.findMany({
