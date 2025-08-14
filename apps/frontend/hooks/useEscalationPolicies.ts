@@ -5,9 +5,43 @@ import {
   CreateEscalationPolicyResponse,
 } from "@/types/escalation-policy";
 
-// Fetch all escalation policies
-async function fetchEscalationPolicies(): Promise<EscalationPolicy[]> {
-  const res = await fetch("/api/escalation-policies", {
+// Types for pagination and search
+export interface FetchEscalationPoliciesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: "name" | "createdAt" | "updatedAt";
+  sortOrder?: "asc" | "desc";
+}
+
+export interface PaginatedEscalationPoliciesResponse {
+  escalationPolicies: EscalationPolicy[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  search: string;
+  sortBy: string;
+  sortOrder: string;
+}
+
+// Fetch escalation policies with pagination and search
+async function fetchEscalationPolicies(
+  params: FetchEscalationPoliciesParams = {}
+): Promise<PaginatedEscalationPoliciesResponse> {
+  const searchParams = new URLSearchParams();
+  
+  if (params.page) searchParams.set("page", params.page.toString());
+  if (params.limit) searchParams.set("limit", params.limit.toString());
+  if (params.search) searchParams.set("search", params.search);
+  if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+
+  const res = await fetch(`/api/escalation-policies?${searchParams.toString()}`, {
     credentials: "include",
   });
 
@@ -18,7 +52,7 @@ async function fetchEscalationPolicies(): Promise<EscalationPolicy[]> {
   }
 
   const data = await res.json();
-  return data.escalationPolicies || [];
+  return data;
 }
 
 // Create new escalation policy
@@ -47,11 +81,36 @@ async function createEscalationPolicy(
   return res.json();
 }
 
-// Hook to fetch all escalation policies
-export function useEscalationPolicies() {
+// Bulk delete escalation policies
+async function bulkDeleteEscalationPolicies(ids: string[]): Promise<any> {
+  const res = await fetch("/api/escalation-policies", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ ids }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error: any = new Error(
+      errorData.error || "Failed to delete escalation policies"
+    );
+    error.status = res.status;
+    error.details = errorData.details;
+    error.policiesInUse = errorData.policiesInUse;
+    throw error;
+  }
+
+  return res.json();
+}
+
+// Hook to fetch escalation policies with pagination and search
+export function useEscalationPolicies(params: FetchEscalationPoliciesParams = {}) {
   return useQuery({
-    queryKey: ["escalation-policies"],
-    queryFn: fetchEscalationPolicies,
+    queryKey: ["escalation-policies", params],
+    queryFn: () => fetchEscalationPolicies(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
     refetchOnWindowFocus: false,
@@ -79,6 +138,27 @@ export function useCreateEscalationPolicy() {
     onError: (error: any) => {
       console.error("Error creating escalation policy:", error);
       console.error("Error details:", error.details);
+    },
+  });
+}
+
+// Hook to bulk delete escalation policies
+export function useBulkDeleteEscalationPolicies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkDeleteEscalationPolicies,
+    onSuccess: (response) => {
+      console.log("Escalation policies deleted successfully:", response);
+      // Invalidate and refetch escalation policies list
+      queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
+    },
+    onError: (error: any) => {
+      console.error("Error deleting escalation policies:", error);
+      console.error("Error details:", error.details);
+      if (error.policiesInUse) {
+        console.error("Policies in use:", error.policiesInUse);
+      }
     },
   });
 }

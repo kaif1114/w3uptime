@@ -1,11 +1,5 @@
-import { EscalationPoliciesContent } from "./EscalationPoliciesContent";
+import { EscalationPoliciesPage } from "./EscalationPoliciesPage";
 
-export default function EscalationPoliciesPage() {
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <EscalationPoliciesContent />
-    </div>
-  );
+export default function Page() {
+  return <EscalationPoliciesPage />;
 }
-
-
