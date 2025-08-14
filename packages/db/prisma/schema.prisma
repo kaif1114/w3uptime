@@ -47,12 +47,12 @@ model Monitor {
 model monitorTick {
   id          String            @id @default(uuid())
   monitorId   String
-  userId String
+  validatorId String
   status      MonitorTickStatus
   latency     Float
   createdAt   DateTime          @default(now())
   monitor     Monitor           @relation(fields: [monitorId], references: [id])
-  user        User          @relation(fields: [userId], references: [id])
+  user        User          @relation(fields: [validatorId], references: [id])
 }
 
 model EscalationPolicy {

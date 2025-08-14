@@ -93,7 +93,7 @@ setInterval(async () => {
             await tx.monitorTick.create({
               data: {
                 monitorId: monitor.id,
-                userId: validatorId,
+                validatorId: validatorId,
                 status,
                 latency,
                 createdAt: new Date(),
