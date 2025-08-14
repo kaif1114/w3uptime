@@ -9,7 +9,9 @@ interface EditEscalationPolicyPageProps {
   policyId: string;
 }
 
-export function EditEscalationPolicyPage({ policyId }: EditEscalationPolicyPageProps) {
+export function EditEscalationPolicyPage({
+  policyId,
+}: EditEscalationPolicyPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -33,12 +35,11 @@ export function EditEscalationPolicyPage({ policyId }: EditEscalationPolicyPageP
         <CardContent>
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
-              The edit functionality is coming soon! For now, you can delete and recreate the policy.
+              The edit functionality is coming soon! For now, you can delete and
+              recreate the policy.
             </p>
             <Button asChild>
-              <Link href="/escalation-policies">
-                Back to Policies
-              </Link>
+              <Link href="/escalation-policies">Back to Policies</Link>
             </Button>
           </div>
         </CardContent>

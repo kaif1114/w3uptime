@@ -87,23 +87,32 @@ const methodIcons = {
 
 const methodColors = {
   EMAIL: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  SLACK: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-  WEBHOOK: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  SLACK:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+  WEBHOOK:
+    "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
   email: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  slack: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-  webhook: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  slack:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+  webhook:
+    "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
 };
 
 export function EscalationPoliciesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [selectedPolicies, setSelectedPolicies] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [policyToDelete, setPolicyToDelete] = useState<EscalationPolicy | null>(null);
+  const [policyToDelete, setPolicyToDelete] = useState<EscalationPolicy | null>(
+    null
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "updatedAt">("createdAt");
+  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "updatedAt">(
+    "createdAt"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Fetch policies with current filters
@@ -115,16 +124,36 @@ export function EscalationPoliciesPage() {
     sortOrder,
   };
 
-  const { data, isLoading, error, refetch } = useEscalationPolicies(queryParams);
+  const { data, isLoading, error, refetch } =
+    useEscalationPolicies(queryParams);
   const bulkDeleteMutation = useBulkDeleteEscalationPolicies();
 
   const policies = data?.escalationPolicies || [];
   const pagination = data?.pagination;
 
-  // Handle search
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
+  // Handle search input change
+  const handleSearchInputChange = (value: string) => {
+    setSearchInput(value);
+  };
+
+  // Handle search button click
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
     setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Handle clear search
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  // Handle Enter key press in search input
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   // Handle sorting
@@ -187,7 +216,9 @@ export function EscalationPoliciesPage() {
   const handleBulkDeleteConfirm = async () => {
     try {
       await bulkDeleteMutation.mutateAsync(selectedPolicies);
-      toast.success(`${selectedPolicies.length} escalation policies deleted successfully`);
+      toast.success(
+        `${selectedPolicies.length} escalation policies deleted successfully`
+      );
       setSelectedPolicies([]);
       setBulkDeleteDialogOpen(false);
     } catch (error: any) {
@@ -274,7 +305,9 @@ export function EscalationPoliciesPage() {
           <CardContent className="flex items-center justify-center py-8">
             <div className="text-center">
               <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
-              <p className="text-destructive mb-2">Failed to load escalation policies</p>
+              <p className="text-destructive mb-2">
+                Failed to load escalation policies
+              </p>
               <p className="text-sm text-muted-foreground mb-4">
                 Please try refreshing the page or check your connection
               </p>
@@ -313,14 +346,21 @@ export function EscalationPoliciesPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Escalation Policies</CardTitle>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search policies..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search policies..."
+                    value={searchInput}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    className="pl-9"
+                  />
+                </div>
+                <Button onClick={handleSearch} variant="default">
+                  <Search className="h-4 w-4 mr-1" />
+                  Search
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -330,7 +370,7 @@ export function EscalationPoliciesPage() {
                 <p className="text-muted-foreground mb-4">
                   No escalation policies match your search for "{searchQuery}"
                 </p>
-                <Button onClick={() => handleSearch("")} variant="outline">
+                <Button onClick={handleClearSearch} variant="outline">
                   Clear search
                 </Button>
               </div>
@@ -361,10 +401,12 @@ export function EscalationPoliciesPage() {
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center max-w-md">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No escalation policies yet</h3>
+              <h3 className="text-lg font-medium mb-2">
+                No escalation policies yet
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Create your first escalation policy to define how incidents should be
-                handled when they are not acknowledged in time.
+                Create your first escalation policy to define how incidents
+                should be handled when they are not acknowledged in time.
               </p>
               <Button asChild>
                 <Link href="/escalation-policies/create">
@@ -381,7 +423,7 @@ export function EscalationPoliciesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Escalation Policies</h1>
           <p className="text-muted-foreground">
@@ -399,9 +441,7 @@ export function EscalationPoliciesPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>
-              {pagination?.totalCount} escalation policies
-            </CardTitle>
+            <CardTitle>{pagination?.totalCount} escalation policies</CardTitle>
             {selectedPolicies.length > 0 && (
               <Button
                 variant="destructive"
@@ -419,14 +459,26 @@ export function EscalationPoliciesPage() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search policies..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex gap-2 flex-1 max-w-md">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search policies..."
+                  value={searchInput}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={handleSearch} variant="default" size="sm">
+                <Search className="h-4 w-4 mr-1" />
+                Search
+              </Button>
+              {(searchQuery || searchInput) && (
+                <Button onClick={handleClearSearch} variant="outline" size="sm">
+                  Clear
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Show:</span>
@@ -436,7 +488,7 @@ export function EscalationPoliciesPage() {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-1 border rounded-md text-sm"
+                className="px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 min-w-[70px]"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -455,7 +507,8 @@ export function EscalationPoliciesPage() {
                   <TableHead className="w-12">
                     <Checkbox
                       checked={
-                        policies.length > 0 && selectedPolicies.length === policies.length
+                        policies.length > 0 &&
+                        selectedPolicies.length === policies.length
                       }
                       onCheckedChange={handleSelectAll}
                     />
@@ -501,7 +554,10 @@ export function EscalationPoliciesPage() {
                 {policies.map((policy) => {
                   const isSelected = selectedPolicies.includes(policy.id);
                   return (
-                    <TableRow key={policy.id} className={isSelected ? "bg-muted/50" : ""}>
+                    <TableRow
+                      key={policy.id}
+                      className={isSelected ? "bg-muted/50" : ""}
+                    >
                       <TableCell>
                         <Checkbox
                           checked={isSelected}
@@ -514,20 +570,26 @@ export function EscalationPoliciesPage() {
                         <div>
                           <div className="font-medium">{policy.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {policy.levels.length} level{policy.levels.length !== 1 ? "s" : ""}
+                            {policy.levels.length} level
+                            {policy.levels.length !== 1 ? "s" : ""}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {policy.levels.slice(0, 3).map((level, index) => {
-                            const Icon = methodIcons[level.method as keyof typeof methodIcons];
+                            const Icon =
+                              methodIcons[
+                                level.method as keyof typeof methodIcons
+                              ];
                             return (
                               <Badge
                                 key={level.id}
                                 variant="secondary"
                                 className={`text-xs ${
-                                  methodColors[level.method as keyof typeof methodColors]
+                                  methodColors[
+                                    level.method as keyof typeof methodColors
+                                  ]
                                 }`}
                               >
                                 {Icon && <Icon className="h-3 w-3 mr-1" />}
@@ -556,7 +618,9 @@ export function EscalationPoliciesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(policy.id)}>
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(policy.id)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
@@ -582,7 +646,7 @@ export function EscalationPoliciesPage() {
           {pagination && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
               <div className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * pageSize) + 1} to{" "}
+                Showing {(currentPage - 1) * pageSize + 1} to{" "}
                 {Math.min(currentPage * pageSize, pagination.totalCount)} of{" "}
                 {pagination.totalCount} results
               </div>
@@ -619,7 +683,9 @@ export function EscalationPoliciesPage() {
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
                         className="w-8 h-8 p-0"
@@ -657,8 +723,8 @@ export function EscalationPoliciesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Escalation Policy</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{policyToDelete?.name}"? This action cannot
-              be undone.
+              Are you sure you want to delete "{policyToDelete?.name}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -678,13 +744,16 @@ export function EscalationPoliciesPage() {
       </AlertDialog>
 
       {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+      <AlertDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Selected Policies</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedPolicies.length} selected escalation
-              policies? This action cannot be undone.
+              Are you sure you want to delete {selectedPolicies.length} selected
+              escalation policies? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

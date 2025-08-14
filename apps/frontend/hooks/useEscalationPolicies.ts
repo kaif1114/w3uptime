@@ -34,16 +34,19 @@ async function fetchEscalationPolicies(
   params: FetchEscalationPoliciesParams = {}
 ): Promise<PaginatedEscalationPoliciesResponse> {
   const searchParams = new URLSearchParams();
-  
+
   if (params.page) searchParams.set("page", params.page.toString());
   if (params.limit) searchParams.set("limit", params.limit.toString());
   if (params.search) searchParams.set("search", params.search);
   if (params.sortBy) searchParams.set("sortBy", params.sortBy);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
 
-  const res = await fetch(`/api/escalation-policies?${searchParams.toString()}`, {
-    credentials: "include",
-  });
+  const res = await fetch(
+    `/api/escalation-policies?${searchParams.toString()}`,
+    {
+      credentials: "include",
+    }
+  );
 
   if (!res.ok) {
     const error: any = new Error("Failed to fetch escalation policies");
@@ -107,7 +110,9 @@ async function bulkDeleteEscalationPolicies(ids: string[]): Promise<any> {
 }
 
 // Hook to fetch escalation policies with pagination and search
-export function useEscalationPolicies(params: FetchEscalationPoliciesParams = {}) {
+export function useEscalationPolicies(
+  params: FetchEscalationPoliciesParams = {}
+) {
   return useQuery({
     queryKey: ["escalation-policies", params],
     queryFn: () => fetchEscalationPolicies(params),

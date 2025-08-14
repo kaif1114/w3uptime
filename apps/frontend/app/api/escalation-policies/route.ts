@@ -24,9 +24,6 @@ const createEscalationPolicySchema = z.object({
     .max(10, "Cannot have more than 10 escalation levels"),
 });
 
-
-
-
 // GET /api/escalation-policies - Get escalation policies for user with pagination and search
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
@@ -253,7 +250,9 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
     }
 
     // Check if any policies are in use by monitors
-    const policiesInUse = policies.filter((policy) => policy.monitors.length > 0);
+    const policiesInUse = policies.filter(
+      (policy) => policy.monitors.length > 0
+    );
     if (policiesInUse.length > 0) {
       return NextResponse.json(
         {
