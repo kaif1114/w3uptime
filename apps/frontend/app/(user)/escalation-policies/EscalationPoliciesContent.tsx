@@ -28,7 +28,7 @@ const methodIcons = {
 };
 
 export function EscalationPoliciesContent() {
-  const { data: policies, isLoading, error } = useEscalationPolicies();
+  const { data, isLoading, error } = useEscalationPolicies();
 
   if (isLoading) {
     return (
@@ -115,7 +115,7 @@ export function EscalationPoliciesContent() {
         </Button>
       </div>
 
-      {!policies || policies.length === 0 ? (
+      {!data || data.escalationPolicies.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center max-w-md">
@@ -138,9 +138,9 @@ export function EscalationPoliciesContent() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {policies.map((policy) => {
+          {data.escalationPolicies.map((policy) => {
             const Icon =
-              methodIcons[policy.levels[0]?.method as EscalationMethod] ||
+              methodIcons[policy.levels[0]?.method as keyof typeof methodIcons] ||
               AlertTriangle;
 
             return (
@@ -187,7 +187,8 @@ export function EscalationPoliciesContent() {
                       <div className="flex flex-wrap gap-2">
                         {policy.levels.map((level, index) => {
                           const LevelIcon =
-                            methodIcons[level.method] || AlertTriangle;
+                            methodIcons[level.method as keyof typeof methodIcons] ||
+                            AlertTriangle;
                           return (
                             <div
                               key={level.id}

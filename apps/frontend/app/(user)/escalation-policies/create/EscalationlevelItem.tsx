@@ -20,6 +20,7 @@ import {
   Webhook,
 } from "lucide-react";
 import { useState } from "react";
+import z from "zod";
 
 interface EscalationLevelItemProps {
   level: number;
@@ -68,9 +69,8 @@ export function EscalationLevelItem({
     }
 
     if (method === "EMAIL") {
-        //use zod for email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
+      const result = z.email().safeParse(value);
+      if (!result.success) {
         return "Please enter a valid email address";
       }
     } else if (method === "WEBHOOK") {
