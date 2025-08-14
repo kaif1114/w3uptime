@@ -1,34 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
+import { withAuth } from "@/lib/auth";
 
 const updateIncidentSchema = z.object({
   title: z.string().min(1).optional(),
-  description: z.string().optional(),
+  description: z.string(),
   severity: z.enum(["CRITICAL", "MAJOR", "MINOR", "MAINTENANCE"]).optional(),
   status: z.enum(["INVESTIGATING", "IDENTIFIED", "MONITORING", "RESOLVED", "POSTMORTEM"]).optional(),
   escalated: z.boolean().optional(),
   downtime: z.number().int().positive().optional(),
 });
 
-// Hardcoded user ID (matching monitors API)
-const HARDCODED_USER_ID = "user-123";
-// Hardcoded monitor ID for testing - REPLACE THIS WITH ACTUAL MONITOR ID FROM POST /api/monitors
-const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49s";
-
 // GET /api/incidents/[incidentid] - Get specific incident
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ incidentid: string }> }
-) {
+export const GET = withAuth(async (req: NextRequest, user) => {
   try {
-    const { incidentid } = await params;
+    const body = await req.json();
+    const incidentid = body.incidentid;
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentid,
+        id: incidentid as string,
         Monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
       include: {
@@ -71,16 +65,13 @@ export async function GET(
     );
   }
 }
+);
 
-// PUT /api/incidents/[incidentid] - Update incident
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ incidentid: string }> }
-) {
+
+export const PUT = withAuth(async (req: NextRequest, user) => {
   try {
-    const { incidentid } = await params;
     const body = await req.json();
-
+    const incidentid = body.incidentid;
     const validation = updateIncidentSchema.safeParse(body);
 
     if (!validation.success) {
@@ -94,7 +85,7 @@ export async function PUT(
       where: {
         id: incidentid,
         Monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
     });
@@ -148,21 +139,19 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/incidents/[incidentid] - Delete incident
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ incidentid: string }> }
-) {
+export const DELETE = withAuth(async (req: NextRequest, user) => {
   try {
-    const { incidentid } = await params;
+    const body = await req.json();
+    const incidentid = body.incidentid;
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentid,
+        id: incidentid as string,
         Monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
     });
@@ -176,7 +165,7 @@ export async function DELETE(
 
     await prisma.incident.delete({
       where: {
-        id: incidentid,
+        id: incidentid as string,
       },
     });
 
@@ -188,4 +177,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
