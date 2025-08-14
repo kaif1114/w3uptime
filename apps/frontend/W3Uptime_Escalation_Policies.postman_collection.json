@@ -1,0 +1,249 @@
+{
+  "info": {
+    "name": "W3Uptime - Escalation Policies API",
+    "description": "Test collection for escalation policies API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Test Endpoints (No Auth)",
+      "item": [
+        {
+          "name": "GET All Test Policies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREATE Test Policy - Critical Production",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Critical Production Alerts\",\n  \"levels\": [\n    {\n      \"method\": \"email\",\n      \"target\": \"oncall@company.com\",\n      \"waitTimeMinutes\": 15\n    },\n    {\n      \"method\": \"slack\",\n      \"target\": \"#critical-alerts\",\n      \"waitTimeMinutes\": 30\n    },\n    {\n      \"method\": \"webhook\",\n      \"target\": \"https://webhook.example.com/escalation\",\n      \"waitTimeMinutes\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREATE Test Policy - Simple Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Simple Email Alert\",\n  \"levels\": [\n    {\n      \"method\": \"email\",\n      \"target\": \"admin@company.com\",\n      \"waitTimeMinutes\": 60\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREATE Test Policy - Team Escalation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Team Escalation Policy\",\n  \"levels\": [\n    {\n      \"method\": \"slack\",\n      \"target\": \"#dev-team\",\n      \"waitTimeMinutes\": 10\n    },\n    {\n      \"method\": \"slack\",\n      \"target\": \"#team-leads\",\n      \"waitTimeMinutes\": 20\n    },\n    {\n      \"method\": \"slack\",\n      \"target\": \"#management\",\n      \"waitTimeMinutes\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE All Test Policies",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "item": [
+        {
+          "name": "Test Invalid Data - Empty Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"levels\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Invalid Method",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Method Test\",\n  \"levels\": [\n    {\n      \"method\": \"sms\",\n      \"target\": \"+1234567890\",\n      \"waitTimeMinutes\": 30\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Invalid Wait Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Wait Time Test\",\n  \"levels\": [\n    {\n      \"method\": \"email\",\n      \"target\": \"test@example.com\",\n      \"waitTimeMinutes\": 2000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies", "test"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authenticated Endpoints (Requires Session)",
+      "item": [
+        {
+          "name": "GET All Policies (Auth Required)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "sessionId=your-session-id-here",
+                "description": "Replace with actual session ID from browser"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREATE Policy (Auth Required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "sessionId=your-session-id-here",
+                "description": "Replace with actual session ID from browser"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Authenticated Test Policy\",\n  \"levels\": [\n    {\n      \"method\": \"email\",\n      \"target\": \"authenticated@example.com\",\n      \"waitTimeMinutes\": 30\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/escalation-policies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "escalation-policies"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

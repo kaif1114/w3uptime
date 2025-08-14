@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +62,7 @@ export function CreateEscalationPolicyForm() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [policyName, setPolicyName] = useState("");
   const [nameError, setNameError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const {
     handleSubmit,
@@ -142,6 +143,9 @@ export function CreateEscalationPolicyForm() {
   };
 
   const onSubmit = async () => {
+    console.log("🔥 Form submitted!", { policyName, levels });
+    console.log("🔥 isValid():", isValid());
+    console.log("🔥 createMutation.isPending:", createMutation.isPending);
     try {
       // Validate all fields
       const nameValidationError = validatePolicyName(policyName);
@@ -152,11 +156,14 @@ export function CreateEscalationPolicyForm() {
 
       // Validate levels
       const validLevels = levels.filter(
-        (level) =>
-          level.method && level.target.trim() && level.waitTimeMinutes > 0
+        (level, index) =>
+          level.method &&
+          level.target.trim() &&
+          (level.waitTimeMinutes > 0 || index === levels.length - 1) // Last level can have 0 wait time
       );
 
       if (validLevels.length === 0) {
+        console.error("No valid escalation levels");
         return;
       }
 
@@ -166,23 +173,50 @@ export function CreateEscalationPolicyForm() {
           method: level.method as EscalationMethod,
           target: level.target.trim(),
           waitTimeMinutes:
-            index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, // Last level doesn't need wait time
+            index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, // Last level gets 0 wait time
         })),
       };
 
-      await createMutation.mutateAsync(formData);
-      router.push("/escalation-policies");
-    } catch (error) {
+      console.log("Submitting escalation policy:", formData);
+
+      const response = await createMutation.mutateAsync(formData);
+      console.log("Policy created successfully:", response);
+
+      // Show success message briefly
+      setSuccessMessage("Escalation policy created successfully!");
+
+      // Navigate back to the escalation policies list after a short delay
+      setTimeout(() => {
+        router.push("/escalation-policies");
+      }, 1500);
+    } catch (error: any) {
       console.error("Failed to create escalation policy:", error);
+
+      // Show more detailed error information
+      if (error.details) {
+        console.error("Validation errors:", error.details);
+      }
     }
   };
 
   const isValid = () => {
     const hasValidName = policyName.trim() && !nameError;
     const hasValidLevels = levels.some(
-      (level) =>
-        level.method && level.target.trim() && level.waitTimeMinutes > 0
+      (level, index) =>
+        level.method &&
+        level.target.trim() &&
+        (level.waitTimeMinutes > 0 || index === levels.length - 1) // Last level can have 0 wait time
     );
+
+    console.log("🔍 Validation check:", {
+      policyName: policyName.trim(),
+      nameError,
+      hasValidName,
+      levels,
+      hasValidLevels,
+      overall: hasValidName && hasValidLevels,
+    });
+
     return hasValidName && hasValidLevels;
   };
 
@@ -201,7 +235,13 @@ export function CreateEscalationPolicyForm() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSubmit();
+            }}
+            className="space-y-6"
+          >
             {/* Policy Name */}
             <div className="space-y-2">
               <Label htmlFor="policy-name">Policy Name</Label>
@@ -291,17 +331,39 @@ export function CreateEscalationPolicyForm() {
 
             {/* Form Actions */}
             <div className="flex items-center justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isSubmitting || createMutation.isPending}
-              >
-                Cancel
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={isSubmitting || createMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    console.log("🐛 Debug - Current State:", {
+                      policyName,
+                      levels,
+                      isValid: isValid(),
+                      nameError,
+                      isPending: createMutation.isPending,
+                    });
+                  }}
+                >
+                  Debug
+                </Button>
+              </div>
 
               <Button
                 type="submit"
+                onClick={(e) => {
+                  console.log("🚀 Create Policy button clicked!");
+                  e.preventDefault();
+                  onSubmit();
+                }}
                 disabled={
                   !isValid() || isSubmitting || createMutation.isPending
                 }
@@ -321,12 +383,34 @@ export function CreateEscalationPolicyForm() {
               </Button>
             </div>
 
+            {/* Success Message */}
+            {successMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800 font-medium">
+                  {successMessage}
+                </p>
+              </div>
+            )}
+
             {/* Error Message */}
             {createMutation.error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-sm text-destructive">
-                  Failed to create escalation policy. Please try again.
+                <p className="text-sm text-destructive font-medium mb-1">
+                  Failed to create escalation policy
                 </p>
+                <p className="text-sm text-destructive">
+                  {createMutation.error.message || "Please try again."}
+                </p>
+                {createMutation.error.details && (
+                  <div className="mt-2 text-xs text-destructive">
+                    <details>
+                      <summary className="cursor-pointer">Show details</summary>
+                      <pre className="mt-1 whitespace-pre-wrap">
+                        {JSON.stringify(createMutation.error.details, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                )}
               </div>
             )}
           </form>
