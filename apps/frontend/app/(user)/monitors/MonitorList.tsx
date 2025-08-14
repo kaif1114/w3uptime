@@ -1,6 +1,6 @@
 "use client";
 
-import { MonitorCard } from "./monitor-card";
+import { MonitorCard } from "./MonitorCards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Plus } from "lucide-react";
 import { MonitorApiResponse } from "@/types/monitor";

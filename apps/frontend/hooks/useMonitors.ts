@@ -55,10 +55,10 @@ export function useMonitor(id: string) {
 
 // Fetch monitor details with stats and metrics
 export function useMonitorDetails(id: string) {
-  return useQuery<MonitorDetailsResponse>({
+  return useQuery<Monitor>({
     queryKey: ["monitor-details", id],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/${id}/details`, {
+      const response = await fetch(`${API_BASE}/${id}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',

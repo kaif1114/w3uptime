@@ -10,7 +10,7 @@ import {
   Send, 
   Calendar, 
   Cog, 
-  TrendingUp,
+  TrendingUp, 
   Clock,
   Activity,
   AlertTriangle,
@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { MonitorStatus } from "@/types/monitor";
 import Link from "next/link";
-import { ResponseTimeChart } from "./response-time-chart";
-import { UptimeTable } from "./uptime-table";
+import { ResponseTimeChart } from "./ResponseTimeChart";
+import { UptimeTable } from "./UptimeTable";
 
 interface MonitorDetailsProps {
   monitorId: string;
@@ -65,12 +65,12 @@ function getStatusVariant(status: MonitorStatus) {
 }
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
-  const { data, isLoading, error } = useMonitorDetails(monitorId);
+  const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
 
   const handlePauseToggle = () => {
-    if (data?.monitor) {
-      const newStatus = data.monitor.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
+    if (monitor && monitor?.status) {
+      const newStatus = monitor?.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
       pauseMonitor.mutate({ id: monitorId, status: newStatus });
     }
   };
@@ -101,22 +101,20 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
     );
   }
 
-  if (!data) return null;
-
-  const { monitor, stats } = data;
+  if (!monitor) return null;
 
   return (
     <div className="space-y-8">
       {/* Monitor Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor.status)}`} />
+          <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`} />
           <div>
-            <h1 className="text-2xl font-bold">{monitor.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</h1>
+            <h1 className="text-2xl font-bold">{monitor?.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</h1>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <span className="text-lg font-medium">{getStatusText(monitor.status)}</span>
+              <span className="text-lg font-medium">{getStatusText(monitor?.status)}</span>
               <span>•</span>
-              <span>Checked every {monitor.checkInterval / 60} minutes</span>
+              <span>Checked every {monitor?.checkInterval / 60} minutes</span>
             </div>
           </div>
         </div>
@@ -165,7 +163,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Currently up for</p>
-              <p className="text-2xl font-bold">{stats.currentlyUpFor}</p>
+              <p className="text-2xl font-bold">10:20 AM</p>
             </div>
           </CardContent>
         </Card>
@@ -174,7 +172,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Last checked at</p>
-              <p className="text-2xl font-bold">{stats.lastCheckedAt}</p>
+              <p className="text-2xl font-bold">9:20 AM</p>
             </div>
           </CardContent>
         </Card>
@@ -183,7 +181,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Incidents</p>
-              <p className="text-2xl font-bold">{stats.incidentsCount}</p>
+              <p className="text-2xl font-bold">10.03 Seconds</p>
             </div>
           </CardContent>
         </Card>
@@ -213,12 +211,12 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <ResponseTimeChart data={data.responseTimeData} />
+          {/* <ResponseTimeChart data={data.responseTimeData} /> */}
         </CardContent>
       </Card>
 
       {/* Uptime Table */}
-      <UptimeTable stats={stats} />
+      {/* <UptimeTable stats={stats} />  */}
     </div>
   );
-} 
+}

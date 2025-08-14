@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 
 import { useState } from "react";
-import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useDeleteMonitor, usePauseMonitor } from "@/hooks/useMonitors";
 
 interface MonitorCardProps {

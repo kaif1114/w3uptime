@@ -1,13 +1,13 @@
 "use client";
 
 import { useMonitors } from "@/hooks/useMonitors";
-import { MonitorsList } from "./monitors-list";
+import { MonitorsList } from "./MonitorList";
 import { MonitorsLoading } from "./loading";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { MonitorsHeader } from "./monitors-header";
+import { MonitorsHeader } from "./MonitorHeaders";
 
 export default function MonitorsPage() {
   const { data, isLoading, error, refetch } = useMonitors();

@@ -1,14 +1,15 @@
-"use client";
-
-import { useParams } from "next/navigation";
-import { MonitorDetails } from "./monitor-details";
+import { MonitorDetails } from "./MonitorDetails";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-export default function MonitorDetailsPage() {
-  const params = useParams();
-  const monitorId = params.id as string;
+interface MonitorDetailsPageProps {
+  params: Promise<{ id: string }>;
+} 
+
+export default async function MonitorDetailsPage({ params }: MonitorDetailsPageProps) {
+  const { id } = await params;
+  const monitorId = id;
 
   if (!monitorId) {
     return (
@@ -41,4 +42,4 @@ export default function MonitorDetailsPage() {
       <MonitorDetails monitorId={monitorId} />
     </div>
   );
-} 
+}   
