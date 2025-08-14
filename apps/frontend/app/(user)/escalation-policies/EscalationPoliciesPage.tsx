@@ -248,7 +248,7 @@ export function EscalationPoliciesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
@@ -264,17 +264,50 @@ export function EscalationPoliciesPage() {
               <div className="h-6 w-48 bg-muted animate-pulse rounded" />
               <div className="h-8 w-24 bg-muted animate-pulse rounded" />
             </div>
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <div className="absolute left-3 top-1/2 h-4 w-4 bg-muted animate-pulse rounded" />
+                  <div className="h-10 bg-muted animate-pulse rounded-md pl-9" />
+                </div>
+                <div className="h-10 w-20 bg-muted animate-pulse rounded-md" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-8 bg-muted animate-pulse rounded" />
+                <div className="h-10 w-16 bg-muted animate-pulse rounded-md" />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
-                  <div className="h-4 w-48 bg-muted animate-pulse rounded" />
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            <div className="rounded-md border">
+              <div className="border-b">
+                <div className="flex items-center h-12 px-4">
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded mr-4" />
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded mr-4" />
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded mr-4" />
+                  <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
+                  <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
+                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
                 </div>
-              ))}
+              </div>
+              <div className="space-y-0">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center h-16 px-4 border-b last:border-b-0"
+                  >
+                    <div className="h-4 w-4 bg-muted animate-pulse rounded mr-4" />
+                    <div className="flex-1">
+                      <div className="h-4 w-32 bg-muted animate-pulse rounded mb-2" />
+                      <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                    </div>
+                    <div className="h-6 w-8 bg-muted animate-pulse rounded mr-4" />
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
+                    <div className="h-8 w-8 bg-muted animate-pulse rounded" />
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -286,7 +319,7 @@ export function EscalationPoliciesPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
@@ -326,7 +359,7 @@ export function EscalationPoliciesPage() {
     if (searchQuery) {
       return (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold">Escalation Policies</h1>
               <p className="text-muted-foreground">
@@ -382,7 +415,7 @@ export function EscalationPoliciesPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
