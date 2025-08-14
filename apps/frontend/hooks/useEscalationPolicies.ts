@@ -17,7 +17,8 @@ async function fetchEscalationPolicies(): Promise<EscalationPolicy[]> {
     throw error;
   }
 
-  return res.json();
+  const data = await res.json();
+  return data.escalationPolicies || [];
 }
 
 // Create new escalation policy
@@ -34,8 +35,12 @@ async function createEscalationPolicy(
   });
 
   if (!res.ok) {
-    const error: any = new Error("Failed to create escalation policy");
+    const errorData = await res.json().catch(() => ({}));
+    const error: any = new Error(
+      errorData.error || "Failed to create escalation policy"
+    );
     error.status = res.status;
+    error.details = errorData.details;
     throw error;
   }
 
@@ -63,12 +68,17 @@ export function useCreateEscalationPolicy() {
 
   return useMutation({
     mutationFn: createEscalationPolicy,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log(
+        "Escalation policy created successfully:",
+        response.escalationPolicy
+      );
       // Invalidate and refetch escalation policies list
       queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
     },
     onError: (error: any) => {
       console.error("Error creating escalation policy:", error);
+      console.error("Error details:", error.details);
     },
   });
 }

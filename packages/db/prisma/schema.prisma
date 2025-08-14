@@ -23,6 +23,7 @@ model User {
   comments      Comment[]
   monitors      Monitor[]
   monitorTicks  monitorTick[]
+  escalationPolicies EscalationPolicy[]
 }
 
 model Monitor {
@@ -58,11 +59,13 @@ model monitorTick {
 model EscalationPolicy {
   id        String            @id @default(uuid())
   name      String
+  userId    String            // Add userId to associate policy with user
   enabled   Boolean           @default(true)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   levels    EscalationLevel[]
   monitors  Monitor[]
+  user      User              @relation(fields: [userId], references: [id])
 }
 
 model EscalationLevel {

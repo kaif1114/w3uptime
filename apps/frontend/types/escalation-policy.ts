@@ -1,4 +1,4 @@
-export type EscalationMethod = "email" | "slack" | "webhook";
+export type EscalationMethod = "EMAIL" | "SLACK" | "WEBHOOK";
 
 export interface EscalationLevel {
   id: string;
