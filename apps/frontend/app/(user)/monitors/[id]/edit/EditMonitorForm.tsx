@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useUpdateMonitor } from "@/hooks/useMonitors";
+import { useUpdateMonitor, useMonitor } from "@/hooks/useMonitors";
 import { Monitor } from "@/types/monitor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, Save, TestTube } from "lucide-react";
+import { X, Plus, Loader2, Save, TestTube, AlertTriangle } from "lucide-react";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {
@@ -39,10 +39,50 @@ const editMonitorSchema = z.object({
 type EditMonitorFormData = z.infer<typeof editMonitorSchema>;
 
 interface EditMonitorFormProps {
-  monitor: Monitor;
+  monitorId: string;
 }
 
-export function EditMonitorForm({ monitor }: EditMonitorFormProps) {
+export function EditMonitorForm({ monitorId }: EditMonitorFormProps) {
+  const { data: monitor, isLoading, error } = useMonitor(monitorId);
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 bg-muted rounded w-1/4"></div>
+              <div className="h-10 bg-muted rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Failed to load monitor</h3>
+        <p className="text-muted-foreground mb-4">Please try refreshing the page.</p>
+      </div>
+    );
+  }
+
+  if (!monitor) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-semibold mb-2">Monitor not found</h3>
+        <p className="text-muted-foreground">The monitor could not be found.</p>
+      </div>
+    );
+  }
+
+  return <EditMonitorFormContent monitor={monitor} />;
+}
+
+function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
   const router = useRouter();
   const updateMonitor = useUpdateMonitor();
   const [statusCodes, setStatusCodes] = useState<number[]>(monitor.expectedStatusCodes);
