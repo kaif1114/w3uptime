@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 
-// Type assertion to help TypeScript understand Prisma client
-const db = prisma as any;
-
 // Map database channel enum to frontend method
 function mapChannelToMethod(channel: string) {
   switch (channel) {
@@ -37,7 +34,7 @@ export const GET = withAuth(
         );
       }
 
-      const escalationPolicy = await db.escalationPolicy.findFirst({
+      const escalationPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
           userId: user.id, // Direct userId lookup
@@ -104,7 +101,7 @@ export const PUT = withAuth(
       }
 
       // Check if policy exists and user has access
-      const existingPolicy = await db.escalationPolicy.findFirst({
+      const existingPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
           userId: user.id, // Direct userId lookup
@@ -153,7 +150,7 @@ export const DELETE = withAuth(
       }
 
       // Check if policy exists and user has access
-      const existingPolicy = await db.escalationPolicy.findFirst({
+      const existingPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
           userId: user.id, // Direct userId lookup
@@ -185,7 +182,7 @@ export const DELETE = withAuth(
       }
 
       // Delete policy and its levels in a transaction
-      await db.$transaction(async (tx: any) => {
+      await prisma.$transaction(async (tx: any) => {
         // Delete levels first
         await tx.escalationLevel.deleteMany({
           where: {

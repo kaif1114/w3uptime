@@ -107,7 +107,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       return NextResponse.json(
         {
           error: "Invalid input data",
-          details: validation.error.flatten().fieldErrors,
+          details: validation.error.message,
         },
         { status: 400 }
       );
