@@ -31,7 +31,7 @@ const escalationPolicySchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        method: z.enum(["email", "slack", "webhook"]),
+        method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
         target: z.string().min(1, "Target is required"),
         waitTimeMinutes: z
           .number()
@@ -65,8 +65,7 @@ export function CreateEscalationPolicyForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const {
-    handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(escalationPolicySchema),
   });

@@ -12,7 +12,7 @@ const createEscalationPolicySchema = z.object({
   levels: z
     .array(
       z.object({
-        method: z.enum(["email", "slack", "webhook"]),
+        method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
         target: z.string().min(1, "Target is required"),
         waitTimeMinutes: z
           .number()
@@ -24,33 +24,8 @@ const createEscalationPolicySchema = z.object({
     .max(10, "Cannot have more than 10 escalation levels"),
 });
 
-// Map frontend escalation method to database channel enum
-function mapMethodToChannel(method: string) {
-  switch (method) {
-    case "email":
-      return "EMAIL";
-    case "slack":
-      return "SLACK";
-    case "webhook":
-      return "WEBHOOK";
-    default:
-      throw new Error(`Invalid escalation method: ${method}`);
-  }
-}
 
-// Map database channel enum to frontend method
-function mapChannelToMethod(channel: string) {
-  switch (channel) {
-    case "EMAIL":
-      return "email";
-    case "SLACK":
-      return "slack";
-    case "WEBHOOK":
-      return "webhook";
-    default:
-      throw new Error(`Invalid escalation channel: ${channel}`);
-  }
-}
+
 
 // GET /api/escalation-policies - Get all escalation policies for user
 export const GET = withAuth(async (req: NextRequest, user) => {
@@ -79,7 +54,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       levels: policy.levels.map((level: any) => ({
         id: level.id,
         order: level.levelOrder,
-        method: mapChannelToMethod(level.channel),
+        method: level.channel.toUpperCase(),
         target: level.contacts[0] || "", // Take first contact for now
         waitTimeMinutes: level.waitMinutes,
       })),
@@ -135,7 +110,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
               levelOrder: index + 1, // 1-based ordering
               waitMinutes: level.waitTimeMinutes,
               contacts: [level.target], // Store as array
-              channel: mapMethodToChannel(level.method),
+              channel: level.method.toUpperCase(),
               name: `Level ${index + 1}`,
               message: `Escalation level ${index + 1} for ${name}`,
             },
@@ -157,7 +132,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       levels: escalationPolicy.levels.map((level: any) => ({
         id: level.id,
         order: level.levelOrder,
-        method: mapChannelToMethod(level.channel),
+        method: level.channel.toUpperCase(),
         target: level.contacts[0] || "",
         waitTimeMinutes: level.waitMinutes,
       })),

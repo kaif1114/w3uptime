@@ -2,19 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 
-// Map database channel enum to frontend method
-function mapChannelToMethod(channel: string) {
-  switch (channel) {
-    case "EMAIL":
-      return "email";
-    case "SLACK":
-      return "slack";
-    case "WEBHOOK":
-      return "webhook";
-    default:
-      throw new Error(`Invalid escalation channel: ${channel}`);
-  }
-}
 
 // GET /api/escalation-policies/[id] - Get single escalation policy
 export const GET = withAuth(
@@ -63,7 +50,7 @@ export const GET = withAuth(
         levels: escalationPolicy.levels.map((level) => ({
           id: level.id,
           order: level.levelOrder,
-          method: mapChannelToMethod(level.channel),
+          method: level.channel.toUpperCase(),
           target: level.contacts[0] || "",
           waitTimeMinutes: level.waitMinutes,
         })),

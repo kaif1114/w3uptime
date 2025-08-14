@@ -38,9 +38,9 @@ interface EscalationLevelItemProps {
 }
 
 const methodOptions = [
-  { value: "email" as EscalationMethod, label: "Email", icon: Mail },
-  { value: "slack" as EscalationMethod, label: "Slack", icon: MessageSquare },
-  { value: "webhook" as EscalationMethod, label: "Webhook", icon: Webhook },
+  { value: "EMAIL" as EscalationMethod, label: "Email", icon: Mail },
+  { value: "SLACK" as EscalationMethod, label: "Slack", icon: MessageSquare },
+  { value: "WEBHOOK" as EscalationMethod, label: "Webhook", icon: Webhook },
 ];
 
 export function EscalationLevelItem({
@@ -67,13 +67,13 @@ export function EscalationLevelItem({
       return "This field is required";
     }
 
-    if (method === "email") {
+    if (method === "EMAIL") {
         //use zod for email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         return "Please enter a valid email address";
       }
-    } else if (method === "webhook") {
+    } else if (method === "WEBHOOK") {
       try {
         new URL(value);
       } catch {
@@ -108,11 +108,11 @@ export function EscalationLevelItem({
 
   const getTargetPlaceholder = () => {
     switch (method) {
-      case "email":
+      case "EMAIL":
         return "user@example.com";
-      case "slack":
+      case "SLACK":
         return "#alerts or @username";
-      case "webhook":
+      case "WEBHOOK":
         return "https://webhook.example.com/alerts";
       default:
         return "Select a method first";
@@ -121,11 +121,11 @@ export function EscalationLevelItem({
 
   const getTargetLabel = () => {
     switch (method) {
-      case "email":
+      case "EMAIL":
         return "Email Address";
-      case "slack":
+      case "SLACK":
         return "Slack Channel/User";
-      case "webhook":
+      case "WEBHOOK":
         return "Webhook URL";
       default:
         return "Target";
