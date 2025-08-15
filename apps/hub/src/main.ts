@@ -135,7 +135,7 @@ function verifyMessage(
 
 async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
   try {
-    const validator = await prisma.user.findUnique({
+    const validator = await prisma.user.findFirst({
       where: {
         walletAddress: message.publicKey,
       },
@@ -167,18 +167,28 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       return;
     }
 
+    // Update existing validator's IP address
+    const updatedValidator = await prisma.user.update({
+      where: {
+        id: validator.id,
+      },
+      data: {
+        ip: message.ip,
+      },
+    });
+
     socket.send(
       JSON.stringify({
         type: "signup",
         data: {
-          validatorId: validator.id,
+          validatorId: updatedValidator.id,
           callbackId: uuidv7(),
         },
       })
     );
     validators.push({
-      validatorId: validator.id,
-      publicKey: validator.walletAddress,
+      validatorId: updatedValidator.id,
+      publicKey: updatedValidator.walletAddress,
       socket: socket,
       ip: message.ip,
     });
