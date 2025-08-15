@@ -1,38 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
+import { withAuth } from "@/lib/auth";
 
 const updateAlertSchema = z.object({
+  alertId: z.string().min(1),
   status: z.enum(["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"]).optional(),
   acknowledgedBy: z.string().optional(),
   currentEscalationLevel: z.number().int().positive().optional(),
   escalationCompleted: z.boolean().optional(),
 });
 
+
+//acknowledged will most prolly be by the user or idk 
 const acknowledgeAlertSchema = z.object({
-  acknowledgedBy: z.string().min(1).optional(), // Can be optional if using hardcoded user
+  acknowledgedBy: z.string().min(1).optional(), 
+  alertId: z.string().min(1),
 });
 
-// Hardcoded user ID (matching other APIs)
-const HARDCODED_USER_ID = "user-123";
-// Hardcoded monitor ID for testing
-const HARDCODED_MONITOR_ID = "a9be5b60-ae13-4bb1-af74-f49660086e49";
 
 
 //get specific alert
 // Check and working fine on Postman
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ alertid: string }> }
-) {
+export const GET = withAuth(async (req: NextRequest, user) =>
+{
   try {
-    const { alertid } = await params;
+    const body = await req.json();
+    const validation = updateAlertSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.message },
+        { status: 400 }
+      );
+    }
 
     const alert = await prisma.alert.findFirst({
       where: {
-        id: alertid,
         monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
       include: {
@@ -62,95 +68,13 @@ export async function GET(
     );
   }
 }
-
-// Update alert (general update)
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ alertid: string }> }
-) {
-  try {
-    const { alertid } = await params;
-    const body = await req.json();
-
-    const validation = updateAlertSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.message },
-        { status: 400 }
-      );
-    }
-
-    const existingAlert = await prisma.alert.findFirst({
-      where: {
-        id: alertid,
-        monitor: {
-          userId: HARDCODED_USER_ID,
-        },
-      },
-    });
-
-    if (!existingAlert) {
-      return NextResponse.json(
-        { error: "Alert not found" },
-        { status: 404 }
-      );
-    }
-
-    const updateData: any = { ...validation.data };
-
-    // Auto-set acknowledgedAt when status changes to ACKNOWLEDGED
-    if (validation.data.status === "ACKNOWLEDGED" && existingAlert.status !== "ACKNOWLEDGED") {
-      updateData.acknowledgedAt = new Date();
-      if (!validation.data.acknowledgedBy) {
-        updateData.acknowledgedBy = HARDCODED_USER_ID;
-      }
-    }
-    // FOR NOW HARDCODED USER ID IS USED FOR AcknowledgedBy BUT IN FUTURE IT WILL BE CHANGED TO THE ACTUAL USER ID
-
-    // Auto-set resolvedAt-like behavior when status changes to RESOLVED
-    if (validation.data.status === "RESOLVED" && existingAlert.status !== "RESOLVED") {
-      updateData.escalationCompleted = true;
-    }
-
-    const updatedAlert = await prisma.alert.update({
-      where: {
-        id: alertid,
-      },
-      data: updateData,
-      include: {
-        monitor: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json({
-      message: "Alert updated successfully",
-      alert: updatedAlert,
-    });
-  } catch (error) {
-    console.error("Failed to update alert:", error);
-    return NextResponse.json(
-      { error: "Failed to update alert" },
-      { status: 500 }
-    );
-  }
-}
+);
 
 // PATCH /api/alerts/[alertid] - Acknowledge alert (specific action)
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ alertid: string }> }
-) {
+export const PATCH = withAuth(async (req: NextRequest, user) =>
+{
   try {
-    const { alertid } = await params;
     const body = await req.json();
-
     const validation = acknowledgeAlertSchema.safeParse(body);
 
     if (!validation.success) {
@@ -162,9 +86,9 @@ export async function PATCH(
 
     const existingAlert = await prisma.alert.findFirst({
       where: { 
-        id: alertid,
+        id: validation.data.alertId,
         monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
     });
@@ -187,12 +111,12 @@ export async function PATCH(
     // Acknowledge the alert
     const acknowledgedAlert = await prisma.alert.update({
       where: {
-        id: alertid,
+        id: validation.data.alertId,
       },
       data: {
         status: "ACKNOWLEDGED",
         acknowledgedAt: new Date(),
-        acknowledgedBy: validation.data.acknowledgedBy || HARDCODED_USER_ID,
+        acknowledgedBy: validation.data.acknowledgedBy || user.id,
       },
       include: {
         monitor: {
@@ -216,21 +140,26 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/alerts/[alertid] - Delete alert
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ alertid: string }> }
-) {
+export const DELETE = withAuth(async (req: NextRequest, user) =>
+{
   try {
-    const { alertid } = await params;
+    const body = await req.json();
+    const validation = updateAlertSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.message },
+        { status: 400 }
+      );
+    }
 
     const alert = await prisma.alert.findFirst({
       where: {
-        id: alertid,
         monitor: {
-          userId: HARDCODED_USER_ID,
+          userId: user.id,
         },
       },
     });
@@ -244,8 +173,8 @@ export async function DELETE(
 
     await prisma.alert.delete({
       where: {
-        id: alertid,
-      },
+          id: validation.data.alertId,
+      },  
     });
 
     return NextResponse.json({ message: "Alert deleted successfully" });
@@ -256,4 +185,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});

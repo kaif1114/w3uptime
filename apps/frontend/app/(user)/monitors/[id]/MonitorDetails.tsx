@@ -1,4 +1,5 @@
-"use client";
+
+'use client';
 
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { Button } from "@/components/ui/button";
