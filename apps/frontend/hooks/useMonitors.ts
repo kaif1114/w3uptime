@@ -8,7 +8,7 @@ import {
   CreateMonitorResponse,
   UpdateMonitorResponse,
   DeleteMonitorResponse,
-  MonitorDetailsResponse
+
 } from "@/types/monitor";
 
 const API_BASE = "/api/monitors";
