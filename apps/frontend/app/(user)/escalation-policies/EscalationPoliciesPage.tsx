@@ -101,7 +101,6 @@ const methodColors = {
 export function EscalationPoliciesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchInput, setSearchInput] = useState("");
   const [selectedPolicies, setSelectedPolicies] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -131,29 +130,10 @@ export function EscalationPoliciesPage() {
   const policies = data?.escalationPolicies || [];
   const pagination = data?.pagination;
 
-  // Handle search input change
-  const handleSearchInputChange = (value: string) => {
-    setSearchInput(value);
-  };
-
-  // Handle search button click
-  const handleSearch = () => {
-    setSearchQuery(searchInput);
+  // Handle search
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
     setCurrentPage(1); // Reset to first page when searching
-  };
-
-  // Handle clear search
-  const handleClearSearch = () => {
-    setSearchInput("");
-    setSearchQuery("");
-    setCurrentPage(1);
-  };
-
-  // Handle Enter key press in search input
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
   };
 
   // Handle sorting
@@ -248,7 +228,7 @@ export function EscalationPoliciesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
@@ -264,50 +244,17 @@ export function EscalationPoliciesPage() {
               <div className="h-6 w-48 bg-muted animate-pulse rounded" />
               <div className="h-8 w-24 bg-muted animate-pulse rounded" />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex gap-2 flex-1 max-w-md">
-                <div className="relative flex-1">
-                  <div className="absolute left-3 top-1/2 h-4 w-4 bg-muted animate-pulse rounded" />
-                  <div className="h-10 bg-muted animate-pulse rounded-md pl-9" />
-                </div>
-                <div className="h-10 w-20 bg-muted animate-pulse rounded-md" />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-8 bg-muted animate-pulse rounded" />
-                <div className="h-10 w-16 bg-muted animate-pulse rounded-md" />
-              </div>
-            </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <div className="border-b">
-                <div className="flex items-center h-12 px-4">
-                  <div className="h-4 w-4 bg-muted animate-pulse rounded mr-4" />
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded mr-4" />
-                  <div className="h-4 w-32 bg-muted animate-pulse rounded mr-4" />
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
                 </div>
-              </div>
-              <div className="space-y-0">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="flex items-center h-16 px-4 border-b last:border-b-0"
-                  >
-                    <div className="h-4 w-4 bg-muted animate-pulse rounded mr-4" />
-                    <div className="flex-1">
-                      <div className="h-4 w-32 bg-muted animate-pulse rounded mb-2" />
-                      <div className="h-3 w-16 bg-muted animate-pulse rounded" />
-                    </div>
-                    <div className="h-6 w-8 bg-muted animate-pulse rounded mr-4" />
-                    <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
-                    <div className="h-4 w-20 bg-muted animate-pulse rounded mr-4" />
-                    <div className="h-8 w-8 bg-muted animate-pulse rounded" />
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -319,7 +266,7 @@ export function EscalationPoliciesPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
@@ -359,7 +306,7 @@ export function EscalationPoliciesPage() {
     if (searchQuery) {
       return (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Escalation Policies</h1>
               <p className="text-muted-foreground">
@@ -379,21 +326,14 @@ export function EscalationPoliciesPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Escalation Policies</CardTitle>
               </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search policies..."
-                    value={searchInput}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                    className="pl-9"
-                  />
-                </div>
-                <Button onClick={handleSearch} variant="default">
-                  <Search className="h-4 w-4 mr-1" />
-                  Search
-                </Button>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search policies..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-9"
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -403,7 +343,7 @@ export function EscalationPoliciesPage() {
                 <p className="text-muted-foreground mb-4">
                   No escalation policies match your search for "{searchQuery}"
                 </p>
-                <Button onClick={handleClearSearch} variant="outline">
+                <Button onClick={() => handleSearch("")} variant="outline">
                   Clear search
                 </Button>
               </div>
@@ -415,7 +355,7 @@ export function EscalationPoliciesPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Escalation Policies</h1>
             <p className="text-muted-foreground">
@@ -456,7 +396,7 @@ export function EscalationPoliciesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Escalation Policies</h1>
           <p className="text-muted-foreground">
@@ -492,26 +432,14 @@ export function EscalationPoliciesPage() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex gap-2 flex-1 max-w-md">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search policies..."
-                  value={searchInput}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  className="pl-9"
-                />
-              </div>
-              <Button onClick={handleSearch} variant="default" size="sm">
-                <Search className="h-4 w-4 mr-1" />
-                Search
-              </Button>
-              {(searchQuery || searchInput) && (
-                <Button onClick={handleClearSearch} variant="outline" size="sm">
-                  Clear
-                </Button>
-              )}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search policies..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Show:</span>
@@ -521,7 +449,7 @@ export function EscalationPoliciesPage() {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 min-w-[70px]"
+                className="px-3 py-1 border rounded-md text-sm"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -601,7 +529,14 @@ export function EscalationPoliciesPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{policy.name}</div>
+                          <div
+                            className="font-medium cursor-pointer hover:text-primary transition-colors"
+                            onClick={() =>
+                              router.push(`/escalation-policies/${policy.id}`)
+                            }
+                          >
+                            {policy.name}
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             {policy.levels.length} level
                             {policy.levels.length !== 1 ? "s" : ""}

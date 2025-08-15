@@ -109,6 +109,42 @@ async function bulkDeleteEscalationPolicies(ids: string[]): Promise<any> {
   return res.json();
 }
 
+// Update escalation policy
+async function updateEscalationPolicy(
+  id: string,
+  data: {
+    name: string;
+    levels: {
+      id?: string;
+      order: number;
+      method: "EMAIL" | "SLACK" | "WEBHOOK";
+      target: string;
+      waitTimeMinutes: number;
+    }[];
+  }
+): Promise<{ message: string; escalationPolicy: EscalationPolicy }> {
+  const res = await fetch(`/api/escalation-policies/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error: any = new Error(
+      errorData.error || "Failed to update escalation policy"
+    );
+    error.status = res.status;
+    error.details = errorData.details;
+    throw error;
+  }
+
+  return res.json();
+}
+
 // Hook to fetch escalation policies with pagination and search
 export function useEscalationPolicies(
   params: FetchEscalationPoliciesParams = {}
@@ -164,6 +200,31 @@ export function useBulkDeleteEscalationPolicies() {
       if (error.policiesInUse) {
         console.error("Policies in use:", error.policiesInUse);
       }
+    },
+  });
+}
+
+// Hook to update escalation policy
+export function useUpdateEscalationPolicy() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateEscalationPolicy(id, data),
+    onSuccess: (response, variables) => {
+      console.log(
+        "Escalation policy updated successfully:",
+        response.escalationPolicy
+      );
+      // Invalidate and refetch escalation policies list and specific policy
+      queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
+      queryClient.invalidateQueries({
+        queryKey: ["escalation-policy", variables.id],
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error updating escalation policy:", error);
+      console.error("Error details:", error.details);
     },
   });
 }
