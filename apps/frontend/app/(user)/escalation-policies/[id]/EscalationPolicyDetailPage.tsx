@@ -113,10 +113,13 @@ export function EscalationPolicyDetailPage({
     name: "levels",
   });
 
+  // Watch form values to ensure UI updates
+  const watchedLevels = form.watch("levels");
+
   // Initialize form when policy data loads
   React.useEffect(() => {
-    if (policy && !isEditing) {
-      form.reset({
+    if (policy) {
+      const formData = {
         name: policy.name,
         levels: policy.levels.map((level) => ({
           id: level.id,
@@ -125,9 +128,10 @@ export function EscalationPolicyDetailPage({
           target: level.target,
           waitTimeMinutes: level.waitTimeMinutes,
         })),
-      });
+      };
+      form.reset(formData);
     }
-  }, [policy, form, isEditing]);
+  }, [policy, form]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -137,7 +141,7 @@ export function EscalationPolicyDetailPage({
     setIsEditing(false);
     // Reset form to original values
     if (policy) {
-      form.reset({
+      const formData = {
         name: policy.name,
         levels: policy.levels.map((level) => ({
           id: level.id,
@@ -146,7 +150,8 @@ export function EscalationPolicyDetailPage({
           target: level.target,
           waitTimeMinutes: level.waitTimeMinutes,
         })),
-      });
+      };
+      form.reset(formData);
     }
   };
 
@@ -421,7 +426,11 @@ export function EscalationPolicyDetailPage({
                       className="space-y-4"
                     >
                       {fields.map((field, index) => {
+                        const currentLevel = watchedLevels[index];
                         const Icon =
+                          methodIcons[
+                            currentLevel?.method as keyof typeof methodIcons
+                          ] ||
                           methodIcons[field.method as keyof typeof methodIcons];
                         return (
                           <Draggable
@@ -454,13 +463,17 @@ export function EscalationPolicyDetailPage({
                                   <div className="space-y-2">
                                     <Label>Method</Label>
                                     <Select
-                                      value={field.method}
-                                      onValueChange={(value) =>
+                                      value={
+                                        currentLevel?.method || field.method
+                                      }
+                                      onValueChange={(value) => {
                                         form.setValue(
                                           `levels.${index}.method`,
                                           value as "EMAIL" | "SLACK" | "WEBHOOK"
-                                        )
-                                      }
+                                        );
+                                        // Trigger form validation
+                                        form.trigger(`levels.${index}.method`);
+                                      }}
                                     >
                                       <SelectTrigger>
                                         <SelectValue />
@@ -486,6 +499,13 @@ export function EscalationPolicyDetailPage({
                                         `levels.${index}.target`
                                       )}
                                       placeholder="Email, channel, or webhook URL"
+                                      onChange={(e) => {
+                                        form.setValue(
+                                          `levels.${index}.target`,
+                                          e.target.value
+                                        );
+                                        form.trigger(`levels.${index}.target`);
+                                      }}
                                     />
                                   </div>
 
@@ -501,6 +521,15 @@ export function EscalationPolicyDetailPage({
                                       )}
                                       min="0"
                                       max="1440"
+                                      onChange={(e) => {
+                                        form.setValue(
+                                          `levels.${index}.waitTimeMinutes`,
+                                          parseInt(e.target.value) || 0
+                                        );
+                                        form.trigger(
+                                          `levels.${index}.waitTimeMinutes`
+                                        );
+                                      }}
                                     />
                                   </div>
                                 </div>
