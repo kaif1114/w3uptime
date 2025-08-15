@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import { IncomingMessage, OutgoingMessage } from 'common/types';
 import { SecureMessageSigner } from '../crypto/signer.js';
 import { v7 as uuidv7 } from 'uuid';
+import { networkInterfaces } from 'os';
 
 export interface WebSocketConfig {
   url: string;
@@ -378,8 +379,22 @@ export class ValidatorWebSocketClient extends EventEmitter {
    * Get local IP address
    */
   private async getLocalIP(): Promise<string> {
-    // Simple implementation - in production might want to use external service
-    return '127.0.0.1'; // Placeholder
+    const nets = networkInterfaces();
+    
+    for (const name of Object.keys(nets)) {
+      const netInfo = nets[name];
+      if (!netInfo) continue;
+      
+      for (const net of netInfo) {
+        // Skip internal (i.e. 127.0.0.1) and non-IPv4 addresses
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+    
+    // Fallback to localhost if no external IP found
+    return '127.0.0.1';
   }
 
   /**
