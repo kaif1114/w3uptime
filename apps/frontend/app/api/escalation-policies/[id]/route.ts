@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
+import { z } from "zod";
 
+// Validation schema for updating escalation policy
+const updateEscalationPolicySchema = z.object({
+  name: z
+    .string()
+    .min(1, "Policy name is required")
+    .max(100, "Policy name cannot exceed 100 characters"),
+  levels: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        order: z.number(),
+        method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
+        target: z.string().min(1, "Target is required"),
+        waitTimeMinutes: z
+          .number()
+          .min(0, "Wait time cannot be negative")
+          .max(1440, "Wait time cannot exceed 24 hours"),
+      })
+    )
+    .min(1, "At least one escalation level is required")
+    .max(10, "Cannot have more than 10 escalation levels"),
+});
 
 // GET /api/escalation-policies/[id] - Get single escalation policy
 export const GET = withAuth(
@@ -9,10 +32,10 @@ export const GET = withAuth(
     req: NextRequest,
     user,
     session,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
-      const { id } = params;
+      const { id } = await params;
 
       if (!id) {
         return NextResponse.json(
@@ -75,10 +98,10 @@ export const PUT = withAuth(
     req: NextRequest,
     user,
     session,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
-      const { id } = params;
+      const { id } = await params;
 
       if (!id) {
         return NextResponse.json(
@@ -87,11 +110,30 @@ export const PUT = withAuth(
         );
       }
 
+      // Parse and validate request body
+      const body = await req.json();
+      const validation = updateEscalationPolicySchema.safeParse(body);
+
+      if (!validation.success) {
+        return NextResponse.json(
+          {
+            error: "Invalid input data",
+            details: validation.error.message,
+          },
+          { status: 400 }
+        );
+      }
+
+      const { name, levels } = validation.data;
+
       // Check if policy exists and user has access
       const existingPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
           userId: user.id, // Direct userId lookup
+        },
+        include: {
+          monitors: true,
         },
       });
 
@@ -102,16 +144,94 @@ export const PUT = withAuth(
         );
       }
 
-      // For now, return method not implemented
-      // This would require more complex logic to handle level updates
-      return NextResponse.json(
-        { error: "Update functionality not yet implemented" },
-        { status: 501 }
-      );
+      // Check if policy is in use by any monitors
+      if (existingPolicy.monitors.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Cannot update escalation policy that is in use by monitors",
+            monitors: existingPolicy.monitors.map((m) => ({
+              id: m.id,
+              name: m.name,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+
+      // Update policy and levels in a transaction
+      const updatedPolicy = await prisma.$transaction(async (tx: any) => {
+        // Update the escalation policy
+        const policy = await tx.escalationPolicy.update({
+          where: { id },
+          data: {
+            name,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Delete existing levels
+        await tx.escalationLevel.deleteMany({
+          where: { escalationId: id },
+        });
+
+        // Create new levels
+        const createdLevels = await Promise.all(
+          levels.map((level: any, index: number) =>
+            tx.escalationLevel.create({
+              data: {
+                escalationId: id,
+                levelOrder: level.order,
+                waitMinutes: level.waitTimeMinutes,
+                contacts: [level.target], // Store as array
+                channel: level.method,
+                name: `Level ${level.order}`,
+                message: `Escalation level ${level.order} for ${name}`,
+              },
+            })
+          )
+        );
+
+        return {
+          ...policy,
+          levels: createdLevels,
+        };
+      });
+
+      // Transform response to match frontend types
+      const transformedPolicy = {
+        id: updatedPolicy.id,
+        name: updatedPolicy.name,
+        userId: updatedPolicy.userId,
+        levels: updatedPolicy.levels.map((level: any) => ({
+          id: level.id,
+          order: level.levelOrder,
+          method: level.channel.toUpperCase(),
+          target: level.contacts[0] || "",
+          waitTimeMinutes: level.waitMinutes,
+        })),
+        createdAt: updatedPolicy.createdAt,
+        updatedAt: updatedPolicy.updatedAt,
+      };
+
+      return NextResponse.json({
+        message: "Escalation policy updated successfully",
+        escalationPolicy: transformedPolicy,
+      });
     } catch (error) {
       console.error("Error updating escalation policy:", error);
+
+      if (error instanceof Error) {
+        return NextResponse.json(
+          {
+            error: "Failed to update escalation policy",
+            details: error.message,
+          },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
-        { error: "Failed to update escalation policy" },
+        { error: "Internal server error" },
         { status: 500 }
       );
     }
@@ -124,10 +244,10 @@ export const DELETE = withAuth(
     req: NextRequest,
     user,
     session,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
-      const { id } = params;
+      const { id } = await params;
 
       if (!id) {
         return NextResponse.json(
