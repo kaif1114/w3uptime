@@ -238,8 +238,8 @@ model Maintenance {
 
 enum MonitorStatus {
   ACTIVE
-  PAUSE
-  DEAD_DISABLED
+  PAUSED
+  DISABLED
 }
 
 enum AlertSeverity {
@@ -278,8 +278,8 @@ enum EscalationChannel {
 }
 
 enum MonitorTickStatus {
-  Good
-  Bad
+  GOOD
+  BAD
 }
 
 enum UserType {
