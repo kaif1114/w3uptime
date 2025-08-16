@@ -186,7 +186,7 @@ model StatusPage {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   statusPageSections   StatusPageSection[]
-  announcements        Update[]
+  maintenances        Maintenance[]
   updates              Update[]
 }
 
@@ -196,7 +196,7 @@ model StatusPageSection {
   description          String?
   order                Int
   type                 StatusPageSectionType
-  monitorId            String?
+  monitorId            String
   statusPageId         String
   maintenanceId        String?
   affectedSections     AffectedSections[]
@@ -232,6 +232,7 @@ model Maintenance {
   to                   DateTime
   statusPageId         String
   statusPageSections   StatusPageSection[]
+  statusPage           StatusPage             @relation(fields: [statusPageId], references: [id])
 }
 
 
