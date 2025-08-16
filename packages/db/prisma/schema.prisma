@@ -237,8 +237,8 @@ model Maintenance {
 
 enum MonitorStatus {
   ACTIVE
-  PAUSED
-  DISABLED
+  PAUSE
+  DEAD_DISABLED
 }
 
 enum AlertSeverity {
@@ -277,8 +277,8 @@ enum EscalationChannel {
 }
 
 enum MonitorTickStatus {
-  GOOD
-  BAD
+  Good
+  Bad
 }
 
 enum UserType {
@@ -287,16 +287,23 @@ enum UserType {
 }
 
 enum StatusPageSectionType {
-  MONITOR
-  ANNOUNCEMENT
-  MAINTENANCE
+  STATUS
+  HISTORY
+  BOTH
 }
 
 enum AffectedStatus {
-  OPERATIONAL
+  NONE
+  DOWNTIME
   DEGRADED
-  PARTIAL_OUTAGE
-  MAJOR_OUTAGE
-  UNDER_MAINTENANCE
+  RESOLVED
+}
+
+enum AlertType {
+  STATUS_CODE_ERROR
+  URL_UNAVAILABLE
+  PING_FAILURE
+  TIMEOUT
+  RESOLVED
 }
 
