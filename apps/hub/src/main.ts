@@ -42,7 +42,7 @@ ws.on("connection", (socket: WebSocket) => {
       );
       return;
     }
-
+  
     if (message.type === "signup") {
       handleSignup(message.data, socket);
     } else if (message.type === "validate") {
@@ -68,7 +68,6 @@ setInterval(async () => {
       status: "ACTIVE",
     },
   });
-  console.log("Validators:", validators);
 
   for (const monitor of monitorsToValidate) {
     validators.forEach((validator) => {
@@ -135,16 +134,18 @@ function verifyMessage(
 
 async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
   try {
-    const validator = await prisma.user.findFirst({
+    let validator = await prisma.user.findFirst({
       where: {
-        walletAddress: message.publicKey,
+        walletAddress: message.walletAddress.toLowerCase(),
       },
     });
-
+   
+ 
     if (!validator) {
       const newValidator = await prisma.user.create({
         data: {
-          walletAddress: message.publicKey,
+          publicKey: message.publicKey,
+          walletAddress: message.walletAddress.toLowerCase(),
           ip: message.ip,
         },
       });
@@ -160,7 +161,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       );
       validators.push({
         validatorId: newValidator.id,
-        publicKey: newValidator.walletAddress,
+        publicKey: newValidator.publicKey,
         socket: socket,
         ip: message.ip,
       });
@@ -174,6 +175,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       },
       data: {
         ip: message.ip,
+        publicKey: message.publicKey,
       },
     });
 
@@ -188,7 +190,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
     );
     validators.push({
       validatorId: updatedValidator.id,
-      publicKey: updatedValidator.walletAddress,
+      publicKey: updatedValidator.publicKey,
       socket: socket,
       ip: message.ip,
     });

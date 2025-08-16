@@ -76,7 +76,7 @@ export class ValidatorService extends EventEmitter {
       // Create and start WebSocket connection
       await this.initializeWebSocketClient();
       
-      console.log(chalk.green('✅ Connected to hub'));
+      console.log(chalk.green('✅ Connected to hub'))
       console.log(chalk.blue('📝 Registering as validator...'));
       
       // Register with hub
@@ -217,11 +217,11 @@ export class ValidatorService extends EventEmitter {
     });
 
     this.websocketClient.on('hubError', (error: { message: string }) => {
-      console.error(chalk.red(`❌ Hub error: ${error.message}`));
+      console.log(chalk.red(`❌ Hub error: ${error.message}`));
     });
 
     this.websocketClient.on('error', (error: Error) => {
-      console.error(chalk.red(`❌ WebSocket error: ${error.message}`));
+      console.log(chalk.red(`❌ WebSocket error: ${error.message}`));
     });
 
     // Connect to hub
@@ -254,10 +254,10 @@ export class ValidatorService extends EventEmitter {
       this.updateStats(result);
       
       const statusIcon = result.status === 'GOOD' ? '✅' : '❌';
-      console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
+        console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
+      console.log(chalk.red(`❌ Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
       
       // Send error result
       try {
@@ -268,7 +268,7 @@ export class ValidatorService extends EventEmitter {
           monitorId: data.monitorId || 'unknown'
         });
       } catch (sendError) {
-        console.error(chalk.red(`❌ Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`));
+        console.log(chalk.red(`❌ Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`) );
       }
       
       this.stats.failedValidations++;
@@ -303,13 +303,13 @@ export class ValidatorService extends EventEmitter {
    */
   private setupGracefulShutdown(): void {
     process.on('SIGINT', async () => {
-      console.log(chalk.yellow('\n🛑 Received SIGINT, shutting down gracefully...'));
+      chalk.yellow('\n🛑 Received SIGINT, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.log(chalk.yellow('\n🛑 Received SIGTERM, shutting down gracefully...'));
+        chalk.yellow('\n🛑 Received SIGTERM, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });
@@ -325,11 +325,11 @@ export class ValidatorService extends EventEmitter {
         
         // Log periodic status (every 5 minutes)
         if (status.stats.uptime % (5 * 60 * 1000) < 1000) {
-          console.log(chalk.gray(
+          chalk.gray(
             `📊 Uptime: ${this.formatUptime(status.stats.uptime)} | ` +
             `Validations: ${this.stats.totalValidations} | ` +
             `Success Rate: ${this.getSuccessRate()}%`
-          ));
+          );
         }
       }
     }, 1000);

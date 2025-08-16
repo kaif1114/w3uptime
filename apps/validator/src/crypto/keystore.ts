@@ -59,6 +59,7 @@ export class KeystoreManager {
     // Validate private key and derive public key
     try {
       const wallet = new ethers.Wallet(privateKey);
+      console.log(wallet);
       
       // Derive public key from private key
       const derivedPublicKey = wallet.signingKey.publicKey;
