@@ -125,6 +125,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
     const signupData = {
       ip: await this.getLocalIP(),
       publicKey: this.signer.getPublicKey()!,
+      walletAddress: this.signer.getAddress()!,
       callbackId: this.generateCallbackId()
     };
 
@@ -193,7 +194,6 @@ export class ValidatorWebSocketClient extends EventEmitter {
           this.reconnectAttempts = 0;
           this.setupHeartbeat();
           this.processMessageQueue();
-          console.log('Connected to hub');
           resolve();
         });
 

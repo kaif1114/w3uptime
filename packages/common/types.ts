@@ -1,6 +1,7 @@
 export interface SignupIncomingMessage {
   ip: string;
   publicKey: string;
+  walletAddress: string;
   callbackId: string;
 }
 
