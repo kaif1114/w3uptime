@@ -43,6 +43,7 @@ model Monitor {
   Incident            Incident?
   user                User              @relation(fields: [userId], references: [id])
   monitorTicks        monitorTick[]
+  statusPageSections  StatusPageSection[]
 }
 
 model monitorTick {
@@ -174,6 +175,66 @@ model Session {
   @@index([walletAddress])
 }
 
+model StatusPage {
+  id                   String               @id @default(uuid())
+  name                 String
+  isPublished          Boolean              @default(false)
+  logoUrl              String?
+  logo                 String?
+  supportUrl           String?
+  announcement         String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  statusPageSections   StatusPageSection[]
+  maintenances        Maintenance[]
+  updates              Update[]
+}
+
+model StatusPageSection {
+  id                   String                 @id @default(uuid())
+  name                 String
+  description          String?
+  order                Int
+  type                 StatusPageSectionType
+  monitorId            String
+  statusPageId         String
+  maintenanceId        String?
+  affectedSections     AffectedSections[]
+  statusPage           StatusPage             @relation(fields: [statusPageId], references: [id])
+  monitor              Monitor?               @relation(fields: [monitorId], references: [id])
+  maintenance          Maintenance?           @relation(fields: [maintenanceId], references: [id])
+}
+
+model Update {
+  id                   String               @id @default(uuid())
+  title                String
+  description          String
+  publishedAt          DateTime             @default(now())
+  statusPageId         String
+  affectedSections     AffectedSections[]
+  statusPage           StatusPage           @relation(fields: [statusPageId], references: [id])
+}
+
+model AffectedSections {
+  id                   String               @id @default(uuid())
+  updateId             String
+  sectionId            String
+  status               AffectedStatus
+  update               Update               @relation(fields: [updateId], references: [id])
+  section              StatusPageSection    @relation(fields: [sectionId], references: [id])
+}
+
+model Maintenance {
+  id                   String               @id @default(uuid())
+  title                String
+  description          String
+  from                 DateTime
+  to                   DateTime
+  statusPageId         String
+  statusPageSections   StatusPageSection[]
+  statusPage           StatusPage             @relation(fields: [statusPageId], references: [id])
+}
+
 
 enum MonitorStatus {
   ACTIVE
@@ -224,5 +285,26 @@ enum MonitorTickStatus {
 enum UserType {
   USER
   VALIDATOR
+}
+
+enum StatusPageSectionType {
+  STATUS
+  HISTORY
+  BOTH
+}
+
+enum AffectedStatus {
+  NONE
+  DOWNTIME
+  DEGRADED
+  RESOLVED
+}
+
+enum AlertType {
+  STATUS_CODE_ERROR
+  URL_UNAVAILABLE
+  PING_FAILURE
+  TIMEOUT
+  RESOLVED
 }
 
