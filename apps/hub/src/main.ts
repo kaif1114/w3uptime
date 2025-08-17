@@ -198,13 +198,7 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
     if (hasIpChanged) {
       const oldGeoLocationId = validator.geoLocationId;
       const geoLocation = await getGeoLocation(message.ip);
-      await prisma.geoLocation.upsert({
-        where: {
-          userId: validator.id,
-        },
-        update: {
-          updatedAt: new Date(),
-        },
+      const newGeoLocation = await prisma.geoLocation.create({
         data: {
           ip: message.ip,
           country: geoLocation.country.toLowerCase(),
@@ -219,8 +213,15 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
           longitude: geoLocation.longitude,
           timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
           flag: geoLocation.flag.svg || null,
-          userId: validator.id,
           updatedAt: new Date(),
+        },
+      });
+      await prisma.user.update({
+        where: {
+          id: validator.id,
+        },
+        data: {
+          geoLocationId: newGeoLocation.id,
         },
       });
       await prisma.geoLocation.delete({
