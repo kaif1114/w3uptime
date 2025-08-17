@@ -14,7 +14,6 @@ model User {
   type               UserType           @default(USER)
   balance            Int                @default(0)
   nonce              String?
-  ip                 String?
   nonceExpiry        DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -23,6 +22,27 @@ model User {
   monitors           Monitor[]
   monitorTicks       monitorTick[]
   escalationPolicies EscalationPolicy[]
+  geoLocationId      String?            @unique
+  geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
+}
+
+model GeoLocation {
+  id                   String   @id @default(uuid())
+  ip                   String
+  region               String?
+  regionCode           String?
+  country              String
+  countryCode          String?
+  city                 String
+  postalCode           String?
+  continent            String?
+  continentCode        String?
+  latitude             Float
+  longitude            Float
+  timezoneAbbreviation String?
+  flag                 String?
+  updatedAt            DateTime @updatedAt
+  user                 User?
 }
 
 model Monitor {
