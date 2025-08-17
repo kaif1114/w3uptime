@@ -278,14 +278,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
             {activeTab === 'global' && (
               <div className="space-y-6">
                 <MapboxGlobeMap validators={mockData.validators} />
-                <GlobalLatencyChart 
-                  data={mockData.latencyData} 
-                  incidents={mockData.incidents.map(inc => ({
-                    start: inc.startTime,
-                    end: inc.endTime || new Date(),
-                    title: inc.title
-                  }))}
-                />
+               
               </div>
             )}
 

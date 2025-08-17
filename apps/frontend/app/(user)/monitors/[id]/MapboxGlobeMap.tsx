@@ -382,13 +382,6 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-             
-              {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-xs space-y-1">
-                <p className="font-semibold">🌍 Interactive 3D Globe</p>
-                <p>• Click countries to view details</p>
-                <p>• Drag to rotate • Scroll to zoom</p>
-                <p>• Use controls to switch views</p>
-              </div>  */}
             </div>
 
             {/* Status Legend */}
