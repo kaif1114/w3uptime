@@ -1,6 +1,7 @@
 
 'use client';
 
+import React, { useState } from 'react';
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,17 +11,24 @@ import {
   Pause, 
   Send, 
   Calendar, 
-  Cog, 
+  Globe,
   TrendingUp, 
   Clock,
   Activity,
   AlertTriangle,
-  Edit3
+  Edit3,
+  BarChart3,
+  Shield,
+  Settings
 } from "lucide-react";
 import { MonitorStatus } from "@/types/monitor";
 import Link from "next/link";
-import { ResponseTimeChart } from "./ResponseTimeChart";
-import { UptimeTable } from "./UptimeTable";
+import { GlobalValidatorMap } from "./GlobalValidatorMap";
+import { GlobalLatencyChart } from "./GlobalLatencyChart";
+import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
+import { RegionalStats } from "./RegionalStats";
+import { MonitoringControls, TimePeriod, UpdateFrequency, MetricType } from "./MonitoringControls";
+import { mockData } from "./mockData";
 
 interface MonitorDetailsProps {
   monitorId: string;
@@ -65,15 +73,51 @@ function getStatusVariant(status: MonitorStatus) {
   }
 }
 
+type TabType = 'overview' | 'global' | 'uptime' | 'performance';
+
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
+  
+  // State for tabs and controls
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
+  const [updateFreq, setUpdateFreq] = useState<UpdateFrequency>('5m');
+  const [metricType, setMetricType] = useState<MetricType>('all');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
       const newStatus = monitor?.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
       pauseMonitor.mutate({ id: monitorId, status: newStatus });
     }
+  };
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setLastUpdated(new Date());
+      setIsRefreshing(false);
+    }, 2000);
+  };
+
+  const handleExportData = () => {
+    const dataToExport = {
+      monitor: monitor?.name,
+      period: timePeriod,
+      validators: mockData.validators.length,
+      incidents: mockData.incidents.length,
+      exportTime: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `monitor-${monitorId}-data.json`;
+    a.click();
   };
 
   if (isLoading) {
@@ -104,8 +148,15 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
   if (!monitor) return null;
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'global', label: 'Global Map', icon: Globe },
+    { id: 'uptime', label: 'Uptime & Incidents', icon: Shield },
+    { id: 'performance', label: 'Performance', icon: BarChart3 }
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Monitor Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -158,66 +209,126 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         </div>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-card">
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Currently up for</p>
-              <p className="text-2xl font-bold">10:20 AM</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Monitoring Controls */}
+      <MonitoringControls
+        timePeriod={timePeriod}
+        updateFrequency={updateFreq}
+        metricType={metricType}
+        autoRefresh={autoRefresh}
+        onTimePeriodChange={setTimePeriod}
+        onUpdateFrequencyChange={setUpdateFreq}
+        onMetricTypeChange={setMetricType}
+        onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
+        onManualRefresh={handleManualRefresh}
+        onExportData={handleExportData}
+        lastUpdated={lastUpdated}
+        isRefreshing={isRefreshing}
+      />
 
-        <Card className="bg-card">
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Last checked at</p>
-              <p className="text-2xl font-bold">9:20 AM</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Incidents</p>
-              <p className="text-2xl font-bold">10.03 Seconds</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Response Times Chart */}
-      <Card className="bg-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Response times</CardTitle>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-purple-500"></div>
-              <span>Name lookup</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-blue-400"></div>
-              <span>Connection</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-green-500"></div>
-              <span>TLS handshake</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-teal-400"></div>
-              <span>Data transfer</span>
-            </div>
+      {/* Tab Navigation */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="border-b">
+            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`
+                      flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
+                      ${activeTab === tab.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {/* <ResponseTimeChart data={data.responseTimeData} /> */}
+          
+          <div className="p-6">
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Currently up for</p>
+                        <p className="text-2xl font-bold">2 days 14h</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Last checked at</p>
+                        <p className="text-2xl font-bold">{new Date().toLocaleTimeString()}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Active Validators</p>
+                        <p className="text-2xl font-bold">{mockData.validators.filter(v => v.status !== 'offline').length}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Regional Stats */}
+                <RegionalStats validators={mockData.validators} />
+              </div>
+            )}
+
+            {activeTab === 'global' && (
+              <div className="space-y-6">
+                <GlobalValidatorMap validators={mockData.validators} />
+                <GlobalLatencyChart 
+                  data={mockData.latencyData} 
+                  incidents={mockData.incidents.map(inc => ({
+                    start: inc.startTime,
+                    end: inc.endTime || new Date(),
+                    title: inc.title
+                  }))}
+                />
+              </div>
+            )}
+
+            {activeTab === 'uptime' && (
+              <UptimeIncidentPanel
+                uptimeData={mockData.uptimeData}
+                incidents={mockData.incidents}
+                monitorName={monitor?.url || 'Monitor'}
+              />
+            )}
+
+            {activeTab === 'performance' && (
+              <div className="space-y-6">
+                <GlobalLatencyChart 
+                  data={mockData.latencyData} 
+                  incidents={mockData.incidents.map(inc => ({
+                    start: inc.startTime,
+                    end: inc.endTime || new Date(),
+                    title: inc.title
+                  }))}
+                />
+                <RegionalStats validators={mockData.validators} />
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {/* Uptime Table */}
-      {/* <UptimeTable stats={stats} />  */}
     </div>
   );
 }
