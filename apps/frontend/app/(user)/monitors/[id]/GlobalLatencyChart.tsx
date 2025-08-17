@@ -129,8 +129,8 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <div>
+      <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -195,9 +195,9 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
             <p className="text-xl font-bold text-red-600">{stats.max}ms</p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div>
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -296,7 +296,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
             Live Data
           </Badge>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

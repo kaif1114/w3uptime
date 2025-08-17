@@ -238,9 +238,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
             Global Validator Network
           </span>
           <div className="flex gap-2">
-            <Badge variant="outline">{stats.online}/{stats.total} Online</Badge>
-            <Badge variant="outline">{stats.countries} Countries</Badge>
-            <Badge variant="outline">{stats.avgLatency}ms Avg</Badge>
+            <Badge variant="outline">{stats.online} Online</Badge>
           </div>
         </div>
       </div>
@@ -385,13 +383,13 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-              {/* Instructions */}
-              <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-xs space-y-1">
+             
+              {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-xs space-y-1">
                 <p className="font-semibold">🌍 Interactive 3D Globe</p>
                 <p>• Click countries to view details</p>
                 <p>• Drag to rotate • Scroll to zoom</p>
                 <p>• Use controls to switch views</p>
-              </div>
+              </div>  */}
             </div>
 
             {/* Status Legend */}
@@ -416,122 +414,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
           </div>
 
           {/* Country Details Panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Global Stats */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                GLOBAL OVERVIEW
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Active</p>
-                  <p className="font-semibold text-green-600">{stats.online}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total</p>
-                  <p className="font-semibold">{stats.total}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Avg Latency</p>
-                  <p className="font-semibold">{stats.avgLatency}ms</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Countries</p>
-                  <p className="font-semibold">{stats.countries}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Country Details */}
-            {selectedCountryData ? (
-              <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    {selectedCountryData.name}
-                  </h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSelectedCountry(null)}
-                  >
-                    ×
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Validators</p>
-                    <p className="font-semibold">{selectedCountryData.validators.length}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Online</p>
-                    <p className="font-semibold text-green-600">{selectedCountryData.onlineCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Avg Latency</p>
-                    <p className="font-semibold">{selectedCountryData.avgLatency}ms</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Uptime</p>
-                    <p className="font-semibold">
-                      {Math.round((selectedCountryData.onlineCount / selectedCountryData.validators.length) * 100)}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Validator List */}
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Validators</h4>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {selectedCountryData.validators.map((validator: ValidatorData) => (
-                      <div key={validator.id} className="flex items-center justify-between text-xs p-2 bg-muted rounded">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            validator.status === 'good' ? 'bg-green-500' :
-                            validator.status === 'moderate' ? 'bg-yellow-500' :
-                            validator.status === 'offline' ? 'bg-red-500' : 'bg-gray-500'
-                          }`}></div>
-                          <span>{validator.city}</span>
-                        </div>
-                        <span className="text-muted-foreground">{validator.latency}ms</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="border rounded-lg p-4 text-center text-muted-foreground">
-                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Click a country on the globe to view validator details</p>
-              </div>
-            )}
-
-            {/* Top Countries */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-muted-foreground">TOP COUNTRIES</h3>
-              <div className="space-y-1">
-                {countryData.slice(0, 5).map((country: CountryData) => (
-                  <div 
-                    key={country.name}
-                    className="flex items-center justify-between text-sm p-2 hover:bg-muted rounded cursor-pointer"
-                    onClick={() => setSelectedCountry(country.name)}
-                  >
-                    <span className="font-medium">{country.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {country.validators.length}
-                      </Badge>
-                      <span className="text-muted-foreground text-xs">
-                        {country.avgLatency}ms
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+         
         </div>
       </div>
   );

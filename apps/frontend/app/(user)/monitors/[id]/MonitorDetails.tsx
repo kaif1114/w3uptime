@@ -210,8 +210,8 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       /> */}
 
       {/* Tab Navigation */}
-      <Card>
-        <CardContent className="p-0">
+      <div>
+        <div className="p-0"> 
           <div className="border-b">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
               {tabs.map((tab) => {
@@ -311,8 +311,8 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
