@@ -1,7 +1,7 @@
-import { MonitorDetails } from "./MonitorDetails";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { MonitorDetails } from "./MonitorDetails";
 
 interface MonitorDetailsPageProps {
   params: Promise<{ id: string }>;

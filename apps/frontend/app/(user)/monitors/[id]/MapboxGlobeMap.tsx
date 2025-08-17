@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import Map, { Source, Layer } from 'react-map-gl/mapbox';
-import type { MapRef, ViewState } from 'react-map-gl/mapbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Users, Globe, Activity, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MapRef, ViewState } from 'react-map-gl/mapbox';
+import Map, { Layer, Source } from 'react-map-gl/mapbox';
 
 interface ValidatorData {
   id: string;

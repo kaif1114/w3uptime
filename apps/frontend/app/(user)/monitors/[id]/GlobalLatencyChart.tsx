@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Clock, TrendingUp, AlertTriangle } from 'lucide-react';
-import { format, subHours, subDays } from 'date-fns';
+import { format, subDays, subHours } from 'date-fns';
+import { AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface LatencyDataPoint {
   timestamp: Date;
@@ -287,14 +286,6 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Update frequency indicator */}
-        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-          <span>Updates every {UPDATE_FREQUENCY_OPTIONS.find(opt => opt.value === updateFreq)?.label.toLowerCase()}</span>
-          <Badge variant="outline">
-            Live Data
-          </Badge>
         </div>
       </div>
     </div>

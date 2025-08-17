@@ -1,29 +1,29 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Play, 
-  Pause, 
-  Send, 
-  Calendar, 
-  Globe,
+import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
+import { MonitorStatus } from "@/types/monitor";
+import {
   Activity,
   AlertTriangle,
-  Edit3,
   BarChart3,
+  Calendar,
+  Edit3,
+  Globe,
+  Pause,
+  Play,
+  Send,
   Shield
 } from "lucide-react";
-import { MonitorStatus } from "@/types/monitor";
 import Link from "next/link";
-import { MapboxGlobeMap } from "./MapboxGlobeMap";
+import { useState } from 'react';
 import { GlobalLatencyChart } from "./GlobalLatencyChart";
-import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
+import { MapboxGlobeMap } from "./MapboxGlobeMap";
+import { MetricType, TimePeriod, UpdateFrequency } from "./MonitoringControls";
 import { RegionalStats } from "./RegionalStats";
-import { MonitoringControls, TimePeriod, UpdateFrequency, MetricType } from "./MonitoringControls";
+import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { mockData } from "./mockData";
 
 interface MonitorDetailsProps {
