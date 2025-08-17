@@ -7,15 +7,147 @@ import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage, SignupIncomingMessage } from "common/types";
+import http from "http";
+import url from "url";
 import "dotenv/config";
 
-const ws = new WebSocketServer({ port: 8080 });
+async function checkAuthentication(req: http.IncomingMessage): Promise<string | null> {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const sessionId = cookies.sessionId;
+  console.log(sessionId);
+  if (!sessionId) {
+    return null;
+  }
+
+  try {
+    const session = await prisma.session.findUnique({
+      where: {  sessionId }
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    return session.userId;
+  } catch (error) {
+    console.error("Authentication error:", error);
+    return null;
+  }
+}
+
+function parseCookies(cookieHeader: string): { [key: string]: string } {
+  const cookies: { [key: string]: string } = {};
+  cookieHeader.split(';').forEach(cookie => {
+    const parts = cookie.trim().split('=');
+    if (parts.length === 2) {
+      cookies[parts[0]] = parts[1];
+    }
+  });
+  return cookies;
+}
+
+// HTTP server setup
+const httpServer = http.createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = url.parse(req.url || '', true);
+  const pathname = parsedUrl.pathname;
+
+  if (pathname === '/ping') {
+    res.writeHead(200);
+    res.end(JSON.stringify({ status: 'OK' }));
+    return;
+  }
+
+  // Authentication required for validator routes
+  const userId = await checkAuthentication(req);
+  if (!userId) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  if (pathname === '/validators') {
+    try {
+      const validatorCount = validators.length;
+      res.writeHead(200);
+      res.end(JSON.stringify({ count: validatorCount }));
+    } catch (error) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
+    return;
+  }
+
+  if (pathname?.startsWith('/validators/')) {
+    const countryCode = pathname.split('/')[2];
+    
+    if (!countryCode) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Country code is required' }));
+      return;
+    }
+
+    try {
+      const countryValidators = validators
+        .filter(v => v.location.countryCode.toLowerCase() === countryCode.toLowerCase())
+        .map(v => ({
+          validatorId: v.validatorId,
+          location: {
+            country: v.location.country,
+            countryCode: v.location.countryCode,
+            region: v.location.region,
+            city: v.location.city,
+            continent: v.location.continent,
+            continentCode: v.location.continentCode,
+            flag: v.location.flag
+          }
+        }));
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({ validators: countryValidators }));
+    } catch (error) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
+    return;
+  }
+
+  res.writeHead(404);
+  res.end(JSON.stringify({ error: 'Not found' }));
+});
+
+const ws = new WebSocketServer({ server: httpServer });
 
 const validators: {
   validatorId: string;
   publicKey: string;
   socket: WebSocket;
-  ip: string;
+  location:{
+    ip: string,
+    country: string,
+    countryCode: string,
+    region: string,
+    regionCode: string,
+    city: string,
+    postalCode: string,
+    continent: string,
+    continentCode: string,
+    latitude: number,
+    longitude: number,
+    timezoneAbbreviation: string | null,
+    flag: string | null,
+
+  }
 }[] = [];
 const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
   {};
@@ -86,6 +218,8 @@ setInterval(async () => {
       CALLBACKS[callbackId] = async (message: IncomingMessage) => {
         if (message.type === "validate") {
           const { validatorId, status, latency } = message.data;
+          const validatorData = validators.find(v => v.validatorId === validatorId);
+          
           await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await tx.monitorTick.create({
               data: {
@@ -93,6 +227,11 @@ setInterval(async () => {
                 validatorId: validatorId,
                 status,
                 latency,
+                longitude: validatorData?.location.longitude || 0,
+                latitude: validatorData?.location.latitude || 0,
+                countryCode: validatorData?.location.countryCode || 'UNKNOWN',
+                continentCode: validatorData?.location.continentCode || 'UNKNOWN',
+                city: validatorData?.location.city || 'unknown',
                 createdAt: new Date(),
               },
             });
@@ -190,7 +329,22 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
         validatorId: newValidator.id,
         publicKey: newValidator.publicKey,
         socket: socket,
-        ip: message.ip,
+        location:{
+          ip: message.ip,
+          country: geoLocation.country,
+          countryCode: geoLocation.country_code,
+          region: geoLocation.region,
+          regionCode: geoLocation.region_code,
+          city: geoLocation.city,
+          postalCode: geoLocation.postal_code,
+          continent: geoLocation.continent,
+          continentCode: geoLocation.continent_code,
+          latitude: geoLocation.latitude,
+          longitude: geoLocation.longitude,
+          timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
+          flag: geoLocation.flag.svg || null,
+        }
+       
       });
       return;
     }
@@ -244,7 +398,21 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       validatorId: validator.id,
       publicKey: validator.publicKey,
       socket: socket,
-      ip: message.ip,
+      location:{
+        ip: message.ip,
+        country: validator.geoLocation.country,
+        countryCode: validator.geoLocation.countryCode,
+        region: validator.geoLocation.region,
+        regionCode: validator.geoLocation.regionCode,
+        city: validator.geoLocation.city,
+        postalCode: validator.geoLocation.postalCode,
+        continent: validator.geoLocation.continent,
+        continentCode: validator.geoLocation.continentCode,
+        latitude: validator.geoLocation.latitude,
+        longitude: validator.geoLocation.longitude,
+        timezoneAbbreviation: validator.geoLocation.timezoneAbbreviation,
+        flag: validator.geoLocation.flag,
+      }
     });
   } catch (error) {
     console.error(error);
@@ -262,5 +430,9 @@ ws.on("error", (error) => {
 });
 
 ws.on("listening", () => {
-  console.log("Server is running on port 8080");
+  console.log("WebSocket server is running on port 8080");
+});
+
+httpServer.listen(8080, () => {
+  console.log("HTTP and WebSocket server is running on port 8080");
 });
