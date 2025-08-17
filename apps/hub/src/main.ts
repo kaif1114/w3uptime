@@ -78,6 +78,59 @@ const httpServer = http.createServer(async (req, res) => {
 
   if (pathname === '/validators') {
     try {
+      const { countrycode, city, postalcode, continent } = parsedUrl.query;
+      
+      let filteredValidators = validators;
+      
+      // Apply filters based on query parameters
+      if (countrycode) {
+        filteredValidators = filteredValidators.filter(v => 
+          v.location.countryCode.toLowerCase() === (countrycode as string).toLowerCase()
+        );
+      }
+      
+      if (city) {
+        filteredValidators = filteredValidators.filter(v => 
+          v.location.city.toLowerCase() === (city as string).toLowerCase()
+        );
+      }
+      
+      if (postalcode) {
+        filteredValidators = filteredValidators.filter(v => 
+          v.location.postalCode === postalcode
+        );
+      }
+      
+      if (continent) {
+        filteredValidators = filteredValidators.filter(v => 
+          v.location.continent.toLowerCase() === (continent as string).toLowerCase()
+        );
+      }
+      
+      const responseValidators = filteredValidators.map(v => ({
+        validatorId: v.validatorId,
+        location: {
+          country: v.location.country,
+          countryCode: v.location.countryCode,
+          region: v.location.region,
+          city: v.location.city,
+          continent: v.location.continent,
+          continentCode: v.location.continentCode,
+          flag: v.location.flag
+        }
+      }));
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({ validators: responseValidators }));
+    } catch (error) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
+    return;
+  }
+
+  if (pathname === '/validators/count') {
+    try {
       const validatorCount = validators.length;
       res.writeHead(200);
       res.end(JSON.stringify({ count: validatorCount }));
@@ -88,39 +141,6 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname?.startsWith('/validators/')) {
-    const countryCode = pathname.split('/')[2];
-    
-    if (!countryCode) {
-      res.writeHead(400);
-      res.end(JSON.stringify({ error: 'Country code is required' }));
-      return;
-    }
-
-    try {
-      const countryValidators = validators
-        .filter(v => v.location.countryCode.toLowerCase() === countryCode.toLowerCase())
-        .map(v => ({
-          validatorId: v.validatorId,
-          location: {
-            country: v.location.country,
-            countryCode: v.location.countryCode,
-            region: v.location.region,
-            city: v.location.city,
-            continent: v.location.continent,
-            continentCode: v.location.continentCode,
-            flag: v.location.flag
-          }
-        }));
-      
-      res.writeHead(200);
-      res.end(JSON.stringify({ validators: countryValidators }));
-    } catch (error) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Internal server error' }));
-    }
-    return;
-  }
 
   res.writeHead(404);
   res.end(JSON.stringify({ error: 'Not found' }));
