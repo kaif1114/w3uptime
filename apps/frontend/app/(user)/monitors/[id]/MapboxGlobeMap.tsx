@@ -248,24 +248,26 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
           {/* Mapbox 3D Globe */}
           <div className="space-y-4">
             <div className="h-screen rounded-lg overflow-hidden relative border">
-              <Map
-                ref={mapRef}
-                {...viewState}
-                onMove={evt => setViewState(evt.viewState)}
-                onClick={onMapClick}
-                onMouseMove={onMapMouseMove}
-                mapboxAccessToken={MAPBOX_TOKEN}
-                style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/standard"
-                projection="globe"
-                fog={{
-                  "color": "#220b30",
-                  "high-color": "#245cdf", 
-                  "horizon-blend": 0.02,
-                  "space-color": "#000b19",
-                  "star-intensity": 0.15
-                }}
-              >
+                             <Map
+                 ref={mapRef}
+                 {...viewState}
+                 onMove={evt => setViewState(evt.viewState)}
+                 onClick={onMapClick}
+                 onMouseMove={onMapMouseMove}
+                 mapboxAccessToken={MAPBOX_TOKEN}
+                 style={{ width: '100%', height: '100%' }}
+                 mapStyle="mapbox://styles/mapbox/standard"
+                 projection="globe"
+                 maxZoom={3}
+                 minZoom={1}
+                 fog={{
+                   "color": "#220b30",
+                   "high-color": "#245cdf", 
+                   "horizon-blend": 0.02,
+                   "space-color": "#000b19",
+                   "star-intensity": 0.15
+                 }}
+               >
                 {/* Validator Points */}
                 <Source
                   id="validators"

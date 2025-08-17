@@ -194,7 +194,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       </div>
 
       {/* Monitoring Controls */}
-      <MonitoringControls
+      {/* <MonitoringControls
         timePeriod={timePeriod}
         updateFrequency={updateFreq}
         metricType={metricType}
@@ -207,7 +207,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         onExportData={handleExportData}
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
-      />
+      /> */}
 
       {/* Tab Navigation */}
       <Card>
