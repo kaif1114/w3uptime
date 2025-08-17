@@ -376,24 +376,21 @@ export class ValidatorWebSocketClient extends EventEmitter {
   }
 
   /**
-   * Get local IP address
+   * Get public IP address
    */
   private async getLocalIP(): Promise<string> {
-    const nets = networkInterfaces();
-    
-    for (const name of Object.keys(nets)) {
-      const netInfo = nets[name];
-      if (!netInfo) continue;
-      
-      for (const net of netInfo) {
-        // Skip internal (i.e. 127.0.0.1) and non-IPv4 addresses
-        if (net.family === 'IPv4' && !net.internal) {
-          return net.address;
-        }
+    try {
+      // get public IP from external service
+      const response = await fetch('https://api.ipify.org?format=json');
+      if (response.ok) {
+        const data = await response.json();
+
+        return data.ip;
       }
+    } catch (error) {
+      console.log('Failed to get public IP. Exiting...');
+      process.exit(1);
     }
-    
-    // Fallback to localhost if no external IP found
     return '127.0.0.1';
   }
 

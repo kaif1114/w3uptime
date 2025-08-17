@@ -7,6 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage, SignupIncomingMessage } from "common/types";
+import "dotenv/config";
 
 const ws = new WebSocketServer({ port: 8080 });
 
@@ -25,9 +26,7 @@ ws.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
   socket.on("message", (messageRaw) => {
     const message: IncomingMessage = JSON.parse(messageRaw.toString());
-    
 
-    
     const verified = verifyMessage(
       message.signature,
       JSON.stringify(message.data),
@@ -42,7 +41,7 @@ ws.on("connection", (socket: WebSocket) => {
       );
       return;
     }
-  
+
     if (message.type === "signup") {
       handleSignup(message.data, socket);
     } else if (message.type === "validate") {
@@ -59,7 +58,6 @@ ws.on("connection", (socket: WebSocket) => {
     );
   });
 });
-
 
 //for now the hub sends all of the monitors to all of the validators every 60 seconds, later on we will need to implement efficient algorithm for distributing the monitors to the validators
 setInterval(async () => {
@@ -132,21 +130,50 @@ function verifyMessage(
   }
 }
 
+async function getGeoLocation(ip: string) {
+  const response = await fetch(
+    `https://ipgeolocation.abstractapi.com/v1/?api_key=${process.env.ABSTRACTAPI_KEY}&ip_address=${ip}`
+  );
+  const data = await response.json();
+  return data;
+}
+
 async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
   try {
     let validator = await prisma.user.findFirst({
       where: {
         walletAddress: message.walletAddress.toLowerCase(),
       },
+      include: {
+        geoLocation: true,
+      },
     });
-   
- 
+
     if (!validator) {
+      const geoLocation = await getGeoLocation(message.ip);
+      const newGeoLocation = await prisma.geoLocation.create({
+        data: {
+          ip: message.ip,
+          country: geoLocation.country.toLowerCase(),
+          countryCode: geoLocation.country_code,
+          region: geoLocation.region,
+          regionCode: geoLocation.region_code,
+          city: geoLocation.city.toLowerCase(),
+          postalCode: geoLocation.postal_code,
+          continent: geoLocation.continent.toLowerCase(),
+          continentCode: geoLocation.continent_code,
+          latitude: geoLocation.latitude,
+          longitude: geoLocation.longitude,
+          timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
+          flag: geoLocation.flag.svg || null,
+          updatedAt: new Date(),
+        },
+      });
       const newValidator = await prisma.user.create({
         data: {
           publicKey: message.publicKey,
           walletAddress: message.walletAddress.toLowerCase(),
-          ip: message.ip,
+          geoLocationId: newGeoLocation.id,
         },
       });
 
@@ -167,30 +194,54 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       });
       return;
     }
-
-    // Update existing validator's IP address
-    const updatedValidator = await prisma.user.update({
-      where: {
-        id: validator.id,
-      },
-      data: {
-        ip: message.ip,
-        publicKey: message.publicKey,
-      },
-    });
+    const hasIpChanged = validator?.geoLocation?.ip !== message.ip;
+    if (hasIpChanged) {
+      const oldGeoLocationId = validator.geoLocationId;
+      const geoLocation = await getGeoLocation(message.ip);
+      await prisma.geoLocation.upsert({
+        where: {
+          userId: validator.id,
+        },
+        update: {
+          updatedAt: new Date(),
+        },
+        data: {
+          ip: message.ip,
+          country: geoLocation.country.toLowerCase(),
+          countryCode: geoLocation.country_code,
+          region: geoLocation.region,
+          regionCode: geoLocation.region_code,
+          city: geoLocation.city.toLowerCase(),
+          postalCode: geoLocation.postal_code,
+          continent: geoLocation.continent.toLowerCase(),
+          continentCode: geoLocation.continent_code,
+          latitude: geoLocation.latitude,
+          longitude: geoLocation.longitude,
+          timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
+          flag: geoLocation.flag.svg || null,
+          userId: validator.id,
+          updatedAt: new Date(),
+        },
+      });
+      await prisma.geoLocation.delete({
+        where: {
+          id: oldGeoLocationId,
+        },
+      });
+    }
 
     socket.send(
       JSON.stringify({
         type: "signup",
         data: {
-          validatorId: updatedValidator.id,
+          validatorId: validator.id,
           callbackId: uuidv7(),
         },
       })
     );
     validators.push({
-      validatorId: updatedValidator.id,
-      publicKey: updatedValidator.publicKey,
+      validatorId: validator.id,
+      publicKey: validator.publicKey,
       socket: socket,
       ip: message.ip,
     });
@@ -212,4 +263,3 @@ ws.on("error", (error) => {
 ws.on("listening", () => {
   console.log("Server is running on port 8080");
 });
-
