@@ -14,14 +14,14 @@ import "dotenv/config";
 async function checkAuthentication(req: http.IncomingMessage): Promise<string | null> {
   const cookies = parseCookies(req.headers.cookie || "");
   const sessionId = cookies.sessionId;
-  
+  console.log(sessionId);
   if (!sessionId) {
     return null;
   }
 
   try {
     const session = await prisma.session.findUnique({
-      where: { id: sessionId }
+      where: {  sessionId }
     });
 
     if (!session || session.expiresAt < new Date()) {
@@ -98,9 +98,20 @@ const httpServer = http.createServer(async (req, res) => {
     }
 
     try {
-      const countryValidators = validators.filter(v => 
-        v.location.countryCode.toLowerCase() === countryCode.toLowerCase()
-      );
+      const countryValidators = validators
+        .filter(v => v.location.countryCode.toLowerCase() === countryCode.toLowerCase())
+        .map(v => ({
+          validatorId: v.validatorId,
+          location: {
+            country: v.location.country,
+            countryCode: v.location.countryCode,
+            region: v.location.region,
+            city: v.location.city,
+            continent: v.location.continent,
+            continentCode: v.location.continentCode,
+            flag: v.location.flag
+          }
+        }));
       
       res.writeHead(200);
       res.end(JSON.stringify({ validators: countryValidators }));
