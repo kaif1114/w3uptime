@@ -15,7 +15,22 @@ const validators: {
   validatorId: string;
   publicKey: string;
   socket: WebSocket;
-  ip: string;
+  location:{
+    ip: string,
+    country: string,
+    countryCode: string,
+    region: string,
+    regionCode: string,
+    city: string,
+    postalCode: string,
+    continent: string,
+    continentCode: string,
+    latitude: number,
+    longitude: number,
+    timezoneAbbreviation: string | null,
+    flag: string | null,
+
+  }
 }[] = [];
 const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
   {};
@@ -190,7 +205,22 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
         validatorId: newValidator.id,
         publicKey: newValidator.publicKey,
         socket: socket,
-        ip: message.ip,
+        location:{
+          ip: message.ip,
+          country: geoLocation.country,
+          countryCode: geoLocation.country_code,
+          region: geoLocation.region,
+          regionCode: geoLocation.region_code,
+          city: geoLocation.city,
+          postalCode: geoLocation.postal_code,
+          continent: geoLocation.continent,
+          continentCode: geoLocation.continent_code,
+          latitude: geoLocation.latitude,
+          longitude: geoLocation.longitude,
+          timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
+          flag: geoLocation.flag.svg || null,
+        }
+       
       });
       return;
     }
@@ -244,7 +274,21 @@ async function handleSignup(message: SignupIncomingMessage, socket: WebSocket) {
       validatorId: validator.id,
       publicKey: validator.publicKey,
       socket: socket,
-      ip: message.ip,
+      location:{
+        ip: message.ip,
+        country: validator.geoLocation.country,
+        countryCode: validator.geoLocation.countryCode,
+        region: validator.geoLocation.region,
+        regionCode: validator.geoLocation.regionCode,
+        city: validator.geoLocation.city,
+        postalCode: validator.geoLocation.postalCode,
+        continent: validator.geoLocation.continent,
+        continentCode: validator.geoLocation.continentCode,
+        latitude: validator.geoLocation.latitude,
+        longitude: validator.geoLocation.longitude,
+        timezoneAbbreviation: validator.geoLocation.timezoneAbbreviation,
+        flag: validator.geoLocation.flag,
+      }
     });
   } catch (error) {
     console.error(error);

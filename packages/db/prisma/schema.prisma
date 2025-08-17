@@ -20,7 +20,7 @@ model User {
   sessions           Session[]
   comments           Comment[]
   monitors           Monitor[]
-  monitorTicks       monitorTick[]
+  monitorTicks       MonitorTick[]
   escalationPolicies EscalationPolicy[]
   geoLocationId      String?            @unique
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
@@ -61,19 +61,30 @@ model Monitor {
   escalationPolicy    EscalationPolicy?   @relation(fields: [escalationPolicyId], references: [id])
   Incident            Incident?
   user                User                @relation(fields: [userId], references: [id])
-  monitorTicks        monitorTick[]
+  monitorTicks        MonitorTick[]
   statusPageSections  StatusPageSection[]
 }
 
-model monitorTick {
-  id          String            @id @default(uuid())
-  monitorId   String
-  validatorId String
-  status      MonitorTickStatus
-  latency     Float
-  createdAt   DateTime          @default(now())
-  monitor     Monitor           @relation(fields: [monitorId], references: [id])
-  user        User              @relation(fields: [validatorId], references: [id])
+//IMPORTANT
+
+//storing the location data in monitorTick as well even if there we can join it from monitorTick -> userId -> geoLocation but since we will be using timescale aggregation this will cause a lot of joins and slow down the queries causing performance issues
+//we need to store the geolocation reference for user(validator) because if we don't we will need ip address lookup from api on every sign up resulting in a lot of api calls for getting geolocation data and ip address does not change very often, if it does we get new geolocation data from api and update in database for that user.
+// we will be needing geolocation data for a user(validator) to provide geographical insights on the distributed network of validators
+
+model MonitorTick { 
+  id            String            @id @default(uuid())
+  monitorId     String
+  validatorId   String
+  status        MonitorTickStatus
+  latency       Float
+  longitude     Float
+  latitude      Float
+  countryCode   String
+  continentCode String
+  city          String
+  createdAt     DateTime          @default(now())
+  monitor       Monitor           @relation(fields: [monitorId], references: [id])
+  user          User              @relation(fields: [validatorId], references: [id])
 }
 
 model EscalationPolicy {
