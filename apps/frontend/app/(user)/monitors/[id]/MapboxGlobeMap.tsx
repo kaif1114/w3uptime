@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import Map, { Source, Layer, MapRef, ViewState, MapEvent } from 'react-map-gl';
+import Map, { Source, Layer } from 'react-map-gl/mapbox';
+import type { MapRef, ViewState } from 'react-map-gl/mapbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,8 +33,8 @@ interface MapboxGlobeMapProps {
   validators: ValidatorData[];
 }
 
-// Mapbox public token (replace with your own for production)
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
@@ -44,12 +45,18 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     latitude: 20,
     zoom: 1.5,
     bearing: 0,
-    pitch: 0
+    pitch: 0,
+    padding: {
+      top: 100,
+      left: 100,
+      bottom: 100,
+      right: 100
+    }
   });
 
   // Group validators by country
   const countryData = useMemo(() => {
-    const countryMap = new Map<string, CountryData>();
+    const countryMap = new globalThis.Map<string, CountryData>();
     
     validators.forEach(validator => {
       const countryName = validator.country;
@@ -72,12 +79,12 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     });
 
     // Calculate average latency for each country
-    countryMap.forEach(country => {
-      const totalLatency = country.validators.reduce((sum, v) => sum + v.latency, 0);
+    countryMap.forEach((country: CountryData) => {
+      const totalLatency = country.validators.reduce((sum: number, v: ValidatorData) => sum + v.latency, 0);
       country.avgLatency = Math.round(totalLatency / country.validators.length);
     });
 
-    return Array.from(countryMap.values()).sort((a, b) => b.onlineCount - a.onlineCount);
+    return Array.from(countryMap.values()).sort((a: CountryData, b: CountryData) => b.onlineCount - a.onlineCount);
   }, [validators]);
 
   const stats = useMemo(() => {
@@ -93,7 +100,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [validators, countryData]);
 
   const selectedCountryData = useMemo(() => {
-    return countryData.find(country => country.name === selectedCountry);
+    return countryData.find((country: CountryData) => country.name === selectedCountry);
   }, [countryData, selectedCountry]);
 
   // Create GeoJSON for validator points
@@ -118,18 +125,18 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [validators]);
 
   // Handle map click events
-  const onMapClick = useCallback((event: MapEvent) => {
+  const onMapClick = useCallback((event: any) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const features = map.queryRenderedFeatures(event.point, {
+    const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-fills']
     });
 
     if (features.length > 0) {
       const countryName = features[0].properties?.NAME;
       if (countryName) {
-        const countryInData = countryData.find(c => c.name === countryName);
+        const countryInData = countryData.find((c: CountryData) => c.name === countryName);
         if (countryInData) {
           setSelectedCountry(selectedCountry === countryName ? null : countryName);
         }
@@ -138,11 +145,11 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [countryData, selectedCountry]);
 
   // Handle map hover events
-  const onMapMouseMove = useCallback((event: MapEvent) => {
+  const onMapMouseMove = useCallback((event: any) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const features = map.queryRenderedFeatures(event.point, {
+    const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-fills']
     });
 
@@ -163,7 +170,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
 
     try {
       const currentProjection = map.getProjection();
-      const newProjection = currentProjection?.name === 'globe' ? { name: 'mercator' } : { name: 'globe' };
+      const newProjection = currentProjection?.name === 'globe' ? 'mercator' : 'globe';
       map.setProjection(newProjection);
     } catch (error) {
       console.warn('Projection toggle not supported:', error);
@@ -188,7 +195,13 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
       latitude: 20,
       zoom: 1.5,
       bearing: 0,
-      pitch: 0
+      pitch: 0,
+      padding: {
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0
+      }
     });
   }, []);
 
@@ -200,8 +213,8 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
       
       if (countryValidators.length > 0) {
         // Calculate bounds for the country
-        const lngs = countryValidators.map(v => v.lng);
-        const lats = countryValidators.map(v => v.lat);
+        const lngs = countryValidators.map((v: ValidatorData) => v.lng);
+        const lats = countryValidators.map((v: ValidatorData) => v.lat);
         
         const minLng = Math.min(...lngs);
         const maxLng = Math.max(...lngs);
@@ -217,9 +230,9 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [selectedCountryData]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <span className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
             Global Validator Network
@@ -229,13 +242,12 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
             <Badge variant="outline">{stats.countries} Countries</Badge>
             <Badge variant="outline">{stats.avgLatency}ms Avg</Badge>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        </div>
+      </div>
+        <div className="space-y-6">
           {/* Mapbox 3D Globe */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="h-96 rounded-lg overflow-hidden relative border">
+          <div className="space-y-4">
+            <div className="h-screen rounded-lg overflow-hidden relative border">
               <Map
                 ref={mapRef}
                 {...viewState}
@@ -244,10 +256,8 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
                 onMouseMove={onMapMouseMove}
                 mapboxAccessToken={MAPBOX_TOKEN}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-                projection={{
-                  name: 'globe'
-                }}
+                mapStyle="mapbox://styles/mapbox/standard"
+                projection="globe"
                 fog={{
                   "color": "#220b30",
                   "high-color": "#245cdf", 
@@ -404,7 +414,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
           </div>
 
           {/* Country Details Panel */}
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Global Stats */}
             <div className="space-y-2">
               <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
@@ -473,7 +483,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Validators</h4>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {selectedCountryData.validators.map(validator => (
+                    {selectedCountryData.validators.map((validator: ValidatorData) => (
                       <div key={validator.id} className="flex items-center justify-between text-xs p-2 bg-muted rounded">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
@@ -500,7 +510,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
             <div className="space-y-2">
               <h3 className="font-semibold text-sm text-muted-foreground">TOP COUNTRIES</h3>
               <div className="space-y-1">
-                {countryData.slice(0, 5).map(country => (
+                {countryData.slice(0, 5).map((country: CountryData) => (
                   <div 
                     key={country.name}
                     className="flex items-center justify-between text-sm p-2 hover:bg-muted rounded cursor-pointer"
@@ -521,7 +531,6 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
   );
 }
