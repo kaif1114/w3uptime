@@ -29,15 +29,8 @@ export default async function MonitorDetailsPage({ params }: MonitorDetailsPageP
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <Link href="/monitors">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Monitors
-          </Button>
-        </Link>
-      </div>
+    <div className="container mx-auto px-4 ">
+
       
       <MonitorDetails monitorId={monitorId} />
     </div>

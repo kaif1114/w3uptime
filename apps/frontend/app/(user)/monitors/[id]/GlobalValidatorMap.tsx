@@ -115,71 +115,172 @@ export function GlobalValidatorMap({ validators }: GlobalValidatorMapProps) {
               {/* World Map Background */}
               <div className="absolute inset-0 bg-gradient-to-r from-green-800/20 via-yellow-800/20 to-green-800/20"></div>
               
-              {/* Simulated World Map with Countries */}
+              {/* Realistic World Map with Countries */}
               <svg
                 viewBox="0 0 1000 500"
                 className="w-full h-full"
                 style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1))' }}
               >
-                {/* Major Country Shapes (simplified) */}
-                {countryData.map((country, index) => {
+                {/* World Map Background Continents */}
+                <defs>
+                  <linearGradient id="oceanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor:'#1e3a8a', stopOpacity:0.8}} />
+                    <stop offset="50%" style={{stopColor:'#3b82f6', stopOpacity:0.6}} />
+                    <stop offset="100%" style={{stopColor:'#1e40af', stopOpacity:0.8}} />
+                  </linearGradient>
+                  <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor:'#065f46', stopOpacity:0.3}} />
+                    <stop offset="100%" style={{stopColor:'#047857', stopOpacity:0.2}} />
+                  </linearGradient>
+                </defs>
+
+                {/* Ocean background */}
+                <rect width="1000" height="500" fill="url(#oceanGradient)" />
+
+                {/* Simplified continent shapes */}
+                {/* North America */}
+                <path d="M50 80 Q120 60 180 80 Q220 100 250 120 Q280 140 300 180 Q320 220 290 250 Q250 270 200 260 Q150 250 100 220 Q50 180 50 120 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+                
+                {/* South America */}
+                <path d="M250 280 Q270 300 280 340 Q290 380 280 420 Q270 460 250 480 Q230 470 220 440 Q210 400 220 360 Q230 320 240 300 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+                
+                {/* Europe */}
+                <path d="M420 80 Q480 70 520 90 Q540 110 530 140 Q520 160 480 170 Q440 175 410 160 Q400 140 410 120 Q420 100 420 80 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+                
+                {/* Africa */}
+                <path d="M440 200 Q480 190 520 210 Q540 240 530 280 Q520 320 510 360 Q500 400 480 420 Q460 415 450 380 Q440 340 445 300 Q450 260 440 230 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+                
+                {/* Asia */}
+                <path d="M550 80 Q650 70 750 90 Q820 110 860 140 Q880 170 870 200 Q850 230 800 240 Q750 245 700 235 Q650 225 600 210 Q550 190 540 150 Q545 120 550 80 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+                
+                {/* Australia */}
+                <path d="M750 350 Q800 340 840 360 Q860 380 850 400 Q830 415 800 410 Q770 405 750 390 Q740 375 750 350 Z" 
+                      fill="url(#landGradient)" stroke="#10b981" strokeWidth="1" opacity="0.4"/>
+
+                {/* Country positioning with proper geographical layout */}
+                {countryData.map((country) => {
                   const isSelected = selectedCountry === country.name;
                   const hasValidators = country.validators.length > 0;
                   
-                  // Calculate position based on country (simplified positioning)
+                  // Realistic geographical positions based on actual world map coordinates
                   const positions = {
-                    'United States': { x: 200, y: 150 },
-                    'Canada': { x: 180, y: 100 },
-                    'United Kingdom': { x: 450, y: 130 },
-                    'Germany': { x: 480, y: 140 },
-                    'France': { x: 460, y: 160 },
-                    'Japan': { x: 800, y: 180 },
-                    'Australia': { x: 820, y: 350 },
-                    'Brazil': { x: 300, y: 320 },
-                    'India': { x: 650, y: 220 },
-                    'China': { x: 750, y: 160 },
-                    'South Africa': { x: 520, y: 380 },
-                    'Russia': { x: 600, y: 100 }
+                    // North America
+                    'United States': { x: 180, y: 160 },
+                    'Canada': { x: 160, y: 120 },
+                    'Mexico': { x: 150, y: 200 },
+                    
+                    // South America  
+                    'Brazil': { x: 280, y: 340 },
+                    'Argentina': { x: 260, y: 400 },
+                    'Peru': { x: 240, y: 320 },
+                    'Colombia': { x: 250, y: 280 },
+                    'Chile': { x: 240, y: 420 },
+                    
+                    // Europe
+                    'United Kingdom': { x: 430, y: 120 },
+                    'Germany': { x: 470, y: 130 },
+                    'France': { x: 450, y: 140 },
+                    'Spain': { x: 430, y: 160 },
+                    'Italy': { x: 480, y: 160 },
+                    'Netherlands': { x: 460, y: 120 },
+                    'Sweden': { x: 480, y: 100 },
+                    'Poland': { x: 490, y: 120 },
+                    
+                    // Africa
+                    'South Africa': { x: 490, y: 380 },
+                    'Nigeria': { x: 460, y: 280 },
+                    'Egypt': { x: 510, y: 240 },
+                    'Morocco': { x: 430, y: 230 },
+                    'Kenya': { x: 520, y: 320 },
+                    
+                    // Asia
+                    'China': { x: 720, y: 180 },
+                    'Japan': { x: 780, y: 170 },
+                    'India': { x: 650, y: 210 },
+                    'South Korea': { x: 760, y: 160 },
+                    'Thailand': { x: 680, y: 230 },
+                    'Singapore': { x: 690, y: 260 },
+                    'Hong Kong': { x: 730, y: 200 },
+                    'Russia': { x: 650, y: 120 },
+                    
+                    // Oceania
+                    'Australia': { x: 800, y: 380 },
+                    'New Zealand': { x: 840, y: 420 }
                   };
                   
-                  const pos = positions[country.name as keyof typeof positions] || { 
-                    x: 100 + (index * 80) % 800, 
-                    y: 100 + Math.floor(index / 10) * 60 
-                  };
+                  const pos = positions[country.name as keyof typeof positions];
+                  if (!pos) return null; // Skip countries not in our position map
 
                   return (
                     <g key={country.name}>
-                      {/* Country highlighting */}
+                      {/* Country base circle */}
                       <circle
                         cx={pos.x}
                         cy={pos.y}
-                        r={hasValidators ? "25" : "15"}
+                        r={hasValidators ? "30" : "20"}
                         fill={isSelected ? "#3b82f6" : hasValidators ? "#10b981" : "#6b7280"}
-                        fillOpacity={hasValidators ? "0.7" : "0.3"}
+                        fillOpacity={hasValidators ? "0.8" : "0.4"}
                         stroke={isSelected ? "#1d4ed8" : "#ffffff"}
-                        strokeWidth={isSelected ? "3" : "1"}
-                        className="cursor-pointer transition-all duration-200 hover:stroke-white hover:stroke-2"
+                        strokeWidth={isSelected ? "4" : "2"}
+                        className="cursor-pointer transition-all duration-300 hover:stroke-yellow-400 hover:stroke-3"
                         onClick={() => setSelectedCountry(isSelected ? null : country.name)}
                       />
                       
-                      {/* Validator dots within country */}
-                      {country.validators.slice(0, 5).map((validator, vIndex) => (
+                      {/* Country glow effect for active countries */}
+                      {hasValidators && (
                         <circle
-                          key={validator.id}
-                          cx={pos.x + (vIndex - 2) * 8}
-                          cy={pos.y + (vIndex % 2 === 0 ? -8 : 8)}
-                          r="3"
-                          fill={validator.status === 'good' ? '#10b981' : 
-                                validator.status === 'moderate' ? '#f59e0b' : 
-                                validator.status === 'offline' ? '#ef4444' : '#6b7280'}
+                          cx={pos.x}
+                          cy={pos.y}
+                          r="35"
+                          fill="none"
+                          stroke={isSelected ? "#3b82f6" : "#10b981"}
+                          strokeWidth="1"
+                          strokeOpacity="0.3"
                           className="animate-pulse"
                         />
-                      ))}
+                      )}
                       
-                      {/* Country label */}
+                      {/* Validator status indicators */}
+                      {country.validators.slice(0, 8).map((validator, vIndex) => {
+                        const angle = (vIndex / 8) * 2 * Math.PI;
+                        const radius = 18;
+                        const dotX = pos.x + Math.cos(angle) * radius;
+                        const dotY = pos.y + Math.sin(angle) * radius;
+                        
+                        return (
+                          <circle
+                            key={validator.id}
+                            cx={dotX}
+                            cy={dotY}
+                            r="4"
+                            fill={validator.status === 'good' ? '#10b981' : 
+                                  validator.status === 'moderate' ? '#f59e0b' : 
+                                  validator.status === 'offline' ? '#ef4444' : '#6b7280'}
+                            stroke="#ffffff"
+                            strokeWidth="1"
+                            className="animate-pulse"
+                          />
+                        );
+                      })}
+                      
+                      {/* Country label with background */}
+                      <rect
+                        x={pos.x - (country.name.length * 3)}
+                        y={pos.y + 38}
+                        width={country.name.length * 6}
+                        height="16"
+                        fill="rgba(0,0,0,0.7)"
+                        rx="8"
+                        ry="8"
+                      />
                       <text
                         x={pos.x}
-                        y={pos.y + 35}
+                        y={pos.y + 49}
                         textAnchor="middle"
                         className="fill-white text-xs font-medium"
                         style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
@@ -187,27 +288,75 @@ export function GlobalValidatorMap({ validators }: GlobalValidatorMapProps) {
                         {country.name}
                       </text>
                       
-                      {/* Validator count */}
+                      {/* Validator count badge */}
                       {hasValidators && (
-                        <text
-                          x={pos.x}
-                          y={pos.y + 5}
-                          textAnchor="middle"
-                          className="fill-white text-sm font-bold"
-                          style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
-                        >
-                          {country.validators.length}
-                        </text>
+                        <>
+                          <circle
+                            cx={pos.x}
+                            cy={pos.y}
+                            r="12"
+                            fill="rgba(0,0,0,0.8)"
+                            stroke="#ffffff"
+                            strokeWidth="2"
+                          />
+                          <text
+                            x={pos.x}
+                            y={pos.y + 5}
+                            textAnchor="middle"
+                            className="fill-white text-sm font-bold"
+                            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
+                          >
+                            {country.validators.length}
+                          </text>
+                        </>
                       )}
+                      
+                      {/* Connection lines for selected country */}
+                      {isSelected && country.validators.slice(0, 5).map((validator, vIndex) => {
+                        const angle = (vIndex / 5) * 2 * Math.PI;
+                        const radius = 50;
+                        const lineX = pos.x + Math.cos(angle) * radius;
+                        const lineY = pos.y + Math.sin(angle) * radius;
+                        
+                        return (
+                          <line
+                            key={`line-${validator.id}`}
+                            x1={pos.x}
+                            y1={pos.y}
+                            x2={lineX}
+                            y2={lineY}
+                            stroke="#3b82f6"
+                            strokeWidth="2"
+                            strokeOpacity="0.6"
+                            className="animate-pulse"
+                          />
+                        );
+                      })}
                     </g>
                   );
                 })}
               </svg>
               
-              {/* Instructions */}
-              <div className="absolute bottom-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
-                Click on countries to view validator details
+              {/* Instructions and Legend */}
+              <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-xs space-y-1">
+                <p className="font-semibold">🌍 Interactive World Map</p>
+                <p>• Click countries to view validator details</p>
+                <p>• Green: Active validators</p>
+                <p>• Blue: Selected country</p>
+                <p>• Gray: No validators</p>
               </div>
+              
+              {/* Selected country info overlay */}
+              {selectedCountryData && (
+                <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-sm max-w-48">
+                  <h4 className="font-semibold mb-2">{selectedCountryData.name}</h4>
+                  <div className="space-y-1 text-xs">
+                    <p>📍 {selectedCountryData.validators.length} validators</p>
+                    <p>✅ {selectedCountryData.onlineCount} online</p>
+                    <p>⚡ {selectedCountryData.avgLatency}ms avg</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Status Legend */}
