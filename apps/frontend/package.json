@@ -27,6 +27,7 @@
     "@tabler/icons-react": "^3.34.1",
     "@tanstack/react-query": "^5.84.2",
     "@tanstack/react-query-devtools": "^5.84.2",
+    "@types/react-map-gl": "^6.1.7",
     "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

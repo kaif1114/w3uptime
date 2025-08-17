@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import Map, { Source, Layer, MapRef } from 'react-map-gl';
+import Map, { Source, Layer, MapRef, ViewState, MapEvent } from 'react-map-gl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, Globe, Activity, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
-import type { MapboxEvent, ViewState } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface ValidatorData {
   id: string;
@@ -118,7 +118,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [validators]);
 
   // Handle map click events
-  const onMapClick = useCallback((event: MapboxEvent) => {
+  const onMapClick = useCallback((event: MapEvent) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
@@ -138,7 +138,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
   }, [countryData, selectedCountry]);
 
   // Handle map hover events
-  const onMapMouseMove = useCallback((event: MapboxEvent) => {
+  const onMapMouseMove = useCallback((event: MapEvent) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
@@ -161,9 +161,13 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const currentProjection = map.getProjection();
-    const newProjection = currentProjection.name === 'globe' ? 'mercator' : 'globe';
-    map.setProjection(newProjection);
+    try {
+      const currentProjection = map.getProjection();
+      const newProjection = currentProjection?.name === 'globe' ? { name: 'mercator' } : { name: 'globe' };
+      map.setProjection(newProjection);
+    } catch (error) {
+      console.warn('Projection toggle not supported:', error);
+    }
   }, []);
 
   const zoomIn = useCallback(() => {
@@ -241,13 +245,15 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
                 mapboxAccessToken={MAPBOX_TOKEN}
                 style={{ width: '100%', height: '100%' }}
                 mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-                projection="globe"
+                projection={{
+                  name: 'globe'
+                }}
                 fog={{
-                  "color": "#220b30", // Lower atmosphere
-                  "high-color": "#245cdf", // Upper atmosphere
-                  "horizon-blend": 0.02, // Exaggerate atmosphere (default is .1)
-                  "space-color": "#000b19", // Background color
-                  "star-intensity": 0.15 // Background star intensity (default is 0.35 at low zoomlevels )
+                  "color": "#220b30",
+                  "high-color": "#245cdf", 
+                  "horizon-blend": 0.02,
+                  "space-color": "#000b19",
+                  "star-intensity": 0.15
                 }}
               >
                 {/* Validator Points */}
