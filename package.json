@@ -7,7 +7,15 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "db:seed": "npm run db:seed -w packages/db"
+    "db:seed": "npm run db:seed -w packages/db",
+    "db:start": "docker-compose up timescaledb -d",
+    "db:stop": "docker-compose down",
+    "db:reset": "docker-compose down -v && docker-compose up timescaledb -d",
+    "db:logs": "docker-compose logs -f timescaledb",
+    "db:shell": "docker-compose exec timescaledb psql -U postgres -d myapp",
+    "pgadmin:start": "docker-compose up pgadmin -d",
+    "dev:services": "docker-compose up -d",
+    "dev:services:stop": "docker-compose down"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
