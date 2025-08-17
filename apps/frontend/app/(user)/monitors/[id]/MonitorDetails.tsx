@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { MonitorStatus } from "@/types/monitor";
 import Link from "next/link";
-import { GlobalValidatorMap } from "./GlobalValidatorMap";
+import { MapboxGlobeMap } from "./MapboxGlobeMap";
 import { GlobalLatencyChart } from "./GlobalLatencyChart";
 import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { RegionalStats } from "./RegionalStats";
@@ -277,7 +277,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
             {activeTab === 'global' && (
               <div className="space-y-6">
-                <GlobalValidatorMap validators={mockData.validators} />
+                <MapboxGlobeMap validators={mockData.validators} />
                 <GlobalLatencyChart 
                   data={mockData.latencyData} 
                   incidents={mockData.incidents.map(inc => ({
