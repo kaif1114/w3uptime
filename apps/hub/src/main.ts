@@ -78,6 +78,30 @@ const httpServer = http.createServer(async (req, res) => {
 
   if (pathname === '/validators') {
     try {
+      const allValidators = validators.map(v => ({
+        validatorId: v.validatorId,
+        location: {
+          country: v.location.country,
+          countryCode: v.location.countryCode,
+          region: v.location.region,
+          city: v.location.city,
+          continent: v.location.continent,
+          continentCode: v.location.continentCode,
+          flag: v.location.flag
+        }
+      }));
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({ validators: allValidators }));
+    } catch (error) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
+    return;
+  }
+
+  if (pathname === '/validators/count') {
+    try {
       const validatorCount = validators.length;
       res.writeHead(200);
       res.end(JSON.stringify({ count: validatorCount }));
