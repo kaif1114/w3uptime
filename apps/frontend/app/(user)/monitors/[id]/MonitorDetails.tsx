@@ -4,22 +4,18 @@
 import React, { useState } from 'react';
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
   Play, 
   Pause, 
   Send, 
   Calendar, 
   Globe,
-  TrendingUp, 
-  Clock,
   Activity,
   AlertTriangle,
   Edit3,
   BarChart3,
-  Shield,
-  Settings
+  Shield
 } from "lucide-react";
 import { MonitorStatus } from "@/types/monitor";
 import Link from "next/link";
@@ -60,18 +56,6 @@ function getStatusText(status: MonitorStatus): string {
   }
 }
 
-function getStatusVariant(status: MonitorStatus) {
-  switch (status) {
-    case "ACTIVE":
-      return "default";
-    case "PAUSED":
-      return "secondary";
-    case "DISABLED":
-      return "destructive";
-    default:
-      return "secondary";
-  }
-}
 
 type TabType = 'overview' | 'global' | 'uptime' | 'performance';
 

@@ -37,7 +37,7 @@ interface Incident {
 interface UptimeIncidentPanelProps {
   uptimeData: UptimeRecord[];
   incidents: Incident[];
-  monitorName: string;
+  monitorName?: string;
 }
 
 export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: UptimeIncidentPanelProps) {
@@ -96,15 +96,6 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
     return incidents.filter(incident => incident.status === 'ongoing');
   }, [incidents]);
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'low': return 'bg-blue-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'high': return 'bg-orange-500';
-      case 'critical': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
 
   const getSeverityVariant = (severity: string) => {
     switch (severity) {
