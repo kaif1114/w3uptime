@@ -11,7 +11,6 @@ import http from "http";
 import url from "url";
 import "dotenv/config";
 
-// Authentication functions
 async function checkAuthentication(req: http.IncomingMessage): Promise<string | null> {
   const cookies = parseCookies(req.headers.cookie || "");
   const sessionId = cookies.sessionId;
@@ -208,6 +207,8 @@ setInterval(async () => {
       CALLBACKS[callbackId] = async (message: IncomingMessage) => {
         if (message.type === "validate") {
           const { validatorId, status, latency } = message.data;
+          const validatorData = validators.find(v => v.validatorId === validatorId);
+          
           await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await tx.monitorTick.create({
               data: {
@@ -215,6 +216,11 @@ setInterval(async () => {
                 validatorId: validatorId,
                 status,
                 latency,
+                longitude: validatorData?.location.longitude || 0,
+                latitude: validatorData?.location.latitude || 0,
+                countryCode: validatorData?.location.countryCode || 'UNKNOWN',
+                continentCode: validatorData?.location.continentCode || 'UNKNOWN',
+                city: validatorData?.location.city || 'unknown',
                 createdAt: new Date(),
               },
             });
