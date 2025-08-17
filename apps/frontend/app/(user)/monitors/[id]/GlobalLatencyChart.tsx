@@ -232,7 +232,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
                   x={format(incident.start, timePeriod === '1h' || timePeriod === '6h' ? 'HH:mm' : 'MMM dd HH:mm')}
                   stroke="#ef4444"
                   strokeDasharray="5 5"
-                  label={{ value: "Incident", position: "topRight" }}
+                  label={{ value: "Incident", position: "top" }}
                 />
               ))}
 

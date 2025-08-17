@@ -233,7 +233,7 @@ export function generateIncidents(): Incident[] {
       title: 'High Latency in Asia-Pacific',
       description: 'Increased response times observed across Asia-Pacific region due to network congestion',
       startTime: subDays(new Date(), 2),
-      endTime: subDays(new Date(), 2) + 30 * 60 * 1000, // 30 minutes later
+      endTime: new Date(subDays(new Date(), 2).getTime() + 30 * 60 * 1000), // 30 minutes later
       severity: 'low',
       affectedRegions: ['Asia', 'Oceania'],
       status: 'resolved'
@@ -243,7 +243,7 @@ export function generateIncidents(): Incident[] {
       title: 'Partial Service Outage',
       description: 'Critical service disruption affecting North American validators',
       startTime: subDays(new Date(), 5),
-      endTime: subDays(new Date(), 5) + 45 * 60 * 1000, // 45 minutes later
+      endTime: new Date(subDays(new Date(), 5).getTime() + 45 * 60 * 1000), // 45 minutes later
       severity: 'high',
       affectedRegions: ['North America'],
       status: 'resolved'
@@ -253,7 +253,7 @@ export function generateIncidents(): Incident[] {
       title: 'API Rate Limiting',
       description: 'Temporary rate limiting implemented to prevent service degradation',
       startTime: subDays(new Date(), 10),
-      endTime: subDays(new Date(), 10) + 15 * 60 * 1000, // 15 minutes later
+      endTime: new Date(subDays(new Date(), 10).getTime() + 15 * 60 * 1000), // 15 minutes later
       severity: 'low',
       affectedRegions: ['Global'],
       status: 'resolved'
