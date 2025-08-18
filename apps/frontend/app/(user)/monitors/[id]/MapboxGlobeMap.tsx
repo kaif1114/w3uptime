@@ -251,6 +251,14 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
   }, [validators]);
 
+  // Simple list of countries with validators for highlighting
+  const countriesWithValidators = useMemo(() => {
+    // Map lowercase validator country names to title case for Mapbox matching
+    return countryData.map(country => {
+      // Convert "pakistan" to "Pakistan" for Mapbox NAME property
+      return country.name.charAt(0).toUpperCase() + country.name.slice(1).toLowerCase();
+    });
+  }, [countryData]);
 
   // Handle map click events
   const onMapClick = useCallback((event: any) => {
@@ -262,7 +270,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
 
     if (features.length > 0) {
-      const countryName = features[0].properties?.name;
+      const countryName = features[0].properties?.NAME || features[0].properties?.name;
       if (countryName) {
         const countryInData = countryData.find((c: MapboxCountryData) => c.name.toLowerCase() === countryName.toLowerCase());
         if (countryInData) {
@@ -287,8 +295,8 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       console.log('Feature properties:', feature.properties);
       console.log('Feature layer:', feature.layer?.id);
       
-      // Use the correct property name from Mapbox (from logs: name: "India")
-      const mapboxCountryName = feature.properties?.name || feature.properties?.name_en;
+      // Try both property names since different layers might use different properties
+      const mapboxCountryName = feature.properties?.NAME || feature.properties?.name || feature.properties?.name_en;
       
       console.log('Hovering over country:', mapboxCountryName);
       console.log('Available validator countries:', countryData.map(c => c.name));
@@ -518,14 +526,16 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     paint={{
                       'fill-color': [
                         'case',
-                        ['==', ['get', 'name'], selectedCountry || ''], '#3b82f6',
-                        ['==', ['get', 'name'], hoveredCountry || ''], '#10b981',
+                        ['==', ['get', 'NAME'], selectedCountry || ''], '#3b82f6',
+                        ['==', ['get', 'NAME'], hoveredCountry || ''], '#10b981',
+                        ['in', ['get', 'NAME'], ['literal', countriesWithValidators]], '#10b981',
                         'transparent'
                       ],
                       'fill-opacity': [
                         'case',
-                        ['==', ['get', 'name'], selectedCountry || ''], 0.6,
-                        ['==', ['get', 'name'], hoveredCountry || ''], 0.4,
+                        ['==', ['get', 'NAME'], selectedCountry || ''], 0.6,
+                        ['==', ['get', 'NAME'], hoveredCountry || ''], 0.4,
+                        ['in', ['get', 'NAME'], ['literal', countriesWithValidators]], 0.2,
                         0
                       ]
                     }}
@@ -545,7 +555,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     type="symbol"
                     source-layer="country_boundaries"
                     layout={{
-                      'text-field': ['get', 'name'],
+                      'text-field': ['get', 'NAME'],
                       'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
                       'text-size': [
                         'interpolate',
