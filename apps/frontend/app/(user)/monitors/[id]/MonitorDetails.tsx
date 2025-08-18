@@ -25,7 +25,6 @@ import { MapboxGlobeMap } from "./MapboxGlobeMap";
 import { RegionalStats } from "./RegionalStats";
 import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { mockData } from "./mockData";
-
 interface MonitorDetailsProps {
   monitorId: string;
 }
