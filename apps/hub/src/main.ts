@@ -3,7 +3,6 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { prisma } = require("db/client");
 import { ethers } from "ethers";
-import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
 import { 
