@@ -63,13 +63,25 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
   }
 
   // Transform data for chart
-  const chartData = timeseriesData.data.map(point => ({
-    time: new Date(point.time_bucket).getTime(),
-    timeFormatted: format(new Date(point.time_bucket), bucketSize.includes('day') ? 'MMM dd' : 'MMM dd HH:mm'),
-    latency: Math.round(Number(point.avg_latency) || 0),
-    uptime: Math.round(Number(point.uptime_percentage) || 0),
-    checks: Number(point.total_checks) || 0,
-  }));
+  const chartData = timeseriesData.data.map(point => {
+    // Handle invalid or empty time_bucket
+    const timeValue = point.time_bucket && typeof point.time_bucket === 'string' 
+      ? point.time_bucket 
+      : new Date().toISOString(); // fallback to current time
+    
+    const dateObj = new Date(timeValue);
+    const isValidDate = !isNaN(dateObj.getTime());
+    
+    return {
+      time: isValidDate ? dateObj.getTime() : Date.now(),
+      timeFormatted: isValidDate 
+        ? format(dateObj, bucketSize.includes('day') ? 'MMM dd' : 'MMM dd HH:mm')
+        : 'Invalid Date',
+      latency: Math.round(Number(point.avg_latency) || 0),
+      uptime: Math.round(Number(point.uptime_percentage) || 0),
+      checks: Number(point.total_checks) || 0,
+    };
+  });
 
   const formatTooltipValue = (value: unknown, name: string): [string, string] => {
     if (name === 'latency') return [`${value}ms`, 'Latency'];
