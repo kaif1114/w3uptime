@@ -28,8 +28,10 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "common": "^1.0.0",
+    "cookie-parser": "^1.4.7",
     "db": "^1.0.0",
     "dotenv": "^17.2.1",
     "ethers": "^6.15.0",

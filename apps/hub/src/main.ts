@@ -13,12 +13,12 @@ import {
   MonitorTickStatus 
 } from "common/types";
 import express from "express";
+import cookieParser from "cookie-parser";
 import http from "http";
 import "dotenv/config";
 
-async function checkAuthentication(req: http.IncomingMessage): Promise<string | null> {
-  const cookies = parseCookies(req.headers.cookie || "");
-  const sessionId = cookies.sessionId;
+async function checkAuthentication(req: express.Request): Promise<string | null> {
+  const sessionId = req.cookies?.sessionId;
   console.log(sessionId);
   if (!sessionId) {
     return null;
@@ -40,23 +40,13 @@ async function checkAuthentication(req: http.IncomingMessage): Promise<string | 
   }
 }
 
-function parseCookies(cookieHeader: string): { [key: string]: string } {
-  const cookies: { [key: string]: string } = {};
-  cookieHeader.split(';').forEach(cookie => {
-    const parts = cookie.trim().split('=');
-    if (parts.length === 2) {
-      cookies[parts[0]] = parts[1];
-    }
-  });
-  return cookies;
-}
-
 // Express server setup
 const app = express();
 const httpServer = http.createServer(app);
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -72,7 +62,7 @@ app.options('*', (req, res) => {
 
 // Authentication middleware
 const authenticateUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const userId = await checkAuthentication(req as any);
+  const userId = await checkAuthentication(req);
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
