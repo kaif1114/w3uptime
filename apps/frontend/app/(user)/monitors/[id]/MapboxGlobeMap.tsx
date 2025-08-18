@@ -7,7 +7,7 @@ import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapRef, ViewState } from 'react-map-gl/mapbox';
-import Map, { Layer, Source } from 'react-map-gl/mapbox';
+import Map, { Layer, Source, Marker } from 'react-map-gl/mapbox';
 
 interface MapboxValidatorData {
   id: string;
@@ -37,6 +37,20 @@ interface MapboxGlobeMapProps {
 
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+// Available avatars (17 avatars available)
+const AVAILABLE_AVATARS = Array.from({ length: 17 }, (_, i) => `/avatar-${i + 1}.png`);
+
+// Function to assign avatar to validator based on their ID
+function getValidatorAvatar(validatorId: string): string {
+  // Create a simple hash from the validator ID to ensure consistent avatar assignment
+  let hash = 0;
+  for (let i = 0; i < validatorId.length; i++) {
+    hash = ((hash << 5) - hash + validatorId.charCodeAt(i)) & 0xffffffff;
+  }
+  const avatarIndex = Math.abs(hash) % AVAILABLE_AVATARS.length;
+  return AVAILABLE_AVATARS[avatarIndex];
+}
 
 // Approximate coordinates for major cities and countries
 // In production, you might want to use a geocoding service or store coordinates in the database
@@ -100,6 +114,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   const [hoveredValidator, setHoveredValidator] = useState<MapboxValidatorData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<string | null>(null);
+  const [selectedValidator, setSelectedValidator] = useState<MapboxValidatorData | null>(null);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 0,
     latitude: 20,
@@ -402,6 +417,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
     setSelectedCountry(null);
     setSelectedContinent(null);
+    setSelectedValidator(null);
   }, []);
 
   // Focus on continent
@@ -559,6 +575,72 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     }}
                   />
                 </Source>
+
+                {/* Avatar markers for individual validators */}
+                {validators.map((validator) => (
+                  <Marker
+                    key={validator.id}
+                    longitude={validator.lng}
+                    latitude={validator.lat}
+                    anchor="center"
+                  >
+                    <div
+                      className={`relative cursor-pointer transform transition-all duration-300 hover:scale-110 ${
+                        selectedValidator?.id === validator.id 
+                          ? 'scale-125 z-50' 
+                          : 'hover:z-40'
+                      } drop-shadow-lg hover:drop-shadow-xl`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedValidator(
+                          selectedValidator?.id === validator.id ? null : validator
+                        );
+                        setSelectedCountry(null); // Clear country selection when selecting validator
+                      }}
+                      onMouseEnter={(e) => {
+                        setHoveredValidator(validator);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTooltipPosition({ 
+                          x: rect.left + rect.width / 2, 
+                          y: rect.top 
+                        });
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredValidator(null);
+                        setTooltipPosition(null);
+                      }}
+                    >
+                      <div 
+                        className={`w-10 h-10 rounded-full border-3 overflow-hidden shadow-xl ${
+                          selectedValidator?.id === validator.id
+                            ? 'border-blue-400 shadow-blue-400/60 ring-2 ring-blue-300/50'
+                            : 'border-white shadow-black/40 hover:border-gray-200'
+                        } bg-white relative`}
+                        style={{
+                          background: selectedValidator?.id === validator.id 
+                            ? 'linear-gradient(135deg, #60a5fa, #3b82f6)' 
+                            : 'white',
+                          backdropFilter: 'blur(4px)'
+                        }}
+                      >
+                        <img
+                          src={getValidatorAvatar(validator.id)}
+                          alt={`Validator in ${validator.city}, ${validator.country}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to a default avatar if image fails to load
+                            (e.target as HTMLImageElement).src = '/avatar-1.png';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Online status indicator */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm">
+                        <div className="absolute inset-1 bg-green-400 rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                  </Marker>
+                ))}
               </Map>
 
               {/* Map Controls */}
@@ -597,8 +679,87 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                 </Button>
               </div>
 
+              {/* Selected validator info overlay */}
+              {selectedValidator && (
+                <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-sm max-w-80">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full border-2 border-blue-400 overflow-hidden">
+                      <img
+                        src={getValidatorAvatar(selectedValidator.id)}
+                        alt={`Validator avatar`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-base">Validator Details</h4>
+                      <div className="text-green-400 text-sm flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Online
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {/* Location Information */}
+                    <div className="border-b border-white/20 pb-3">
+                      <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Location</h5>
+                      <div className="flex items-center gap-2 mb-1">
+                        {selectedValidator.flag && (
+                          <img src={selectedValidator.flag} alt="" className="w-5 h-3 rounded-sm" />
+                        )}
+                        <span className="font-medium">{selectedValidator.country}</span>
+                      </div>
+                      <div className="text-gray-300 text-sm">
+                        📍 {selectedValidator.city}
+                      </div>
+                      <div className="text-gray-400 text-xs mt-1">
+                        🌍 {selectedValidator.continent}
+                      </div>
+                    </div>
+
+                    {/* Technical Details */}
+                    <div className="border-b border-white/20 pb-3">
+                      <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Technical Info</h5>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Validator ID:</span>
+                          <span className="font-mono text-xs">{selectedValidator.id.slice(0, 8)}...</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Status:</span>
+                          <span className="text-green-400">Active</span>
+                        </div>
+                        {selectedValidator.latency && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Latency:</span>
+                            <span>{selectedValidator.latency}ms</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Coordinates */}
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Coordinates</h5>
+                      <div className="text-xs text-gray-400 font-mono">
+                        <div>Lat: {selectedValidator.lat.toFixed(4)}°</div>
+                        <div>Lng: {selectedValidator.lng.toFixed(4)}°</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Close button */}
+                  <button
+                    onClick={() => setSelectedValidator(null)}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               {/* Selected country info overlay */}
-              {selectedCountryData && (
+              {selectedCountryData && !selectedValidator && (
                 <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-sm max-w-72">
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
                     {selectedCountryData.validators[0]?.flag && (
@@ -635,8 +796,8 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-              {/* Country tooltip on hover */}
-              {hoveredValidator && tooltipPosition && (
+              {/* Validator/Country tooltip on hover */}
+              {hoveredValidator && tooltipPosition && !selectedValidator && (
                 <div 
                   className="absolute pointer-events-none bg-black/90 text-white p-3 rounded-md text-sm z-50 max-w-72"
                   style={{
@@ -645,28 +806,65 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     transform: 'translateY(-100%)'
                   }}
                 >
-                  <div className="font-semibold flex items-center gap-2 mb-2">
-                    {hoveredValidator.flag && (
-                      <img src={hoveredValidator.flag} alt="" className="w-5 h-3 rounded-sm" />
-                    )}
-                    {hoveredValidator.country}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-green-400 text-sm">
-                      ● {(hoveredValidator as any).validatorCount || 1} Validator{((hoveredValidator as any).validatorCount || 1) > 1 ? 's' : ''} Online
-                    </div>
-                    {(hoveredValidator as any).cities && (hoveredValidator as any).cities.length > 0 && (
-                      <div>
-                        <div className="text-gray-300 text-xs mb-1">Cities:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {[...(new Set((hoveredValidator as any).cities))].map((city: string, index: number) => (
-                            <span key={city} className="bg-gray-700 px-2 py-1 rounded text-xs">
-                              {city.charAt(0).toUpperCase() + city.slice(1)}
-                            </span>
-                          ))}
+                  {/* Check if this is an individual validator tooltip or country tooltip */}
+                  {(hoveredValidator as any).validatorCount ? (
+                    // Country tooltip (aggregated data)
+                    <>
+                      <div className="font-semibold flex items-center gap-2 mb-2">
+                        {hoveredValidator.flag && (
+                          <img src={hoveredValidator.flag} alt="" className="w-5 h-3 rounded-sm" />
+                        )}
+                        {hoveredValidator.country}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-green-400 text-sm">
+                          ● {(hoveredValidator as any).validatorCount} Validator{(hoveredValidator as any).validatorCount > 1 ? 's' : ''} Online
+                        </div>
+                        {(hoveredValidator as any).cities && (hoveredValidator as any).cities.length > 0 && (
+                          <div>
+                            <div className="text-gray-300 text-xs mb-1">Cities:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {[...(new Set((hoveredValidator as any).cities))].map((city: string) => (
+                                <span key={city} className="bg-gray-700 px-2 py-1 rounded text-xs">
+                                  {city.charAt(0).toUpperCase() + city.slice(1)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    // Individual validator tooltip
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/30">
+                          <img
+                            src={getValidatorAvatar(hoveredValidator.id)}
+                            alt="Validator avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-sm">Validator</div>
+                          <div className="text-green-400 text-xs flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            Online
+                          </div>
                         </div>
                       </div>
-                    )}
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          {hoveredValidator.flag && (
+                            <img src={hoveredValidator.flag} alt="" className="w-4 h-2.5 rounded-sm" />
+                          )}
+                          <span className="font-medium">{hoveredValidator.country}</span>
+                        </div>
+                        <div className="text-gray-300">📍 {hoveredValidator.city}</div>
+                        <div className="text-gray-400 font-mono">{hoveredValidator.id.slice(0, 8)}...</div>
+                      </div>
+                    </>
+                  )}
                   </div>
                 </div>
               )}
