@@ -143,16 +143,13 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     
     validatorData.forEach(country => {
       country.validators.forEach(validator => {
-        // For now, we'll use approximate coordinates based on country/city
-        // In a real implementation, you might want to geocode or use stored coordinates
-        const coords = getApproximateCoordinates(validator.location.country, validator.location.city);
-        
+        // Use real coordinates from the hub server
         transformedValidators.push({
           id: validator.validatorId,
           country: validator.location.country,
           city: validator.location.city,
-          lat: coords.lat,
-          lng: coords.lng,
+          lat: validator.location.latitude,
+          lng: validator.location.longitude,
           status: 'online',
           countryCode: validator.location.countryCode,
           continent: validator.location.continent,
@@ -197,13 +194,12 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       name: country.name,
       code: country.code,
       validators: country.validators.map(validator => {
-        const coords = getApproximateCoordinates(validator.location.country, validator.location.city);
         return {
           id: validator.validatorId,
           country: validator.location.country,
           city: validator.location.city,
-          lat: coords.lat,
-          lng: coords.lng,
+          lat: validator.location.latitude,
+          lng: validator.location.longitude,
           status: 'online' as const,
           countryCode: validator.location.countryCode,
           continent: validator.location.continent,

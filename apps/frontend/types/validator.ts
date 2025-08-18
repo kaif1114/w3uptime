@@ -5,6 +5,8 @@ export interface ValidatorLocation {
   city: string;
   continent: string;
   continentCode: string;
+  latitude: number;
+  longitude: number;
   flag: string | null;
 }
 

@@ -119,6 +119,8 @@ app.get('/validators', authenticateUser, (req, res) => {
         city: v.location.city,
         continent: v.location.continent,
         continentCode: v.location.continentCode,
+        latitude: v.location.latitude,
+        longitude: v.location.longitude,
         flag: v.location.flag
       }
     }));
