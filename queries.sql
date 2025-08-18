@@ -306,7 +306,7 @@ CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     bucket_size TEXT DEFAULT '1 hour'
 )
 RETURNS TABLE(
-    time_bucket TIMESTAMP,
+    time_bucket TIMESTAMP WITH TIME ZONE,
     avg_latency NUMERIC,
     uptime_percentage NUMERIC,
     total_checks BIGINT
