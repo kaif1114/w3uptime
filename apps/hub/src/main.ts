@@ -12,7 +12,7 @@ import {
   MonitorTickBatchResponse, 
   MonitorTickStatus 
 } from "common/types";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import http from "http";
@@ -58,12 +58,20 @@ app.use((req, res, next) => {
   next();
 });
 
-const authenticateUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+declare global {
+  namespace Express {
+    interface Request {
+      userId: string;
+    }
+  }
+}
+
+const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
   const userId = await checkAuthentication(req);
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  (req as any).userId = userId;
+  req.userId = userId;
   next();
 };
 
