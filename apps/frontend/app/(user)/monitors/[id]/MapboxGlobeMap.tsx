@@ -2,34 +2,37 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useValidatorsByCountryAggregated } from '@/hooks/useValidators';
+import { Validator } from '@/types/validator';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapRef, ViewState } from 'react-map-gl/mapbox';
 import Map, { Layer, Source } from 'react-map-gl/mapbox';
 
-interface ValidatorData {
+interface MapboxValidatorData {
   id: string;
   country: string;
   city: string;
   lat: number;
   lng: number;
-  latency: number;
-  status: 'online' | 'offline' | 'moderate' | 'good';
-  lastChecked: Date;
-  ip: string;
+  status: 'online';
+  countryCode: string;
+  continent: string;
+  continentCode: string;
+  flag: string | null;
 }
 
-interface CountryData {
+interface MapboxCountryData {
   name: string;
   code: string;
-  validators: ValidatorData[];
-  avgLatency: number;
+  validators: MapboxValidatorData[];
   onlineCount: number;
 }
 
 interface MapboxGlobeMapProps {
-  validators: ValidatorData[];
+  // Optional prop for backward compatibility with mock data
+  mockValidators?: any[];
 }
 
 

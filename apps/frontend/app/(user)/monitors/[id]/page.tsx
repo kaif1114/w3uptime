@@ -30,8 +30,6 @@ export default async function MonitorDetailsPage({ params }: MonitorDetailsPageP
 
   return (
     <div className="container mx-auto px-4 ">
-
-      
       <MonitorDetails monitorId={monitorId} />
     </div>
   );

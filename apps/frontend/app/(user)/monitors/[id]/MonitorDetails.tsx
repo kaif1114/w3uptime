@@ -21,7 +21,7 @@ import Link from "next/link";
 import { useState } from 'react';
 import { GlobalLatencyChart } from "./GlobalLatencyChart";
 import { MapboxGlobeMap } from "./MapboxGlobeMap";
-import { MetricType, TimePeriod, UpdateFrequency } from "./MonitoringControls";
+// import { MetricType, TimePeriod, UpdateFrequency } from "./MonitoringControls";
 import { RegionalStats } from "./RegionalStats";
 import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { mockData } from "./mockData";
@@ -65,12 +65,12 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   
   // State for tabs and controls
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
-  const [updateFreq, setUpdateFreq] = useState<UpdateFrequency>('5m');
-  const [metricType, setMetricType] = useState<MetricType>('all');
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
+  // const [updateFreq, setUpdateFreq] = useState<UpdateFrequency>('5m');
+  // const [metricType, setMetricType] = useState<MetricType>('all');
+  // const [autoRefresh, setAutoRefresh] = useState(true);
+  // const [lastUpdated, setLastUpdated] = useState(new Date());
+  // const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
@@ -80,17 +80,17 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   };
 
   const handleManualRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-    }, 2000);
+    // setIsRefreshing(true);
+    // setTimeout(() => {
+    //   setLastUpdated(new Date());
+    //   setIsRefreshing(false);
+    // }, 2000);
   };
 
   const handleExportData = () => {
     const dataToExport = {
       monitor: monitor?.name,
-      period: timePeriod,
+      // period: timePeriod,
       validators: mockData.validators.length,
       incidents: mockData.incidents.length,
       exportTime: new Date().toISOString()
