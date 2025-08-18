@@ -265,17 +265,9 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const allFeatures = map.queryRenderedFeatures([event.point.x, event.point.y]);
-    
-    // Try to find country features in any layer
-    const features = allFeatures.filter(feature => 
-      feature.properties && (
-        feature.properties.name_en || 
-        feature.properties.NAME || 
-        feature.properties.name ||
-        feature.properties.iso_3166_1
-      )
-    );
+    const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
+      layers: ['country-hover']
+    });
 
     if (features.length > 0) {
       const feature = features[0];
@@ -300,23 +292,15 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    // Query all layers to see what's available
-    const allFeatures = map.queryRenderedFeatures([event.point.x, event.point.y]);
+    // Query specifically our country layer
+    const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
+      layers: ['country-hover']
+    });
     
-    if (allFeatures.length > 0) {
-      console.log('Available layers at point:', [...new Set(allFeatures.map(f => f.layer?.id))]);
-      console.log('First feature properties:', allFeatures[0].properties);
+    console.log('Country features found:', countryFeatures.length);
+    if (countryFeatures.length > 0) {
+      console.log('Country feature properties:', countryFeatures[0].properties);
     }
-    
-    // Try to find country features in any layer
-    const countryFeatures = allFeatures.filter(feature => 
-      feature.properties && (
-        feature.properties.name_en || 
-        feature.properties.NAME || 
-        feature.properties.name ||
-        feature.properties.iso_3166_1
-      )
-    );
 
     if (countryFeatures.length > 0) {
       const feature = countryFeatures[0];
@@ -549,6 +533,32 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                    "star-intensity": 0.15
                  }}
                >
+                {/* Add country boundaries for hover detection */}
+                <Source
+                  id="countries"
+                  type="vector"
+                  url="mapbox://mapbox.country-boundaries-v1"
+                >
+                  <Layer
+                    id="country-hover"
+                    type="fill"
+                    source-layer="country_boundaries"
+                    paint={{
+                      'fill-color': [
+                        'case',
+                        ['==', ['get', 'name_en'], hoveredCountry || ''], '#10b981',
+                        ['in', ['get', 'name_en'], ['literal', countriesWithValidators]], '#10b981',
+                        'transparent'
+                      ],
+                      'fill-opacity': [
+                        'case',
+                        ['==', ['get', 'name_en'], hoveredCountry || ''], 0.4,
+                        ['in', ['get', 'name_en'], ['literal', countriesWithValidators]], 0.2,
+                        0
+                      ]
+                    }}
+                  />
+                </Source>
               </Map>
 
               {/* Map Controls */}
