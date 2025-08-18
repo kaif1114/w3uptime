@@ -174,11 +174,10 @@ const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
 
 const COST_PER_VALIDATION = 1;
 
-// MonitorTick batching configuration
 const BUFFER_SIZE = 50;
 const BUFFER_TIMEOUT = 10 * 1000; // 10 seconds
 
-// MonitorTick buffer and timer
+
 let monitorTickBuffer: {
   monitorId: string;
   validatorId: string;
@@ -194,40 +193,36 @@ let monitorTickBuffer: {
 
 let bufferTimer: NodeJS.Timeout | null = null;
 
-// Function to send batched MonitorTicks to data ingestion service
-function sendBatchToDataIngestionService(batch: typeof monitorTickBuffer) {
-  // For now, just console.log the batch
+function sendBatch(batch: typeof monitorTickBuffer) {
+
   console.log('Sending batch to data ingestion service:', {
     batchSize: batch.length,
     timestamp: new Date().toISOString(),
-    monitorTicks: batch
   });
-  // TODO: Later replace with HTTP request to data ingestion service
+  
 }
 
-// Function to process and send the current buffer
+
 function processBatch() {
   if (monitorTickBuffer.length === 0) {
     return;
   }
   
   const batchToSend = [...monitorTickBuffer];
-  monitorTickBuffer = []; // Clear the buffer
+  monitorTickBuffer = []; 
   
-  // Clear the timer since we're processing now
+
   if (bufferTimer) {
     clearTimeout(bufferTimer);
     bufferTimer = null;
   }
   
-  sendBatchToDataIngestionService(batchToSend);
+  sendBatch(batchToSend);
 }
 
-// Function to add MonitorTick to buffer
-function addToBuffer(monitorTick: typeof monitorTickBuffer[0]) {
+function addToBatch(monitorTick: typeof monitorTickBuffer[0]) {
   monitorTickBuffer.push(monitorTick);
   
-  // Check if buffer is full
   if (monitorTickBuffer.length >= BUFFER_SIZE) {
     processBatch();
     return;
@@ -308,7 +303,7 @@ setInterval(async () => {
           const validatorData = validators.find(v => v.validatorId === validatorId);
           
           // Add MonitorTick to buffer instead of saving directly to database
-          addToBuffer({
+          addToBatch({
             monitorId: monitor.id,
             validatorId: validatorId,
             status,
