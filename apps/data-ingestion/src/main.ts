@@ -66,53 +66,46 @@ app.post("/batch", async (req, res) => {
     }
 
     const { batch, batchId } = validationResult.data;
-    const errors: { index: number; error: string }[] = [];
     let processedCount = 0;
 
     console.log(`Processing batch ${batchId} with ${batch.length} MonitorTicks`);
 
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (let i = 0; i < batch.length; i++) {
-        const item = batch[i];
-        try {
-          await tx.monitorTick.create({
-            data: {
-              monitorId: item.monitorId,
-              validatorId: item.validatorId,
-              status: item.status,
-              latency: item.latency,
-              longitude: item.longitude,
-              latitude: item.latitude,
-              countryCode: item.countryCode,
-              continentCode: item.continentCode,
-              city: item.city,
-              createdAt: item.createdAt,
-            },
-          });
-          
-          processedCount++;
-        } catch (error) {
-          console.error(`Error processing item ${i}:`, error);
-          errors.push({
-            index: i,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
-        }
-      }
-    });
+    try {
+      const result = await prisma.monitorTick.createMany({
+        data: batch.map(item => ({
+          monitorId: item.monitorId,
+          validatorId: item.validatorId,
+          status: item.status,
+          latency: item.latency,
+          longitude: item.longitude,
+          latitude: item.latitude,
+          countryCode: item.countryCode,
+          continentCode: item.continentCode,
+          city: item.city,
+          createdAt: item.createdAt,
+        })),
+        skipDuplicates: true
+      });
+      
+      processedCount = result.count;
+    } catch (error) {
+      console.error('Batch processing error:', error);
+      const response: MonitorTickBatchResponse = {
+        success: false,
+        message: error instanceof Error ? error.message : 'Database error during batch insert'
+      };
+      return res.status(500).json(response);
+    }
 
     const response: MonitorTickBatchResponse = {
-      success: errors.length === 0,
-      message: errors.length === 0 
-        ? `Successfully processed ${processedCount} MonitorTicks` 
-        : `Processed ${processedCount}/${batch.length} MonitorTicks with ${errors.length} errors`,
-      processedCount,
-      errors: errors.length > 0 ? errors : undefined
+      success: true,
+      message: `Successfully processed ${processedCount} MonitorTicks`,
+      processedCount
     };
 
     console.log(`Batch ${batchId} completed: ${processedCount}/${batch.length} processed`);
     
-    return res.status(errors.length === 0 ? 200 : 207).json(response);
+    return res.status(200).json(response);
     
   } catch (error) {
     console.error('Batch processing error:', error);
