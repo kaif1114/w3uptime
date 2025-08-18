@@ -57,7 +57,7 @@ app.post("/batch", async (req, res) => {
       const response: MonitorTickBatchResponse = {
         success: false,
         message: "Validation failed",
-        errors: validationResult.error.errors.map((err, index) => ({
+        errors: validationResult.error.issues.map((err: any, index: number) => ({
           index,
           error: `${err.path.join('.')}: ${err.message}`
         }))
