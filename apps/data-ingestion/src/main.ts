@@ -90,13 +90,6 @@ app.post("/batch", async (req, res) => {
             },
           });
           
-          await tx.user.update({
-            where: { id: item.validatorId },
-            data: {
-              balance: { increment: 1 },
-            },
-          });
-          
           processedCount++;
         } catch (error) {
           console.error(`Error processing item ${i}:`, error);
