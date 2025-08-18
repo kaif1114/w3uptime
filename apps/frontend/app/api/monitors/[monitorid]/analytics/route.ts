@@ -104,14 +104,14 @@ export const GET = withAuth(async (
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      uptime: convertBigIntToNumber(uptimeData[0]) || null,
-      latency: convertBigIntToNumber(totalLatencyData[0]) || null,
-      downtime: convertBigIntToNumber(downtimeData[0]) || null,
-      bestRegion: convertBigIntToNumber(bestRegion[0]) || null,
+      uptime: convertBigIntToNumber((uptimeData as any[])[0]) || null,
+      latency: convertBigIntToNumber((totalLatencyData as any[])[0]) || null,
+      downtime: convertBigIntToNumber((downtimeData as any[])[0]) || null,
+      bestRegion: convertBigIntToNumber((bestRegion as any[])[0]) || null,
       regional: {
-        byCountry: convertBigIntToNumber(latencyByCountry) || [],
-        byContinent: convertBigIntToNumber(latencyByContinent) || [],
-        byCity: convertBigIntToNumber(latencyByCity) || [],
+        byCountry: convertBigIntToNumber(latencyByCountry as any[]) || [],
+        byContinent: convertBigIntToNumber(latencyByContinent as any[]) || [],
+        byCity: convertBigIntToNumber(latencyByCity as any[]) || [],
       },
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

@@ -71,17 +71,17 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
     checks: Number(point.total_checks) || 0,
   }));
 
-  const formatTooltipValue = (value: unknown, name: string) => {
+  const formatTooltipValue = (value: unknown, name: string): [string, string] => {
     if (name === 'latency') return [`${value}ms`, 'Latency'];
     if (name === 'uptime') return [`${value}%`, 'Uptime'];
-    return [value, name];
+    return [String(value), name];
   };
 
-  const formatTooltipLabel = (label: unknown) => {
+  const formatTooltipLabel = (label: unknown): string => {
     if (typeof label === 'number') {
       return format(new Date(label), bucketSize.includes('day') ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm');
     }
-    return label;
+    return String(label);
   };
 
   if (type === 'latency') {

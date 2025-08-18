@@ -91,7 +91,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
 
     // Group ticks by validator ID to get unique validators with latest data
-    const validatorMap = new Map<string, MapboxValidatorData>();
+    const validatorMap = new (globalThis.Map)<string, MapboxValidatorData>();
     
     ticksData.ticks.forEach(tick => {
       const existingValidator = validatorMap.get(tick.validator.id);
@@ -123,7 +123,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
 
     // Group validators by country
-    const countryMap = new Map<string, MapboxValidatorData[]>();
+    const countryMap = new (globalThis.Map)<string, MapboxValidatorData[]>();
     
     validators.forEach(validator => {
       const countryKey = validator.countryCode;
@@ -134,12 +134,12 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     });
 
     // Convert to country data format
-    return Array.from(countryMap.entries()).map(([countryCode, countryValidators]) => ({
+    return (Array.from(countryMap.entries()) as [string, MapboxValidatorData[]][]).map(([countryCode, countryValidators]) => ({
       name: countryCode, // Use country code as name since we don't have full country names
       code: countryCode,
       validators: countryValidators,
       onlineCount: countryValidators.length
-    })).sort((a, b) => b.onlineCount - a.onlineCount);
+    })).sort((a: MapboxCountryData, b: MapboxCountryData) => b.onlineCount - a.onlineCount);
   }, [validators]);
 
   const stats = useMemo(() => {
@@ -156,7 +156,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
 
   // Aggregate data by continent
   const continentData = useMemo(() => {
-    const continentMap = new globalThis.Map<string, { name: string; code: string; count: number; countries: string[] }>();
+    const continentMap = new (globalThis.Map)<string, { name: string; code: string; count: number; countries: string[] }>();
     
     validators.forEach(validator => {
       const continent = validator.continent;
@@ -179,7 +179,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       }
     });
     
-    return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
+    return Array.from(continentMap.values()).sort((a: any, b: any) => b.count - a.count);
   }, [validators]);
 
   // Simple list of countries with validators for highlighting
@@ -712,15 +712,15 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                     <p className="text-xs font-medium mb-1">Cities:</p>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {(() => {
-                        const cityMap = new globalThis.Map<string, number>();
+                        const cityMap = new (globalThis.Map)<string, number>();
                         selectedCountryData.validators.forEach(v => {
                           const cityName = v.city;
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
                         });
                         return Array.from(cityMap.entries())
-                          .sort((a, b) => b[1] - a[1])
+                          .sort((a: any, b: any) => b[1] - a[1])
                           .slice(0, 8)
-                          .map(([city, count]) => (
+                          .map(([city, count]: [string, number]) => (
                             <div key={city} className="flex justify-between text-xs">
                               <span>{city}</span>
                               <span className="text-green-400">{count}</span>
@@ -811,7 +811,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
               <div className="md:col-span-2 lg:col-span-3">
                 <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
               </div>
-              {continentData.map(continent => (
+              {continentData.map((continent: any) => (
                 <div 
                   key={continent.name} 
                   className={`bg-background p-3 rounded-md cursor-pointer transition-all hover:shadow-md border-2 ${
