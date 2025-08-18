@@ -14,6 +14,7 @@ import {
 } from "common/types";
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import http from "http";
 import "dotenv/config";
 
@@ -45,22 +46,18 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // Middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Content-Type', 'application/json');
   next();
 });
 
-// Handle preflight requests
-app.options('*', (req, res) => {
-  res.sendStatus(200);
-});
-
-// Authentication middleware
 const authenticateUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const userId = await checkAuthentication(req);
   if (!userId) {
@@ -70,7 +67,6 @@ const authenticateUser = async (req: express.Request, res: express.Response, nex
   next();
 };
 
-// Routes
 app.get('/ping', (req, res) => {
   res.json({ status: 'OK' });
 });
