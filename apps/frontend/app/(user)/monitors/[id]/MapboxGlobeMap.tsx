@@ -251,26 +251,6 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
   }, [validators]);
 
-  // Create GeoJSON for validator points
-  const validatorGeoJSON = useMemo(() => {
-    return {
-      type: 'FeatureCollection' as const,
-      features: validators.map(validator => ({
-        type: 'Feature' as const,
-        properties: {
-          id: validator.id,
-          country: validator.country,
-          city: validator.city,
-          status: validator.status,
-          latency: validator.latency
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [validator.lng, validator.lat]
-        }
-      }))
-    };
-  }, [validators]);
 
   // Handle map click events
   const onMapClick = useCallback((event: any) => {
@@ -297,37 +277,32 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    // Check for validator points first
-    const validatorFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
-      layers: ['validator-points']
-    });
-
-    if (validatorFeatures.length > 0) {
-      const validatorId = validatorFeatures[0].properties?.id;
-      const validator = validators.find(v => v.id === validatorId);
-      
-      if (validator) {
-        setHoveredValidator(validator);
-        setTooltipPosition({ x: event.point.x, y: event.point.y });
-        setHoveredCountry(null);
-        map.getCanvas().style.cursor = 'pointer';
-        return;
-      }
-    }
-
     // Check for countries
     const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
-      layers: ['country-fills']
+      layers: ['country-fills', 'country-labels']
     });
 
     if (countryFeatures.length > 0) {
       const countryName = countryFeatures[0].properties?.NAME;
-      const countryInData = countryData.find(c => c.name === countryName);
+      const countryInData = countryData.find(c => c.name.toLowerCase() === countryName?.toLowerCase());
       
       if (countryInData) {
+        // Show tooltip with country validator information
+        setHoveredValidator({
+          id: countryInData.code,
+          country: countryInData.name,
+          city: '', // Not used
+          lat: 0, lng: 0, // Not used
+          status: 'online',
+          countryCode: countryInData.code,
+          continent: countryInData.validators[0]?.continent || '',
+          continentCode: countryInData.validators[0]?.continentCode || '',
+          flag: countryInData.validators[0]?.flag || null,
+          validatorCount: countryInData.onlineCount,
+          cities: countryInData.validators.map(v => v.city)
+        } as any);
+        setTooltipPosition({ x: event.point.x, y: event.point.y });
         setHoveredCountry(countryName || null);
-        setHoveredValidator(null);
-        setTooltipPosition(null);
         map.getCanvas().style.cursor = 'pointer';
         return;
       }
@@ -338,7 +313,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     setHoveredValidator(null);
     setTooltipPosition(null);
     map.getCanvas().style.cursor = '';
-  }, [validators, countryData]);
+  }, [countryData]);
 
   // Map control functions
   const toggleGlobeView = useCallback(() => {
@@ -513,36 +488,6 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                    "star-intensity": 0.15
                  }}
                >
-                {/* Validator Points */}
-                <Source
-                  id="validators"
-                  type="geojson"
-                  data={validatorGeoJSON}
-                >
-                  <Layer
-                    id="validator-points"
-                    type="circle"
-                    paint={{
-                      'circle-radius': [
-                        'case',
-                        ['==', ['get', 'status'], 'good'], 8,
-                        ['==', ['get', 'status'], 'moderate'], 6,
-                        ['==', ['get', 'status'], 'offline'], 4,
-                        5
-                      ],
-                      'circle-color': [
-                        'case',
-                        ['==', ['get', 'status'], 'good'], '#10b981',
-                        ['==', ['get', 'status'], 'moderate'], '#f59e0b',
-                        ['==', ['get', 'status'], 'offline'], '#ef4444',
-                        '#6b7280'
-                      ],
-                      'circle-stroke-color': '#ffffff',
-                      'circle-stroke-width': 2,
-                      'circle-opacity': 0.8
-                    }}
-                  />
-                </Source>
 
                 {/* Country Boundaries with highlighting */}
                 <Source
@@ -577,6 +522,40 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                       'line-color': '#ffffff',
                       'line-width': 1,
                       'line-opacity': 0.5
+                    }}
+                  />
+                  <Layer
+                    id="country-labels"
+                    type="symbol"
+                    source-layer="country_boundaries"
+                    layout={{
+                      'text-field': ['get', 'NAME'],
+                      'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                      'text-size': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        1, 8,
+                        3, 14,
+                        5, 18
+                      ],
+                      'text-transform': 'uppercase',
+                      'text-letter-spacing': 0.1,
+                      'text-offset': [0, 0],
+                      'text-anchor': 'center'
+                    }}
+                    paint={{
+                      'text-color': '#ffffff',
+                      'text-halo-color': '#000000',
+                      'text-halo-width': 1,
+                      'text-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        1, 0.3,
+                        2, 0.7,
+                        3, 1
+                      ]
                     }}
                   />
                 </Source>
@@ -656,27 +635,38 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-              {/* Validator tooltip on hover */}
+              {/* Country tooltip on hover */}
               {hoveredValidator && tooltipPosition && (
                 <div 
-                  className="absolute pointer-events-none bg-black/90 text-white p-2 rounded-md text-xs z-50 max-w-48"
+                  className="absolute pointer-events-none bg-black/90 text-white p-3 rounded-md text-sm z-50 max-w-72"
                   style={{
                     left: tooltipPosition.x + 10,
                     top: tooltipPosition.y - 10,
                     transform: 'translateY(-100%)'
                   }}
                 >
-                  <div className="font-semibold flex items-center gap-1 mb-1">
+                  <div className="font-semibold flex items-center gap-2 mb-2">
                     {hoveredValidator.flag && (
-                      <img src={hoveredValidator.flag} alt="" className="w-3 h-2 rounded-sm" />
+                      <img src={hoveredValidator.flag} alt="" className="w-5 h-3 rounded-sm" />
                     )}
-                    {hoveredValidator.city}
-                  </div>
-                  <div className="text-gray-300">
                     {hoveredValidator.country}
                   </div>
-                  <div className="text-green-400 text-xs mt-1">
-                    ● Online
+                  <div className="space-y-2">
+                    <div className="text-green-400 text-sm">
+                      ● {(hoveredValidator as any).validatorCount || 1} Validator{((hoveredValidator as any).validatorCount || 1) > 1 ? 's' : ''} Online
+                    </div>
+                    {(hoveredValidator as any).cities && (hoveredValidator as any).cities.length > 0 && (
+                      <div>
+                        <div className="text-gray-300 text-xs mb-1">Cities:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {[...(new Set((hoveredValidator as any).cities))].map((city: string, index: number) => (
+                            <span key={city} className="bg-gray-700 px-2 py-1 rounded text-xs">
+                              {city.charAt(0).toUpperCase() + city.slice(1)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
