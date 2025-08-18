@@ -58,11 +58,26 @@ export const GET = withAuth(async (
       FROM get_monitor_timeseries(${monitorid}, ${period}, ${bucket})
     `;
 
+    // Helper function to convert BigInt to Number
+    const convertBigIntToNumber = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === 'bigint') return Number(obj);
+      if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+      if (typeof obj === 'object') {
+        const converted: any = {};
+        for (const key in obj) {
+          converted[key] = convertBigIntToNumber(obj[key]);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
     return NextResponse.json({
       monitorId: monitorid,
       period,
       bucketSize: bucket,
-      data: timeseriesData || [],
+      data: convertBigIntToNumber(timeseriesData) || [],
       generatedAt: new Date().toISOString(),
     }, { status: 200 });
 

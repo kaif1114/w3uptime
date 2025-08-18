@@ -86,17 +86,32 @@ export const GET = withAuth(async (
       prisma.$queryRaw`SELECT * FROM get_avg_latency_by_city(${monitorid}, ${period})`,
     ]);
 
+    // Helper function to convert BigInt to Number
+    const convertBigIntToNumber = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === 'bigint') return Number(obj);
+      if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+      if (typeof obj === 'object') {
+        const converted: any = {};
+        for (const key in obj) {
+          converted[key] = convertBigIntToNumber(obj[key]);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      uptime: uptimeData[0] || null,
-      latency: totalLatencyData[0] || null,
-      downtime: downtimeData[0] || null,
-      bestRegion: bestRegion[0] || null,
+      uptime: convertBigIntToNumber(uptimeData[0]) || null,
+      latency: convertBigIntToNumber(totalLatencyData[0]) || null,
+      downtime: convertBigIntToNumber(downtimeData[0]) || null,
+      bestRegion: convertBigIntToNumber(bestRegion[0]) || null,
       regional: {
-        byCountry: latencyByCountry || [],
-        byContinent: latencyByContinent || [],
-        byCity: latencyByCity || [],
+        byCountry: convertBigIntToNumber(latencyByCountry) || [],
+        byContinent: convertBigIntToNumber(latencyByContinent) || [],
+        byCity: convertBigIntToNumber(latencyByCity) || [],
       },
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

@@ -121,7 +121,7 @@ export const GET = withAuth(async (
         createdAt: tick.createdAt.toISOString(),
       })),
       pagination: {
-        total: totalCount,
+        total: Number(totalCount), // Convert BigInt to Number
         limit,
         offset,
         hasMore: offset + limit < totalCount,
