@@ -270,12 +270,19 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
 
     if (features.length > 0) {
-      const countryName = features[0].properties?.NAME || features[0].properties?.name;
-      if (countryName) {
-        const countryInData = countryData.find((c: MapboxCountryData) => c.name.toLowerCase() === countryName.toLowerCase());
-        if (countryInData) {
-          setSelectedCountry(selectedCountry === countryName ? null : countryName);
-        }
+      const feature = features[0];
+      const countryName = feature.properties?.name_en || feature.properties?.NAME || feature.properties?.name;
+      
+      // Try matching by name first
+      let countryInData = countryData.find((c: MapboxCountryData) => c.name.toLowerCase() === countryName?.toLowerCase());
+      
+      // If no match by name, try country code
+      if (!countryInData && feature.properties?.iso_3166_1) {
+        countryInData = countryData.find((c: MapboxCountryData) => c.code === feature.properties.iso_3166_1);
+      }
+      
+      if (countryInData) {
+        setSelectedCountry(selectedCountry === countryName ? null : countryName);
       }
     }
   }, [countryData, selectedCountry]);
@@ -295,16 +302,25 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       console.log('Feature properties:', feature.properties);
       console.log('Feature layer:', feature.layer?.id);
       
-      // Try both property names since different layers might use different properties
-      const mapboxCountryName = feature.properties?.NAME || feature.properties?.name || feature.properties?.name_en;
+      // Use English name from Mapbox properties (more reliable than bilingual names)
+      const mapboxCountryName = feature.properties?.name_en || feature.properties?.NAME || feature.properties?.name;
       
       console.log('Hovering over country:', mapboxCountryName);
-      console.log('Available validator countries:', countryData.map(c => c.name));
+      console.log('Available validator countries:', countryData.map(c => `${c.name} (${c.code})`));
       
-      // Simple case-insensitive match
-      const countryInData = countryData.find(c => 
+      // Try matching by English name first
+      let countryInData = countryData.find(c => 
         c.name.toLowerCase() === mapboxCountryName?.toLowerCase()
       );
+      
+      // If no match by name, try country code matching if available
+      if (!countryInData && feature.properties?.iso_3166_1) {
+        const mapboxCountryCode = feature.properties.iso_3166_1;
+        console.log('Trying country code match:', mapboxCountryCode);
+        countryInData = countryData.find(c => 
+          c.code === mapboxCountryCode
+        );
+      }
       
       if (countryInData) {
         console.log('✅ Found match! Showing tooltip for:', countryInData.name);
