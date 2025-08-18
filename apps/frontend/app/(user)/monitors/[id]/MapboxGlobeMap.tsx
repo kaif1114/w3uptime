@@ -59,6 +59,7 @@ export function MapboxGlobeMap() {
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<string | null>(null);
   const [selectedValidator, setSelectedValidator] = useState<MapboxValidatorData | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 0,
     latitude: 20,
@@ -185,7 +186,13 @@ export function MapboxGlobeMap() {
   // Handle map click events
   const onMapClick = useCallback((event: any) => {
     const map = mapRef.current?.getMap();
-    if (!map) return;
+    if (!map || !mapLoaded) return;
+
+    // Check if the country-hover layer exists before querying
+    if (!map.getLayer('country-hover')) {
+      console.warn('country-hover layer not found, skipping click handling');
+      return;
+    }
 
     const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-hover']
@@ -207,33 +214,28 @@ export function MapboxGlobeMap() {
         setSelectedCountry(selectedCountry === countryName ? null : countryName);
       }
     }
-  }, [countryData, selectedCountry]);
+  }, [countryData, selectedCountry, mapLoaded]);
 
   // Handle map hover events
   const onMapMouseMove = useCallback((event: any) => {
     const map = mapRef.current?.getMap();
-    if (!map) return;
+    if (!map || !mapLoaded) return;
+
+    // Check if the country-hover layer exists before querying
+    if (!map.getLayer('country-hover')) {
+      return;
+    }
 
     // Query specifically our country layer
     const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-hover']
     });
-    
-    console.log('Country features found:', countryFeatures.length);
-    if (countryFeatures.length > 0) {
-      console.log('Country feature properties:', countryFeatures[0].properties);
-    }
 
     if (countryFeatures.length > 0) {
       const feature = countryFeatures[0];
-      console.log('Feature properties:', feature.properties);
-      console.log('Feature layer:', feature.layer?.id);
       
       // Use English name from Mapbox properties (more reliable than bilingual names)
       const mapboxCountryName = feature.properties?.name_en || feature.properties?.NAME || feature.properties?.name;
-      
-      console.log('Hovering over country:', mapboxCountryName);
-      console.log('Available validator countries:', countryData.map(c => `${c.name} (${c.code})`));
       
       // Try matching by English name first
       let countryInData = countryData.find(c => 
@@ -243,14 +245,12 @@ export function MapboxGlobeMap() {
       // If no match by name, try country code matching if available
       if (!countryInData && feature.properties?.iso_3166_1) {
         const mapboxCountryCode = feature.properties.iso_3166_1;
-        console.log('Trying country code match:', mapboxCountryCode);
         countryInData = countryData.find(c => 
           c.code === mapboxCountryCode
         );
       }
       
       if (countryInData) {
-        console.log('✅ Found match! Showing tooltip for:', countryInData.name);
         
         // Show tooltip with country validator information
         setHoveredValidator({
@@ -270,8 +270,6 @@ export function MapboxGlobeMap() {
         setHoveredCountry(mapboxCountryName || null);
         map.getCanvas().style.cursor = 'pointer';
         return;
-      } else {
-        console.log('❌ No match found for:', mapboxCountryName);
       }
     }
 
@@ -280,7 +278,7 @@ export function MapboxGlobeMap() {
     setHoveredValidator(null);
     setTooltipPosition(null);
     map.getCanvas().style.cursor = '';
-  }, [countryData]);
+  }, [countryData, mapLoaded]);
 
   // Map control functions
   const toggleGlobeView = useCallback(() => {
@@ -461,6 +459,7 @@ export function MapboxGlobeMap() {
                  onMove={evt => setViewState(evt.viewState)}
                  onClick={onMapClick}
                  onMouseMove={onMapMouseMove}
+                 onLoad={() => setMapLoaded(true)}
                  mapboxAccessToken={MAPBOX_TOKEN}
                  style={{ width: '100%', height: '100%' }}
                  mapStyle="mapbox://styles/mapbox/standard"
