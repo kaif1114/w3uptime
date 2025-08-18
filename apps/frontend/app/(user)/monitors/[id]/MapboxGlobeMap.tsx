@@ -38,7 +38,62 @@ interface MapboxGlobeMapProps {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
+// Approximate coordinates for major cities and countries
+// In production, you might want to use a geocoding service or store coordinates in the database
+function getApproximateCoordinates(country: string, city: string): { lat: number; lng: number } {
+  const cityCoords: Record<string, { lat: number; lng: number }> = {
+    // Major cities coordinates
+    'new york': { lat: 40.7128, lng: -74.0060 },
+    'london': { lat: 51.5074, lng: -0.1278 },
+    'tokyo': { lat: 35.6762, lng: 139.6503 },
+    'sydney': { lat: -33.8688, lng: 151.2093 },
+    'paris': { lat: 48.8566, lng: 2.3522 },
+    'berlin': { lat: 52.5200, lng: 13.4050 },
+    'toronto': { lat: 43.6532, lng: -79.3832 },
+    'singapore': { lat: 1.3521, lng: 103.8198 },
+    'mumbai': { lat: 19.0760, lng: 72.8777 },
+    'sao paulo': { lat: -23.5505, lng: -46.6333 },
+  };
+
+  // Country center coordinates as fallback
+  const countryCoords: Record<string, { lat: number; lng: number }> = {
+    'united states': { lat: 39.8283, lng: -98.5795 },
+    'canada': { lat: 56.1304, lng: -106.3468 },
+    'united kingdom': { lat: 55.3781, lng: -3.4360 },
+    'germany': { lat: 51.1657, lng: 10.4515 },
+    'france': { lat: 46.2276, lng: 2.2137 },
+    'japan': { lat: 36.2048, lng: 138.2529 },
+    'australia': { lat: -25.2744, lng: 133.7751 },
+    'singapore': { lat: 1.3521, lng: 103.8198 },
+    'india': { lat: 20.5937, lng: 78.9629 },
+    'brazil': { lat: -14.2350, lng: -51.9253 },
+  };
+
+  const cityKey = city.toLowerCase();
+  const countryKey = country.toLowerCase();
+
+  // Try to find city coordinates first
+  if (cityCoords[cityKey]) {
+    return cityCoords[cityKey];
+  }
+
+  // Fallback to country coordinates
+  if (countryCoords[countryKey]) {
+    // Add small random offset to avoid overlapping markers
+    return {
+      lat: countryCoords[countryKey].lat + (Math.random() - 0.5) * 2,
+      lng: countryCoords[countryKey].lng + (Math.random() - 0.5) * 2
+    };
+  }
+
+  // Ultimate fallback - random location
+  return {
+    lat: (Math.random() - 0.5) * 180,
+    lng: (Math.random() - 0.5) * 360
+  };
+}
+
+export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
@@ -56,53 +111,117 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     }
   });
 
-  // Group validators by country
-  const countryData = useMemo(() => {
-    const countryMap = new globalThis.Map<string, CountryData>();
+  // Fetch real validator data from hub server
+  const { data: validatorData, isLoading, error } = useValidatorsByCountryAggregated();
+
+  // Transform real validator data to MapboxValidatorData format
+  const validators: MapboxValidatorData[] = useMemo(() => {
+    if (!validatorData || validatorData.length === 0) {
+      // Fallback to mock data if provided
+      if (mockValidators) {
+        return mockValidators.map(v => ({
+          id: v.id,
+          country: v.country,
+          city: v.city,
+          lat: v.lat,
+          lng: v.lng,
+          status: 'online' as const,
+          countryCode: v.country.substring(0, 2).toUpperCase(),
+          continent: v.continent || 'Unknown',
+          continentCode: v.continent?.substring(0, 2).toUpperCase() || 'UN',
+          flag: null
+        }));
+      }
+      return [];
+    }
+
+    // Transform real validator data
+    const transformedValidators: MapboxValidatorData[] = [];
     
-    validators.forEach(validator => {
-      const countryName = validator.country;
-      if (!countryMap.has(countryName)) {
-        countryMap.set(countryName, {
-          name: countryName,
-          code: countryName.substring(0, 2).toUpperCase(),
-          validators: [],
-          avgLatency: 0,
-          onlineCount: 0
+    validatorData.forEach(country => {
+      country.validators.forEach(validator => {
+        // For now, we'll use approximate coordinates based on country/city
+        // In a real implementation, you might want to geocode or use stored coordinates
+        const coords = getApproximateCoordinates(validator.location.country, validator.location.city);
+        
+        transformedValidators.push({
+          id: validator.validatorId,
+          country: validator.location.country,
+          city: validator.location.city,
+          lat: coords.lat,
+          lng: coords.lng,
+          status: 'online',
+          countryCode: validator.location.countryCode,
+          continent: validator.location.continent,
+          continentCode: validator.location.continentCode,
+          flag: validator.location.flag
         });
-      }
-      
-      const country = countryMap.get(countryName)!;
-      country.validators.push(validator);
-      
-      if (validator.status !== 'offline') {
-        country.onlineCount++;
-      }
+      });
     });
+    
+    return transformedValidators;
+  }, [validatorData, mockValidators]);
 
-    // Calculate average latency for each country
-    countryMap.forEach((country: CountryData) => {
-      const totalLatency = country.validators.reduce((sum: number, v: ValidatorData) => sum + v.latency, 0);
-      country.avgLatency = Math.round(totalLatency / country.validators.length);
-    });
+  // Transform country data 
+  const countryData: MapboxCountryData[] = useMemo(() => {
+    if (!validatorData || validatorData.length === 0) {
+      // Fallback logic for mock data
+      if (mockValidators) {
+        const countryMap = new Map<string, MapboxCountryData>();
+        
+        validators.forEach(validator => {
+          const countryName = validator.country;
+          if (!countryMap.has(countryName)) {
+            countryMap.set(countryName, {
+              name: countryName,
+              code: validator.countryCode,
+              validators: [],
+              onlineCount: 0
+            });
+          }
+          
+          const country = countryMap.get(countryName)!;
+          country.validators.push(validator);
+          country.onlineCount++;
+        });
+        
+        return Array.from(countryMap.values()).sort((a, b) => b.onlineCount - a.onlineCount);
+      }
+      return [];
+    }
 
-    return Array.from(countryMap.values()).sort((a: CountryData, b: CountryData) => b.onlineCount - a.onlineCount);
-  }, [validators]);
+    return validatorData.map(country => ({
+      name: country.name,
+      code: country.code,
+      validators: country.validators.map(validator => {
+        const coords = getApproximateCoordinates(validator.location.country, validator.location.city);
+        return {
+          id: validator.validatorId,
+          country: validator.location.country,
+          city: validator.location.city,
+          lat: coords.lat,
+          lng: coords.lng,
+          status: 'online' as const,
+          countryCode: validator.location.countryCode,
+          continent: validator.location.continent,
+          continentCode: validator.location.continentCode,
+          flag: validator.location.flag
+        };
+      }),
+      onlineCount: country.count
+    })).sort((a, b) => b.onlineCount - a.onlineCount);
+  }, [validatorData, validators, mockValidators]);
 
   const stats = useMemo(() => {
-    const online = validators.filter(v => v.status !== 'offline').length;
-    const avgLatency = validators.reduce((sum, v) => sum + v.latency, 0) / validators.length;
-    
     return { 
-      online, 
+      online: validators.length, 
       total: validators.length, 
-      avgLatency: Math.round(avgLatency), 
       countries: countryData.length 
     };
   }, [validators, countryData]);
 
   const selectedCountryData = useMemo(() => {
-    return countryData.find((country: CountryData) => country.name === selectedCountry);
+    return countryData.find((country: MapboxCountryData) => country.name === selectedCountry);
   }, [countryData, selectedCountry]);
 
   // Create GeoJSON for validator points
@@ -138,7 +257,7 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     if (features.length > 0) {
       const countryName = features[0].properties?.NAME;
       if (countryName) {
-        const countryInData = countryData.find((c: CountryData) => c.name === countryName);
+        const countryInData = countryData.find((c: MapboxCountryData) => c.name === countryName);
         if (countryInData) {
           setSelectedCountry(selectedCountry === countryName ? null : countryName);
         }
@@ -215,8 +334,8 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
       
       if (countryValidators.length > 0) {
         // Calculate bounds for the country
-        const lngs = countryValidators.map((v: ValidatorData) => v.lng);
-        const lats = countryValidators.map((v: ValidatorData) => v.lat);
+        const lngs = countryValidators.map((v: MapboxValidatorData) => v.lng);
+        const lats = countryValidators.map((v: MapboxValidatorData) => v.lat);
         
         const minLng = Math.min(...lngs);
         const maxLng = Math.max(...lngs);
@@ -231,6 +350,42 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
     }
   }, [selectedCountryData]);
 
+  // Show loading state
+  if (isLoading && !mockValidators) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Global Validator Network
+            <Badge variant="outline">Loading...</Badge>
+          </div>
+        </div>
+        <div className="h-screen rounded-lg border bg-muted animate-pulse flex items-center justify-center">
+          <p className="text-muted-foreground">Loading validator network...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !mockValidators) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Global Validator Network
+            <Badge variant="destructive">Error</Badge>
+          </div>
+        </div>
+        <div className="h-screen rounded-lg border bg-destructive/5 flex items-center justify-center">
+          <p className="text-destructive">Failed to load validator network. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -241,6 +396,12 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
           </span>
           <div className="flex gap-2">
             <Badge variant="outline">{stats.online} Online</Badge>
+            {validatorData && (
+              <Badge variant="secondary">Real-time</Badge>
+            )}
+            {mockValidators && !validatorData && (
+              <Badge variant="outline">Demo</Badge>
+            )}
           </div>
         </div>
       </div>
@@ -375,12 +536,38 @@ export function MapboxGlobeMap({ validators }: MapboxGlobeMapProps) {
 
               {/* Selected country info overlay */}
               {selectedCountryData && (
-                <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-sm max-w-48">
-                  <h4 className="font-semibold mb-2">{selectedCountryData.name}</h4>
-                  <div className="space-y-1 text-xs">
+                <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-sm max-w-72">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    {selectedCountryData.validators[0]?.flag && (
+                      <img src={selectedCountryData.validators[0].flag} alt="" className="w-4 h-3 rounded-sm" />
+                    )}
+                    {selectedCountryData.name}
+                  </h4>
+                  <div className="space-y-1 text-xs mb-3">
                     <p>📍 {selectedCountryData.validators.length} validators</p>
                     <p>✅ {selectedCountryData.onlineCount} online</p>
-                    <p>⚡ {selectedCountryData.avgLatency}ms avg</p>
+                  </div>
+                  {/* City breakdown */}
+                  <div className="border-t border-white/20 pt-2">
+                    <p className="text-xs font-medium mb-1">Cities:</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {(() => {
+                        const cityMap = new Map<string, number>();
+                        selectedCountryData.validators.forEach(v => {
+                          const cityName = v.city;
+                          cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
+                        });
+                        return Array.from(cityMap.entries())
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 8)
+                          .map(([city, count]) => (
+                            <div key={city} className="flex justify-between text-xs">
+                              <span>{city}</span>
+                              <span className="text-green-400">{count}</span>
+                            </div>
+                          ));
+                      })()}
+                    </div>
                   </div>
                 </div>
               )}

@@ -277,7 +277,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
             {activeTab === 'global' && (
               <div className="space-y-6">
-                <MapboxGlobeMap validators={mockData.validators} />
+                <MapboxGlobeMap mockValidators={mockData.validators} />
                
               </div>
             )}
