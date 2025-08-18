@@ -170,7 +170,7 @@ export function ValidatorMap({ monitorId }: ValidatorMapProps) {
           </div>
           <div className="text-center p-4 bg-muted rounded-lg">
             <div className="text-2xl font-bold text-green-600">
-              {((totalGoodChecks / totalChecks) * 100).toFixed(1)}%
+              {totalChecks > 0 ? ((totalGoodChecks / totalChecks) * 100).toFixed(1) : '0'}%
             </div>
             <div className="text-xs text-muted-foreground">Success Rate</div>
           </div>
@@ -208,9 +208,9 @@ export function ValidatorMap({ monitorId }: ValidatorMapProps) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">{location.avgLatency}ms</div>
+                      <div className="font-semibold">{Math.round(location.avgLatency)}ms</div>
                       <div className="text-xs text-muted-foreground">
-                        {successRate.toFixed(1)}% uptime
+                        {Number(successRate).toFixed(1)}% uptime
                       </div>
                     </div>
                   </div>

@@ -91,11 +91,11 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {uptime?.uptime_percentage?.toFixed(2) || '0'}%
+            {uptime?.uptime_percentage ? Number(uptime.uptime_percentage).toFixed(2) : '0'}%
           </div>
           <div className="space-y-2 mt-4">
             <Progress 
-              value={uptime?.uptime_percentage || 0} 
+              value={uptime?.uptime_percentage ? Number(uptime.uptime_percentage) : 0} 
               className="w-full" 
             />
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -117,11 +117,11 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {latency?.avg_latency?.toFixed(0) || '0'}ms
+            {latency?.avg_latency ? Number(latency.avg_latency).toFixed(0) : '0'}ms
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            <span>Min: {latency?.min_latency?.toFixed(0) || '0'}ms</span>
-            <span>Max: {latency?.max_latency?.toFixed(0) || '0'}ms</span>
+            <span>Min: {latency?.min_latency ? Number(latency.min_latency).toFixed(0) : '0'}ms</span>
+            <span>Max: {latency?.max_latency ? Number(latency.max_latency).toFixed(0) : '0'}ms</span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             {latency?.sample_count || 0} samples
@@ -166,7 +166,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {bestRegion.avg_latency?.toFixed(0)}ms
+              {bestRegion.avg_latency ? Number(bestRegion.avg_latency).toFixed(0) : '0'}ms
             </div>
             <div className="mt-2">
               <Badge variant="secondary">
@@ -197,9 +197,11 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
                   <span className="font-medium">{country.country_code}</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{country.avg_latency?.toFixed(0)}ms</div>
+                  <div className="font-semibold">
+                    {country.avg_latency ? Number(country.avg_latency).toFixed(0) : '0'}ms
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    {country.sample_count} checks
+                    {country.sample_count || 0} checks
                   </div>
                 </div>
               </div>
