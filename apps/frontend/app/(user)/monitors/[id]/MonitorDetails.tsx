@@ -22,6 +22,7 @@ import { MonitoringControls, TimePeriod, BucketSize } from "./MonitoringControls
 import { AnalyticsOverview } from "./AnalyticsOverview";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { ValidatorMap } from "./ValidatorMap";
+import { MapboxGlobeMap } from "./MapboxGlobeMap";
 import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { mockData } from "./mockData";
 interface MonitorDetailsProps {
@@ -242,6 +243,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
             {activeTab === 'global' && (
               <div className="space-y-6">
+                <MapboxGlobeMap />
                 <ValidatorMap monitorId={monitorId} />
               </div>
             )}
