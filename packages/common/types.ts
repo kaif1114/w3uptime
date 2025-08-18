@@ -65,3 +65,32 @@ export enum MonitorTickStatus {
   GOOD = "GOOD",
   BAD = "BAD",
 }
+
+export interface MonitorTickBatchItem {
+  monitorId: string;
+  validatorId: string;
+  status: MonitorTickStatus;
+  latency: number;
+  longitude: number;
+  latitude: number;
+  countryCode: string;
+  continentCode: string;
+  city: string;
+  createdAt: Date;
+}
+
+export interface MonitorTickBatchRequest {
+  batch: MonitorTickBatchItem[];
+  batchId: string;
+  timestamp: string;
+}
+
+export interface MonitorTickBatchResponse {
+  success: boolean;
+  message: string;
+  processedCount?: number;
+  errors?: {
+    index: number;
+    error: string;
+  }[];
+}
