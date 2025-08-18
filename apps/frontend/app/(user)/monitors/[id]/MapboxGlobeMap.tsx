@@ -293,7 +293,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       
       // If no match by name, try country code
       if (!countryInData && feature.properties?.iso_3166_1) {
-        countryInData = countryData.find((c: MapboxCountryData) => c.code === feature.properties.iso_3166_1);
+        countryInData = countryData.find((c: MapboxCountryData) => c.code === feature.properties!.iso_3166_1);
       }
       
       if (countryInData) {
@@ -824,8 +824,8 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                           <div>
                             <div className="text-gray-300 text-xs mb-1">Cities:</div>
                             <div className="flex flex-wrap gap-1">
-                              {[...(new Set((hoveredValidator as any).cities))].map((city: string) => (
-                                <span key={city} className="bg-gray-700 px-2 py-1 rounded text-xs">
+                              {[...(new Set((hoveredValidator as any).cities as string[]))].map((city: string, index: number) => (
+                                <span key={`${city}-${index}`} className="bg-gray-700 px-2 py-1 rounded text-xs">
                                   {city.charAt(0).toUpperCase() + city.slice(1)}
                                 </span>
                               ))}
@@ -865,7 +865,6 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                       </div>
                     </>
                   )}
-                  </div>
                 </div>
               )}
 
@@ -920,10 +919,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
               </div>
             </div>
           </div>
-
-          {/* Country Details Panel */}
-         
         </div>
-      </div>
+    </div>
   );
 }
