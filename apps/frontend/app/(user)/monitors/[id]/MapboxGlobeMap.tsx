@@ -251,6 +251,41 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
   }, [validators]);
 
+  // Create comprehensive list of countries that have validators for highlighting
+  const countriesWithValidators = useMemo(() => {
+    const countryMappings: Record<string, string[]> = {
+      'pakistan': ['Pakistan', 'PAKISTAN', 'pakistan'],
+      'united states': ['United States', 'USA', 'US', 'United States of America'],
+      'united kingdom': ['United Kingdom', 'UK', 'Britain', 'Great Britain'],
+      'india': ['India', 'INDIA'],
+      'canada': ['Canada', 'CANADA'],
+      'germany': ['Germany', 'Deutschland'],
+      'france': ['France', 'FRANCE'],
+      'japan': ['Japan', 'JAPAN'],
+      'australia': ['Australia', 'AUSTRALIA'],
+      'brazil': ['Brazil', 'BRAZIL'],
+      'china': ['China', 'CHINA'],
+      'russia': ['Russia', 'Russian Federation']
+    };
+    
+    const allCountryVariants: string[] = [];
+    
+    countryData.forEach(country => {
+      const countryNameLower = country.name.toLowerCase();
+      
+      // Add the original name
+      allCountryVariants.push(country.name.toLowerCase());
+      
+      // Add mapped variants if they exist
+      if (countryMappings[countryNameLower]) {
+        countryMappings[countryNameLower].forEach(variant => {
+          allCountryVariants.push(variant.toLowerCase());
+        });
+      }
+    });
+    
+    return [...new Set(allCountryVariants)]; // Remove duplicates
+  }, [countryData]);
 
   // Handle map click events
   const onMapClick = useCallback((event: any) => {
@@ -283,10 +318,57 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
 
     if (countryFeatures.length > 0) {
-      const countryName = countryFeatures[0].properties?.NAME;
-      const countryInData = countryData.find(c => c.name.toLowerCase() === countryName?.toLowerCase());
+      const mapboxCountryName = countryFeatures[0].properties?.NAME;
+      
+      // Debug logging
+      if (mapboxCountryName) {
+        console.log('Mapbox country name:', mapboxCountryName);
+        console.log('Available countries in data:', countryData.map(c => c.name));
+      }
+      
+      // Try multiple matching strategies
+      let countryInData = null;
+      
+      if (mapboxCountryName) {
+        // Strategy 1: Exact match (case insensitive)
+        countryInData = countryData.find(c => 
+          c.name.toLowerCase() === mapboxCountryName.toLowerCase()
+        );
+        
+        // Strategy 2: Check if our country name includes the mapbox name or vice versa
+        if (!countryInData) {
+          countryInData = countryData.find(c => 
+            c.name.toLowerCase().includes(mapboxCountryName.toLowerCase()) ||
+            mapboxCountryName.toLowerCase().includes(c.name.toLowerCase())
+          );
+        }
+        
+        // Strategy 3: Use country code mapping for known mismatches
+        if (!countryInData) {
+          const countryCodeMap: Record<string, string> = {
+            'Pakistan': 'pakistan',
+            'United States': 'united states',
+            'United Kingdom': 'united kingdom',
+            'India': 'india',
+            'Canada': 'canada',
+            'Germany': 'germany',
+            'France': 'france',
+            'Japan': 'japan',
+            'Australia': 'australia',
+            'Brazil': 'brazil',
+            'China': 'china',
+            'Russia': 'russia'
+          };
+          
+          const mappedName = countryCodeMap[mapboxCountryName];
+          if (mappedName) {
+            countryInData = countryData.find(c => c.name.toLowerCase() === mappedName);
+          }
+        }
+      }
       
       if (countryInData) {
+        console.log('Found matching country:', countryInData.name);
         // Show tooltip with country validator information
         setHoveredValidator({
           id: countryInData.code,
@@ -302,7 +384,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
           cities: countryInData.validators.map(v => v.city)
         } as any);
         setTooltipPosition({ x: event.point.x, y: event.point.y });
-        setHoveredCountry(countryName || null);
+        setHoveredCountry(mapboxCountryName || null);
         map.getCanvas().style.cursor = 'pointer';
         return;
       }
@@ -504,12 +586,14 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                         'case',
                         ['==', ['get', 'NAME'], selectedCountry || ''], '#3b82f6',
                         ['==', ['get', 'NAME'], hoveredCountry || ''], '#10b981',
+                        ['in', ['downcase', ['get', 'NAME']], ['literal', countriesWithValidators]], '#10b981',
                         'transparent'
                       ],
                       'fill-opacity': [
                         'case',
-                        ['==', ['get', 'NAME'], selectedCountry || ''], 0.6,
-                        ['==', ['get', 'NAME'], hoveredCountry || ''], 0.4,
+                        ['==', ['get', 'NAME'], selectedCountry || ''], 0.7,
+                        ['==', ['get', 'NAME'], hoveredCountry || ''], 0.5,
+                        ['in', ['downcase', ['get', 'NAME']], ['literal', countriesWithValidators]], 0.2,
                         0
                       ]
                     }}
