@@ -88,4 +88,108 @@ export interface MonitorDetailsResponse {
   monitor: Monitor;
   stats: MonitorStats;
   responseTimeData: ResponseTimeData[];
+}
+
+// Monitor analytics types for TimescaleDB functions
+export interface UptimeData {
+  total_checks: number;
+  successful_checks: number;
+  failed_checks: number;
+  uptime_percentage: number;
+  availability_sla: number;
+}
+
+export interface LatencyData {
+  avg_latency: number;
+  min_latency: number;
+  max_latency: number;
+  sample_count: number;
+}
+
+export interface DowntimeData {
+  total_downtime_duration: string; // PostgreSQL INTERVAL type
+  downtime_incidents: number;
+  avg_incident_duration: string;
+  longest_incident: string;
+  mttr: string; // Mean Time To Recovery
+}
+
+export interface BestRegion {
+  region_type: 'Country' | 'Continent' | 'City';
+  region_name: string;
+  avg_latency: number;
+  sample_count: number;
+}
+
+export interface RegionalLatency {
+  country_code?: string;
+  continent_code?: string;
+  city?: string;
+  avg_latency: number;
+  sample_count: number;
+}
+
+export interface MonitorAnalyticsResponse {
+  monitorId: string;
+  period: string;
+  uptime: UptimeData | null;
+  latency: LatencyData | null;
+  downtime: DowntimeData | null;
+  bestRegion: BestRegion | null;
+  regional: {
+    byCountry: RegionalLatency[];
+    byContinent: RegionalLatency[];
+    byCity: RegionalLatency[];
+  };
+  generatedAt: string;
+}
+
+export interface TimeSeriesDataPoint {
+  time_bucket: string;
+  avg_latency: number;
+  uptime_percentage: number;
+  total_checks: number;
+}
+
+export interface MonitorTimeSeriesResponse {
+  monitorId: string;
+  period: string;
+  bucketSize: string;
+  data: TimeSeriesDataPoint[];
+  generatedAt: string;
+}
+
+export interface MonitorTickLocation {
+  longitude: number;
+  latitude: number;
+  countryCode: string;
+  continentCode: string;
+  city: string;
+}
+
+export interface MonitorTickValidator {
+  id: string;
+  walletAddress: string;
+  type: string;
+}
+
+export interface MonitorTick {
+  id: string;
+  status: 'GOOD' | 'BAD';
+  latency: number;
+  location: MonitorTickLocation;
+  validator: MonitorTickValidator;
+  createdAt: string;
+}
+
+export interface MonitorTicksResponse {
+  monitorId: string;
+  ticks: MonitorTick[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+  generatedAt: string;
 } 
