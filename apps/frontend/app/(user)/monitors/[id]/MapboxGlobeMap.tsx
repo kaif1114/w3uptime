@@ -3,7 +3,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useValidatorsByCountryAggregated } from '@/hooks/useValidators';
-import { Validator } from '@/types/validator';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,6 +20,7 @@ interface MapboxValidatorData {
   continent: string;
   continentCode: string;
   flag: string | null;
+  latency?: number; // Optional latency for compatibility
 }
 
 interface MapboxCountryData {
@@ -170,7 +170,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     if (!validatorData || validatorData.length === 0) {
       // Fallback logic for mock data
       if (mockValidators) {
-        const countryMap = new Map<string, MapboxCountryData>();
+        const countryMap = new globalThis.Map<string, MapboxCountryData>();
         
         validators.forEach(validator => {
           const countryName = validator.country;
@@ -209,10 +209,10 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
           continent: validator.location.continent,
           continentCode: validator.location.continentCode,
           flag: validator.location.flag
-        };
+        } as MapboxValidatorData;
       }),
       onlineCount: country.count
-    })).sort((a, b) => b.onlineCount - a.onlineCount);
+    } as MapboxCountryData)).sort((a, b) => b.onlineCount - a.onlineCount);
   }, [validatorData, validators, mockValidators]);
 
   const stats = useMemo(() => {
@@ -229,7 +229,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
 
   // Aggregate data by continent
   const continentData = useMemo(() => {
-    const continentMap = new Map<string, { name: string; code: string; count: number; countries: string[] }>();
+    const continentMap = new globalThis.Map<string, { name: string; code: string; count: number; countries: string[] }>();
     
     validators.forEach(validator => {
       const continent = validator.continent;
@@ -640,7 +640,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     <p className="text-xs font-medium mb-1">Cities:</p>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {(() => {
-                        const cityMap = new Map<string, number>();
+                        const cityMap = new globalThis.Map<string, number>();
                         selectedCountryData.validators.forEach(v => {
                           const cityName = v.city;
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
