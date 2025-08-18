@@ -31,8 +31,7 @@ interface MapboxCountryData {
 }
 
 interface MapboxGlobeMapProps {
-  // Optional prop for backward compatibility with mock data
-  mockValidators?: any[];
+  // No props needed - component uses real API data only
 }
 
 
@@ -52,62 +51,7 @@ function getValidatorAvatar(validatorId: string): string {
   return AVAILABLE_AVATARS[avatarIndex];
 }
 
-// Approximate coordinates for major cities and countries
-// In production, you might want to use a geocoding service or store coordinates in the database
-function getApproximateCoordinates(country: string, city: string): { lat: number; lng: number } {
-  const cityCoords: Record<string, { lat: number; lng: number }> = {
-    // Major cities coordinates
-    'new york': { lat: 40.7128, lng: -74.0060 },
-    'london': { lat: 51.5074, lng: -0.1278 },
-    'tokyo': { lat: 35.6762, lng: 139.6503 },
-    'sydney': { lat: -33.8688, lng: 151.2093 },
-    'paris': { lat: 48.8566, lng: 2.3522 },
-    'berlin': { lat: 52.5200, lng: 13.4050 },
-    'toronto': { lat: 43.6532, lng: -79.3832 },
-    'singapore': { lat: 1.3521, lng: 103.8198 },
-    'mumbai': { lat: 19.0760, lng: 72.8777 },
-    'sao paulo': { lat: -23.5505, lng: -46.6333 },
-  };
-
-  // Country center coordinates as fallback
-  const countryCoords: Record<string, { lat: number; lng: number }> = {
-    'united states': { lat: 39.8283, lng: -98.5795 },
-    'canada': { lat: 56.1304, lng: -106.3468 },
-    'united kingdom': { lat: 55.3781, lng: -3.4360 },
-    'germany': { lat: 51.1657, lng: 10.4515 },
-    'france': { lat: 46.2276, lng: 2.2137 },
-    'japan': { lat: 36.2048, lng: 138.2529 },
-    'australia': { lat: -25.2744, lng: 133.7751 },
-    'singapore': { lat: 1.3521, lng: 103.8198 },
-    'india': { lat: 20.5937, lng: 78.9629 },
-    'brazil': { lat: -14.2350, lng: -51.9253 },
-  };
-
-  const cityKey = city.toLowerCase();
-  const countryKey = country.toLowerCase();
-
-  // Try to find city coordinates first
-  if (cityCoords[cityKey]) {
-    return cityCoords[cityKey];
-  }
-
-  // Fallback to country coordinates
-  if (countryCoords[countryKey]) {
-    // Add small random offset to avoid overlapping markers
-    return {
-      lat: countryCoords[countryKey].lat + (Math.random() - 0.5) * 2,
-      lng: countryCoords[countryKey].lng + (Math.random() - 0.5) * 2
-    };
-  }
-
-  // Ultimate fallback - random location
-  return {
-    lat: (Math.random() - 0.5) * 180,
-    lng: (Math.random() - 0.5) * 360
-  };
-}
-
-export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
+export function MapboxGlobeMap() {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
@@ -135,21 +79,6 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   // Transform real validator data to MapboxValidatorData format
   const validators: MapboxValidatorData[] = useMemo(() => {
     if (!validatorData || validatorData.length === 0) {
-      // Fallback to mock data if provided
-      if (mockValidators) {
-        return mockValidators.map(v => ({
-          id: v.id,
-          country: v.country,
-          city: v.city,
-          lat: v.lat,
-          lng: v.lng,
-          status: 'online' as const,
-          countryCode: v.country.substring(0, 2).toUpperCase(),
-          continent: v.continent || 'Unknown',
-          continentCode: v.continent?.substring(0, 2).toUpperCase() || 'UN',
-          flag: null
-        }));
-      }
       return [];
     }
 
@@ -175,33 +104,11 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
     
     return transformedValidators;
-  }, [validatorData, mockValidators]);
+  }, [validatorData]);
 
   // Transform country data 
   const countryData: MapboxCountryData[] = useMemo(() => {
     if (!validatorData || validatorData.length === 0) {
-      // Fallback logic for mock data
-      if (mockValidators) {
-        const countryMap = new globalThis.Map<string, MapboxCountryData>();
-        
-        validators.forEach(validator => {
-          const countryName = validator.country;
-          if (!countryMap.has(countryName)) {
-            countryMap.set(countryName, {
-              name: countryName,
-              code: validator.countryCode,
-              validators: [],
-              onlineCount: 0
-            });
-          }
-          
-          const country = countryMap.get(countryName)!;
-          country.validators.push(validator);
-          country.onlineCount++;
-        });
-        
-        return Array.from(countryMap.values()).sort((a, b) => b.onlineCount - a.onlineCount);
-      }
       return [];
     }
 
@@ -224,7 +131,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       }),
       onlineCount: country.count
     } as MapboxCountryData)).sort((a, b) => b.onlineCount - a.onlineCount);
-  }, [validatorData, validators, mockValidators]);
+  }, [validatorData, validators]);
 
   const stats = useMemo(() => {
     return { 
@@ -471,7 +378,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   }, [selectedCountryData]);
 
   // Show loading state
-  if (isLoading && !mockValidators) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -489,7 +396,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   }
 
   // Show error state
-  if (error && !mockValidators) {
+  if (error) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -506,6 +413,30 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     );
   }
 
+  // Show empty state when no validators
+  if (!validators || validators.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Global Validator Network
+            <Badge variant="outline">No Validators</Badge>
+          </div>
+        </div>
+        <div className="h-screen rounded-lg border bg-muted/30 flex items-center justify-center">
+          <div className="text-center">
+            <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Validators Available</h3>
+            <p className="text-muted-foreground max-w-md">
+              There are currently no active validators in the network. The 3D world map will appear once validators come online.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -516,12 +447,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
           </span>
           <div className="flex gap-2">
             <Badge variant="outline">{stats.online} Online</Badge>
-            {validatorData && (
-              <Badge variant="secondary">Real-time</Badge>
-            )}
-            {mockValidators && !validatorData && (
-              <Badge variant="outline">Demo</Badge>
-            )}
+            <Badge variant="secondary">Real-time</Badge>
           </div>
         </div>
       </div>
