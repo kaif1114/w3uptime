@@ -262,9 +262,9 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
 
     if (features.length > 0) {
-      const countryName = features[0].properties?.NAME;
+      const countryName = features[0].properties?.name;
       if (countryName) {
-        const countryInData = countryData.find((c: MapboxCountryData) => c.name === countryName);
+        const countryInData = countryData.find((c: MapboxCountryData) => c.name.toLowerCase() === countryName.toLowerCase());
         if (countryInData) {
           setSelectedCountry(selectedCountry === countryName ? null : countryName);
         }
@@ -287,14 +287,8 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
       console.log('Feature properties:', feature.properties);
       console.log('Feature layer:', feature.layer?.id);
       
-      // Try different property names that Mapbox might use
-      const mapboxCountryName = feature.properties?.NAME || 
-                               feature.properties?.name || 
-                               feature.properties?.NAME_EN || 
-                               feature.properties?.ADMIN ||
-                               feature.properties?.SOVEREIGNT ||
-                               feature.properties?.country ||
-                               feature.properties?.Country;
+      // Use the correct property name from Mapbox (from logs: name: "India")
+      const mapboxCountryName = feature.properties?.name || feature.properties?.name_en;
       
       console.log('Hovering over country:', mapboxCountryName);
       console.log('Available validator countries:', countryData.map(c => c.name));
@@ -524,14 +518,14 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     paint={{
                       'fill-color': [
                         'case',
-                        ['==', ['get', 'NAME'], selectedCountry || ''], '#3b82f6',
-                        ['==', ['get', 'NAME'], hoveredCountry || ''], '#10b981',
+                        ['==', ['get', 'name'], selectedCountry || ''], '#3b82f6',
+                        ['==', ['get', 'name'], hoveredCountry || ''], '#10b981',
                         'transparent'
                       ],
                       'fill-opacity': [
                         'case',
-                        ['==', ['get', 'NAME'], selectedCountry || ''], 0.6,
-                        ['==', ['get', 'NAME'], hoveredCountry || ''], 0.4,
+                        ['==', ['get', 'name'], selectedCountry || ''], 0.6,
+                        ['==', ['get', 'name'], hoveredCountry || ''], 0.4,
                         0
                       ]
                     }}
@@ -551,7 +545,7 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                     type="symbol"
                     source-layer="country_boundaries"
                     layout={{
-                      'text-field': ['get', 'NAME'],
+                      'text-field': ['get', 'name'],
                       'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
                       'text-size': [
                         'interpolate',
