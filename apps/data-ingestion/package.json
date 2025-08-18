@@ -1,0 +1,37 @@
+{
+  "name": "data-ingestion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node  build/src/main.js",
+    "dev": "nodemon --watch src --exec ts-node src/main.ts",
+    "build": "tsc --build",
+    "dev:debug": "nodemon --inspect src/main.ts",
+    "compile:windows": "rmdir /s /q build & tsc -p . && npm run copy-templates",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "fix": "gts fix",
+    "compile": "rm -rf build/; node  ./node_modules/.bin/tsc -p .; npm run copy-templates"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/ws": "^8.18.1",
+    "copyfiles": "^2.4.1",
+    "gts": "^6.0.2",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "common": "^1.0.0",
+    "db": "^1.0.0",
+    "dotenv": "^17.2.1",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.3"
+  }
+}
