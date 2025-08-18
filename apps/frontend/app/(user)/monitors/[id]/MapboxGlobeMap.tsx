@@ -97,6 +97,9 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  const [hoveredValidator, setHoveredValidator] = useState<MapboxValidatorData | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [selectedContinent, setSelectedContinent] = useState<string | null>(null);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 0,
     latitude: 20,
@@ -224,6 +227,34 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     return countryData.find((country: MapboxCountryData) => country.name === selectedCountry);
   }, [countryData, selectedCountry]);
 
+  // Aggregate data by continent
+  const continentData = useMemo(() => {
+    const continentMap = new Map<string, { name: string; code: string; count: number; countries: string[] }>();
+    
+    validators.forEach(validator => {
+      const continent = validator.continent;
+      const continentCode = validator.continentCode;
+      
+      if (!continentMap.has(continent)) {
+        continentMap.set(continent, {
+          name: continent,
+          code: continentCode,
+          count: 0,
+          countries: []
+        });
+      }
+      
+      const cont = continentMap.get(continent)!;
+      cont.count++;
+      
+      if (!cont.countries.includes(validator.country)) {
+        cont.countries.push(validator.country);
+      }
+    });
+    
+    return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
+  }, [validators]);
+
   // Create GeoJSON for validator points
   const validatorGeoJSON = useMemo(() => {
     return {
@@ -270,19 +301,48 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
+    // Check for validator points first
+    const validatorFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
+      layers: ['validator-points']
+    });
+
+    if (validatorFeatures.length > 0) {
+      const validatorId = validatorFeatures[0].properties?.id;
+      const validator = validators.find(v => v.id === validatorId);
+      
+      if (validator) {
+        setHoveredValidator(validator);
+        setTooltipPosition({ x: event.point.x, y: event.point.y });
+        setHoveredCountry(null);
+        map.getCanvas().style.cursor = 'pointer';
+        return;
+      }
+    }
+
+    // Check for countries
+    const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-fills']
     });
 
-    if (features.length > 0) {
-      const countryName = features[0].properties?.NAME;
-      setHoveredCountry(countryName || null);
-      map.getCanvas().style.cursor = 'pointer';
-    } else {
-      setHoveredCountry(null);
-      map.getCanvas().style.cursor = '';
+    if (countryFeatures.length > 0) {
+      const countryName = countryFeatures[0].properties?.NAME;
+      const countryInData = countryData.find(c => c.name === countryName);
+      
+      if (countryInData) {
+        setHoveredCountry(countryName || null);
+        setHoveredValidator(null);
+        setTooltipPosition(null);
+        map.getCanvas().style.cursor = 'pointer';
+        return;
+      }
     }
-  }, []);
+
+    // Clear all hover states
+    setHoveredCountry(null);
+    setHoveredValidator(null);
+    setTooltipPosition(null);
+    map.getCanvas().style.cursor = '';
+  }, [validators, countryData]);
 
   // Map control functions
   const toggleGlobeView = useCallback(() => {
@@ -324,7 +384,35 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
         right: 0
       }
     });
+    setSelectedCountry(null);
+    setSelectedContinent(null);
   }, []);
+
+  // Focus on continent
+  const focusOnContinent = useCallback((continentName: string) => {
+    const continentValidators = validators.filter(v => v.continent.toLowerCase() === continentName.toLowerCase());
+    
+    if (continentValidators.length > 0 && mapRef.current) {
+      const map = mapRef.current.getMap();
+      
+      // Calculate bounds for the continent
+      const lngs = continentValidators.map(v => v.lng);
+      const lats = continentValidators.map(v => v.lat);
+      
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      
+      map.fitBounds(
+        [[minLng, minLat], [maxLng, maxLat]],
+        { padding: 50, duration: 1000 }
+      );
+      
+      setSelectedContinent(continentName);
+      setSelectedCountry(null);
+    }
+  }, [validators]);
 
   // Focus on selected country
   useEffect(() => {
@@ -572,25 +660,79 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                 </div>
               )}
 
+              {/* Validator tooltip on hover */}
+              {hoveredValidator && tooltipPosition && (
+                <div 
+                  className="absolute pointer-events-none bg-black/90 text-white p-2 rounded-md text-xs z-50 max-w-48"
+                  style={{
+                    left: tooltipPosition.x + 10,
+                    top: tooltipPosition.y - 10,
+                    transform: 'translateY(-100%)'
+                  }}
+                >
+                  <div className="font-semibold flex items-center gap-1 mb-1">
+                    {hoveredValidator.flag && (
+                      <img src={hoveredValidator.flag} alt="" className="w-3 h-2 rounded-sm" />
+                    )}
+                    {hoveredValidator.city}
+                  </div>
+                  <div className="text-gray-300">
+                    {hoveredValidator.country}
+                  </div>
+                  <div className="text-green-400 text-xs mt-1">
+                    ● Online
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Continental Distribution */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+              <div className="md:col-span-2 lg:col-span-3">
+                <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
+              </div>
+              {continentData.map(continent => (
+                <div 
+                  key={continent.name} 
+                  className={`bg-background p-3 rounded-md cursor-pointer transition-all hover:shadow-md border-2 ${
+                    selectedContinent === continent.name ? 'border-primary' : 'border-transparent'
+                  }`}
+                  onClick={() => focusOnContinent(continent.name)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">{continent.name}</span>
+                    <Badge variant="secondary">{continent.count}</Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {continent.countries.length} countries
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {continent.countries.slice(0, 3).join(', ')}
+                    {continent.countries.length > 3 && ` +${continent.countries.length - 3} more`}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Status Legend */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-sm">Good (&lt;100ms)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <span className="text-sm">Moderate (100-300ms)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="text-sm">Poor (&gt;300ms)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-                <span className="text-sm">Offline</span>
+            <div className="grid grid-cols-1 gap-4 p-4 bg-muted rounded-lg">
+              <div>
+                <h4 className="font-medium mb-2">Legend</h4>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-sm">Online Validators</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-sm">Selected Country</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500/40"></div>
+                    <span className="text-sm">Hovered Country</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
