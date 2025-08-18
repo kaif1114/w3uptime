@@ -265,9 +265,17 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const features = map.queryRenderedFeatures([event.point.x, event.point.y], {
-      layers: ['country-fills']
-    });
+    const allFeatures = map.queryRenderedFeatures([event.point.x, event.point.y]);
+    
+    // Try to find country features in any layer
+    const features = allFeatures.filter(feature => 
+      feature.properties && (
+        feature.properties.name_en || 
+        feature.properties.NAME || 
+        feature.properties.name ||
+        feature.properties.iso_3166_1
+      )
+    );
 
     if (features.length > 0) {
       const feature = features[0];
@@ -292,10 +300,23 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    // Check for countries
-    const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
-      layers: ['country-fills', 'country-labels']
-    });
+    // Query all layers to see what's available
+    const allFeatures = map.queryRenderedFeatures([event.point.x, event.point.y]);
+    
+    if (allFeatures.length > 0) {
+      console.log('Available layers at point:', [...new Set(allFeatures.map(f => f.layer?.id))]);
+      console.log('First feature properties:', allFeatures[0].properties);
+    }
+    
+    // Try to find country features in any layer
+    const countryFeatures = allFeatures.filter(feature => 
+      feature.properties && (
+        feature.properties.name_en || 
+        feature.properties.NAME || 
+        feature.properties.name ||
+        feature.properties.iso_3166_1
+      )
+    );
 
     if (countryFeatures.length > 0) {
       const feature = countryFeatures[0];
@@ -528,79 +549,6 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
                    "star-intensity": 0.15
                  }}
                >
-
-                {/* Country Boundaries with highlighting */}
-                <Source
-                  id="countries"
-                  type="vector"
-                  url="mapbox://mapbox.country-boundaries-v1"
-                >
-                  <Layer
-                    id="country-fills"
-                    type="fill"
-                    source-layer="country_boundaries"
-                    paint={{
-                      'fill-color': [
-                        'case',
-                        ['==', ['get', 'NAME'], selectedCountry || ''], '#3b82f6',
-                        ['==', ['get', 'NAME'], hoveredCountry || ''], '#10b981',
-                        ['in', ['get', 'NAME'], ['literal', countriesWithValidators]], '#10b981',
-                        'transparent'
-                      ],
-                      'fill-opacity': [
-                        'case',
-                        ['==', ['get', 'NAME'], selectedCountry || ''], 0.6,
-                        ['==', ['get', 'NAME'], hoveredCountry || ''], 0.4,
-                        ['in', ['get', 'NAME'], ['literal', countriesWithValidators]], 0.2,
-                        0
-                      ]
-                    }}
-                  />
-                  <Layer
-                    id="country-borders"
-                    type="line"
-                    source-layer="country_boundaries"
-                    paint={{
-                      'line-color': '#ffffff',
-                      'line-width': 1,
-                      'line-opacity': 0.5
-                    }}
-                  />
-                  <Layer
-                    id="country-labels"
-                    type="symbol"
-                    source-layer="country_boundaries"
-                    layout={{
-                      'text-field': ['get', 'NAME'],
-                      'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-                      'text-size': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        1, 8,
-                        3, 14,
-                        5, 18
-                      ],
-                      'text-transform': 'uppercase',
-                      'text-letter-spacing': 0.1,
-                      'text-offset': [0, 0],
-                      'text-anchor': 'center'
-                    }}
-                    paint={{
-                      'text-color': '#ffffff',
-                      'text-halo-color': '#000000',
-                      'text-halo-width': 1,
-                      'text-opacity': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        1, 0.3,
-                        2, 0.7,
-                        3, 1
-                      ]
-                    }}
-                  />
-                </Source>
               </Map>
 
               {/* Map Controls */}
