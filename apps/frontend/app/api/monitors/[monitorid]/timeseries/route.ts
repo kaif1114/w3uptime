@@ -48,10 +48,10 @@ export const GET = withAuth(async (
       );
     }
 
-    // Get time series data
+    // Get time series data - cast timestamp to handle timezone issues
     const timeseriesData = await prisma.$queryRaw`
       SELECT 
-        time_bucket,
+        time_bucket::timestamp without time zone as time_bucket,
         avg_latency,
         uptime_percentage,
         total_checks
