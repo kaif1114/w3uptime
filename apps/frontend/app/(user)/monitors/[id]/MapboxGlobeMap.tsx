@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useValidatorsByCountryAggregated } from '@/hooks/useValidators';
+import { useMonitorTicks } from '@/hooks/useMonitors';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -31,7 +31,7 @@ interface MapboxCountryData {
 }
 
 interface MapboxGlobeMapProps {
-  // No props needed - component uses real API data only
+  monitorId: string;
 }
 
 
@@ -51,7 +51,7 @@ function getValidatorAvatar(validatorId: string): string {
   return AVAILABLE_AVATARS[avatarIndex];
 }
 
-export function MapboxGlobeMap() {
+export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
@@ -74,65 +74,65 @@ export function MapboxGlobeMap() {
     }
   });
 
-  // Fetch real validator data from hub server
-  const { data: validatorData, isLoading, error } = useValidatorsByCountryAggregated();
+  // Fetch real monitor ticks data for this specific monitor
+  const { data: ticksData, isLoading, error } = useMonitorTicks(monitorId, { limit: 500 });
 
-  // Transform real validator data to MapboxValidatorData format
+  // Transform monitor ticks data to MapboxValidatorData format
   const validators: MapboxValidatorData[] = useMemo(() => {
-    if (!validatorData || validatorData.length === 0) {
+    if (!ticksData?.ticks || ticksData.ticks.length === 0) {
       return [];
     }
 
-    // Transform real validator data
-    const transformedValidators: MapboxValidatorData[] = [];
+    // Group ticks by validator ID to get unique validators with latest data
+    const validatorMap = new Map<string, MapboxValidatorData>();
     
-    validatorData.forEach(country => {
-      country.validators.forEach(validator => {
-        // Use real coordinates from the hub server
-        transformedValidators.push({
-          id: validator.validatorId,
-          country: validator.location.country,
-          city: validator.location.city,
-          lat: validator.location.latitude,
-          lng: validator.location.longitude,
+    ticksData.ticks.forEach(tick => {
+      const existingValidator = validatorMap.get(tick.validator.id);
+      if (!existingValidator || new Date(tick.createdAt) > new Date(existingValidator.id)) {
+        validatorMap.set(tick.validator.id, {
+          id: tick.validator.id,
+          country: tick.location.countryCode,
+          city: tick.location.city,
+          lat: tick.location.latitude,
+          lng: tick.location.longitude,
           status: 'online',
-          countryCode: validator.location.countryCode,
-          continent: validator.location.continent,
-          continentCode: validator.location.continentCode,
-          flag: validator.location.flag
+          countryCode: tick.location.countryCode,
+          continent: tick.location.continentCode,
+          continentCode: tick.location.continentCode,
+          flag: null, // No flag data available in monitor ticks
+          latency: tick.latency
         });
-      });
+      }
     });
     
-    return transformedValidators;
-  }, [validatorData]);
+    return Array.from(validatorMap.values());
+  }, [ticksData]);
 
-  // Transform country data 
+  // Transform country data based on validators
   const countryData: MapboxCountryData[] = useMemo(() => {
-    if (!validatorData || validatorData.length === 0) {
+    if (!validators || validators.length === 0) {
       return [];
     }
 
-    return validatorData.map(country => ({
-      name: country.name,
-      code: country.code,
-      validators: country.validators.map(validator => {
-        return {
-          id: validator.validatorId,
-          country: validator.location.country,
-          city: validator.location.city,
-          lat: validator.location.latitude,
-          lng: validator.location.longitude,
-          status: 'online' as const,
-          countryCode: validator.location.countryCode,
-          continent: validator.location.continent,
-          continentCode: validator.location.continentCode,
-          flag: validator.location.flag
-        } as MapboxValidatorData;
-      }),
-      onlineCount: country.count
-    } as MapboxCountryData)).sort((a, b) => b.onlineCount - a.onlineCount);
-  }, [validatorData, validators]);
+    // Group validators by country
+    const countryMap = new Map<string, MapboxValidatorData[]>();
+    
+    validators.forEach(validator => {
+      const countryKey = validator.countryCode;
+      if (!countryMap.has(countryKey)) {
+        countryMap.set(countryKey, []);
+      }
+      countryMap.get(countryKey)!.push(validator);
+    });
+
+    // Convert to country data format
+    return Array.from(countryMap.entries()).map(([countryCode, countryValidators]) => ({
+      name: countryCode, // Use country code as name since we don't have full country names
+      code: countryCode,
+      validators: countryValidators,
+      onlineCount: countryValidators.length
+    })).sort((a, b) => b.onlineCount - a.onlineCount);
+  }, [validators]);
 
   const stats = useMemo(() => {
     return { 
