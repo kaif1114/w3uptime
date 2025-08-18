@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, RefreshCw } from "lucide-react";
-import { useState } from 'react';
 
 export type TimePeriod = '1hr' | '1day' | '3days' | '1week' | '2weeks' | '30days' | '90days';
 export type UpdateFrequency = '30s' | '1m' | '5m' | '15m' | '30m';
@@ -48,11 +47,11 @@ const BUCKET_SIZE_LABELS: Record<BucketSize, string> = {
 
 export function MonitoringControls({
   timePeriod,
-  updateFrequency,
+  updateFrequency: _updateFrequency,
   bucketSize,
   autoRefresh,
   onTimePeriodChange,
-  onUpdateFrequencyChange,
+  onUpdateFrequencyChange: _onUpdateFrequencyChange,
   onBucketSizeChange,
   onAutoRefreshToggle,
   onManualRefresh,

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMonitorTimeSeries } from "@/hooks/useMonitors";
 import { AlertTriangle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { format } from 'date-fns';
 
 interface TimeSeriesChartProps {
@@ -71,13 +71,13 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
     checks: point.total_checks,
   }));
 
-  const formatTooltipValue = (value: any, name: string) => {
+  const formatTooltipValue = (value: unknown, name: string) => {
     if (name === 'latency') return [`${value}ms`, 'Latency'];
     if (name === 'uptime') return [`${value}%`, 'Uptime'];
     return [value, name];
   };
 
-  const formatTooltipLabel = (label: any) => {
+  const formatTooltipLabel = (label: unknown) => {
     if (typeof label === 'number') {
       return format(new Date(label), bucketSize.includes('day') ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm');
     }

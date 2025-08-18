@@ -2,8 +2,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { useMonitorDetails, usePauseMonitor, useMonitorAnalytics } from "@/hooks/useMonitors";
+import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
   Activity,

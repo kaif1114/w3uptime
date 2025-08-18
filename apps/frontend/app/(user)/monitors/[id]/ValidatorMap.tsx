@@ -182,7 +182,7 @@ export function ValidatorMap({ monitorId }: ValidatorMapProps) {
           <div className="max-h-96 overflow-y-auto space-y-2">
             {validatorLocations
               .sort((a, b) => b.validatorCount - a.validatorCount)
-              .map((location, index) => {
+              .map((location) => {
                 const successRate = (location.goodChecks / (location.goodChecks + location.badChecks)) * 100;
                 
                 return (

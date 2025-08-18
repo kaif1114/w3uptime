@@ -55,7 +55,12 @@ export const GET = withAuth(async (
     }
 
     // Build where conditions
-    const whereConditions: any = {
+    const whereConditions: {
+      monitorId: string;
+      status?: 'GOOD' | 'BAD';
+      countryCode?: string;
+      city?: string;
+    } = {
       monitorId: monitorid,
     };
 
