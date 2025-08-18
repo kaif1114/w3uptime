@@ -28,10 +28,16 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "common": "^1.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "db": "^1.0.0",
     "dotenv": "^17.2.1",
     "ethers": "^6.15.0",
+    "express": "^5.1.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.3"
   }

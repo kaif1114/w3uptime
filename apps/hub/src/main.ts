@@ -12,13 +12,14 @@ import {
   MonitorTickBatchResponse, 
   MonitorTickStatus 
 } from "common/types";
+import express, { Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import http from "http";
-import url from "url";
 import "dotenv/config";
 
-async function checkAuthentication(req: http.IncomingMessage): Promise<string | null> {
-  const cookies = parseCookies(req.headers.cookie || "");
-  const sessionId = cookies.sessionId;
+async function checkAuthentication(req: express.Request): Promise<string | null> {
+  const sessionId = req.cookies?.sessionId;
   console.log(sessionId);
   if (!sessionId) {
     return null;
@@ -40,115 +41,106 @@ async function checkAuthentication(req: http.IncomingMessage): Promise<string | 
   }
 }
 
-function parseCookies(cookieHeader: string): { [key: string]: string } {
-  const cookies: { [key: string]: string } = {};
-  cookieHeader.split(';').forEach(cookie => {
-    const parts = cookie.trim().split('=');
-    if (parts.length === 2) {
-      cookies[parts[0]] = parts[1];
+// Express server setup
+const app = express();
+const httpServer = http.createServer(app);
+
+// Middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
+app.use(cookieParser());
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
+declare global {
+  namespace Express {
+    interface Request {
+      userId: string;
     }
-  });
-  return cookies;
+  }
 }
 
-// HTTP server setup
-const httpServer = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-
-  const parsedUrl = url.parse(req.url || '', true);
-  const pathname = parsedUrl.pathname;
-
-  if (pathname === '/ping') {
-    res.writeHead(200);
-    res.end(JSON.stringify({ status: 'OK' }));
-    return;
-  }
-
-  // Authentication required for validator routes
+const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
   const userId = await checkAuthentication(req);
   if (!userId) {
-    res.writeHead(401);
-    res.end(JSON.stringify({ error: 'Unauthorized' }));
-    return;
+    return res.status(401).json({ error: 'Unauthorized' });
   }
+  req.userId = userId;
+  next();
+};
 
-  if (pathname === '/validators') {
-    try {
-      const { countrycode, city, postalcode, continent } = parsedUrl.query;
-      
-      let filteredValidators = validators;
-      
-      // Apply filters based on query parameters
-      if (countrycode) {
-        filteredValidators = filteredValidators.filter(v => 
-          v.location.countryCode.toLowerCase() === (countrycode as string).toLowerCase()
-        );
-      }
-      
-      if (city) {
-        filteredValidators = filteredValidators.filter(v => 
-          v.location.city.toLowerCase() === (city as string).toLowerCase()
-        );
-      }
-      
-      if (postalcode) {
-        filteredValidators = filteredValidators.filter(v => 
-          v.location.postalCode === postalcode
-        );
-      }
-      
-      if (continent) {
-        filteredValidators = filteredValidators.filter(v => 
-          v.location.continent.toLowerCase() === (continent as string).toLowerCase()
-        );
-      }
-      
-      const responseValidators = filteredValidators.map(v => ({
-        validatorId: v.validatorId,
-        location: {
-          country: v.location.country,
-          countryCode: v.location.countryCode,
-          region: v.location.region,
-          city: v.location.city,
-          continent: v.location.continent,
-          continentCode: v.location.continentCode,
-          flag: v.location.flag
-        }
-      }));
-      
-      res.writeHead(200);
-      res.end(JSON.stringify({ validators: responseValidators }));
-    } catch (error) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Internal server error' }));
+app.get('/ping', (req, res) => {
+  res.json({ status: 'OK' });
+});
+
+app.get('/validators', authenticateUser, (req, res) => {
+  try {
+    const { countrycode, city, postalcode, continent } = req.query;
+    
+    let filteredValidators = validators;
+    
+    // Apply filters based on query parameters
+    if (countrycode) {
+      filteredValidators = filteredValidators.filter(v => 
+        v.location.countryCode.toLowerCase() === (countrycode as string).toLowerCase()
+      );
     }
-    return;
-  }
-
-  if (pathname === '/validators/count') {
-    try {
-      const validatorCount = validators.length;
-      res.writeHead(200);
-      res.end(JSON.stringify({ count: validatorCount }));
-    } catch (error) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Internal server error' }));
+    
+    if (city) {
+      filteredValidators = filteredValidators.filter(v => 
+        v.location.city.toLowerCase() === (city as string).toLowerCase()
+      );
     }
-    return;
+    
+    if (postalcode) {
+      filteredValidators = filteredValidators.filter(v => 
+        v.location.postalCode === postalcode
+      );
+    }
+    
+    if (continent) {
+      filteredValidators = filteredValidators.filter(v => 
+        v.location.continent.toLowerCase() === (continent as string).toLowerCase()
+      );
+    }
+    
+    const responseValidators = filteredValidators.map(v => ({
+      validatorId: v.validatorId,
+      location: {
+        country: v.location.country,
+        countryCode: v.location.countryCode,
+        region: v.location.region,
+        city: v.location.city,
+        continent: v.location.continent,
+        continentCode: v.location.continentCode,
+        flag: v.location.flag
+      }
+    }));
+    
+    res.json({ validators: responseValidators });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
+});
 
+app.get('/validators/count', authenticateUser, (req, res) => {
+  try {
+    const validatorCount = validators.length;
+    res.json({ count: validatorCount });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-  res.writeHead(404);
-  res.end(JSON.stringify({ error: 'Not found' }));
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
 });
 
 const ws = new WebSocketServer({ server: httpServer });
