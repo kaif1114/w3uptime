@@ -174,6 +174,73 @@ const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
 
 const COST_PER_VALIDATION = 1;
 
+// MonitorTick batching configuration
+const BUFFER_SIZE = 50;
+const BUFFER_TIMEOUT = 10 * 1000; // 10 seconds
+
+// MonitorTick buffer and timer
+let monitorTickBuffer: {
+  monitorId: string;
+  validatorId: string;
+  status: number;
+  latency: number;
+  longitude: number;
+  latitude: number;
+  countryCode: string;
+  continentCode: string;
+  city: string;
+  createdAt: Date;
+}[] = [];
+
+let bufferTimer: NodeJS.Timeout | null = null;
+
+// Function to send batched MonitorTicks to data ingestion service
+function sendBatchToDataIngestionService(batch: typeof monitorTickBuffer) {
+  // For now, just console.log the batch
+  console.log('Sending batch to data ingestion service:', {
+    batchSize: batch.length,
+    timestamp: new Date().toISOString(),
+    monitorTicks: batch
+  });
+  // TODO: Later replace with HTTP request to data ingestion service
+}
+
+// Function to process and send the current buffer
+function processBatch() {
+  if (monitorTickBuffer.length === 0) {
+    return;
+  }
+  
+  const batchToSend = [...monitorTickBuffer];
+  monitorTickBuffer = []; // Clear the buffer
+  
+  // Clear the timer since we're processing now
+  if (bufferTimer) {
+    clearTimeout(bufferTimer);
+    bufferTimer = null;
+  }
+  
+  sendBatchToDataIngestionService(batchToSend);
+}
+
+// Function to add MonitorTick to buffer
+function addToBuffer(monitorTick: typeof monitorTickBuffer[0]) {
+  monitorTickBuffer.push(monitorTick);
+  
+  // Check if buffer is full
+  if (monitorTickBuffer.length >= BUFFER_SIZE) {
+    processBatch();
+    return;
+  }
+  
+  // Start timer if not already running
+  if (!bufferTimer) {
+    bufferTimer = setTimeout(() => {
+      processBatch();
+    }, BUFFER_TIMEOUT);
+  }
+}
+
 ws.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
   socket.on("message", (messageRaw) => {
@@ -240,28 +307,26 @@ setInterval(async () => {
           const { validatorId, status, latency } = message.data;
           const validatorData = validators.find(v => v.validatorId === validatorId);
           
-          await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-            await tx.monitorTick.create({
-              data: {
-                monitorId: monitor.id,
-                validatorId: validatorId,
-                status,
-                latency,
-                longitude: validatorData?.location.longitude || 0,
-                latitude: validatorData?.location.latitude || 0,
-                countryCode: validatorData?.location.countryCode || 'UNKNOWN',
-                continentCode: validatorData?.location.continentCode || 'UNKNOWN',
-                city: validatorData?.location.city || 'unknown',
-                createdAt: new Date(),
-              },
-            });
+          // Add MonitorTick to buffer instead of saving directly to database
+          addToBuffer({
+            monitorId: monitor.id,
+            validatorId: validatorId,
+            status,
+            latency,
+            longitude: validatorData?.location.longitude || 0,
+            latitude: validatorData?.location.latitude || 0,
+            countryCode: validatorData?.location.countryCode || 'UNKNOWN',
+            continentCode: validatorData?.location.continentCode || 'UNKNOWN',
+            city: validatorData?.location.city || 'unknown',
+            createdAt: new Date(),
+          });
 
-            await tx.user.update({
-              where: { id: validatorId },
-              data: {
-                balance: { increment: COST_PER_VALIDATION },
-              },
-            });
+          // Still update validator balance immediately
+          await prisma.user.update({
+            where: { id: validatorId },
+            data: {
+              balance: { increment: COST_PER_VALIDATION },
+            },
           });
         }
       };
