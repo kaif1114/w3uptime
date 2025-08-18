@@ -62,8 +62,16 @@ export const GET = withAuth(async (
       // Total latency statistics
       prisma.$queryRaw`SELECT * FROM get_total_avg_latency(${monitorid}, ${period})`,
       
-      // Downtime data
-      prisma.$queryRaw`SELECT * FROM get_downtime_data(${monitorid}, ${period})`,
+      // Downtime data - cast intervals to text
+      prisma.$queryRaw`
+        SELECT 
+          total_downtime_duration::text,
+          downtime_incidents,
+          avg_incident_duration::text,
+          longest_incident::text,
+          mttr::text
+        FROM get_downtime_data(${monitorid}, ${period})
+      `,
       
       // Best performing region
       prisma.$queryRaw`SELECT * FROM get_best_performing_region(${monitorid}, ${period})`,

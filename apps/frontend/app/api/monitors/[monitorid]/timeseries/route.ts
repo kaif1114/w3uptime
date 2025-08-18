@@ -50,7 +50,12 @@ export const GET = withAuth(async (
 
     // Get time series data
     const timeseriesData = await prisma.$queryRaw`
-      SELECT * FROM get_monitor_timeseries(${monitorid}, ${period}, ${bucket})
+      SELECT 
+        time_bucket,
+        avg_latency,
+        uptime_percentage,
+        total_checks
+      FROM get_monitor_timeseries(${monitorid}, ${period}, ${bucket})
     `;
 
     return NextResponse.json({
