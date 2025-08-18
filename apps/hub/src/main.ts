@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
-import { IncomingMessage, SignupIncomingMessage } from "common/types";
+import { IncomingMessage, SignupIncomingMessage, MonitorTickStatus } from "common/types";
 import http from "http";
 import url from "url";
 import "dotenv/config";
@@ -182,7 +182,7 @@ const BUFFER_TIMEOUT = 10 * 1000; // 10 seconds
 let monitorTickBuffer: {
   monitorId: string;
   validatorId: string;
-  status: number;
+  status: MonitorTickStatus;
   latency: number;
   longitude: number;
   latitude: number;
