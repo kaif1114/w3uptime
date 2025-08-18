@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import type { Prisma } from "@prisma/client";
 import { v7 as uuidv7 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
-import { IncomingMessage, SignupIncomingMessage } from "common/types";
+import { IncomingMessage, SignupIncomingMessage, MonitorTickStatus } from "common/types";
 import http from "http";
 import url from "url";
 import "dotenv/config";
@@ -174,6 +174,68 @@ const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } =
 
 const COST_PER_VALIDATION = 1;
 
+const BUFFER_SIZE = 50;
+const BUFFER_TIMEOUT = 10 * 1000; // 10 seconds
+
+
+let monitorTickBuffer: {
+  monitorId: string;
+  validatorId: string;
+  status: MonitorTickStatus;
+  latency: number;
+  longitude: number;
+  latitude: number;
+  countryCode: string;
+  continentCode: string;
+  city: string;
+  createdAt: Date;
+}[] = [];
+
+let bufferTimer: NodeJS.Timeout | null = null;
+
+function sendBatch(batch: typeof monitorTickBuffer) {
+
+  console.log('Sending batch to data ingestion service:', {
+    batchSize: batch.length,
+    timestamp: new Date().toISOString(),
+  });
+  
+}
+
+
+function processBatch() {
+  if (monitorTickBuffer.length === 0) {
+    return;
+  }
+  
+  const batchToSend = [...monitorTickBuffer];
+  monitorTickBuffer = []; 
+  
+
+  if (bufferTimer) {
+    clearTimeout(bufferTimer);
+    bufferTimer = null;
+  }
+  
+  sendBatch(batchToSend);
+}
+
+function addToBatch(monitorTick: typeof monitorTickBuffer[0]) {
+  monitorTickBuffer.push(monitorTick);
+  
+  if (monitorTickBuffer.length >= BUFFER_SIZE) {
+    processBatch();
+    return;
+  }
+  
+  // Start timer if not already running
+  if (!bufferTimer) {
+    bufferTimer = setTimeout(() => {
+      processBatch();
+    }, BUFFER_TIMEOUT);
+  }
+}
+
 ws.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
   socket.on("message", (messageRaw) => {
@@ -240,28 +302,26 @@ setInterval(async () => {
           const { validatorId, status, latency } = message.data;
           const validatorData = validators.find(v => v.validatorId === validatorId);
           
-          await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-            await tx.monitorTick.create({
-              data: {
-                monitorId: monitor.id,
-                validatorId: validatorId,
-                status,
-                latency,
-                longitude: validatorData?.location.longitude || 0,
-                latitude: validatorData?.location.latitude || 0,
-                countryCode: validatorData?.location.countryCode || 'UNKNOWN',
-                continentCode: validatorData?.location.continentCode || 'UNKNOWN',
-                city: validatorData?.location.city || 'unknown',
-                createdAt: new Date(),
-              },
-            });
+          // Add MonitorTick to buffer instead of saving directly to database
+          addToBatch({
+            monitorId: monitor.id,
+            validatorId: validatorId,
+            status,
+            latency,
+            longitude: validatorData?.location.longitude || 0,
+            latitude: validatorData?.location.latitude || 0,
+            countryCode: validatorData?.location.countryCode || 'UNKNOWN',
+            continentCode: validatorData?.location.continentCode || 'UNKNOWN',
+            city: validatorData?.location.city || 'unknown',
+            createdAt: new Date(),
+          });
 
-            await tx.user.update({
-              where: { id: validatorId },
-              data: {
-                balance: { increment: COST_PER_VALIDATION },
-              },
-            });
+          // Still update validator balance immediately
+          await prisma.user.update({
+            where: { id: validatorId },
+            data: {
+              balance: { increment: COST_PER_VALIDATION },
+            },
           });
         }
       };
