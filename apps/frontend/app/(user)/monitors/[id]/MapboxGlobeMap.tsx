@@ -283,7 +283,18 @@ export function MapboxGlobeMap({ mockValidators }: MapboxGlobeMapProps) {
     });
 
     if (countryFeatures.length > 0) {
-      const mapboxCountryName = countryFeatures[0].properties?.NAME;
+      const feature = countryFeatures[0];
+      console.log('Feature properties:', feature.properties);
+      console.log('Feature layer:', feature.layer?.id);
+      
+      // Try different property names that Mapbox might use
+      const mapboxCountryName = feature.properties?.NAME || 
+                               feature.properties?.name || 
+                               feature.properties?.NAME_EN || 
+                               feature.properties?.ADMIN ||
+                               feature.properties?.SOVEREIGNT ||
+                               feature.properties?.country ||
+                               feature.properties?.Country;
       
       console.log('Hovering over country:', mapboxCountryName);
       console.log('Available validator countries:', countryData.map(c => c.name));
