@@ -11,19 +11,19 @@ SELECT create_hypertable('"MonitorTick"', 'createdAt',
 
 -- 3. Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_monitor_tick_monitor_id_time 
-ON "MonitorTick" (monitorId, createdAt DESC);
+ON "MonitorTick" ("monitorId", "createdAt" DESC);
 
 CREATE INDEX IF NOT EXISTS idx_monitor_tick_country_time 
-ON "MonitorTick" (countryCode, createdAt DESC);
+ON "MonitorTick" ("countryCode", "createdAt" DESC);
 
 CREATE INDEX IF NOT EXISTS idx_monitor_tick_continent_time 
-ON "MonitorTick" (continentCode, createdAt DESC);
+ON "MonitorTick" ("continentCode", "createdAt" DESC);
 
 CREATE INDEX IF NOT EXISTS idx_monitor_tick_city_time 
-ON "MonitorTick" (city, createdAt DESC);
+ON "MonitorTick" ("city", "createdAt" DESC);
 
 CREATE INDEX IF NOT EXISTS idx_monitor_tick_status_time 
-ON "MonitorTick" (status, createdAt DESC);
+ON "MonitorTick" ("status", "createdAt" DESC);
 
 -- 4. Create a continuous aggregate for hourly data (optional but recommended for performance)
 CREATE MATERIALIZED VIEW monitor_tick_hourly
@@ -35,12 +35,12 @@ SELECT
     "continentCode",
     "city",
     "status",
-    AVG(latency) AS avg_latency,
-    MIN(latency) AS min_latency,
-    MAX(latency) AS max_latency,
+    AVG("latency") AS avg_latency,
+    MIN("latency") AS min_latency,
+    MAX("latency") AS max_latency,
     COUNT(*) AS tick_count,
-    COUNT(CASE WHEN status = 'UP' THEN 1 END) AS up_count,
-    COUNT(CASE WHEN status = 'DOWN' THEN 1 END) AS down_count
+    COUNT(CASE WHEN "status" = 'GOOD' THEN 1 END) AS up_count,
+    COUNT(CASE WHEN "status" = 'BAD' THEN 1 END) AS down_count
 FROM "MonitorTick"
 GROUP BY hour, "monitorId", "countryCode", "continentCode", "city", "status";
 
@@ -88,7 +88,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         mt."countryCode"::TEXT,
-        ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+        ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
         COUNT(*) AS sample_count
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
@@ -114,7 +114,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         mt."continentCode"::TEXT,
-        ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+        ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
         COUNT(*) AS sample_count
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
@@ -140,14 +140,14 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT 
-        mt.city::TEXT,
+        mt."city"::TEXT,
         mt."countryCode"::TEXT,
-        ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+        ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
         COUNT(*) AS sample_count
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
         AND mt."createdAt" >= NOW() - get_time_range(period_param)
-    GROUP BY mt.city, mt."countryCode"
+    GROUP BY mt."city", mt."countryCode"
     ORDER BY avg_latency ASC;
 END;
 $$ LANGUAGE plpgsql;
@@ -169,7 +169,7 @@ BEGIN
     RETURN QUERY
     WITH regional_performance AS (
         SELECT 'Country' as region_type, "countryCode" as region_name, 
-               AVG(latency) as avg_latency, COUNT(*) as sample_count
+               AVG("latency") as avg_latency, COUNT(*) as sample_count
         FROM "MonitorTick"
         WHERE "monitorId" = monitor_id_param
             AND "createdAt" >= NOW() - get_time_range(period_param)
@@ -178,7 +178,7 @@ BEGIN
         UNION ALL
         
         SELECT 'Continent' as region_type, "continentCode" as region_name,
-               AVG(latency) as avg_latency, COUNT(*) as sample_count
+               AVG("latency") as avg_latency, COUNT(*) as sample_count
         FROM "MonitorTick"
         WHERE "monitorId" = monitor_id_param
             AND "createdAt" >= NOW() - get_time_range(period_param)
@@ -186,12 +186,12 @@ BEGIN
         
         UNION ALL
         
-        SELECT 'City' as region_type, city as region_name,
-               AVG(latency) as avg_latency, COUNT(*) as sample_count
+        SELECT 'City' as region_type, "city" as region_name,
+               AVG("latency") as avg_latency, COUNT(*) as sample_count
         FROM "MonitorTick"
         WHERE "monitorId" = monitor_id_param
             AND "createdAt" >= NOW() - get_time_range(period_param)
-        GROUP BY city
+        GROUP BY "city"
     )
     SELECT rp.region_type::TEXT, rp.region_name::TEXT, 
            ROUND(rp.avg_latency::NUMERIC, 2), rp.sample_count
@@ -217,9 +217,9 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT 
-        ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-        ROUND(MIN(mt.latency)::NUMERIC, 2) AS min_latency,
-        ROUND(MAX(mt.latency)::NUMERIC, 2) AS max_latency,
+        ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
+        ROUND(MIN(mt."latency")::NUMERIC, 2) AS min_latency,
+        ROUND(MAX(mt."latency")::NUMERIC, 2) AS max_latency,
         COUNT(*) AS sample_count
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
@@ -245,10 +245,10 @@ BEGIN
     RETURN QUERY
     SELECT 
         COUNT(*) AS total_checks,
-        COUNT(CASE WHEN mt.status = 'UP' THEN 1 END) AS successful_checks,
-        COUNT(CASE WHEN mt.status = 'DOWN' THEN 1 END) AS failed_checks,
-        ROUND((COUNT(CASE WHEN mt.status = 'UP' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 4) AS uptime_percentage,
-        ROUND((COUNT(CASE WHEN mt.status = 'UP' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 2) AS availability_sla
+        COUNT(CASE WHEN mt."status" = 'GOOD' THEN 1 END) AS successful_checks,
+        COUNT(CASE WHEN mt."status" = 'BAD' THEN 1 END) AS failed_checks,
+        ROUND((COUNT(CASE WHEN mt."status" = 'GOOD' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 4) AS uptime_percentage,
+        ROUND((COUNT(CASE WHEN mt."status" = 'GOOD' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 2) AS availability_sla
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
         AND mt."createdAt" >= NOW() - get_time_range(period_param);
@@ -275,7 +275,7 @@ BEGIN
         SELECT 
             mt."createdAt" as start_time,
             LEAD(mt."createdAt") OVER (ORDER BY mt."createdAt") as end_time,
-            mt.status
+            mt."status"
         FROM "MonitorTick" mt
         WHERE mt."monitorId" = monitor_id_param
             AND mt."createdAt" >= NOW() - get_time_range(period_param)
@@ -285,7 +285,7 @@ BEGIN
         SELECT 
             (end_time - start_time) as duration
         FROM downtime_periods
-        WHERE status = 'DOWN' AND end_time IS NOT NULL
+        WHERE "status" = 'BAD' AND end_time IS NOT NULL
     )
     SELECT 
         COALESCE(SUM(duration), INTERVAL '0') as total_downtime_duration,
@@ -315,8 +315,8 @@ BEGIN
     RETURN QUERY
     SELECT 
         time_bucket(bucket_size::INTERVAL, mt."createdAt") AS time_bucket,
-        ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-        ROUND((COUNT(CASE WHEN mt.status = 'UP' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 2) AS uptime_percentage,
+        ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
+        ROUND((COUNT(CASE WHEN mt."status" = 'GOOD' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC) * 100, 2) AS uptime_percentage,
         COUNT(*) AS total_checks
     FROM "MonitorTick" mt
     WHERE mt."monitorId" = monitor_id_param
