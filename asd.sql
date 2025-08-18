@@ -3,6 +3,7 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- 2. Convert MonitorTick table to hypertable
 -- This should be run AFTER your Prisma migration creates the table
+-- Note: The table now uses a composite primary key (id, createdAt) to support hypertable partitioning
 SELECT create_hypertable('"MonitorTick"', 'createdAt', 
   chunk_time_interval => INTERVAL '1 day',
   if_not_exists => TRUE
