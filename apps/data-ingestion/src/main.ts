@@ -2,15 +2,13 @@
 // This avoids TS1479 when importing an ESM package from a CJS module
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { prisma } = require("db/client");
-import express from "express";
-import { z } from "zod";
-import type { Prisma } from "@prisma/client";
-import { 
-  MonitorTickBatchRequest, 
-  MonitorTickBatchResponse, 
-  MonitorTickStatus 
+import {
+  MonitorTickBatchResponse,
+  MonitorTickStatus
 } from "common/types";
 import "dotenv/config";
+import express from "express";
+import { z } from "zod";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
