@@ -20,7 +20,8 @@ interface MapboxValidatorData {
   continent: string;
   continentCode: string;
   flag: string | null;
-  latency?: number; // Optional latency for compatibility
+  latency?: number;
+  createdAt?: string; // Add timestamp for comparison
 }
 
 interface MapboxCountryData {
@@ -33,6 +34,12 @@ interface MapboxCountryData {
 interface MapboxGlobeMapProps {
   monitorId: string;
 }
+
+// Extended type for hover state that includes additional properties
+type ExtendedValidatorData = MapboxValidatorData & {
+  validatorCount?: number;
+  cities?: string[];
+};
 
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -55,7 +62,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
-  const [hoveredValidator, setHoveredValidator] = useState<MapboxValidatorData | null>(null);
+  const [hoveredValidator, setHoveredValidator] = useState<ExtendedValidatorData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<string | null>(null);
   const [selectedValidator, setSelectedValidator] = useState<MapboxValidatorData | null>(null);
@@ -88,7 +95,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     
     ticksData.ticks.forEach(tick => {
       const existingValidator = validatorMap.get(tick.validator.id);
-      if (!existingValidator || new Date(tick.createdAt) > new Date(existingValidator.id)) {
+      if (!existingValidator || (existingValidator.createdAt && new Date(tick.createdAt) > new Date(existingValidator.createdAt))) {
         validatorMap.set(tick.validator.id, {
           id: tick.validator.id,
           country: tick.location.countryCode,
@@ -100,7 +107,8 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
           continent: tick.location.continentCode,
           continentCode: tick.location.continentCode,
           flag: null, // No flag data available in monitor ticks
-          latency: tick.latency
+          latency: tick.latency,
+          createdAt: tick.createdAt
         });
       }
     });
@@ -263,9 +271,12 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
           continent: countryInData.validators[0]?.continent || '',
           continentCode: countryInData.validators[0]?.continentCode || '',
           flag: countryInData.validators[0]?.flag || null,
-          validatorCount: countryInData.onlineCount,
-          cities: countryInData.validators.map(v => v.city)
-        } as any);
+          // Store additional data in a custom property
+          ...{
+            validatorCount: countryInData.onlineCount,
+            cities: countryInData.validators.map(v => v.city)
+          }
+        } as ExtendedValidatorData);
         setTooltipPosition({ x: event.point.x, y: event.point.y });
         setHoveredCountry(mapboxCountryName || null);
         map.getCanvas().style.cursor = 'pointer';
@@ -732,7 +743,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                   }}
                 >
                   {/* Check if this is an individual validator tooltip or country tooltip */}
-                  {(hoveredValidator as any).validatorCount ? (
+                  {hoveredValidator.validatorCount ? (
                     // Country tooltip (aggregated data)
                     <>
                       <div className="font-semibold flex items-center gap-2 mb-2">
@@ -743,13 +754,13 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                       </div>
                       <div className="space-y-2">
                         <div className="text-green-400 text-sm">
-                          ● {(hoveredValidator as any).validatorCount} Validator{(hoveredValidator as any).validatorCount > 1 ? 's' : ''} Online
+                          ● {hoveredValidator.validatorCount} Validator{(hoveredValidator.validatorCount || 0) > 1 ? 's' : ''} Online
                         </div>
-                        {(hoveredValidator as any).cities && (hoveredValidator as any).cities.length > 0 && (
+                        {hoveredValidator.cities && hoveredValidator.cities.length > 0 && (
                           <div>
                             <div className="text-gray-300 text-xs mb-1">Cities:</div>
                             <div className="flex flex-wrap gap-1">
-                              {[...(new Set((hoveredValidator as any).cities as string[]))].map((city: string, index: number) => (
+                              {[...(new Set(hoveredValidator.cities))].map((city: string, index: number) => (
                                 <span key={`${city}-${index}`} className="bg-gray-700 px-2 py-1 rounded text-xs">
                                   {city.charAt(0).toUpperCase() + city.slice(1)}
                                 </span>
