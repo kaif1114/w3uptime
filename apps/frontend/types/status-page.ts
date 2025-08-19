@@ -1,8 +1,14 @@
 export type StatusHistoryRange = "7d" | "30d" | "90d";
 
+export type WidgetType = "current" | "with_history" | "with_history_chart";
+
 export interface StatusPageResourceMonitor {
+  id: string;
   type: "monitor";
   monitorId: string;
+  publicName?: string;
+  explanation?: string;
+  widgetType?: WidgetType;
 }
 
 export type StatusPageResource = StatusPageResourceMonitor; // Future: add groups/services
@@ -20,6 +26,7 @@ export interface StatusPageMaintenance {
   start: string; // ISO
   end: string; // ISO
   status: "scheduled" | "in_progress" | "completed";
+  affectedResourceIds?: string[];
 }
 
 export interface StatusPageUpdate {

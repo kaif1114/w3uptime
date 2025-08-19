@@ -13,9 +13,10 @@ const store: Map<string, any> = globalAny.__STATUS_PAGE_STORE__;
 const updateSchema = z.object({
   name: z.string().optional(),
   isPublished: z.boolean().optional(),
-  logoUrl: z.string().url().nullable().optional(),
-  logoHrefUrl: z.string().url().nullable().optional(),
-  contactUrl: z.string().url().nullable().optional(),
+  // Relax URL validation while prototyping uploads / non-http values
+  logoUrl: z.string().nullable().optional(),
+  logoHrefUrl: z.string().nullable().optional(),
+  contactUrl: z.string().nullable().optional(),
   historyRange: z.enum(["7d", "30d", "90d"]).optional(),
   sections: z
     .array(

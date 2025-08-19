@@ -14,9 +14,10 @@ const store: Map<string, any> = globalAny.__STATUS_PAGE_STORE__;
 const createSchema = z.object({
   name: z.string().min(1),
   isPublished: z.boolean().optional().default(false),
-  logoUrl: z.string().url().optional().nullable(),
-  logoHrefUrl: z.string().url().optional().nullable(),
-  contactUrl: z.string().url().optional().nullable(),
+  // Accept any string for logo so we can support uploads/data URLs during prototyping
+  logoUrl: z.string().optional().nullable(),
+  logoHrefUrl: z.string().optional().nullable(),
+  contactUrl: z.string().optional().nullable(),
   historyRange: z.enum(["7d", "30d", "90d"]).optional().default("7d"),
   sections: z
     .array(

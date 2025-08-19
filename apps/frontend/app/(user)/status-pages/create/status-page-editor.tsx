@@ -19,7 +19,7 @@ import {
   useStatusPage,
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
-import type { StatusPageSection } from "@/types/status-page";
+import type { StatusPageSection, WidgetType } from "@/types/status-page";
 import { Plus, Trash2, GripVertical, X } from "lucide-react";
 import { useMonitors } from "@/hooks/useMonitors";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +50,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
       start: string;
       end: string;
       status: "scheduled" | "in_progress" | "completed";
+      affectedResourceIds?: string[];
     }[]
   );
   const [updates, setUpdates] = useState(
@@ -64,7 +65,19 @@ export default function StatusPageEditor({ mode, id }: Props) {
       setLogoHrefUrl(data.logoHrefUrl || "");
       setContactUrl(data.contactUrl || "");
       setHistoryRange(data.historyRange);
-      setSections(data.sections);
+      // Normalize resources to ensure stable ids and defaults
+      const normalized = (data.sections || []).map((s: any) => ({
+        ...s,
+        resources: (s.resources || []).map((r: any) => ({
+          id: r.id || crypto.randomUUID(),
+          type: r.type,
+          monitorId: r.monitorId,
+          publicName: r.publicName || "",
+          explanation: r.explanation || "",
+          widgetType: r.widgetType || ("with_history" as const),
+        })),
+      }));
+      setSections(normalized as unknown as StatusPageSection[]);
       setMaintenances(data.maintenances || []);
       setUpdates(data.updates || []);
     }
@@ -89,7 +102,17 @@ export default function StatusPageEditor({ mode, id }: Props) {
         s.id === sectionId
           ? {
               ...s,
-              resources: [...s.resources, { type: "monitor", monitorId: "" }],
+              resources: [
+                ...s.resources,
+                {
+                  id: crypto.randomUUID(),
+                  type: "monitor",
+                  monitorId: "",
+                  publicName: "",
+                  explanation: "",
+                  widgetType: "with_history" as WidgetType,
+                },
+              ],
             }
           : s
       )
@@ -124,7 +147,52 @@ export default function StatusPageEditor({ mode, id }: Props) {
     );
   }
 
+  function patchResource(
+    sectionId: string,
+    index: number,
+    patch: Partial<{
+      publicName: string;
+      explanation?: string;
+      widgetType: WidgetType;
+    }>
+  ) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? {
+              ...s,
+              resources: s.resources.map((r, i) =>
+                i === index ? { ...(r as any), ...patch } : r
+              ),
+            }
+          : s
+      )
+    );
+  }
+
+  const hasChanges = () => {
+    if (mode === "create") return true; // always allow first save
+    if (!data) return false;
+    return (
+      isPublished !== data.isPublished ||
+      name !== data.name ||
+      (logoUrl || "") !== (data.logoUrl || "") ||
+      (logoHrefUrl || "") !== (data.logoHrefUrl || "") ||
+      (contactUrl || "") !== (data.contactUrl || "") ||
+      historyRange !== data.historyRange ||
+      JSON.stringify(sections) !== JSON.stringify(data.sections) ||
+      JSON.stringify(maintenances) !==
+        JSON.stringify(data.maintenances || []) ||
+      JSON.stringify(updates) !== JSON.stringify(data.updates || [])
+    );
+  };
+
   async function onSave() {
+    if (!name.trim()) {
+      toast.error("Company name is required");
+      return;
+    }
+    if (mode === "edit" && !hasChanges()) return; // no-op if nothing changed
     if (mode === "create") {
       const res = await createMutation.mutateAsync({
         name,
@@ -195,6 +263,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
       start: string;
       end: string;
       status: "scheduled" | "in_progress" | "completed";
+      affectedResourceIds?: string[];
     }>
   ) {
     setMaintenances((items) =>
@@ -313,13 +382,22 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    value={logoUrl}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                  />
+                  <Label htmlFor="logoUrl">Logo</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="logoUrl"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                      placeholder="Paste image URL or data URL"
+                    />
+                    <Button type="button" variant="secondary" disabled>
+                      Upload
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload a logo or paste an image URL. The image will be shown
+                    on your public status page.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="logoHref">Logo link URL</Label>
@@ -329,6 +407,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     onChange={(e) => setLogoHrefUrl(e.target.value)}
                     placeholder="https://example.com"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    When someone clicks your logo, we’ll take them to this URL
+                    (usually your homepage).
+                  </p>
                 </div>
               </div>
 
@@ -341,6 +423,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     onChange={(e) => setContactUrl(e.target.value)}
                     placeholder="https://example.com/support"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    You can use mailto:support@example.com. Leave blank for no
+                    ‘Get in touch’ button.
+                  </p>
                 </div>
               </div>
 
@@ -348,7 +434,9 @@ export default function StatusPageEditor({ mode, id }: Props) {
                 <Button
                   onClick={onSave}
                   disabled={
-                    createMutation.isPending || updateMutation.isPending
+                    createMutation.isPending ||
+                    updateMutation.isPending ||
+                    (mode === "edit" && !hasChanges())
                   }
                 >
                   Save changes
@@ -369,10 +457,26 @@ export default function StatusPageEditor({ mode, id }: Props) {
               </div>
 
               <div className="space-y-3">
-                {sections.map((section) => (
+                {sections.map((section, idx) => (
                   <div
                     key={section.id}
                     className="border rounded-md p-3 space-y-3"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", String(idx));
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      const from = Number(e.dataTransfer.getData("text/plain"));
+                      const to = idx;
+                      if (Number.isNaN(from) || from === to) return;
+                      setSections((prev) => {
+                        const next = [...prev];
+                        const [item] = next.splice(from, 1);
+                        next.splice(to, 0, item);
+                        return next;
+                      });
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -396,21 +500,8 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <div className="ml-auto flex gap-1">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => moveSection(section.id, "up")}
-                        >
-                          Move up
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => moveSection(section.id, "down")}
-                        >
-                          Move down
-                        </Button>
+                      <div className="ml-auto text-xs text-muted-foreground">
+                        Drag to reorder
                       </div>
                     </div>
 
@@ -434,6 +525,42 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               ))}
                             </SelectContent>
                           </Select>
+                          <Input
+                            className="w-64"
+                            placeholder="Public name"
+                            value={(res as any).publicName || ""}
+                            onChange={(e) =>
+                              patchResource(section.id, idx, {
+                                publicName: e.target.value,
+                              })
+                            }
+                          />
+                          <Select
+                            value={
+                              ((res as any).widgetType as WidgetType) ||
+                              "with_history"
+                            }
+                            onValueChange={(v) =>
+                              patchResource(section.id, idx, {
+                                widgetType: v as WidgetType,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-56">
+                              <SelectValue placeholder="Widget type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="current">
+                                Current status only
+                              </SelectItem>
+                              <SelectItem value="with_history">
+                                With status history
+                              </SelectItem>
+                              <SelectItem value="with_history_chart">
+                                With status history & chart
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -444,6 +571,11 @@ export default function StatusPageEditor({ mode, id }: Props) {
                           </Button>
                         </div>
                       ))}
+                      {section.resources.length === 0 && (
+                        <p className="text-xs text-destructive">
+                          At least one resource is required for each section.
+                        </p>
+                      )}
                       <Button
                         variant="secondary"
                         size="sm"
@@ -548,6 +680,47 @@ export default function StatusPageEditor({ mode, id }: Props) {
                           }
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Affected services</Label>
+                      {sections.map((s) => (
+                        <div key={s.id} className="space-y-1">
+                          <div className="text-sm font-medium">
+                            {s.name || "Untitled section"}
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                            {s.resources.map((r: any) => {
+                              const checked = (
+                                m.affectedResourceIds || []
+                              ).includes(r.id);
+                              return (
+                                <label
+                                  key={r.id}
+                                  className="inline-flex items-center gap-2 text-sm"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      const next = new Set(
+                                        m.affectedResourceIds || []
+                                      );
+                                      if (e.target.checked) next.add(r.id);
+                                      else next.delete(r.id);
+                                      updateMaintenance(m.id, {
+                                        affectedResourceIds: Array.from(next),
+                                      });
+                                    }}
+                                  />
+                                  <span>
+                                    {r.publicName || r.monitorId || "Resource"}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                     <div className="flex justify-end">
                       <Button

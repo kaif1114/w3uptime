@@ -8,7 +8,7 @@ export default async function StatusPageDetails({
   const { id } = await params;
   return (
     <div className="container mx-auto px-4 py-6">
-      <StatusPageEditor mode="edit" id={id} />
+      <StatusPageEditor key={id} mode="edit" id={id} />
     </div>
   );
 }
