@@ -5,8 +5,8 @@ import { url, z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 export const createStatusPageSchema = z.object({
+    id: z.string().min(1, "Id is required"),
     name: z.string().min(1, "Name is required"),
-    
     logoUrl: z.string().url().optional(),
     logo: z.string().optional(),
     supportUrl: z.string().url().optional(),
@@ -30,15 +30,15 @@ export const createStatusPageSchema = z.object({
       const { name, logoUrl, logo, supportUrl, announcement, isPublished } = validation.data;
   
         const statusPage = await prisma.statusPage.create({
-        data: {
-          name,
-          logoUrl,
-          logo,
-          supportUrl,
-          announcement,
-          isPublished,
-        //   userId: user.id, // Use authenticated user's ID
-        },
+        data:{
+            userId:user.id,
+            name,
+            logoUrl,
+            logo,
+            supportUrl,
+            announcement,
+            isPublished,
+        }
       });
   
       return NextResponse.json(
@@ -65,5 +65,4 @@ export const createStatusPageSchema = z.object({
     }
   });
   
-
 
