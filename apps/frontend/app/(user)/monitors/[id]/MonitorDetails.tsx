@@ -85,21 +85,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
     }, 2000);
   };
 
-  const handleExportData = () => {
-    const dataToExport = {
-      monitor: monitor?.name,
-      period: timePeriod,
-      monitorId,
-      exportTime: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `monitor-${monitorId}-data.json`;
-    a.click();
-  };
 
   if (isLoading) {
     return (
@@ -201,7 +186,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         onBucketSizeChange={setBucketSize}
         onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
         onManualRefresh={handleManualRefresh}
-        onExportData={handleExportData}
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
       />

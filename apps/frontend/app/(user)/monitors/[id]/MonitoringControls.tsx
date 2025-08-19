@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export type TimePeriod = '1hr' | '1day' | '3days' | '1week' | '2weeks' | '30days' | '90days';
 export type UpdateFrequency = '30s' | '1m' | '5m' | '15m' | '30m';
@@ -20,7 +20,6 @@ interface MonitoringControlsProps {
   onBucketSizeChange: (bucket: BucketSize) => void;
   onAutoRefreshToggle: () => void;
   onManualRefresh: () => void;
-  onExportData: () => void;
   lastUpdated: Date;
   isRefreshing: boolean;
 }
@@ -55,7 +54,6 @@ export function MonitoringControls({
   onBucketSizeChange,
   onAutoRefreshToggle,
   onManualRefresh,
-  onExportData,
   lastUpdated,
   isRefreshing
 }: MonitoringControlsProps) {
@@ -131,11 +129,6 @@ export function MonitoringControls({
               Refresh
             </Button>
 
-            {/* Export Data */}
-            <Button variant="outline" size="sm" onClick={onExportData}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
           </div>
         </div>
       </CardContent>
