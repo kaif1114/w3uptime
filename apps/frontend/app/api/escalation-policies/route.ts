@@ -3,10 +3,10 @@ import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
+
 // Validation schema for creating escalation policy
 const createEscalationPolicySchema = z.object({
-  name: z
-    .string()
+  name: z.string()
     .min(1, "Policy name is required")
     .max(100, "Policy name cannot exceed 100 characters"),
   levels: z
