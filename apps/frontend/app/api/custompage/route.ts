@@ -16,6 +16,7 @@ export const createStatusPageSchema = z.object({
 
   
   export const POST = withAuth(async (req: NextRequest, user) => {
+    
     try { 
       const body = await req.json();
       const validation = createStatusPageSchema.safeParse(body);

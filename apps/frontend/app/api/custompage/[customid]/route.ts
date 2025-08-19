@@ -5,6 +5,15 @@ import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
+export const updateStatusPageSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    logoUrl: z.string().url().optional(),
+    logo: z.string().optional(),
+    supportUrl: z.string().url().optional(),
+    announcement: z.string().optional(),
+    isPublished: z.boolean().default(false),
+  });
+
 
 export const GET = withAuth(async (
     req: NextRequest,
@@ -18,7 +27,7 @@ export const GET = withAuth(async (
       const statusPage = await prisma.statusPage.findFirst({
         where: {
           id: customid,
-        //   userId: user.id,
+          userId: user.id,
         },
       });
   
@@ -51,15 +60,142 @@ export const GET = withAuth(async (
       );
     }
   });
+
+//   create a custom page update for the same post request
+
+export const PATCH = withAuth(async (
+    req: NextRequest,
+    user,
+    session,
+    { params }: { params: Promise<{ customid: string }> }
+  ) => {
+    try {
+      const { customid } = await params;
+      const body = await req.json();
+  
+      if (!customid) {
+        return NextResponse.json(
+          { error: "Custom Page ID is required" },
+          { status: 400 }
+        );
+      }
+  
+      const validation = updateStatusPageSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: validation.error.message },
+          { status: 400 }
+        );
+      }
+  
+      const { name, logoUrl, logo, supportUrl, announcement, isPublished } = validation.data;
+  
+      const existingStatusPage = await prisma.statusPage.findFirst({
+        where: {
+          id: customid,
+          userId: user.id,
+        },
+      });
+  
+      if (!existingStatusPage) {
+        return NextResponse.json(
+          { error: "Status Page not found" },
+          { status: 404 }
+        );
+      }
+  
+      const updatedStatusPage = await prisma.statusPage.update({
+        where: {
+          id: customid,
+        },
+        data: {
+          name,
+          logoUrl,
+          logo,
+          supportUrl,
+          announcement,
+          isPublished,
+        },
+      });
+  
+      return NextResponse.json(
+        {
+          message: "Status Page updated successfully",
+          statusPage: {
+            id: updatedStatusPage.id,
+            name: updatedStatusPage.name,
+            logoUrl: updatedStatusPage.logoUrl,
+            logo: updatedStatusPage.logo,
+            supportUrl: updatedStatusPage.supportUrl,
+            announcement: updatedStatusPage.announcement,
+            isPublished: updatedStatusPage.isPublished,
+            createdAt: updatedStatusPage.createdAt,
+          },
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error("Error updating status page:", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+  });
+  
   
 
+// ROUTE FOR DELETING A CUSTOM PAGE-for single custom page
 
 
 
+// DELETE /api/custompage/[customid] - Delete custom page
+export const DELETE = withAuth(async (
+    req: NextRequest,
+    user,
+    session,
+    { params }: { params: Promise<{ customid: string }> }
+  ) => {
+    try {
+      const { customid } = await params;
+  
+      if (!customid) {
+        return NextResponse.json(
+          { error: "Custom Page ID is required" },
+          { status: 400 }
+        );
+      }
+  
+      const statusPage = await prisma.statusPage.findFirst({
+            where: {
+          id: customid,
+          userId: user.id,
+        },
+      });
+  
+      if (!statusPage) {
+        return NextResponse.json(
+          { error: "Status Page not found" },
+          { status: 404 }
+        );
+      }
+  
+      await prisma.statusPage.delete({
+        where: {
+          id: customid,
+        },
+      });
 
-
-// ROUTE FOR UPDATING A CUSTOM PAGE
-
-// ROUTE FOR DELETING A CUSTOM PAGE
-
-
+      return NextResponse.json(
+        { message: "Status Page deleted successfully" },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error("Error deleting status page:", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+  });
+  
