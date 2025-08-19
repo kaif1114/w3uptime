@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +33,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
   const createMutation = useCreateStatusPage();
   const updateMutation = useUpdateStatusPage();
   const { data } = useStatusPage(id || "");
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const [isPublished, setIsPublished] = useState(false);
   const [name, setName] = useState("");
@@ -335,115 +336,182 @@ export default function StatusPageEditor({ mode, id }: Props) {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <Card>
-            <CardContent className="space-y-6 pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Status page published</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Make your page public
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="published">Published</Label>
-                  <input
-                    id="published"
-                    type="checkbox"
-                    checked={isPublished}
-                    onChange={(e) => setIsPublished(e.target.checked)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Company name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Stripe"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="history">Status history</Label>
-                  <Select value={historyRange} onValueChange={setHistoryRange}>
-                    <SelectTrigger id="history">
-                      <SelectValue placeholder="7 days" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7d">7 Days</SelectItem>
-                      <SelectItem value="30d">30 Days</SelectItem>
-                      <SelectItem value="90d">90 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="logoUrl"
-                      value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
-                      placeholder="Paste image URL or data URL"
-                    />
-                    <Button type="button" variant="secondary" disabled>
-                      Upload
-                    </Button>
+          <div className="grid gap-6 lg:grid-cols-[300px,1fr]">
+            <aside className="space-y-6 text-sm text-muted-foreground">
+              <section>
+                <h3 className="mb-1 text-base font-medium text-foreground">
+                  Basic information
+                </h3>
+                <p>
+                  A public status page informs your users about the uptime of
+                  your services.
+                </p>
+              </section>
+              <section>
+                <h3 className="mb-1 text-base font-medium text-foreground">
+                  Links & URLs
+                </h3>
+                <p>
+                  Where should we point your users when they want to visit your
+                  website?
+                </p>
+                <p className="mt-2">
+                  You can use{" "}
+                  <span className="font-mono">mailto:support@example.com</span>.
+                  Leave blank for no ‘Get in touch’ button.
+                </p>
+              </section>
+              <section>
+                <h3 className="mb-1 text-base font-medium text-foreground">
+                  Personalization
+                </h3>
+                <p>
+                  Upload your logo to personalize the look &amp; feel of your
+                  status page.
+                </p>
+                <p className="mt-2">
+                  Use modern look for refreshed design with latest features like
+                  dark theme, translations, and custom favicon.
+                </p>
+              </section>
+            </aside>
+            <Card>
+              <CardContent className="space-y-6 pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Status page published</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Make your page public
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Upload a logo or paste an image URL. The image will be shown
-                    on your public status page.
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="published">Published</Label>
+                    <input
+                      id="published"
+                      type="checkbox"
+                      checked={isPublished}
+                      onChange={(e) => setIsPublished(e.target.checked)}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="logoHref">Logo link URL</Label>
-                  <Input
-                    id="logoHref"
-                    value={logoHrefUrl}
-                    onChange={(e) => setLogoHrefUrl(e.target.value)}
-                    placeholder="https://example.com"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    When someone clicks your logo, we’ll take them to this URL
-                    (usually your homepage).
-                  </p>
-                </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="contact">Get in touch URL</Label>
-                  <Input
-                    id="contact"
-                    value={contactUrl}
-                    onChange={(e) => setContactUrl(e.target.value)}
-                    placeholder="https://example.com/support"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    You can use mailto:support@example.com. Leave blank for no
-                    ‘Get in touch’ button.
-                  </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Company name</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Stripe"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="history">Status history</Label>
+                    <Select
+                      value={historyRange}
+                      onValueChange={setHistoryRange}
+                    >
+                      <SelectTrigger id="history">
+                        <SelectValue placeholder="7 days" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">7 Days</SelectItem>
+                        <SelectItem value="30d">30 Days</SelectItem>
+                        <SelectItem value="90d">90 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex justify-end">
-                <Button
-                  onClick={onSave}
-                  disabled={
-                    createMutation.isPending ||
-                    updateMutation.isPending ||
-                    (mode === "edit" && !hasChanges())
-                  }
-                >
-                  Save changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="logoUrl">Logo</Label>
+                    <div className="flex gap-2">
+                      {/* Hidden file input for uploads */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={uploadInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const result = reader.result as string;
+                            setLogoUrl(result);
+                          };
+                          reader.readAsDataURL(file);
+                          // clear value so the same file can be re-selected later
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      <Input
+                        id="logoUrl"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="Paste image URL or data URL"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => uploadInputRef.current?.click()}
+                      >
+                        Upload
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload a logo or paste an image URL. Images uploaded here
+                      are stored as data URLs for now (sufficient for preview
+                      and prototyping; we can wire S3 later).
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="logoHref">Logo link URL</Label>
+                    <Input
+                      id="logoHref"
+                      value={logoHrefUrl}
+                      onChange={(e) => setLogoHrefUrl(e.target.value)}
+                      placeholder="https://example.com"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When someone clicks your logo, we’ll take them to this URL
+                      (usually your homepage).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="contact">Get in touch URL</Label>
+                    <Input
+                      id="contact"
+                      value={contactUrl}
+                      onChange={(e) => setContactUrl(e.target.value)}
+                      placeholder="https://example.com/support"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can use mailto:support@example.com. Leave blank for no
+                      ‘Get in touch’ button.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={onSave}
+                    disabled={
+                      createMutation.isPending ||
+                      updateMutation.isPending ||
+                      (mode === "edit" && !hasChanges())
+                    }
+                  >
+                    Save changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="structure" className="mt-6">
