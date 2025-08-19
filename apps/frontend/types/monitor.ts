@@ -159,37 +159,4 @@ export interface MonitorTimeSeriesResponse {
   generatedAt: string;
 }
 
-export interface MonitorTickLocation {
-  longitude: number;
-  latitude: number;
-  countryCode: string;
-  continentCode: string;
-  city: string;
-}
-
-export interface MonitorTickValidator {
-  id: string;
-  walletAddress: string;
-  type: string;
-}
-
-export interface MonitorTick {
-  id: string;
-  status: 'GOOD' | 'BAD';
-  latency: number;
-  location: MonitorTickLocation;
-  validator: MonitorTickValidator;
-  createdAt: string;
-}
-
-export interface MonitorTicksResponse {
-  monitorId: string;
-  ticks: MonitorTick[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-  generatedAt: string;
-} 
+ 
