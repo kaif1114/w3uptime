@@ -10,7 +10,6 @@ import {
   DeleteMonitorResponse,
   MonitorAnalyticsResponse,
   MonitorTimeSeriesResponse,
-  MonitorTicksResponse,
 } from "@/types/monitor";
 
 const API_BASE = "/api/monitors";
@@ -248,41 +247,3 @@ export function useMonitorTimeSeries(id: string, period: string = '30days', buck
   });
 }
 
-// Fetch recent monitor ticks
-export function useMonitorTicks(
-  id: string, 
-  options?: {
-    limit?: number;
-    offset?: number;
-    status?: 'GOOD' | 'BAD';
-    country?: string;
-    city?: string;
-  }
-) {
-  const params = new URLSearchParams();
-  if (options?.limit) params.append('limit', options.limit.toString());
-  if (options?.offset) params.append('offset', options.offset.toString());
-  if (options?.status) params.append('status', options.status);
-  if (options?.country) params.append('country', options.country);
-  if (options?.city) params.append('city', options.city);
-
-  return useQuery<MonitorTicksResponse>({
-    queryKey: ["monitor-ticks", id, options],
-    queryFn: async () => {
-      const url = `${API_BASE}/${id}/ticks${params.toString() ? `?${params.toString()}` : ''}`;
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch monitor ticks");
-      }
-      return response.json();
-    },
-    enabled: !!id,
-    refetchInterval: 30000, // Refetch every 30 seconds for more real-time data
-    staleTime: 15000, // Consider data stale after 15 seconds
-  });
-}
