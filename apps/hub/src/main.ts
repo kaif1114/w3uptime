@@ -533,5 +533,5 @@ ws.on("listening", () => {
 });
 
 httpServer.listen(8080, () => {
-  console.log("HTTP and WebSocket server is running on port 8080");
+  console.log("HTTP server is running on port 8080");
 });
