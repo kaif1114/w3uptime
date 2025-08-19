@@ -547,7 +547,18 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      <button
+                        type="button"
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", String(idx));
+                        }}
+                        className="cursor-grab text-muted-foreground hover:text-foreground"
+                        aria-label="Drag to reorder"
+                        title="Drag to reorder"
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
                       <Input
                         value={section.name}
                         onChange={(e) =>
