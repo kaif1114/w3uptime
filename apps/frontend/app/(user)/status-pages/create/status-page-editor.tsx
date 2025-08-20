@@ -20,7 +20,14 @@ import {
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
-import { Plus, Trash2, GripVertical, X } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  X,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { useMonitors } from "@/hooks/useMonitors";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -57,6 +64,14 @@ export default function StatusPageEditor({ mode, id }: Props) {
   const [updates, setUpdates] = useState(
     [] as { id: string; title: string; body?: string; createdAt: string }[]
   );
+
+  // Resource configuration modal state
+  const [selectedResource, setSelectedResource] = useState<{
+    sectionId: string;
+    resourceIndex: number;
+    resource: any;
+  } | null>(null);
+  const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false);
 
   useMemo(() => {
     if (mode === "edit" && data) {
@@ -301,6 +316,45 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
   function removeUpdate(id: string) {
     setUpdates((items) => items.filter((u) => u.id !== id));
+  }
+
+  // Resource configuration modal handlers
+  function openResourceConfig(
+    sectionId: string,
+    resourceIndex: number,
+    resource: any
+  ) {
+    setSelectedResource({ sectionId, resourceIndex, resource });
+    setIsAdvancedSettingsOpen(false);
+  }
+
+  function closeResourceConfig() {
+    setSelectedResource(null);
+    setIsAdvancedSettingsOpen(false);
+  }
+
+  function updateResourceConfig(
+    patch: Partial<{
+      publicName: string;
+      explanation?: string;
+      widgetType: WidgetType;
+    }>
+  ) {
+    if (!selectedResource) return;
+
+    patchResource(
+      selectedResource.sectionId,
+      selectedResource.resourceIndex,
+      patch
+    );
+    setSelectedResource((prev) =>
+      prev
+        ? {
+            ...prev,
+            resource: { ...prev.resource, ...patch },
+          }
+        : null
+    );
   }
 
   return (
@@ -590,184 +644,205 @@ export default function StatusPageEditor({ mode, id }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="structure" className="mt-6">
-          <Card className="border border-border/50 bg-card shadow-sm">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium text-lg">Sections</h3>
-                <Button
-                  variant="secondary"
-                  onClick={addSection}
-                  className="h-10"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add section
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {sections.map((section, idx) => (
-                  <div
-                    key={section.id}
-                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", String(idx));
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      const from = Number(e.dataTransfer.getData("text/plain"));
-                      const to = idx;
-                      if (Number.isNaN(from) || from === to) return;
-                      setSections((prev) => {
-                        const next = [...prev];
-                        const [item] = next.splice(from, 1);
-                        next.splice(to, 0, item);
-                        return next;
-                      });
-                    }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <button
-                        type="button"
+        <TabsContent value="structure" className="space-y-12">
+          {/* Monitors & heartbeats section */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Monitors & heartbeats
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Pick the monitors and heartbeats you want to display on your
+                status page. You can re-order the monitors by dragging the
+                cards, as well as give each monitor a public name and a short
+                explanation of the service it's monitoring.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-6">
+                  <div className="space-y-4">
+                    {sections.map((section, idx) => (
+                      <div
+                        key={section.id}
+                        className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData("text/plain", String(idx));
                         }}
-                        className="cursor-grab text-muted-foreground hover:text-foreground"
-                        aria-label="Drag to reorder"
-                        title="Drag to reorder"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          const from = Number(
+                            e.dataTransfer.getData("text/plain")
+                          );
+                          const to = idx;
+                          if (Number.isNaN(from) || from === to) return;
+                          setSections((prev) => {
+                            const next = [...prev];
+                            const [item] = next.splice(from, 1);
+                            next.splice(to, 0, item);
+                            return next;
+                          });
+                        }}
                       >
-                        <GripVertical className="h-4 w-4" />
-                      </button>
-                      <Input
-                        value={section.name}
-                        onChange={(e) =>
-                          setSections((prev) =>
-                            prev.map((s) =>
-                              s.id === section.id
-                                ? { ...s, name: e.target.value }
-                                : s
-                            )
-                          )
-                        }
-                        className="max-w-sm h-10"
-                      />
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium text-foreground">
+                              Section name
+                            </Label>
+                            <Input
+                              value={section.name}
+                              onChange={(e) =>
+                                setSections((prev) =>
+                                  prev.map((s) =>
+                                    s.id === section.id
+                                      ? { ...s, name: e.target.value }
+                                      : s
+                                  )
+                                )
+                              }
+                              placeholder="New section"
+                              className="h-10"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Leave blank to hide the section heading.
+                            </p>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium text-foreground">
+                              Resources
+                            </Label>
+                            <div className="space-y-3">
+                              {section.resources.map((res, resIdx) => (
+                                <div
+                                  key={resIdx}
+                                  className="flex items-center gap-3 p-3 border border-border/30 rounded-lg bg-background/30"
+                                >
+                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                                  <div className="flex-1">
+                                    <Select
+                                      value={res.monitorId}
+                                      onValueChange={(v) =>
+                                        updateResource(section.id, resIdx, v)
+                                      }
+                                    >
+                                      <SelectTrigger className="h-9 border-0 bg-transparent p-0">
+                                        <SelectValue placeholder="Select monitor" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {monitorsData?.monitors.map((m) => (
+                                          <SelectItem key={m.id} value={m.id}>
+                                            {m.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    onClick={() =>
+                                      openResourceConfig(
+                                        section.id,
+                                        resIdx,
+                                        res
+                                      )
+                                    }
+                                  >
+                                    {(res as any).widgetType ===
+                                      "with_history" || !(res as any).widgetType
+                                      ? "With status history"
+                                      : (res as any).widgetType === "current"
+                                        ? "Current status only"
+                                        : "With status history & chart"}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="More options"
+                                    className="h-8 w-8"
+                                  >
+                                    <svg
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                      />
+                                    </svg>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Remove resource"
+                                    onClick={() =>
+                                      removeResource(section.id, resIdx)
+                                    }
+                                    className="h-8 w-8"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addResource(section.id)}
+                                className="w-full h-12 border-dashed"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Search to add
+                                resources
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeSection(section.id)}
+                              className="h-8 text-destructive hover:text-destructive"
+                            >
+                              Remove section
+                            </Button>
+                            <div className="text-xs text-muted-foreground">
+                              Drag to reorder
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
                       <Button
                         variant="ghost"
-                        size="icon"
-                        onClick={() => removeSection(section.id)}
-                        className="h-8 w-8"
+                        onClick={addSection}
+                        className="h-12 w-full border-0"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <div className="ml-auto text-xs text-muted-foreground">
-                        Drag to reorder
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {section.resources.map((res, idx) => (
-                        <div key={idx} className="flex items-center gap-4">
-                          <Select
-                            value={res.monitorId}
-                            onValueChange={(v) =>
-                              updateResource(section.id, idx, v)
-                            }
-                          >
-                            <SelectTrigger className="w-80 h-10">
-                              <SelectValue placeholder="Select monitor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {monitorsData?.monitors.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            className="w-64 h-10"
-                            placeholder="Public name"
-                            value={(res as any).publicName || ""}
-                            onChange={(e) =>
-                              patchResource(section.id, idx, {
-                                publicName: e.target.value,
-                              })
-                            }
-                          />
-                          <Select
-                            value={
-                              ((res as any).widgetType as WidgetType) ||
-                              "with_history"
-                            }
-                            onValueChange={(v) =>
-                              patchResource(section.id, idx, {
-                                widgetType: v as WidgetType,
-                              })
-                            }
-                          >
-                            <SelectTrigger className="w-56 h-10">
-                              <SelectValue placeholder="Widget type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="current">
-                                Current status only
-                              </SelectItem>
-                              <SelectItem value="with_history">
-                                With status history
-                              </SelectItem>
-                              <SelectItem value="with_history_chart">
-                                With status history & chart
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Remove resource"
-                            onClick={() => removeResource(section.id, idx)}
-                            className="h-8 w-8"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {section.resources.length === 0 && (
-                        <p className="text-xs text-destructive">
-                          At least one resource is required for each section.
-                        </p>
-                      )}
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => addResource(section.id)}
-                        className="h-9"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add resource
+                        <Plus className="h-4 w-4 mr-2" /> Add section
                       </Button>
                     </div>
                   </div>
-                ))}
-                {sections.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No sections yet. Add your first section.
-                  </p>
-                )}
-              </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-              <div className="flex justify-end pt-6">
-                <Button
-                  onClick={onSave}
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
-                >
-                  Save changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex justify-end pt-8">
+            <Button
+              onClick={onSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
+            >
+              Save changes
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="maintenance" className="mt-6">
@@ -1003,6 +1078,195 @@ export default function StatusPageEditor({ mode, id }: Props) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Resource Configuration Modal */}
+      {selectedResource && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      sabcube.vercel.app
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  With status history
+                </Button>
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-6">
+                {/* Public name */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-foreground">
+                    Public name *
+                  </Label>
+                  <Input
+                    value={(selectedResource.resource as any).publicName || ""}
+                    onChange={(e) =>
+                      updateResourceConfig({ publicName: e.target.value })
+                    }
+                    placeholder="sabcube.vercel.app"
+                    className="h-10"
+                  />
+                </div>
+
+                {/* Explanation */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-foreground">
+                    Explanation
+                  </Label>
+                  <Input
+                    value={(selectedResource.resource as any).explanation || ""}
+                    onChange={(e) =>
+                      updateResourceConfig({ explanation: e.target.value })
+                    }
+                    placeholder=""
+                    className="h-10"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Displayed as a help icon. Optional.
+                  </p>
+                </div>
+
+                {/* Widget type */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-foreground">
+                    Widget type
+                  </Label>
+                  <Select
+                    value={
+                      (selectedResource.resource as any).widgetType ||
+                      "with_history"
+                    }
+                    onValueChange={(value) =>
+                      updateResourceConfig({ widgetType: value as WidgetType })
+                    }
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current">
+                        Current status only
+                      </SelectItem>
+                      <SelectItem value="with_history">
+                        With status history
+                      </SelectItem>
+                      <SelectItem value="with_history_chart">
+                        With status history & chart
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Advanced settings */}
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsAdvancedSettingsOpen(!isAdvancedSettingsOpen)
+                    }
+                    className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
+                  >
+                    {isAdvancedSettingsOpen ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                    Advanced settings
+                  </button>
+
+                  {isAdvancedSettingsOpen && (
+                    <div className="space-y-4 pl-6 border-l border-border/30">
+                      <p className="text-xs text-muted-foreground">
+                        Customize how and which incidents for the selected
+                        resource are displayed on the status page.
+                      </p>
+
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-foreground">
+                            Mark as down for
+                          </Label>
+                          <Select defaultValue="any_incident">
+                            <SelectTrigger className="h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="any_incident">
+                                Any incident for sabcube.vercel.app
+                              </SelectItem>
+                              <SelectItem value="specific_incidents">
+                                Specific incidents only
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-foreground">
+                            Mark as degraded for
+                          </Label>
+                          <Select defaultValue="no_incidents">
+                            <SelectTrigger className="h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="no_incidents">
+                                No incidents
+                              </SelectItem>
+                              <SelectItem value="specific_incidents">
+                                Specific incidents only
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-border/30">
+                <Button
+                  variant="ghost"
+                  onClick={closeResourceConfig}
+                  className="h-9"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={closeResourceConfig} className="h-9">
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
