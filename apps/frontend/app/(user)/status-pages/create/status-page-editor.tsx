@@ -460,6 +460,72 @@ export default function StatusPageEditor({ mode, id }: Props) {
                 <CardContent className="p-8 space-y-8">
                   <div className="space-y-6">
                     <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground">
+                        Logo
+                      </Label>
+                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-muted-foreground"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              Drag & drop or click to choose
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Upload a logo or paste an image URL
+                            </p>
+                          </div>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={uploadInputRef}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const result = reader.result as string;
+                              setLogoUrl(result);
+                            };
+                            reader.readAsDataURL(file);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          placeholder="Paste image URL or data URL"
+                          className="mt-4 w-full max-w-md mx-auto px-3 py-2 border border-border rounded-md bg-background text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => uploadInputRef.current?.click()}
+                          className="mt-3"
+                        >
+                          Upload
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
                       <Label
                         htmlFor="logoHref"
                         className="text-sm font-medium text-foreground"
@@ -507,185 +573,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
                         You can use mailto:support@stripe.com. Leave blank for
                         no 'Get in touch' button.
                       </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Personalization section */}
-          <div className="flex gap-12">
-            <div className="w-1/3 space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                Personalization
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Upload your logo to personalize the look & feel of your status
-                page. Use modern look for refreshed design with latest features
-                like dark theme, translations, and custom favicon.
-              </p>
-            </div>
-            <div className="w-2/3">
-              <Card className="border border-border/50 bg-card shadow-sm">
-                <CardContent className="p-8 space-y-8">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-foreground">
-                          Status page design
-                        </Label>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2"
-                          >
-                            Modern look
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-foreground">
-                          Color theme
-                        </Label>
-                        <Select defaultValue="light">
-                          <SelectTrigger className="h-11 border-border bg-background w-48">
-                            <SelectValue placeholder="Select theme" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="light">Light version</SelectItem>
-                            <SelectItem value="dark">Dark version</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-foreground">
-                          Header layout
-                        </Label>
-                        <div className="space-y-4">
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="radio"
-                              name="header-layout"
-                              id="vertical"
-                              defaultChecked
-                              className="w-4 h-4 text-primary border-border focus:ring-primary mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label
-                                htmlFor="vertical"
-                                className="text-sm font-medium text-foreground cursor-pointer"
-                              >
-                                Vertical layout
-                              </Label>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Prominently display your overall status
-                              </p>
-                            </div>
-                            <div className="w-16 h-8 bg-muted rounded border flex flex-col items-center justify-center gap-1">
-                              <div className="w-8 h-1 bg-green-500 rounded"></div>
-                              <div className="w-4 h-1 bg-muted-foreground rounded"></div>
-                              <div className="w-6 h-1 bg-muted-foreground rounded"></div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="radio"
-                              name="header-layout"
-                              id="horizontal"
-                              className="w-4 h-4 text-primary border-border focus:ring-primary mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label
-                                htmlFor="horizontal"
-                                className="text-sm font-medium text-foreground cursor-pointer"
-                              >
-                                Horizontal layout
-                              </Label>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Save vertical space to show more content
-                              </p>
-                            </div>
-                            <div className="w-16 h-8 bg-muted rounded border flex items-center justify-center gap-1">
-                              <div className="w-1 h-4 bg-green-500 rounded"></div>
-                              <div className="w-1 h-2 bg-muted-foreground rounded"></div>
-                              <div className="w-1 h-3 bg-muted-foreground rounded"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-foreground">
-                      Logo
-                    </Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-muted-foreground"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Drag & drop or click to choose
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Upload a logo or paste an image URL
-                          </p>
-                        </div>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={uploadInputRef}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            const result = reader.result as string;
-                            setLogoUrl(result);
-                          };
-                          reader.readAsDataURL(file);
-                          e.currentTarget.value = "";
-                        }}
-                      />
-                      <input
-                        type="text"
-                        value={logoUrl}
-                        onChange={(e) => setLogoUrl(e.target.value)}
-                        placeholder="Paste image URL or data URL"
-                        className="mt-4 w-full max-w-md mx-auto px-3 py-2 border border-border rounded-md bg-background text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => uploadInputRef.current?.click()}
-                        className="mt-3"
-                      >
-                        Upload
-                      </Button>
                     </div>
                   </div>
                 </CardContent>
