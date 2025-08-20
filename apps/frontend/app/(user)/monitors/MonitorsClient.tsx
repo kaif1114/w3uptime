@@ -13,7 +13,7 @@ export function MonitorsClient() {
   console.log("Monitors page state:", { data, isLoading, error });
 
   if (isLoading) {
-    console.log("Showing loading state");
+
     return <MonitorsLoading />;
   }
 
