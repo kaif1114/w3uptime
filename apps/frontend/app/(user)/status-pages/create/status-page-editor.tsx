@@ -460,6 +460,56 @@ export default function StatusPageEditor({ mode, id }: Props) {
                 <CardContent className="p-8 space-y-8">
                   <div className="space-y-6">
                     <div className="space-y-3">
+                      <Label
+                        htmlFor="logoHref"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        What URL should your logo point to?
+                      </Label>
+                      <Input
+                        id="logoHref"
+                        value={logoHrefUrl}
+                        onChange={(e) => setLogoHrefUrl(e.target.value)}
+                        placeholder="https://stripe.com"
+                        className="h-11 border-border bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="homepage"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        What's your company's homepage?
+                      </Label>
+                      <Input
+                        id="homepage"
+                        placeholder="https://stripe.com"
+                        className="h-11 border-border bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="contact"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        Get in touch URL
+                      </Label>
+                      <Input
+                        id="contact"
+                        value={contactUrl}
+                        onChange={(e) => setContactUrl(e.target.value)}
+                        placeholder="https://stripe.com/support"
+                        className="h-11 border-border bg-background"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        You can use mailto:support@stripe.com. Leave blank for
+                        no 'Get in touch' button.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
                       <Label className="text-sm font-medium text-foreground">
                         Logo
                       </Label>
@@ -523,56 +573,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
                           Upload
                         </Button>
                       </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label
-                        htmlFor="logoHref"
-                        className="text-sm font-medium text-foreground"
-                      >
-                        What URL should your logo point to?
-                      </Label>
-                      <Input
-                        id="logoHref"
-                        value={logoHrefUrl}
-                        onChange={(e) => setLogoHrefUrl(e.target.value)}
-                        placeholder="https://stripe.com"
-                        className="h-11 border-border bg-background"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label
-                        htmlFor="homepage"
-                        className="text-sm font-medium text-foreground"
-                      >
-                        What's your company's homepage?
-                      </Label>
-                      <Input
-                        id="homepage"
-                        placeholder="https://stripe.com"
-                        className="h-11 border-border bg-background"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label
-                        htmlFor="contact"
-                        className="text-sm font-medium text-foreground"
-                      >
-                        Get in touch URL
-                      </Label>
-                      <Input
-                        id="contact"
-                        value={contactUrl}
-                        onChange={(e) => setContactUrl(e.target.value)}
-                        placeholder="https://stripe.com/support"
-                        className="h-11 border-border bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        You can use mailto:support@stripe.com. Leave blank for
-                        no 'Get in touch' button.
-                      </p>
                     </div>
                   </div>
                 </CardContent>
