@@ -1,17 +1,16 @@
 // ROUTE FOR CREATING A CUSTOM PAGE
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
-import { url, z } from "zod";
+import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 export const createStatusPageSchema = z.object({
-    id: z.string().min(1, "Id is required"),
     name: z.string().min(1, "Name is required"),
     logoUrl: z.string().url().optional(),
     logo: z.string().optional(),
     supportUrl: z.string().url().optional(),
     announcement: z.string().optional(),
-    isPublished: z.boolean().default(true),
+    isPublished: z.boolean().default(false),
   });
 
   
@@ -65,5 +64,6 @@ export const createStatusPageSchema = z.object({
       );
     }
   });
-  
+
+
 
