@@ -475,19 +475,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       />
                     </div>
 
-                    <div className="space-y-3">
-                      <Label
-                        htmlFor="homepage"
-                        className="text-sm font-medium text-foreground"
-                      >
-                        What's your company's homepage?
-                      </Label>
-                      <Input
-                        id="homepage"
-                        placeholder="https://stripe.com"
-                        className="h-11 border-border bg-background"
-                      />
-                    </div>
+                    {/** Removed homepage field per requirements */}
 
                     <div className="space-y-3">
                       <Label
@@ -513,7 +501,30 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       <Label className="text-sm font-medium text-foreground">
                         Logo
                       </Label>
-                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                      <div
+                        className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                        onClick={() => uploadInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const result = reader.result as string;
+                            setLogoUrl(result);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            uploadInputRef.current?.click();
+                          }
+                        }}
+                      >
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
                             <svg
@@ -535,7 +546,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               Drag & drop or click to choose
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Upload a logo or paste an image URL
+                              Upload a logo
                             </p>
                           </div>
                         </div>
@@ -556,22 +567,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             e.currentTarget.value = "";
                           }}
                         />
-                        <input
-                          type="text"
-                          value={logoUrl}
-                          onChange={(e) => setLogoUrl(e.target.value)}
-                          placeholder="Paste image URL or data URL"
-                          className="mt-4 w-full max-w-md mx-auto px-3 py-2 border border-border rounded-md bg-background text-sm"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => uploadInputRef.current?.click()}
-                          className="mt-3"
-                        >
-                          Upload
-                        </Button>
                       </div>
                     </div>
                   </div>
