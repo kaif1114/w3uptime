@@ -304,17 +304,17 @@ export default function StatusPageEditor({ mode, id }: Props) {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {mode === "create" ? "Create status page" : "Status page"}
         </h1>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="overview" className="space-y-8">
         {mode === "create" && (
-          <div className="mt-2 mb-4">
-            <Alert>
+          <div className="mb-6">
+            <Alert className="border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-200">
               <AlertDescription>
                 Fill out Overview and click Save changes to unlock Structure,
                 Maintenance, and Status updates.
@@ -322,68 +322,113 @@ export default function StatusPageEditor({ mode, id }: Props) {
             </Alert>
           </div>
         )}
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="structure" disabled={mode === "create"}>
+
+        <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="rounded-md">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="structure"
+            disabled={mode === "create"}
+            className="rounded-md"
+          >
             Structure
           </TabsTrigger>
-          <TabsTrigger value="maintenance" disabled={mode === "create"}>
+          <TabsTrigger
+            value="maintenance"
+            disabled={mode === "create"}
+            className="rounded-md"
+          >
             Maintenance
           </TabsTrigger>
-          <TabsTrigger value="updates" disabled={mode === "create"}>
+          <TabsTrigger
+            value="updates"
+            disabled={mode === "create"}
+            className="rounded-md"
+          >
             Status updates
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-6">
-          <div className="space-y-6">
-            {/* Basic information */}
-            <div className="grid gap-6 lg:grid-cols-[300px,1fr]">
-              <aside className="space-y-2 text-sm text-muted-foreground">
-                <h3 className="mb-1 text-base font-medium text-foreground">
+        <TabsContent value="overview" className="space-y-12">
+          {/* Basic information section */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-foreground">
                   Basic information
-                </h3>
-                <p>
-                  A public status page informs your users about the uptime of
-                  your services.
-                </p>
-              </aside>
-              <Card>
-                <CardContent className="space-y-6 pt-6">
+                </h2>
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  Billable
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A public status page informs your users about the uptime of your
+                services.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-8">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">Status page published</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-medium text-foreground text-base">
+                        Status page published
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
                         Make your page public
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="published">Published</Label>
-                      <input
-                        id="published"
-                        type="checkbox"
-                        checked={isPublished}
-                        onChange={(e) => setIsPublished(e.target.checked)}
-                      />
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-foreground">
+                        Published
+                      </span>
+                      <button
+                        onClick={() => setIsPublished(!isPublished)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                          isPublished ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            isPublished ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Company name</Label>
+
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="name"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        Company name *
+                      </Label>
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Stripe"
+                        className="h-11 border-border bg-background"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="history">Status history</Label>
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="history"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        Status history
+                      </Label>
                       <Select
                         value={historyRange}
                         onValueChange={setHistoryRange}
                       >
-                        <SelectTrigger id="history">
+                        <SelectTrigger
+                          id="history"
+                          className="h-11 border-border bg-background"
+                        >
                           <SelectValue placeholder="7 days" />
                         </SelectTrigger>
                         <SelectContent>
@@ -397,152 +442,291 @@ export default function StatusPageEditor({ mode, id }: Props) {
                 </CardContent>
               </Card>
             </div>
+          </div>
 
-            {/* Links & URLs */}
-            <div className="grid gap-6 lg:grid-cols-[300px,1fr]">
-              <aside className="space-y-2 text-sm text-muted-foreground">
-                <h3 className="mb-1 text-base font-medium text-foreground">
-                  Links & URLs
-                </h3>
-                <p>
-                  Where should we point your users when they want to visit your
-                  website?
-                </p>
-                <p className="mt-2">
-                  You can use{" "}
-                  <span className="font-mono">mailto:support@example.com</span>.
-                  Leave blank for no ‘Get in touch’ button.
-                </p>
-              </aside>
-              <Card>
-                <CardContent className="space-y-6 pt-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="logoHref">Logo link URL</Label>
+          {/* Links & URLs section */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Links & URLs
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Where should we point your users when they want to visit your
+                website?
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="logoHref"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        What URL should your logo point to?
+                      </Label>
                       <Input
                         id="logoHref"
                         value={logoHrefUrl}
                         onChange={(e) => setLogoHrefUrl(e.target.value)}
-                        placeholder="https://example.com"
+                        placeholder="https://stripe.com"
+                        className="h-11 border-border bg-background"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        When someone clicks your logo, we’ll take them to this
-                        URL (usually your homepage).
-                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact">Get in touch URL</Label>
+
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="homepage"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        What's your company's homepage?
+                      </Label>
+                      <Input
+                        id="homepage"
+                        placeholder="https://stripe.com"
+                        className="h-11 border-border bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label
+                        htmlFor="contact"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        Get in touch URL
+                      </Label>
                       <Input
                         id="contact"
                         value={contactUrl}
                         onChange={(e) => setContactUrl(e.target.value)}
-                        placeholder="https://example.com/support"
+                        placeholder="https://stripe.com/support"
+                        className="h-11 border-border bg-background"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        You can use mailto:support@example.com. Leave blank for
-                        no ‘Get in touch’ button.
+                      <p className="text-xs text-muted-foreground mt-2">
+                        You can use mailto:support@stripe.com. Leave blank for
+                        no 'Get in touch' button.
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </div>
 
-            {/* Personalization */}
-            <div className="grid gap-6 lg:grid-cols-[300px,1fr]">
-              <aside className="space-y-2 text-sm text-muted-foreground">
-                <h3 className="mb-1 text-base font-medium text-foreground">
-                  Personalization
-                </h3>
-                <p>
-                  Upload your logo to personalize the look &amp; feel of your
-                  status page.
-                </p>
-                <p className="mt-2">
-                  Use modern look for refreshed design with latest features like
-                  dark theme, translations, and custom favicon.
-                </p>
-              </aside>
-              <Card>
-                <CardContent className="space-y-6 pt-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="logoUrl">Logo</Label>
-                      <div className="flex gap-2">
-                        {/* Hidden file input for uploads */}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          ref={uploadInputRef}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const result = reader.result as string;
-                              setLogoUrl(result);
-                            };
-                            reader.readAsDataURL(file);
-                            // clear value so the same file can be re-selected later
-                            e.currentTarget.value = "";
-                          }}
-                        />
-                        <Input
-                          id="logoUrl"
-                          value={logoUrl}
-                          onChange={(e) => setLogoUrl(e.target.value)}
-                          placeholder="Paste image URL or data URL"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => uploadInputRef.current?.click()}
-                        >
-                          Upload
-                        </Button>
+          {/* Personalization section */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Personalization
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Upload your logo to personalize the look & feel of your status
+                page. Use modern look for refreshed design with latest features
+                like dark theme, translations, and custom favicon.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">
+                          Status page design
+                        </Label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2"
+                          >
+                            Modern look
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Upload a logo or paste an image URL. Images uploaded
-                        here are stored as data URLs for now (sufficient for
-                        preview and prototyping; we can wire S3 later).
-                      </p>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">
+                          Color theme
+                        </Label>
+                        <Select defaultValue="light">
+                          <SelectTrigger className="h-11 border-border bg-background w-48">
+                            <SelectValue placeholder="Select theme" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="light">Light version</SelectItem>
+                            <SelectItem value="dark">Dark version</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">
+                          Header layout
+                        </Label>
+                        <div className="space-y-4">
+                          <div className="flex items-start gap-4">
+                            <input
+                              type="radio"
+                              name="header-layout"
+                              id="vertical"
+                              defaultChecked
+                              className="w-4 h-4 text-primary border-border focus:ring-primary mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="vertical"
+                                className="text-sm font-medium text-foreground cursor-pointer"
+                              >
+                                Vertical layout
+                              </Label>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Prominently display your overall status
+                              </p>
+                            </div>
+                            <div className="w-16 h-8 bg-muted rounded border flex flex-col items-center justify-center gap-1">
+                              <div className="w-8 h-1 bg-green-500 rounded"></div>
+                              <div className="w-4 h-1 bg-muted-foreground rounded"></div>
+                              <div className="w-6 h-1 bg-muted-foreground rounded"></div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-4">
+                            <input
+                              type="radio"
+                              name="header-layout"
+                              id="horizontal"
+                              className="w-4 h-4 text-primary border-border focus:ring-primary mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="horizontal"
+                                className="text-sm font-medium text-foreground cursor-pointer"
+                              >
+                                Horizontal layout
+                              </Label>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Save vertical space to show more content
+                              </p>
+                            </div>
+                            <div className="w-16 h-8 bg-muted rounded border flex items-center justify-center gap-1">
+                              <div className="w-1 h-4 bg-green-500 rounded"></div>
+                              <div className="w-1 h-2 bg-muted-foreground rounded"></div>
+                              <div className="w-1 h-3 bg-muted-foreground rounded"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-foreground">
+                      Logo
+                    </Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6 text-muted-foreground"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            Drag & drop or click to choose
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Upload a logo or paste an image URL
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={uploadInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const result = reader.result as string;
+                            setLogoUrl(result);
+                          };
+                          reader.readAsDataURL(file);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      <input
+                        type="text"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="Paste image URL or data URL"
+                        className="mt-4 w-full max-w-md mx-auto px-3 py-2 border border-border rounded-md bg-background text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => uploadInputRef.current?.click()}
+                        className="mt-3"
+                      >
+                        Upload
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </div>
 
-            <div className="flex justify-end">
-              <Button
-                onClick={onSave}
-                disabled={
-                  createMutation.isPending ||
-                  updateMutation.isPending ||
-                  (mode === "edit" && !hasChanges())
-                }
-              >
-                Save changes
-              </Button>
-            </div>
+          <div className="flex justify-end pt-8">
+            <Button
+              onClick={onSave}
+              disabled={
+                createMutation.isPending ||
+                updateMutation.isPending ||
+                (mode === "edit" && !hasChanges())
+              }
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
+            >
+              Save changes
+            </Button>
           </div>
         </TabsContent>
 
         <TabsContent value="structure" className="mt-6">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
+          <Card className="border border-border/50 bg-card shadow-sm">
+            <CardContent className="p-8 space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="font-medium">Sections</h3>
-                <Button variant="secondary" onClick={addSection}>
+                <h3 className="font-medium text-lg">Sections</h3>
+                <Button
+                  variant="secondary"
+                  onClick={addSection}
+                  className="h-10"
+                >
                   <Plus className="h-4 w-4 mr-2" /> Add section
                 </Button>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {sections.map((section, idx) => (
                   <div
                     key={section.id}
-                    className="border rounded-md p-3 space-y-3"
+                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", String(idx));
@@ -560,7 +744,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       });
                     }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <button
                         type="button"
                         draggable
@@ -584,12 +768,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             )
                           )
                         }
-                        className="max-w-sm"
+                        className="max-w-sm h-10"
                       />
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => removeSection(section.id)}
+                        className="h-8 w-8"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -598,16 +783,16 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {section.resources.map((res, idx) => (
-                        <div key={idx} className="flex items-center gap-3">
+                        <div key={idx} className="flex items-center gap-4">
                           <Select
                             value={res.monitorId}
                             onValueChange={(v) =>
                               updateResource(section.id, idx, v)
                             }
                           >
-                            <SelectTrigger className="w-80">
+                            <SelectTrigger className="w-80 h-10">
                               <SelectValue placeholder="Select monitor" />
                             </SelectTrigger>
                             <SelectContent>
@@ -619,7 +804,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             </SelectContent>
                           </Select>
                           <Input
-                            className="w-64"
+                            className="w-64 h-10"
                             placeholder="Public name"
                             value={(res as any).publicName || ""}
                             onChange={(e) =>
@@ -639,7 +824,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               })
                             }
                           >
-                            <SelectTrigger className="w-56">
+                            <SelectTrigger className="w-56 h-10">
                               <SelectValue placeholder="Widget type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -659,6 +844,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             size="icon"
                             aria-label="Remove resource"
                             onClick={() => removeResource(section.id, idx)}
+                            className="h-8 w-8"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -673,6 +859,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                         variant="secondary"
                         size="sm"
                         onClick={() => addResource(section.id)}
+                        className="h-9"
                       >
                         <Plus className="h-4 w-4 mr-1" /> Add resource
                       </Button>
@@ -686,12 +873,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-6">
                 <Button
                   onClick={onSave}
                   disabled={
                     createMutation.isPending || updateMutation.isPending
                   }
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
                 >
                   Save changes
                 </Button>
@@ -701,36 +889,44 @@ export default function StatusPageEditor({ mode, id }: Props) {
         </TabsContent>
 
         <TabsContent value="maintenance" className="mt-6">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
+          <Card className="border border-border/50 bg-card shadow-sm">
+            <CardContent className="p-8 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">Scheduled maintenance</h3>
-                <Button variant="secondary" onClick={addMaintenanceDraft}>
+                <h3 className="font-medium text-lg">Scheduled maintenance</h3>
+                <Button
+                  variant="secondary"
+                  onClick={addMaintenanceDraft}
+                  className="h-10"
+                >
                   <Plus className="h-4 w-4 mr-2" /> Schedule maintenance
                 </Button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {maintenances.map((m) => (
-                  <div key={m.id} className="border rounded-md p-3 space-y-3">
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label>Title</Label>
+                  <div
+                    key={m.id}
+                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
+                  >
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Title</Label>
                         <Input
                           value={m.title}
                           onChange={(e) =>
                             updateMaintenance(m.id, { title: e.target.value })
                           }
+                          className="h-10"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Status</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Status</Label>
                         <Select
                           value={m.status}
                           onValueChange={(v) =>
                             updateMaintenance(m.id, { status: v as any })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="h-10">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -742,28 +938,32 @@ export default function StatusPageEditor({ mode, id }: Props) {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-1">
-                        <Label>Start</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Start</Label>
                         <Input
                           type="datetime-local"
                           value={m.start}
                           onChange={(e) =>
                             updateMaintenance(m.id, { start: e.target.value })
                           }
+                          className="h-10"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label>End</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">End</Label>
                         <Input
                           type="datetime-local"
                           value={m.end}
                           onChange={(e) =>
                             updateMaintenance(m.id, { end: e.target.value })
                           }
+                          className="h-10"
                         />
                       </div>
-                      <div className="md:col-span-2 space-y-1">
-                        <Label>Description</Label>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label className="text-sm font-medium">
+                          Description
+                        </Label>
                         <Textarea
                           value={m.description}
                           onChange={(e) =>
@@ -771,13 +971,16 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               description: e.target.value,
                             })
                           }
+                          className="min-h-[80px]"
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Affected services</Label>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">
+                        Affected services
+                      </Label>
                       {sections.map((s) => (
-                        <div key={s.id} className="space-y-1">
+                        <div key={s.id} className="space-y-2">
                           <div className="text-sm font-medium">
                             {s.name || "Untitled section"}
                           </div>
@@ -819,6 +1022,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                       <Button
                         variant="ghost"
                         onClick={() => removeMaintenance(m.id)}
+                        className="h-9"
                       >
                         Remove
                       </Button>
@@ -831,12 +1035,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
                   </p>
                 )}
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-6">
                 <Button
                   onClick={onSave}
                   disabled={
                     createMutation.isPending || updateMutation.isPending
                   }
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
                 >
                   Save changes
                 </Button>
@@ -846,39 +1051,49 @@ export default function StatusPageEditor({ mode, id }: Props) {
         </TabsContent>
 
         <TabsContent value="updates" className="mt-6">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
+          <Card className="border border-border/50 bg-card shadow-sm">
+            <CardContent className="p-8 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">Status updates</h3>
-                <Button variant="secondary" onClick={addUpdateDraft}>
+                <h3 className="font-medium text-lg">Status updates</h3>
+                <Button
+                  variant="secondary"
+                  onClick={addUpdateDraft}
+                  className="h-10"
+                >
                   <Plus className="h-4 w-4 mr-2" /> New update
                 </Button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {updates.map((u) => (
-                  <div key={u.id} className="border rounded-md p-3 space-y-3">
-                    <div className="space-y-1">
-                      <Label>Title</Label>
+                  <div
+                    key={u.id}
+                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
+                  >
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Title</Label>
                       <Input
                         value={u.title}
                         onChange={(e) =>
                           updateUpdate(u.id, { title: e.target.value })
                         }
+                        className="h-10"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label>Message</Label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Message</Label>
                       <Textarea
                         value={u.body}
                         onChange={(e) =>
                           updateUpdate(u.id, { body: e.target.value })
                         }
+                        className="min-h-[80px]"
                       />
                     </div>
                     <div className="flex justify-end">
                       <Button
                         variant="ghost"
                         onClick={() => removeUpdate(u.id)}
+                        className="h-9"
                       >
                         Remove
                       </Button>
@@ -891,12 +1106,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
                   </p>
                 )}
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-6">
                 <Button
                   onClick={onSave}
                   disabled={
                     createMutation.isPending || updateMutation.isPending
                   }
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
                 >
                   Save changes
                 </Button>
