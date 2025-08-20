@@ -20,14 +20,7 @@ import {
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
-import {
-  Plus,
-  Trash2,
-  GripVertical,
-  X,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, Trash2, GripVertical, X } from "lucide-react";
 import { useMonitors } from "@/hooks/useMonitors";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -65,14 +58,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
     [] as { id: string; title: string; body?: string; createdAt: string }[]
   );
 
-  // Resource configuration modal state
-  const [selectedResource, setSelectedResource] = useState<{
-    sectionId: string;
-    resourceIndex: number;
-    resource: any;
-  } | null>(null);
-  const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false);
-
   useMemo(() => {
     if (mode === "edit" && data) {
       setIsPublished(data.isPublished);
@@ -104,7 +89,20 @@ export default function StatusPageEditor({ mode, id }: Props) {
     const id = crypto.randomUUID();
     setSections((prev) => [
       ...prev,
-      { id, name: "New section", resources: [] },
+      {
+        id,
+        name: "New section",
+        resources: [
+          {
+            id: crypto.randomUUID(),
+            type: "monitor",
+            monitorId: "",
+            publicName: "",
+            explanation: "",
+            widgetType: "with_history" as WidgetType,
+          },
+        ],
+      },
     ]);
   }
 
@@ -113,26 +111,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
   }
 
   function addResource(sectionId: string) {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              resources: [
-                ...s.resources,
-                {
-                  id: crypto.randomUUID(),
-                  type: "monitor",
-                  monitorId: "",
-                  publicName: "",
-                  explanation: "",
-                  widgetType: "with_history" as WidgetType,
-                },
-              ],
-            }
-          : s
-      )
-    );
+    // Remove this function as we only allow one resource per section
   }
 
   function updateResource(sectionId: string, index: number, monitorId: string) {
@@ -316,45 +295,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
   function removeUpdate(id: string) {
     setUpdates((items) => items.filter((u) => u.id !== id));
-  }
-
-  // Resource configuration modal handlers
-  function openResourceConfig(
-    sectionId: string,
-    resourceIndex: number,
-    resource: any
-  ) {
-    setSelectedResource({ sectionId, resourceIndex, resource });
-    setIsAdvancedSettingsOpen(false);
-  }
-
-  function closeResourceConfig() {
-    setSelectedResource(null);
-    setIsAdvancedSettingsOpen(false);
-  }
-
-  function updateResourceConfig(
-    patch: Partial<{
-      publicName: string;
-      explanation?: string;
-      widgetType: WidgetType;
-    }>
-  ) {
-    if (!selectedResource) return;
-
-    patchResource(
-      selectedResource.sectionId,
-      selectedResource.resourceIndex,
-      patch
-    );
-    setSelectedResource((prev) =>
-      prev
-        ? {
-            ...prev,
-            resource: { ...prev.resource, ...patch },
-          }
-        : null
-    );
   }
 
   return (
@@ -713,71 +653,88 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             <Label className="text-sm font-medium text-foreground">
                               Resources
                             </Label>
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               {section.resources.map((res, resIdx) => (
                                 <div
                                   key={resIdx}
-                                  className="flex items-center gap-3 p-3 border border-border/30 rounded-lg bg-background/30"
+                                  className="flex items-start gap-3 p-3 border border-border/30 rounded-lg bg-background/30"
                                 >
-                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                                  <div className="flex-1">
-                                    <Select
-                                      value={res.monitorId}
-                                      onValueChange={(v) =>
-                                        updateResource(section.id, resIdx, v)
-                                      }
-                                    >
-                                      <SelectTrigger className="h-9 border-0 bg-transparent p-0">
-                                        <SelectValue placeholder="Select monitor" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {monitorsData?.monitors.map((m) => (
-                                          <SelectItem key={m.id} value={m.id}>
-                                            {m.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-xs"
-                                    onClick={() =>
-                                      openResourceConfig(
-                                        section.id,
-                                        resIdx,
-                                        res
-                                      )
-                                    }
-                                  >
-                                    {(res as any).widgetType ===
-                                      "with_history" || !(res as any).widgetType
-                                      ? "With status history"
-                                      : (res as any).widgetType === "current"
-                                        ? "Current status only"
-                                        : "With status history & chart"}
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="More options"
-                                    className="h-8 w-8"
-                                  >
-                                    <svg
-                                      className="h-4 w-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mt-2" />
+                                  <div className="flex-1 space-y-3">
+                                    {/* Name field */}
+                                    <div className="space-y-2">
+                                      <Label className="text-xs font-medium text-foreground">
+                                        Name
+                                      </Label>
+                                      <Input
+                                        value={res.publicName || ""}
+                                        onChange={(e) =>
+                                          patchResource(section.id, resIdx, {
+                                            publicName: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Enter resource name"
+                                        className="h-9 text-sm border-border bg-background rounded-full"
                                       />
-                                    </svg>
-                                  </Button>
+                                    </div>
+
+                                    {/* Widget type dropdown - in the middle */}
+                                    <div className="space-y-2">
+                                      <Label className="text-xs font-medium text-foreground">
+                                        Widget Type
+                                      </Label>
+                                      <Select
+                                        value={
+                                          (res as any).widgetType ||
+                                          "with_history"
+                                        }
+                                        onValueChange={(v) =>
+                                          patchResource(section.id, resIdx, {
+                                            widgetType: v as WidgetType,
+                                          })
+                                        }
+                                      >
+                                        <SelectTrigger className="h-9 text-sm border-border bg-background">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="current">
+                                            Current status only
+                                          </SelectItem>
+                                          <SelectItem value="with_history">
+                                            With status history
+                                          </SelectItem>
+                                          <SelectItem value="with_history_chart">
+                                            With status history & chart
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    {/* Monitor dropdown */}
+                                    <div className="space-y-2 w-full">
+                                      <Label className="text-xs font-medium text-foreground">
+                                        Monitor
+                                      </Label>
+                                      <Select
+                                        value={res.monitorId}
+                                        onValueChange={(v) =>
+                                          updateResource(section.id, resIdx, v)
+                                        }
+                                      >
+                                        <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full !rounded-full w-full">
+                                          <SelectValue placeholder="Select monitor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {monitorsData?.monitors.map((m) => (
+                                            <SelectItem key={m.id} value={m.id}>
+                                              {m.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -785,20 +742,12 @@ export default function StatusPageEditor({ mode, id }: Props) {
                                     onClick={() =>
                                       removeResource(section.id, resIdx)
                                     }
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 mt-2"
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
                                 </div>
                               ))}
-                              <Button
-                                variant="outline"
-                                onClick={() => addResource(section.id)}
-                                className="w-full h-12 border-dashed"
-                              >
-                                <Plus className="h-4 w-4 mr-2" /> Search to add
-                                resources
-                              </Button>
                             </div>
                           </div>
 
@@ -1078,195 +1027,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Resource Configuration Modal */}
-      {selectedResource && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">
-                      sabcube.vercel.app
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ChevronDown className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="h-8 text-xs">
-                  With status history
-                </Button>
-              </div>
-
-              {/* Form Fields */}
-              <div className="space-y-6">
-                {/* Public name */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-foreground">
-                    Public name *
-                  </Label>
-                  <Input
-                    value={(selectedResource.resource as any).publicName || ""}
-                    onChange={(e) =>
-                      updateResourceConfig({ publicName: e.target.value })
-                    }
-                    placeholder="sabcube.vercel.app"
-                    className="h-10"
-                  />
-                </div>
-
-                {/* Explanation */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-foreground">
-                    Explanation
-                  </Label>
-                  <Input
-                    value={(selectedResource.resource as any).explanation || ""}
-                    onChange={(e) =>
-                      updateResourceConfig({ explanation: e.target.value })
-                    }
-                    placeholder=""
-                    className="h-10"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Displayed as a help icon. Optional.
-                  </p>
-                </div>
-
-                {/* Widget type */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-foreground">
-                    Widget type
-                  </Label>
-                  <Select
-                    value={
-                      (selectedResource.resource as any).widgetType ||
-                      "with_history"
-                    }
-                    onValueChange={(value) =>
-                      updateResourceConfig({ widgetType: value as WidgetType })
-                    }
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current">
-                        Current status only
-                      </SelectItem>
-                      <SelectItem value="with_history">
-                        With status history
-                      </SelectItem>
-                      <SelectItem value="with_history_chart">
-                        With status history & chart
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Advanced settings */}
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setIsAdvancedSettingsOpen(!isAdvancedSettingsOpen)
-                    }
-                    className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
-                  >
-                    {isAdvancedSettingsOpen ? (
-                      <ChevronDown className="w-4 h-4" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                    Advanced settings
-                  </button>
-
-                  {isAdvancedSettingsOpen && (
-                    <div className="space-y-4 pl-6 border-l border-border/30">
-                      <p className="text-xs text-muted-foreground">
-                        Customize how and which incidents for the selected
-                        resource are displayed on the status page.
-                      </p>
-
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-foreground">
-                            Mark as down for
-                          </Label>
-                          <Select defaultValue="any_incident">
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="any_incident">
-                                Any incident for sabcube.vercel.app
-                              </SelectItem>
-                              <SelectItem value="specific_incidents">
-                                Specific incidents only
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-foreground">
-                            Mark as degraded for
-                          </Label>
-                          <Select defaultValue="no_incidents">
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="no_incidents">
-                                No incidents
-                              </SelectItem>
-                              <SelectItem value="specific_incidents">
-                                Specific incidents only
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-border/30">
-                <Button
-                  variant="ghost"
-                  onClick={closeResourceConfig}
-                  className="h-9"
-                >
-                  Cancel
-                </Button>
-                <Button onClick={closeResourceConfig} className="h-9">
-                  Save
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
