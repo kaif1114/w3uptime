@@ -13,12 +13,10 @@ export function MonitorsClient() {
   console.log("Monitors page state:", { data, isLoading, error });
 
   if (isLoading) {
-
-    return <MonitorsLoading />;
+return <MonitorsLoading />;
   }
 
   if (error) {
-    console.log("Showing error state:", error);
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
@@ -37,6 +35,5 @@ export function MonitorsClient() {
     );
   }
 
-  console.log("Showing monitors list with data:", data);
   return data ? <MonitorsList initialData={data} /> : null;
 }
