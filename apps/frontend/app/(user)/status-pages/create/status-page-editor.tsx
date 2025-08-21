@@ -94,6 +94,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
     Record<string, boolean>
   >({});
 
+  // UI state: show forms after user opts in from placeholder
+  const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
+
   useMemo(() => {
     if (mode === "edit" && data) {
       setIsPublished(data.isPublished);
@@ -929,573 +933,643 @@ export default function StatusPageEditor({ mode, id }: Props) {
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-12">
-          <div className="flex gap-12">
-            <div className="w-1/3 space-y-4">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-foreground">
-                  Schedule maintenance
-                </h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Describe what will happen and when. Select which services are
-                  affected and schedule the maintenance.
+          {!(showMaintenanceForm || maintenances.length > 0) ? (
+            <div className="min-h-[420px] flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <h3 className="text-xl font-semibold text-foreground">
+                  No maintenance scheduled
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Notify customers of any changes in availability during
+                  upcoming scheduled maintenance.
                 </p>
+                <div className="pt-2">
+                  <Button
+                    onClick={() => setShowMaintenanceForm(true)}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 h-11 text-base font-medium"
+                  >
+                    Schedule maintenance
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="w-2/3 space-y-8">
-              <Card className="border border-border/50 bg-card shadow-sm">
-                <CardContent className="p-8 space-y-6">
+          ) : (
+            <>
+              <div className="flex gap-12">
+                <div className="w-1/3 space-y-4">
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        What's going on?
-                      </Label>
-                      <Input
-                        value={maintenanceDraft.title}
-                        onChange={(e) =>
-                          updateMaintenanceDraft({ title: e.target.value })
-                        }
-                        placeholder="Authentication systems maintenance"
-                        className="h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Description</Label>
-                      <Textarea
-                        value={maintenanceDraft.description}
-                        onChange={(e) =>
-                          updateMaintenanceDraft({
-                            description: e.target.value,
-                          })
-                        }
-                        placeholder="In-depth description of what's going on. You can use markdown here."
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">From</Label>
-                        <Input
-                          type="datetime-local"
-                          value={maintenanceDraft.start}
-                          onChange={(e) =>
-                            updateMaintenanceDraft({ start: e.target.value })
-                          }
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">To</Label>
-                        <Input
-                          type="datetime-local"
-                          value={maintenanceDraft.end}
-                          onChange={(e) =>
-                            updateMaintenanceDraft({ end: e.target.value })
-                          }
-                          className="h-10"
-                        />
-                      </div>
-                    </div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Schedule maintenance
+                    </h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Describe what will happen and when. Select which services
+                      are affected and schedule the maintenance.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          <div className="flex gap-12">
-            <div className="w-1/3 space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                Affected services
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Please select all services affected by the maintenance.
-              </p>
-            </div>
-            <div className="w-2/3">
-              <Card className="border border-border/50 bg-card shadow-sm">
-                <CardContent className="p-6 space-y-4">
-                  {sections.map((s) => {
-                    const sectionResourceIds = s.resources.map(
-                      (r: any) => r.id
-                    );
-                    const selectedIds = new Set(
-                      maintenanceDraft.affectedResourceIds || []
-                    );
-                    const areAllSelected =
-                      sectionResourceIds.length > 0 &&
-                      sectionResourceIds.every((rid) => selectedIds.has(rid));
-
-                    const isExpanded = expandedSections[s.id] ?? true;
-
-                    return (
-                      <div
-                        key={s.id}
-                        className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
-                      >
-                        <button
-                          type="button"
-                          className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
-                          onClick={() =>
-                            setExpandedSections((prev) => ({
-                              ...prev,
-                              [s.id]: !(prev[s.id] ?? true),
-                            }))
-                          }
-                        >
-                          <span className="inline-flex items-center gap-2 text-sm font-medium">
-                            <ChevronDown
-                              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                </div>
+                <div className="w-2/3 space-y-8">
+                  <Card className="border border-border/50 bg-card shadow-sm">
+                    <CardContent className="p-8 space-y-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            What's going on?
+                          </Label>
+                          <Input
+                            value={maintenanceDraft.title}
+                            onChange={(e) =>
+                              updateMaintenanceDraft({ title: e.target.value })
+                            }
+                            placeholder="Authentication systems maintenance"
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Description
+                          </Label>
+                          <Textarea
+                            value={maintenanceDraft.description}
+                            onChange={(e) =>
+                              updateMaintenanceDraft({
+                                description: e.target.value,
+                              })
+                            }
+                            placeholder="In-depth description of what's going on. You can use markdown here."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">From</Label>
+                            <Input
+                              type="datetime-local"
+                              value={maintenanceDraft.start}
+                              onChange={(e) =>
+                                updateMaintenanceDraft({
+                                  start: e.target.value,
+                                })
+                              }
+                              className="h-10"
                             />
-                            {s.name || "New section"}
-                          </span>
-                        </button>
-                        {isExpanded && (
-                          <div className="px-6 pb-3">
-                            <div className="space-y-3 py-2">
-                              {s.resources.map((r: any) => {
-                                const checked = (
-                                  maintenanceDraft.affectedResourceIds || []
-                                ).includes(r.id);
-                                const monitorName = monitorsData?.monitors.find(
-                                  (m) => m.id === r.monitorId
-                                )?.name;
-                                const displayName =
-                                  r.publicName || monitorName || "Resource";
-                                return (
-                                  <label
-                                    key={r.id}
-                                    className="flex items-center gap-3 text-sm"
-                                  >
-                                    <Checkbox
-                                      checked={checked}
-                                      onCheckedChange={(val) => {
-                                        const next = new Set(
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">To</Label>
+                            <Input
+                              type="datetime-local"
+                              value={maintenanceDraft.end}
+                              onChange={(e) =>
+                                updateMaintenanceDraft({ end: e.target.value })
+                              }
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="flex gap-12">
+                <div className="w-1/3 space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Affected services
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Please select all services affected by the maintenance.
+                  </p>
+                </div>
+                <div className="w-2/3">
+                  <Card className="border border-border/50 bg-card shadow-sm">
+                    <CardContent className="p-6 space-y-4">
+                      {sections.map((s) => {
+                        const sectionResourceIds = s.resources.map(
+                          (r: any) => r.id
+                        );
+                        const selectedIds = new Set(
+                          maintenanceDraft.affectedResourceIds || []
+                        );
+                        const areAllSelected =
+                          sectionResourceIds.length > 0 &&
+                          sectionResourceIds.every((rid) =>
+                            selectedIds.has(rid)
+                          );
+
+                        const isExpanded = expandedSections[s.id] ?? true;
+
+                        return (
+                          <div
+                            key={s.id}
+                            className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                              onClick={() =>
+                                setExpandedSections((prev) => ({
+                                  ...prev,
+                                  [s.id]: !(prev[s.id] ?? true),
+                                }))
+                              }
+                            >
+                              <span className="inline-flex items-center gap-2 text-sm font-medium">
+                                <ChevronDown
+                                  className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                                />
+                                {s.name || "New section"}
+                              </span>
+                            </button>
+                            {isExpanded && (
+                              <div className="px-6 pb-3">
+                                <div className="space-y-3 py-2">
+                                  {s.resources.map((r: any) => {
+                                    const checked = (
+                                      maintenanceDraft.affectedResourceIds || []
+                                    ).includes(r.id);
+                                    const monitorName =
+                                      monitorsData?.monitors.find(
+                                        (m) => m.id === r.monitorId
+                                      )?.name;
+                                    const displayName =
+                                      r.publicName || monitorName || "Resource";
+                                    return (
+                                      <label
+                                        key={r.id}
+                                        className="flex items-center gap-3 text-sm"
+                                      >
+                                        <Checkbox
+                                          checked={checked}
+                                          onCheckedChange={(val) => {
+                                            const next = new Set(
+                                              maintenanceDraft.affectedResourceIds ||
+                                                []
+                                            );
+                                            if (Boolean(val)) next.add(r.id);
+                                            else next.delete(r.id);
+                                            updateMaintenanceDraft({
+                                              affectedResourceIds:
+                                                Array.from(next),
+                                            });
+                                          }}
+                                        />
+                                        <span>{displayName}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+
+                                <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
+                                  <button
+                                    type="button"
+                                    className="text-sm font-medium text-primary hover:underline"
+                                    onClick={() => {
+                                      let nextIds: string[];
+                                      if (areAllSelected) {
+                                        nextIds = (
+                                          maintenanceDraft.affectedResourceIds ||
+                                          []
+                                        ).filter(
+                                          (rid) =>
+                                            !sectionResourceIds.includes(rid)
+                                        );
+                                      } else {
+                                        const merged = new Set<string>(
                                           maintenanceDraft.affectedResourceIds ||
                                             []
                                         );
-                                        if (Boolean(val)) next.add(r.id);
-                                        else next.delete(r.id);
-                                        updateMaintenanceDraft({
-                                          affectedResourceIds: Array.from(next),
-                                        });
-                                      }}
-                                    />
-                                    <span>{displayName}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-
-                            <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
-                              <button
-                                type="button"
-                                className="text-sm font-medium text-primary hover:underline"
-                                onClick={() => {
-                                  let nextIds: string[];
-                                  if (areAllSelected) {
-                                    nextIds = (
-                                      maintenanceDraft.affectedResourceIds || []
-                                    ).filter(
-                                      (rid) => !sectionResourceIds.includes(rid)
-                                    );
-                                  } else {
-                                    const merged = new Set<string>(
-                                      maintenanceDraft.affectedResourceIds || []
-                                    );
-                                    sectionResourceIds.forEach((rid) =>
-                                      merged.add(rid)
-                                    );
-                                    nextIds = Array.from(merged);
-                                  }
-                                  updateMaintenanceDraft({
-                                    affectedResourceIds: nextIds,
-                                  });
-                                }}
-                              >
-                                {areAllSelected ? "Clear all" : "Select all"}
-                              </button>
-                            </div>
+                                        sectionResourceIds.forEach((rid) =>
+                                          merged.add(rid)
+                                        );
+                                        nextIds = Array.from(merged);
+                                      }
+                                      updateMaintenanceDraft({
+                                        affectedResourceIds: nextIds,
+                                      });
+                                    }}
+                                  >
+                                    {areAllSelected
+                                      ? "Clear all"
+                                      : "Select all"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {sections.length === 0 && (
-                    <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
-                        onClick={() =>
-                          setExpandedSections((prev) => ({
-                            ...prev,
-                            placeholder: !(prev.placeholder ?? true),
-                          }))
-                        }
-                      >
-                        <span className="inline-flex items-center gap-2 text-sm font-medium">
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform ${
-                              ((expandedSections as any).placeholder ?? true)
-                                ? "rotate-0"
-                                : "-rotate-90"
-                            }`}
-                          />
-                          {"New section"}
-                        </span>
-                      </button>
-
-                      {((expandedSections as any).placeholder ?? true) ? (
-                        <div className="px-6 pb-3">
-                          <div className="space-y-3 py-2">
-                            <label className="flex items-center gap-3 text-sm">
-                              <Checkbox
-                                checked={dummyAffectedIds.includes(
-                                  "placeholder-resource-1"
-                                )}
-                                onCheckedChange={(val) => {
-                                  const next = new Set(dummyAffectedIds);
-                                  if (Boolean(val))
-                                    next.add("placeholder-resource-1");
-                                  else next.delete("placeholder-resource-1");
-                                  setDummyAffectedIds(Array.from(next));
-                                }}
+                        );
+                      })}
+                      {sections.length === 0 && (
+                        <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                            onClick={() =>
+                              setExpandedSections((prev) => ({
+                                ...prev,
+                                placeholder: !(prev.placeholder ?? true),
+                              }))
+                            }
+                          >
+                            <span className="inline-flex items-center gap-2 text-sm font-medium">
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${
+                                  ((expandedSections as any).placeholder ??
+                                  true)
+                                    ? "rotate-0"
+                                    : "-rotate-90"
+                                }`}
                               />
-                              <span>{"sabcube.vercel.app"}</span>
-                            </label>
-                          </div>
+                              {"New section"}
+                            </span>
+                          </button>
 
-                          <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
-                            <button
-                              type="button"
-                              className="text-sm font-medium text-primary hover:underline"
-                              onClick={() => {
-                                const allIds = ["placeholder-resource-1"];
-                                const allSelected = allIds.every((rid) =>
-                                  dummyAffectedIds.includes(rid)
-                                );
-                                setDummyAffectedIds(allSelected ? [] : allIds);
-                              }}
-                            >
-                              {(() => {
-                                const allIds = ["placeholder-resource-1"];
-                                const allSelected = allIds.every((rid) =>
-                                  dummyAffectedIds.includes(rid)
-                                );
-                                return allSelected ? "Clear all" : "Select all";
-                              })()}
-                            </button>
-                          </div>
+                          {((expandedSections as any).placeholder ?? true) ? (
+                            <div className="px-6 pb-3">
+                              <div className="space-y-3 py-2">
+                                <label className="flex items-center gap-3 text-sm">
+                                  <Checkbox
+                                    checked={dummyAffectedIds.includes(
+                                      "placeholder-resource-1"
+                                    )}
+                                    onCheckedChange={(val) => {
+                                      const next = new Set(dummyAffectedIds);
+                                      if (Boolean(val))
+                                        next.add("placeholder-resource-1");
+                                      else
+                                        next.delete("placeholder-resource-1");
+                                      setDummyAffectedIds(Array.from(next));
+                                    }}
+                                  />
+                                  <span>{"sabcube.vercel.app"}</span>
+                                </label>
+                              </div>
+
+                              <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
+                                <button
+                                  type="button"
+                                  className="text-sm font-medium text-primary hover:underline"
+                                  onClick={() => {
+                                    const allIds = ["placeholder-resource-1"];
+                                    const allSelected = allIds.every((rid) =>
+                                      dummyAffectedIds.includes(rid)
+                                    );
+                                    setDummyAffectedIds(
+                                      allSelected ? [] : allIds
+                                    );
+                                  }}
+                                >
+                                  {(() => {
+                                    const allIds = ["placeholder-resource-1"];
+                                    const allSelected = allIds.every((rid) =>
+                                      dummyAffectedIds.includes(rid)
+                                    );
+                                    return allSelected
+                                      ? "Clear all"
+                                      : "Select all";
+                                  })()}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      )}
+                    </CardContent>
+                  </Card>
 
-              <div className="pt-4">
-                <Button
-                  onClick={scheduleMaintenance}
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
-                >
-                  Schedule maintenance
-                </Button>
+                  <div className="pt-4">
+                    <Button
+                      onClick={scheduleMaintenance}
+                      disabled={
+                        createMutation.isPending || updateMutation.isPending
+                      }
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
+                    >
+                      Schedule maintenance
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="updates" className="space-y-12">
-          {/* Basic information for report */}
-          <div className="flex gap-12">
-            <div className="w-1/3 space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                Basic information
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Describe what happened, ETA for resolution, and where your
-                customers can ask for help.
-              </p>
-            </div>
-            <div className="w-2/3">
-              <Card className="border border-border/50 bg-card shadow-sm">
-                <CardContent className="p-8 space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        What's going on?
-                      </Label>
-                      <Input
-                        value={reportDraft.title}
-                        onChange={(e) =>
-                          setReportDraft((d) => ({
-                            ...d,
-                            title: e.target.value,
-                          }))
-                        }
-                        placeholder="Dashboard is unavailable"
-                        className="h-11"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Concise summary of the incident.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Description</Label>
-                      <Textarea
-                        value={reportDraft.description}
-                        onChange={(e) =>
-                          setReportDraft((d) => ({
-                            ...d,
-                            description: e.target.value,
-                          }))
-                        }
-                        placeholder="In-depth description of what's going on. You can use markdown."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        Published at
-                      </Label>
-                      <Input
-                        type="datetime-local"
-                        value={reportDraft.publishedAt}
-                        onChange={(e) =>
-                          setReportDraft((d) => ({
-                            ...d,
-                            publishedAt: e.target.value,
-                          }))
-                        }
-                        className="h-11 max-w-sm"
-                      />
-                    </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <Checkbox
-                        checked={reportDraft.notifySubscribers}
-                        onCheckedChange={(v) =>
-                          setReportDraft((d) => ({
-                            ...d,
-                            notifySubscribers: Boolean(v),
-                          }))
-                        }
-                      />
-                      <span>Notify status page subscribers</span>
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Affected services */}
-          <div className="flex gap-12">
-            <div className="w-1/3 space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                Affected services
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Please select all services affected by the current incident.
-              </p>
-            </div>
-            <div className="w-2/3">
-              <Card className="border border-border/50 bg-card shadow-sm">
-                <CardContent className="p-6 space-y-4">
-                  {sections.map((s) => {
-                    const isExpanded = reportExpandedSections[s.id] ?? true;
-                    return (
-                      <div
-                        key={s.id}
-                        className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
-                      >
-                        <button
-                          type="button"
-                          className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
-                          onClick={() =>
-                            setReportExpandedSections((prev) => ({
-                              ...prev,
-                              [s.id]: !(prev[s.id] ?? true),
-                            }))
-                          }
-                        >
-                          <span className="inline-flex items-center gap-2 text-sm font-medium">
-                            <ChevronDown
-                              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-                            />
-                            {s.name || "New section"}
-                          </span>
-                        </button>
-                        {isExpanded && (
-                          <div className="px-6 pb-4">
-                            <div className="space-y-3 py-2">
-                              {s.resources.map((r: any) => {
-                                const monitorName = monitorsData?.monitors.find(
-                                  (m) => m.id === r.monitorId
-                                )?.name;
-                                const displayName =
-                                  r.publicName || monitorName || "Resource";
-                                const current =
-                                  reportDraft.affected[r.id] || "not_affected";
-                                return (
-                                  <div
-                                    key={r.id}
-                                    className="flex items-center justify-between gap-4"
-                                  >
-                                    <span className="text-sm">
-                                      {displayName}
-                                    </span>
-                                    <div className="w-56">
-                                      <Select
-                                        value={current}
-                                        onValueChange={(v) =>
-                                          setReportDraft((d) => ({
-                                            ...d,
-                                            affected: {
-                                              ...d.affected,
-                                              [r.id]: v as AffectedStatus,
-                                            },
-                                          }))
-                                        }
-                                      >
-                                        <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="not_affected">
-                                            <span className="inline-flex items-center gap-2">
-                                              <Circle className="h-4 w-4 text-muted-foreground" />
-                                              Not affected
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="downtime">
-                                            <span className="inline-flex items-center gap-2">
-                                              <Minus className="h-4 w-4 text-red-500" />
-                                              Downtime
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="degraded">
-                                            <span className="inline-flex items-center gap-2">
-                                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                                              Degraded
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="resolved">
-                                            <span className="inline-flex items-center gap-2">
-                                              <Check className="h-4 w-4 text-green-500" />
-                                              Resolved
-                                            </span>
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {sections.length === 0 && (
-                    <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
-                        onClick={() =>
-                          setReportExpandedSections((prev) => ({
-                            ...prev,
-                            placeholder: !(prev.placeholder ?? true),
-                          }))
-                        }
-                      >
-                        <span className="inline-flex items-center gap-2 text-sm font-medium">
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform ${((reportExpandedSections as any).placeholder ?? true) ? "rotate-0" : "-rotate-90"}`}
-                          />
-                          {"New section"}
-                        </span>
-                      </button>
-                      {((reportExpandedSections as any).placeholder ??
-                        true) && (
-                        <div className="px-6 pb-4">
-                          <div className="space-y-3 py-2">
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-sm">
-                                {"sabcube.vercel.app"}
-                              </span>
-                              <div className="w-56">
-                                <Select
-                                  value={
-                                    reportDraft.affected[
-                                      "placeholder-resource-1"
-                                    ] ?? "not_affected"
-                                  }
-                                  onValueChange={(v) =>
-                                    setReportDraft((d) => ({
-                                      ...d,
-                                      affected: {
-                                        ...d.affected,
-                                        ["placeholder-resource-1"]:
-                                          v as AffectedStatus,
-                                      },
-                                    }))
-                                  }
-                                >
-                                  <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="not_affected">
-                                      <span className="inline-flex items-center gap-2">
-                                        <Circle className="h-4 w-4 text-muted-foreground" />
-                                        Not affected
-                                      </span>
-                                    </SelectItem>
-                                    <SelectItem value="downtime">
-                                      <span className="inline-flex items-center gap-2">
-                                        <Minus className="h-4 w-4 text-red-500" />
-                                        Downtime
-                                      </span>
-                                    </SelectItem>
-                                    <SelectItem value="degraded">
-                                      <span className="inline-flex items-center gap-2">
-                                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                                        Degraded
-                                      </span>
-                                    </SelectItem>
-                                    <SelectItem value="resolved">
-                                      <span className="inline-flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-green-500" />
-                                        Resolved
-                                      </span>
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="pt-4 flex justify-end">
-                <Button
-                  onClick={createReport}
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
-                >
-                  Create report
-                </Button>
+          {!(showReportForm || updates.length > 0) ? (
+            <div className="min-h-[420px] flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <h3 className="text-xl font-semibold text-foreground">
+                  Nothing to report
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  You will see all your status reports here.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    onClick={() => setShowReportForm(true)}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 h-11 text-base font-medium"
+                  >
+                    Create status report
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Basic information for report */}
+              <div className="flex gap-12">
+                <div className="w-1/3 space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Basic information
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Describe what happened, ETA for resolution, and where your
+                    customers can ask for help.
+                  </p>
+                </div>
+                <div className="w-2/3">
+                  <Card className="border border-border/50 bg-card shadow-sm">
+                    <CardContent className="p-8 space-y-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            What's going on?
+                          </Label>
+                          <Input
+                            value={reportDraft.title}
+                            onChange={(e) =>
+                              setReportDraft((d) => ({
+                                ...d,
+                                title: e.target.value,
+                              }))
+                            }
+                            placeholder="Dashboard is unavailable"
+                            className="h-11"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Concise summary of the incident.
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Description
+                          </Label>
+                          <Textarea
+                            value={reportDraft.description}
+                            onChange={(e) =>
+                              setReportDraft((d) => ({
+                                ...d,
+                                description: e.target.value,
+                              }))
+                            }
+                            placeholder="In-depth description of what's going on. You can use markdown."
+                            className="min-h-[120px]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Published at
+                          </Label>
+                          <Input
+                            type="datetime-local"
+                            value={reportDraft.publishedAt}
+                            onChange={(e) =>
+                              setReportDraft((d) => ({
+                                ...d,
+                                publishedAt: e.target.value,
+                              }))
+                            }
+                            className="h-11 max-w-sm"
+                          />
+                        </div>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={reportDraft.notifySubscribers}
+                            onCheckedChange={(v) =>
+                              setReportDraft((d) => ({
+                                ...d,
+                                notifySubscribers: Boolean(v),
+                              }))
+                            }
+                          />
+                          <span>Notify status page subscribers</span>
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Affected services */}
+              <div className="flex gap-12">
+                <div className="w-1/3 space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Affected services
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Please select all services affected by the current incident.
+                  </p>
+                </div>
+                <div className="w-2/3">
+                  <Card className="border border-border/50 bg-card shadow-sm">
+                    <CardContent className="p-6 space-y-4">
+                      {sections.map((s) => {
+                        const isExpanded = reportExpandedSections[s.id] ?? true;
+                        return (
+                          <div
+                            key={s.id}
+                            className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                              onClick={() =>
+                                setReportExpandedSections((prev) => ({
+                                  ...prev,
+                                  [s.id]: !(prev[s.id] ?? true),
+                                }))
+                              }
+                            >
+                              <span className="inline-flex items-center gap-2 text-sm font-medium">
+                                <ChevronDown
+                                  className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                                />
+                                {s.name || "New section"}
+                              </span>
+                            </button>
+                            {isExpanded && (
+                              <div className="px-6 pb-4">
+                                <div className="space-y-3 py-2">
+                                  {s.resources.map((r: any) => {
+                                    const monitorName =
+                                      monitorsData?.monitors.find(
+                                        (m) => m.id === r.monitorId
+                                      )?.name;
+                                    const displayName =
+                                      r.publicName || monitorName || "Resource";
+                                    const current =
+                                      reportDraft.affected[r.id] ||
+                                      "not_affected";
+                                    return (
+                                      <div
+                                        key={r.id}
+                                        className="flex items-center justify-between gap-4"
+                                      >
+                                        <span className="text-sm">
+                                          {displayName}
+                                        </span>
+                                        <div className="w-56">
+                                          <Select
+                                            value={current}
+                                            onValueChange={(v) =>
+                                              setReportDraft((d) => ({
+                                                ...d,
+                                                affected: {
+                                                  ...d.affected,
+                                                  [r.id]: v as AffectedStatus,
+                                                },
+                                              }))
+                                            }
+                                          >
+                                            <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="not_affected">
+                                                <span className="inline-flex items-center gap-2">
+                                                  <Circle className="h-4 w-4 text-muted-foreground" />
+                                                  Not affected
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="downtime">
+                                                <span className="inline-flex items-center gap-2">
+                                                  <Minus className="h-4 w-4 text-red-500" />
+                                                  Downtime
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="degraded">
+                                                <span className="inline-flex items-center gap-2">
+                                                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                                  Degraded
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="resolved">
+                                                <span className="inline-flex items-center gap-2">
+                                                  <Check className="h-4 w-4 text-green-500" />
+                                                  Resolved
+                                                </span>
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {sections.length === 0 && (
+                        <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                            onClick={() =>
+                              setReportExpandedSections((prev) => ({
+                                ...prev,
+                                placeholder: !(prev.placeholder ?? true),
+                              }))
+                            }
+                          >
+                            <span className="inline-flex items-center gap-2 text-sm font-medium">
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${((reportExpandedSections as any).placeholder ?? true) ? "rotate-0" : "-rotate-90"}`}
+                              />
+                              {"New section"}
+                            </span>
+                          </button>
+                          {((reportExpandedSections as any).placeholder ??
+                            true) && (
+                            <div className="px-6 pb-4">
+                              <div className="space-y-3 py-2">
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-sm">
+                                    {"sabcube.vercel.app"}
+                                  </span>
+                                  <div className="w-56">
+                                    <Select
+                                      value={
+                                        reportDraft.affected[
+                                          "placeholder-resource-1"
+                                        ] ?? "not_affected"
+                                      }
+                                      onValueChange={(v) =>
+                                        setReportDraft((d) => ({
+                                          ...d,
+                                          affected: {
+                                            ...d.affected,
+                                            ["placeholder-resource-1"]:
+                                              v as AffectedStatus,
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="not_affected">
+                                          <span className="inline-flex items-center gap-2">
+                                            <Circle className="h-4 w-4 text-muted-foreground" />
+                                            Not affected
+                                          </span>
+                                        </SelectItem>
+                                        <SelectItem value="downtime">
+                                          <span className="inline-flex items-center gap-2">
+                                            <Minus className="h-4 w-4 text-red-500" />
+                                            Downtime
+                                          </span>
+                                        </SelectItem>
+                                        <SelectItem value="degraded">
+                                          <span className="inline-flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                            Degraded
+                                          </span>
+                                        </SelectItem>
+                                        <SelectItem value="resolved">
+                                          <span className="inline-flex items-center gap-2">
+                                            <Check className="h-4 w-4 text-green-500" />
+                                            Resolved
+                                          </span>
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <div className="pt-4 flex justify-end">
+                    <Button
+                      onClick={createReport}
+                      disabled={
+                        createMutation.isPending || updateMutation.isPending
+                      }
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
+                    >
+                      Create report
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>
