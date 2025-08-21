@@ -10,10 +10,8 @@ import { AlertCircle } from "lucide-react";
 export function MonitorsClient() {
   const { data, isLoading, error, refetch } = useMonitors();
 
-  console.log("Monitors page state:", { data, isLoading, error });
-
   if (isLoading) {
-return <MonitorsLoading />;
+    return <MonitorsLoading />;
   }
 
   if (error) {
@@ -35,5 +33,16 @@ return <MonitorsLoading />;
     );
   }
 
-  return data ? <MonitorsList initialData={data} /> : null;
+  if (!data) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No monitors found. Please create your first monitor to get started.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return <MonitorsList initialData={data} />;
 }
