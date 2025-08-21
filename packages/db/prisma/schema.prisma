@@ -20,6 +20,7 @@ model User {
   sessions           Session[]
   comments           Comment[]
   monitors           Monitor[]
+  customPage         StatusPage[]
   monitorTicks       MonitorTick[]
   escalationPolicies EscalationPolicy[]
   geoLocationId      String?            @unique
@@ -214,11 +215,13 @@ model StatusPage {
   logoUrl            String?
   logo               String?
   supportUrl         String?
+  userId             String
   announcement       String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   statusPageSections StatusPageSection[]
   maintenances       Maintenance[]
+  user                User                @relation(fields: [userId], references: [id])
   updates            Update[]
 }
 
