@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useValidatorsByCountryAggregated } from '@/hooks/useValidators';
+import { useValidators } from '@/hooks/useValidators';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -20,7 +20,8 @@ interface MapboxValidatorData {
   continent: string;
   continentCode: string;
   flag: string | null;
-  latency?: number; // Optional latency for compatibility
+  latency?: number;
+  createdAt?: string; // Add timestamp for comparison
 }
 
 interface MapboxCountryData {
@@ -31,8 +32,14 @@ interface MapboxCountryData {
 }
 
 interface MapboxGlobeMapProps {
-  // No props needed - component uses real API data only
+  monitorId: string;
 }
+
+// Extended type for hover state that includes additional properties
+type ExtendedValidatorData = MapboxValidatorData & {
+  validatorCount?: number;
+  cities?: string[];
+};
 
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -51,11 +58,11 @@ function getValidatorAvatar(validatorId: string): string {
   return AVAILABLE_AVATARS[avatarIndex];
 }
 
-export function MapboxGlobeMap() {
+export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
-  const [hoveredValidator, setHoveredValidator] = useState<MapboxValidatorData | null>(null);
+  const [hoveredValidator, setHoveredValidator] = useState<ExtendedValidatorData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<string | null>(null);
   const [selectedValidator, setSelectedValidator] = useState<MapboxValidatorData | null>(null);
@@ -74,65 +81,54 @@ export function MapboxGlobeMap() {
     }
   });
 
-  // Fetch real validator data from hub server
-  const { data: validatorData, isLoading, error } = useValidatorsByCountryAggregated();
+  // Fetch validator network data
+  const { data: validatorsData, isLoading, error } = useValidators();
 
-  // Transform real validator data to MapboxValidatorData format
+  // Transform validator data to MapboxValidatorData format
   const validators: MapboxValidatorData[] = useMemo(() => {
-    if (!validatorData || validatorData.length === 0) {
+    if (!validatorsData?.validators || validatorsData.validators.length === 0) {
       return [];
     }
 
-    // Transform real validator data
-    const transformedValidators: MapboxValidatorData[] = [];
-    
-    validatorData.forEach(country => {
-      country.validators.forEach(validator => {
-        // Use real coordinates from the hub server
-        transformedValidators.push({
-          id: validator.validatorId,
-          country: validator.location.country,
-          city: validator.location.city,
-          lat: validator.location.latitude,
-          lng: validator.location.longitude,
-          status: 'online',
-          countryCode: validator.location.countryCode,
-          continent: validator.location.continent,
-          continentCode: validator.location.continentCode,
-          flag: validator.location.flag
-        });
-      });
-    });
-    
-    return transformedValidators;
-  }, [validatorData]);
+    return validatorsData.validators.map(validator => ({
+      id: validator.validatorId,
+      country: validator.location.country,
+      city: validator.location.city,
+      lat: validator.location.latitude,
+      lng: validator.location.longitude,
+      status: 'online',
+      countryCode: validator.location.countryCode,
+      continent: validator.location.continent,
+      continentCode: validator.location.continentCode,
+      flag: validator.location.flag,
+    }));
+  }, [validatorsData]);
 
-  // Transform country data 
+  // Transform country data based on validators
   const countryData: MapboxCountryData[] = useMemo(() => {
-    if (!validatorData || validatorData.length === 0) {
+    if (!validators || validators.length === 0) {
       return [];
     }
 
-    return validatorData.map(country => ({
-      name: country.name,
-      code: country.code,
-      validators: country.validators.map(validator => {
-        return {
-          id: validator.validatorId,
-          country: validator.location.country,
-          city: validator.location.city,
-          lat: validator.location.latitude,
-          lng: validator.location.longitude,
-          status: 'online' as const,
-          countryCode: validator.location.countryCode,
-          continent: validator.location.continent,
-          continentCode: validator.location.continentCode,
-          flag: validator.location.flag
-        } as MapboxValidatorData;
-      }),
-      onlineCount: country.count
-    } as MapboxCountryData)).sort((a, b) => b.onlineCount - a.onlineCount);
-  }, [validatorData, validators]);
+    // Group validators by country
+    const countryMap = new (globalThis.Map)<string, MapboxValidatorData[]>();
+    
+    validators.forEach(validator => {
+      const countryKey = validator.countryCode;
+      if (!countryMap.has(countryKey)) {
+        countryMap.set(countryKey, []);
+      }
+      countryMap.get(countryKey)!.push(validator);
+    });
+
+    // Convert to country data format
+    return (Array.from(countryMap.entries()) as [string, MapboxValidatorData[]][]).map(([countryCode, countryValidators]) => ({
+      name: countryCode, // Use country code as name since we don't have full country names
+      code: countryCode,
+      validators: countryValidators,
+      onlineCount: countryValidators.length
+    })).sort((a: MapboxCountryData, b: MapboxCountryData) => b.onlineCount - a.onlineCount);
+  }, [validators]);
 
   const stats = useMemo(() => {
     return { 
@@ -148,7 +144,7 @@ export function MapboxGlobeMap() {
 
   // Aggregate data by continent
   const continentData = useMemo(() => {
-    const continentMap = new globalThis.Map<string, { name: string; code: string; count: number; countries: string[] }>();
+    const continentMap = new (globalThis.Map)<string, { name: string; code: string; count: number; countries: string[] }>();
     
     validators.forEach(validator => {
       const continent = validator.continent;
@@ -171,7 +167,7 @@ export function MapboxGlobeMap() {
       }
     });
     
-    return Array.from(continentMap.values()).sort((a, b) => b.count - a.count);
+    return Array.from(continentMap.values()).sort((a: any, b: any) => b.count - a.count);
   }, [validators]);
 
   // Simple list of countries with validators for highlighting
@@ -263,9 +259,12 @@ export function MapboxGlobeMap() {
           continent: countryInData.validators[0]?.continent || '',
           continentCode: countryInData.validators[0]?.continentCode || '',
           flag: countryInData.validators[0]?.flag || null,
-          validatorCount: countryInData.onlineCount,
-          cities: countryInData.validators.map(v => v.city)
-        } as any);
+          // Store additional data in a custom property
+          ...{
+            validatorCount: countryInData.onlineCount,
+            cities: countryInData.validators.map(v => v.city)
+          }
+        } as ExtendedValidatorData);
         setTooltipPosition({ x: event.point.x, y: event.point.y });
         setHoveredCountry(mapboxCountryName || null);
         map.getCanvas().style.cursor = 'pointer';
@@ -701,15 +700,15 @@ export function MapboxGlobeMap() {
                     <p className="text-xs font-medium mb-1">Cities:</p>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {(() => {
-                        const cityMap = new globalThis.Map<string, number>();
+                        const cityMap = new (globalThis.Map)<string, number>();
                         selectedCountryData.validators.forEach(v => {
                           const cityName = v.city;
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
                         });
                         return Array.from(cityMap.entries())
-                          .sort((a, b) => b[1] - a[1])
+                          .sort((a: any, b: any) => b[1] - a[1])
                           .slice(0, 8)
-                          .map(([city, count]) => (
+                          .map(([city, count]: [string, number]) => (
                             <div key={city} className="flex justify-between text-xs">
                               <span>{city}</span>
                               <span className="text-green-400">{count}</span>
@@ -732,7 +731,7 @@ export function MapboxGlobeMap() {
                   }}
                 >
                   {/* Check if this is an individual validator tooltip or country tooltip */}
-                  {(hoveredValidator as any).validatorCount ? (
+                  {hoveredValidator.validatorCount ? (
                     // Country tooltip (aggregated data)
                     <>
                       <div className="font-semibold flex items-center gap-2 mb-2">
@@ -743,13 +742,13 @@ export function MapboxGlobeMap() {
                       </div>
                       <div className="space-y-2">
                         <div className="text-green-400 text-sm">
-                          ● {(hoveredValidator as any).validatorCount} Validator{(hoveredValidator as any).validatorCount > 1 ? 's' : ''} Online
+                          ● {hoveredValidator.validatorCount} Validator{(hoveredValidator.validatorCount || 0) > 1 ? 's' : ''} Online
                         </div>
-                        {(hoveredValidator as any).cities && (hoveredValidator as any).cities.length > 0 && (
+                        {hoveredValidator.cities && hoveredValidator.cities.length > 0 && (
                           <div>
                             <div className="text-gray-300 text-xs mb-1">Cities:</div>
                             <div className="flex flex-wrap gap-1">
-                              {[...(new Set((hoveredValidator as any).cities as string[]))].map((city: string, index: number) => (
+                              {[...(new Set(hoveredValidator.cities))].map((city: string, index: number) => (
                                 <span key={`${city}-${index}`} className="bg-gray-700 px-2 py-1 rounded text-xs">
                                   {city.charAt(0).toUpperCase() + city.slice(1)}
                                 </span>
@@ -800,7 +799,7 @@ export function MapboxGlobeMap() {
               <div className="md:col-span-2 lg:col-span-3">
                 <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
               </div>
-              {continentData.map(continent => (
+              {continentData.map((continent: any) => (
                 <div 
                   key={continent.name} 
                   className={`bg-background p-3 rounded-md cursor-pointer transition-all hover:shadow-md border-2 ${

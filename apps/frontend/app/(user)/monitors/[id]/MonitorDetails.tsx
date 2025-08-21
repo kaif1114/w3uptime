@@ -2,7 +2,6 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
@@ -19,13 +18,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
-import { GlobalLatencyChart } from "./GlobalLatencyChart";
+import { MonitoringControls, TimePeriod, BucketSize } from "./MonitoringControls";
+import { AnalyticsOverview } from "./AnalyticsOverview";
+import { TimeSeriesChart } from "./TimeSeriesChart";
+import { ValidatorMap } from "./ValidatorMap";
 import { MapboxGlobeMap } from "./MapboxGlobeMap";
-// import { MetricType, TimePeriod, UpdateFrequency } from "./MonitoringControls";
-import { RegionalStats } from "./RegionalStats";
 import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
 import { mockData } from "./mockData";
-
 interface MonitorDetailsProps {
   monitorId: string;
 }
@@ -65,12 +64,11 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   
   // State for tabs and controls
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  // const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
-  // const [updateFreq, setUpdateFreq] = useState<UpdateFrequency>('5m');
-  // const [metricType, setMetricType] = useState<MetricType>('all');
-  // const [autoRefresh, setAutoRefresh] = useState(true);
-  // const [lastUpdated, setLastUpdated] = useState(new Date());
-  // const [isRefreshing, setIsRefreshing] = useState(false);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('30days');
+  const [bucketSize, setBucketSize] = useState<BucketSize>('1 hour');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
@@ -80,29 +78,13 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   };
 
   const handleManualRefresh = () => {
-    // setIsRefreshing(true);
-    // setTimeout(() => {
-    //   setLastUpdated(new Date());
-    //   setIsRefreshing(false);
-    // }, 2000);
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setLastUpdated(new Date());
+      setIsRefreshing(false);
+    }, 2000);
   };
 
-  const handleExportData = () => {
-    const dataToExport = {
-      monitor: monitor?.name,
-      // period: timePeriod,
-      validators: mockData.validators.length,
-      incidents: mockData.incidents.length,
-      exportTime: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `monitor-${monitorId}-data.json`;
-    a.click();
-  };
 
   if (isLoading) {
     return (
@@ -194,20 +176,19 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       </div>
 
       {/* Monitoring Controls */}
-      {/* <MonitoringControls
+      <MonitoringControls
         timePeriod={timePeriod}
-        updateFrequency={updateFreq}
-        metricType={metricType}
+        updateFrequency="5m" // This could be made dynamic later
+        bucketSize={bucketSize}
         autoRefresh={autoRefresh}
         onTimePeriodChange={setTimePeriod}
-        onUpdateFrequencyChange={setUpdateFreq}
-        onMetricTypeChange={setMetricType}
+        onUpdateFrequencyChange={() => {}} // Placeholder for now
+        onBucketSizeChange={setBucketSize}
         onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
         onManualRefresh={handleManualRefresh}
-        onExportData={handleExportData}
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
-      /> */}
+      />
 
       {/* Tab Navigation */}
       <div>
@@ -240,45 +221,14 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
             {/* Tab Content */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                {/* Status Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Currently up for</p>
-                        <p className="text-2xl font-bold">2 days 14h</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Last checked at</p>
-                        <p className="text-2xl font-bold">{new Date().toLocaleTimeString()}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Active Validators</p>
-                        <p className="text-2xl font-bold">{mockData.validators.filter(v => v.status !== 'offline').length}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Regional Stats */}
-                <RegionalStats validators={mockData.validators} />
+                <AnalyticsOverview monitorId={monitorId} period={timePeriod} />
               </div>
             )}
 
             {activeTab === 'global' && (
               <div className="space-y-6">
-                <MapboxGlobeMap  />
-               
+                <MapboxGlobeMap monitorId={monitorId} />
+                <ValidatorMap monitorId={monitorId} />
               </div>
             )}
 
@@ -292,15 +242,18 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
             {activeTab === 'performance' && (
               <div className="space-y-6">
-                <GlobalLatencyChart 
-                  data={mockData.latencyData} 
-                  incidents={mockData.incidents.map(inc => ({
-                    start: inc.startTime,
-                    end: inc.endTime || new Date(),
-                    title: inc.title
-                  }))}
+                <TimeSeriesChart 
+                  monitorId={monitorId}
+                  period={timePeriod}
+                  bucketSize={bucketSize}
+                  type="latency"
                 />
-                <RegionalStats validators={mockData.validators} />
+                <TimeSeriesChart 
+                  monitorId={monitorId}
+                  period={timePeriod}
+                  bucketSize={bucketSize}
+                  type="uptime"
+                />
               </div>
             )}
           </div>

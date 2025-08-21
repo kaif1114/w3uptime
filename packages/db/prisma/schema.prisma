@@ -20,6 +20,7 @@ model User {
   sessions           Session[]
   comments           Comment[]
   monitors           Monitor[]
+  customPage         StatusPage[]
   monitorTicks       MonitorTick[]
   escalationPolicies EscalationPolicy[]
   geoLocationId      String?            @unique
@@ -72,7 +73,7 @@ model Monitor {
 // we will be needing geolocation data for a user(validator) to provide geographical insights on the distributed network of validators
 
 model MonitorTick { 
-  id            String            @id @default(uuid())
+  id            String            @default(uuid())
   monitorId     String
   validatorId   String
   status        MonitorTickStatus
@@ -82,9 +83,11 @@ model MonitorTick {
   countryCode   String
   continentCode String
   city          String
-  createdAt     DateTime          @default(now())
+  createdAt     DateTime          @default(now()) @db.Timestamptz
   monitor       Monitor           @relation(fields: [monitorId], references: [id])
   user          User              @relation(fields: [validatorId], references: [id])
+  
+  @@id([id, createdAt])
 }
 
 model EscalationPolicy {
@@ -212,11 +215,13 @@ model StatusPage {
   logoUrl            String?
   logo               String?
   supportUrl         String?
+  userId             String
   announcement       String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   statusPageSections StatusPageSection[]
   maintenances       Maintenance[]
+  user                User                @relation(fields: [userId], references: [id])
   updates            Update[]
 }
 

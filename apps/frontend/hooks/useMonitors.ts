@@ -8,7 +8,8 @@ import {
   CreateMonitorResponse,
   UpdateMonitorResponse,
   DeleteMonitorResponse,
-
+  MonitorAnalyticsResponse,
+  MonitorTimeSeriesResponse,
 } from "@/types/monitor";
 
 const API_BASE = "/api/monitors";
@@ -201,3 +202,48 @@ export function usePauseMonitor() {
     },
   });
 }
+
+// Fetch monitor analytics data
+export function useMonitorAnalytics(id: string, period: string = '30days') {
+  return useQuery<MonitorAnalyticsResponse>({
+    queryKey: ["monitor-analytics", id, period],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/${id}/analytics?period=${period}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch monitor analytics");
+      }
+      return response.json();
+    },
+    enabled: !!id,
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
+}
+
+// Fetch monitor timeseries data for charts
+export function useMonitorTimeSeries(id: string, period: string = '30days', bucket: string = '1 hour') {
+  return useQuery<MonitorTimeSeriesResponse>({
+    queryKey: ["monitor-timeseries", id, period, bucket],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/${id}/timeseries?period=${period}&bucket=${encodeURIComponent(bucket)}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch monitor timeseries");
+      }
+      return response.json();
+    },
+    enabled: !!id,
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
+}
+

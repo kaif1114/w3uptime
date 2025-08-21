@@ -78,18 +78,16 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
 
   return (
     <>
+    <Link href={`/monitors/${monitor.id}`}>
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor.status)}`} />
               <div className="space-y-1">
-                <Link 
-                  href={`/monitors/${monitor.id}`}
-                  className="font-semibold hover:underline"
-                >
+                <div className="font-semibold hover:underline">
                   {monitor.name}
-                </Link>
+                </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Globe className="h-4 w-4" />
                   <a 
@@ -157,6 +155,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
           </div>
         </CardContent>
       </Card>
+      </Link> 
 
       <DeleteConfirmDialog
         open={showDeleteDialog}
