@@ -126,12 +126,12 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                       </>
                     )}
                   </DropdownMenuItem>
-                  <Link href={`/monitors/${monitor.id}/modify`}>
+                  <a href={`/monitors/${monitor.id}/modify`}>
                     <DropdownMenuItem>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                  </Link>
+                  </a>
                   <DropdownMenuItem 
                     onClick={() => setShowDeleteDialog(true)}
                     className="text-destructive"
