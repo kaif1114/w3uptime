@@ -20,7 +20,17 @@ import {
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
-import { Plus, Trash2, GripVertical, X, ChevronDown } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  X,
+  ChevronDown,
+  Circle,
+  Minus,
+  AlertTriangle,
+  Check,
+} from "lucide-react";
 import { useMonitors } from "@/hooks/useMonitors";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -70,6 +80,19 @@ export default function StatusPageEditor({ mode, id }: Props) {
     Record<string, boolean>
   >({});
   const [dummyAffectedIds, setDummyAffectedIds] = useState<string[]>([]);
+
+  // Create report (status update) draft state – mirrors provided design
+  type AffectedStatus = "not_affected" | "downtime" | "degraded" | "resolved";
+  const [reportDraft, setReportDraft] = useState({
+    title: "",
+    description: "",
+    publishedAt: new Date().toISOString().slice(0, 16), // for datetime-local
+    notifySubscribers: false,
+    affected: {} as Record<string, AffectedStatus>, // key = resourceId
+  });
+  const [reportExpandedSections, setReportExpandedSections] = useState<
+    Record<string, boolean>
+  >({});
 
   useMemo(() => {
     if (mode === "edit" && data) {
@@ -376,6 +399,36 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
   function removeUpdate(id: string) {
     setUpdates((items) => items.filter((u) => u.id !== id));
+  }
+
+  // Create report handler (adds a new status update)
+  async function createReport() {
+    if (mode === "create") {
+      toast.error("Save the status page first to create a report");
+      return;
+    }
+    if (!reportDraft.title.trim()) {
+      toast.error("What's going on? is required");
+      return;
+    }
+    const newUpdate = {
+      id: crypto.randomUUID(),
+      title: reportDraft.title,
+      body: reportDraft.description,
+      createdAt: new Date(reportDraft.publishedAt).toISOString(),
+    };
+    const nextUpdates = [newUpdate, ...updates];
+    setUpdates(nextUpdates);
+    if (id) {
+      await updateMutation.mutateAsync({ id, data: { updates: nextUpdates } });
+    }
+    toast.success("Report created");
+    setReportDraft((prev) => ({
+      ...prev,
+      title: "",
+      description: "",
+      // keep publishedAt as-is so users can post multiple
+    }));
   }
 
   return (
@@ -1153,75 +1206,296 @@ export default function StatusPageEditor({ mode, id }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="updates" className="mt-6">
-          <Card className="border border-border/50 bg-card shadow-sm">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-lg">Status updates</h3>
-                <Button
-                  variant="secondary"
-                  onClick={addUpdateDraft}
-                  className="h-10"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> New update
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {updates.map((u) => (
-                  <div
-                    key={u.id}
-                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
-                  >
+        <TabsContent value="updates" className="space-y-12">
+          {/* Basic information for report */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Basic information
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Describe what happened, ETA for resolution, and where your
+                customers can ask for help.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Title</Label>
+                      <Label className="text-sm font-medium">
+                        What's going on?
+                      </Label>
                       <Input
-                        value={u.title}
+                        value={reportDraft.title}
                         onChange={(e) =>
-                          updateUpdate(u.id, { title: e.target.value })
+                          setReportDraft((d) => ({
+                            ...d,
+                            title: e.target.value,
+                          }))
                         }
-                        className="h-10"
+                        placeholder="Dashboard is unavailable"
+                        className="h-11"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Concise summary of the incident.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Description</Label>
+                      <Textarea
+                        value={reportDraft.description}
+                        onChange={(e) =>
+                          setReportDraft((d) => ({
+                            ...d,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="In-depth description of what's going on. You can use markdown."
+                        className="min-h-[120px]"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Message</Label>
-                      <Textarea
-                        value={u.body}
+                      <Label className="text-sm font-medium">
+                        Published at
+                      </Label>
+                      <Input
+                        type="datetime-local"
+                        value={reportDraft.publishedAt}
                         onChange={(e) =>
-                          updateUpdate(u.id, { body: e.target.value })
+                          setReportDraft((d) => ({
+                            ...d,
+                            publishedAt: e.target.value,
+                          }))
                         }
-                        className="min-h-[80px]"
+                        className="h-11 max-w-sm"
                       />
                     </div>
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        onClick={() => removeUpdate(u.id)}
-                        className="h-9"
-                      >
-                        Remove
-                      </Button>
-                    </div>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={reportDraft.notifySubscribers}
+                        onCheckedChange={(v) =>
+                          setReportDraft((d) => ({
+                            ...d,
+                            notifySubscribers: Boolean(v),
+                          }))
+                        }
+                      />
+                      <span>Notify status page subscribers</span>
+                    </label>
                   </div>
-                ))}
-                {updates.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No updates yet.
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end pt-6">
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Affected services */}
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Affected services
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Please select all services affected by the current incident.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-6 space-y-4">
+                  {sections.map((s) => {
+                    const isExpanded = reportExpandedSections[s.id] ?? true;
+                    return (
+                      <div
+                        key={s.id}
+                        className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                          onClick={() =>
+                            setReportExpandedSections((prev) => ({
+                              ...prev,
+                              [s.id]: !(prev[s.id] ?? true),
+                            }))
+                          }
+                        >
+                          <span className="inline-flex items-center gap-2 text-sm font-medium">
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                            />
+                            {s.name || "New section"}
+                          </span>
+                        </button>
+                        {isExpanded && (
+                          <div className="px-6 pb-4">
+                            <div className="space-y-3 py-2">
+                              {s.resources.map((r: any) => {
+                                const monitorName = monitorsData?.monitors.find(
+                                  (m) => m.id === r.monitorId
+                                )?.name;
+                                const displayName =
+                                  r.publicName || monitorName || "Resource";
+                                const current =
+                                  reportDraft.affected[r.id] || "not_affected";
+                                return (
+                                  <div
+                                    key={r.id}
+                                    className="flex items-center justify-between gap-4"
+                                  >
+                                    <span className="text-sm">
+                                      {displayName}
+                                    </span>
+                                    <div className="w-56">
+                                      <Select
+                                        value={current}
+                                        onValueChange={(v) =>
+                                          setReportDraft((d) => ({
+                                            ...d,
+                                            affected: {
+                                              ...d.affected,
+                                              [r.id]: v as AffectedStatus,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="not_affected">
+                                            <span className="inline-flex items-center gap-2">
+                                              <Circle className="h-4 w-4 text-muted-foreground" />
+                                              Not affected
+                                            </span>
+                                          </SelectItem>
+                                          <SelectItem value="downtime">
+                                            <span className="inline-flex items-center gap-2">
+                                              <Minus className="h-4 w-4 text-red-500" />
+                                              Downtime
+                                            </span>
+                                          </SelectItem>
+                                          <SelectItem value="degraded">
+                                            <span className="inline-flex items-center gap-2">
+                                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                              Degraded
+                                            </span>
+                                          </SelectItem>
+                                          <SelectItem value="resolved">
+                                            <span className="inline-flex items-center gap-2">
+                                              <Check className="h-4 w-4 text-green-500" />
+                                              Resolved
+                                            </span>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {sections.length === 0 && (
+                    <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                        onClick={() =>
+                          setReportExpandedSections((prev) => ({
+                            ...prev,
+                            placeholder: !(prev.placeholder ?? true),
+                          }))
+                        }
+                      >
+                        <span className="inline-flex items-center gap-2 text-sm font-medium">
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${((reportExpandedSections as any).placeholder ?? true) ? "rotate-0" : "-rotate-90"}`}
+                          />
+                          {"New section"}
+                        </span>
+                      </button>
+                      {((reportExpandedSections as any).placeholder ??
+                        true) && (
+                        <div className="px-6 pb-4">
+                          <div className="space-y-3 py-2">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-sm">
+                                {"sabcube.vercel.app"}
+                              </span>
+                              <div className="w-56">
+                                <Select
+                                  value={
+                                    reportDraft.affected[
+                                      "placeholder-resource-1"
+                                    ] ?? "not_affected"
+                                  }
+                                  onValueChange={(v) =>
+                                    setReportDraft((d) => ({
+                                      ...d,
+                                      affected: {
+                                        ...d.affected,
+                                        ["placeholder-resource-1"]:
+                                          v as AffectedStatus,
+                                      },
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="not_affected">
+                                      <span className="inline-flex items-center gap-2">
+                                        <Circle className="h-4 w-4 text-muted-foreground" />
+                                        Not affected
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="downtime">
+                                      <span className="inline-flex items-center gap-2">
+                                        <Minus className="h-4 w-4 text-red-500" />
+                                        Downtime
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="degraded">
+                                      <span className="inline-flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                        Degraded
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="resolved">
+                                      <span className="inline-flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Resolved
+                                      </span>
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="pt-4 flex justify-end">
                 <Button
-                  onClick={onSave}
+                  onClick={createReport}
                   disabled={
                     createMutation.isPending || updateMutation.isPending
                   }
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
                 >
-                  Save changes
+                  Create report
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
