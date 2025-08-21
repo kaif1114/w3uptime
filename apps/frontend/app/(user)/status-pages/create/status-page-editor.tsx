@@ -976,7 +976,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     return (
                       <div
                         key={s.id}
-                        className="rounded-lg border border-border/50 bg-background/50 overflow-hidden"
+                        className="rounded-md border border-border/40 bg-muted/20 overflow-hidden"
                       >
                         <button
                           type="button"
@@ -1032,7 +1032,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               })}
                             </div>
 
-                            <div className="mt-2 border-t border-border/40 bg-muted/50 px-6 py-3">
+                            <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
                               <button
                                 type="button"
                                 className="text-sm font-medium text-primary hover:underline"
@@ -1067,7 +1067,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     );
                   })}
                   {sections.length === 0 && (
-                    <div className="rounded-lg border border-border/50 bg-background/50 overflow-hidden">
+                    <div className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
                       <button
                         type="button"
                         className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
@@ -1110,7 +1110,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             </label>
                           </div>
 
-                          <div className="mt-2 border-t border-border/40 bg-muted/50 px-6 py-3">
+                          <div className="mt-2 -mx-6 border-t border-border/40 bg-muted/40 px-6 py-3">
                             <button
                               type="button"
                               className="text-sm font-medium text-primary hover:underline"
