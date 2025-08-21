@@ -13,20 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Ellipsis, Plus, Search } from "lucide-react";
+import { useStatusPages } from "@/hooks/useStatusPages";
 
 type StatusValue = "operational" | "degraded" | "down";
-
-type StatusPage = {
-  id: string;
-  url: string;
-  status: StatusValue;
-};
-
-const DUMMY_STATUS_PAGES: StatusPage[] = [
-  { id: "1", url: "cores-connect.betteruptime.com", status: "operational" },
-  { id: "2", url: "api.examplestatus.com", status: "degraded" },
-  { id: "3", url: "shop.examplestatus.com", status: "down" },
-];
 
 function getStatusStyles(status: StatusValue) {
   switch (status) {
@@ -47,14 +36,18 @@ function getStatusStyles(status: StatusValue) {
 
 export default function StatusPagesList() {
   const [query, setQuery] = useState("");
+  const { data, isLoading } = useStatusPages();
 
   const filteredPages = useMemo(() => {
-    if (!query.trim()) return DUMMY_STATUS_PAGES;
+    const list = (data?.statusPages || []).map((p) => ({
+      id: p.id,
+      url: p.name,
+      status: "operational" as StatusValue,
+    }));
+    if (!query.trim()) return list;
     const lower = query.toLowerCase();
-    return DUMMY_STATUS_PAGES.filter((p) =>
-      p.url.toLowerCase().includes(lower)
-    );
-  }, [query]);
+    return list.filter((p) => p.url.toLowerCase().includes(lower));
+  }, [query, data]);
 
   return (
     <div className="container mx-auto px-4 pt-4 pb-6">
@@ -85,6 +78,9 @@ export default function StatusPagesList() {
         </CardHeader>
         <CardContent className="p-0">
           <ul className="divide-y">
+            {isLoading && (
+              <li className="px-6 py-8 text-muted-foreground">Loading...</li>
+            )}
             {filteredPages.map((page) => {
               const styles = getStatusStyles(page.status);
               return (
@@ -95,7 +91,11 @@ export default function StatusPagesList() {
                         className={`h-2.5 w-2.5 rounded-full ${styles.dot}`}
                       />
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{page.url}</div>
+                        <div className="font-medium truncate">
+                          <Link href={`/status-pages/${page.id}`}>
+                            {page.url}
+                          </Link>
+                        </div>
                         <div className="text-muted-foreground text-xs">
                           1 resource
                         </div>
