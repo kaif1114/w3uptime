@@ -126,7 +126,11 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                       </>
                     )}
                   </DropdownMenuItem>
+<<<<<<< HEAD
                   <a href={`/monitors/${monitor.id}/edit`}>
+=======
+                  <a href={`/monitors/${monitor.id}/modify`}>
+>>>>>>> 867a0cdd18b1f78c7adfdb02fbfdc9b4c5352144
                     <DropdownMenuItem>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
