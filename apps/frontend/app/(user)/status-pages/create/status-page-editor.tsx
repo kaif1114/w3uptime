@@ -20,11 +20,12 @@ import {
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
-import { Plus, Trash2, GripVertical, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, X, ChevronDown } from "lucide-react";
 import { useMonitors } from "@/hooks/useMonitors";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Props = { mode: "create" | "edit"; id?: string };
 
@@ -43,6 +44,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
   const [historyRange, setHistoryRange] = useState("7d");
   const [sections, setSections] = useState<StatusPageSection[]>([]);
   const { data: monitorsData } = useMonitors();
+  const maintenanceRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [maintenances, setMaintenances] = useState(
     [] as {
       id: string;
@@ -54,9 +56,19 @@ export default function StatusPageEditor({ mode, id }: Props) {
       affectedResourceIds?: string[];
     }[]
   );
+  const [maintenanceDraft, setMaintenanceDraft] = useState({
+    title: "",
+    description: "",
+    start: "",
+    end: "",
+    affectedResourceIds: [] as string[],
+  });
   const [updates, setUpdates] = useState(
     [] as { id: string; title: string; body?: string; createdAt: string }[]
   );
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({});
 
   useMemo(() => {
     if (mode === "edit" && data) {
@@ -248,6 +260,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
         status: "scheduled",
       },
     ]);
+    // Scroll the newly created maintenance block into view
+    setTimeout(() => {
+      const el = maintenanceRefs.current[id];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 0);
   }
 
   function updateMaintenance(
@@ -268,6 +287,67 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
   function removeMaintenance(id: string) {
     setMaintenances((items) => items.filter((m) => m.id !== id));
+  }
+
+  function updateMaintenanceDraft(
+    patch: Partial<{
+      title: string;
+      description?: string;
+      start: string;
+      end: string;
+      affectedResourceIds: string[];
+    }>
+  ) {
+    setMaintenanceDraft((prev) => ({ ...prev, ...patch }));
+  }
+
+  async function scheduleMaintenance() {
+    if (mode === "create") {
+      toast.error("Save the status page first to schedule maintenance");
+      return;
+    }
+    const { title, start, end } = maintenanceDraft;
+    if (!title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    if (!start || !end) {
+      toast.error("Please set both From and To date & time");
+      return;
+    }
+    if (new Date(end).getTime() <= new Date(start).getTime()) {
+      toast.error("End time must be after start time");
+      return;
+    }
+    const newItem = {
+      id: crypto.randomUUID(),
+      title: maintenanceDraft.title,
+      description: maintenanceDraft.description || "",
+      start: maintenanceDraft.start,
+      end: maintenanceDraft.end,
+      status: "scheduled" as const,
+      affectedResourceIds: maintenanceDraft.affectedResourceIds,
+    };
+
+    const nextMaintenances = [...maintenances, newItem];
+    setMaintenances(nextMaintenances);
+
+    if (id) {
+      await updateMutation.mutateAsync({
+        id,
+        data: { maintenances: nextMaintenances },
+      });
+    }
+
+    // Reset draft after successful schedule
+    setMaintenanceDraft({
+      title: "",
+      description: "",
+      start: "",
+      end: "",
+      affectedResourceIds: [],
+    });
+    toast.success("Maintenance scheduled");
   }
 
   // Status updates handlers
@@ -722,7 +802,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                                           updateResource(section.id, resIdx, v)
                                         }
                                       >
-                                        <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full !rounded-full w-full">
+                                        <SelectTrigger className="h-9 text-sm border-border bg-background rounded-full w-full">
                                           <SelectValue placeholder="Select monitor" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -794,166 +874,220 @@ export default function StatusPageEditor({ mode, id }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="mt-6">
-          <Card className="border border-border/50 bg-card shadow-sm">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-lg">Scheduled maintenance</h3>
-                <Button
-                  variant="secondary"
-                  onClick={addMaintenanceDraft}
-                  className="h-10"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Schedule maintenance
-                </Button>
-              </div>
+        <TabsContent value="maintenance" className="space-y-12">
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
               <div className="space-y-4">
-                {maintenances.map((m) => (
-                  <div
-                    key={m.id}
-                    className="border border-border/50 rounded-lg p-6 space-y-4 bg-background/50"
-                  >
+                <h2 className="text-xl font-semibold text-foreground">
+                  Schedule maintenance
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Describe what will happen and when. Select which services are
+                  affected and schedule the maintenance.
+                </p>
+              </div>
+            </div>
+            <div className="w-2/3 space-y-8">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-8 space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        What's going on?
+                      </Label>
+                      <Input
+                        value={maintenanceDraft.title}
+                        onChange={(e) =>
+                          updateMaintenanceDraft({ title: e.target.value })
+                        }
+                        placeholder="Authentication systems maintenance"
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Description</Label>
+                      <Textarea
+                        value={maintenanceDraft.description}
+                        onChange={(e) =>
+                          updateMaintenanceDraft({
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="In-depth description of what's going on. You can use markdown here."
+                        className="min-h-[100px]"
+                      />
+                    </div>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Title</Label>
-                        <Input
-                          value={m.title}
-                          onChange={(e) =>
-                            updateMaintenance(m.id, { title: e.target.value })
-                          }
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Status</Label>
-                        <Select
-                          value={m.status}
-                          onValueChange={(v) =>
-                            updateMaintenance(m.id, { status: v as any })
-                          }
-                        >
-                          <SelectTrigger className="h-10">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                            <SelectItem value="in_progress">
-                              In progress
-                            </SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Start</Label>
+                        <Label className="text-sm font-medium">From</Label>
                         <Input
                           type="datetime-local"
-                          value={m.start}
+                          value={maintenanceDraft.start}
                           onChange={(e) =>
-                            updateMaintenance(m.id, { start: e.target.value })
+                            updateMaintenanceDraft({ start: e.target.value })
                           }
                           className="h-10"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">End</Label>
+                        <Label className="text-sm font-medium">To</Label>
                         <Input
                           type="datetime-local"
-                          value={m.end}
+                          value={maintenanceDraft.end}
                           onChange={(e) =>
-                            updateMaintenance(m.id, { end: e.target.value })
+                            updateMaintenanceDraft({ end: e.target.value })
                           }
                           className="h-10"
                         />
                       </div>
-                      <div className="md:col-span-2 space-y-2">
-                        <Label className="text-sm font-medium">
-                          Description
-                        </Label>
-                        <Textarea
-                          value={m.description}
-                          onChange={(e) =>
-                            updateMaintenance(m.id, {
-                              description: e.target.value,
-                            })
-                          }
-                          className="min-h-[80px]"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">
-                        Affected services
-                      </Label>
-                      {sections.map((s) => (
-                        <div key={s.id} className="space-y-2">
-                          <div className="text-sm font-medium">
-                            {s.name || "Untitled section"}
-                          </div>
-                          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                            {s.resources.map((r: any) => {
-                              const checked = (
-                                m.affectedResourceIds || []
-                              ).includes(r.id);
-                              return (
-                                <label
-                                  key={r.id}
-                                  className="inline-flex items-center gap-2 text-sm"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      const next = new Set(
-                                        m.affectedResourceIds || []
-                                      );
-                                      if (e.target.checked) next.add(r.id);
-                                      else next.delete(r.id);
-                                      updateMaintenance(m.id, {
-                                        affectedResourceIds: Array.from(next),
-                                      });
-                                    }}
-                                  />
-                                  <span>
-                                    {r.publicName || r.monitorId || "Resource"}
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        onClick={() => removeMaintenance(m.id)}
-                        className="h-9"
-                      >
-                        Remove
-                      </Button>
                     </div>
                   </div>
-                ))}
-                {maintenances.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No maintenance scheduled.
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end pt-6">
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div className="flex gap-12">
+            <div className="w-1/3 space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Affected services
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Please select all services affected by the maintenance.
+              </p>
+            </div>
+            <div className="w-2/3">
+              <Card className="border border-border/50 bg-card shadow-sm">
+                <CardContent className="p-6 space-y-4">
+                  {sections.map((s) => {
+                    const sectionResourceIds = s.resources.map(
+                      (r: any) => r.id
+                    );
+                    const selectedIds = new Set(
+                      maintenanceDraft.affectedResourceIds || []
+                    );
+                    const areAllSelected =
+                      sectionResourceIds.length > 0 &&
+                      sectionResourceIds.every((rid) => selectedIds.has(rid));
+
+                    const isExpanded = expandedSections[s.id] ?? true;
+
+                    return (
+                      <div
+                        key={s.id}
+                        className="rounded-md border border-border/40 overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/40"
+                          onClick={() =>
+                            setExpandedSections((prev) => ({
+                              ...prev,
+                              [s.id]: !(prev[s.id] ?? true),
+                            }))
+                          }
+                        >
+                          <span className="inline-flex items-center gap-2 text-sm font-medium">
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                            />
+                            {s.name || "New section"}
+                          </span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="px-4 pb-3">
+                            <div className="space-y-3 py-2">
+                              {s.resources.map((r: any) => {
+                                const checked = (
+                                  maintenanceDraft.affectedResourceIds || []
+                                ).includes(r.id);
+                                const monitorName = monitorsData?.monitors.find(
+                                  (m) => m.id === r.monitorId
+                                )?.name;
+                                const displayName =
+                                  r.publicName || monitorName || "Resource";
+                                return (
+                                  <label
+                                    key={r.id}
+                                    className="flex items-center gap-3 text-sm"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(val) => {
+                                        const next = new Set(
+                                          maintenanceDraft.affectedResourceIds ||
+                                            []
+                                        );
+                                        if (Boolean(val)) next.add(r.id);
+                                        else next.delete(r.id);
+                                        updateMaintenanceDraft({
+                                          affectedResourceIds: Array.from(next),
+                                        });
+                                      }}
+                                    />
+                                    <span>{displayName}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+
+                            <div className="mt-2 -mx-4 border-t border-border/40 px-4 py-2">
+                              <button
+                                type="button"
+                                className="text-xs underline text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  let nextIds: string[];
+                                  if (areAllSelected) {
+                                    nextIds = (
+                                      maintenanceDraft.affectedResourceIds || []
+                                    ).filter(
+                                      (rid) => !sectionResourceIds.includes(rid)
+                                    );
+                                  } else {
+                                    const merged = new Set<string>(
+                                      maintenanceDraft.affectedResourceIds || []
+                                    );
+                                    sectionResourceIds.forEach((rid) =>
+                                      merged.add(rid)
+                                    );
+                                    nextIds = Array.from(merged);
+                                  }
+                                  updateMaintenanceDraft({
+                                    affectedResourceIds: nextIds,
+                                  });
+                                }}
+                              >
+                                {areAllSelected ? "Clear all" : "Select all"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {sections.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No services added. Add monitors in the Structure tab
+                      first.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="pt-4">
                 <Button
-                  onClick={onSave}
+                  onClick={scheduleMaintenance}
                   disabled={
                     createMutation.isPending || updateMutation.isPending
                   }
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
                 >
-                  Save changes
+                  Schedule maintenance
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="updates" className="mt-6">
