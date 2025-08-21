@@ -69,6 +69,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
+  const [dummyAffectedIds, setDummyAffectedIds] = useState<string[]>([]);
 
   useMemo(() => {
     if (mode === "edit" && data) {
@@ -975,11 +976,11 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     return (
                       <div
                         key={s.id}
-                        className="rounded-md border border-border/40 overflow-hidden"
+                        className="rounded-lg border border-border/50 bg-background/50 overflow-hidden"
                       >
                         <button
                           type="button"
-                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/40"
+                          className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
                           onClick={() =>
                             setExpandedSections((prev) => ({
                               ...prev,
@@ -994,9 +995,8 @@ export default function StatusPageEditor({ mode, id }: Props) {
                             {s.name || "New section"}
                           </span>
                         </button>
-
                         {isExpanded && (
-                          <div className="px-4 pb-3">
+                          <div className="px-6 pb-3">
                             <div className="space-y-3 py-2">
                               {s.resources.map((r: any) => {
                                 const checked = (
@@ -1032,10 +1032,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
                               })}
                             </div>
 
-                            <div className="mt-2 -mx-4 border-t border-border/40 px-4 py-2">
+                            <div className="mt-2 border-t border-border/40 bg-muted/50 px-6 py-3">
                               <button
                                 type="button"
-                                className="text-xs underline text-muted-foreground hover:text-foreground"
+                                className="text-sm font-medium text-primary hover:underline"
                                 onClick={() => {
                                   let nextIds: string[];
                                   if (areAllSelected) {
@@ -1067,10 +1067,73 @@ export default function StatusPageEditor({ mode, id }: Props) {
                     );
                   })}
                   {sections.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No services added. Add monitors in the Structure tab
-                      first.
-                    </p>
+                    <div className="rounded-lg border border-border/50 bg-background/50 overflow-hidden">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/40"
+                        onClick={() =>
+                          setExpandedSections((prev) => ({
+                            ...prev,
+                            placeholder: !(prev.placeholder ?? true),
+                          }))
+                        }
+                      >
+                        <span className="inline-flex items-center gap-2 text-sm font-medium">
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                              ((expandedSections as any).placeholder ?? true)
+                                ? "rotate-0"
+                                : "-rotate-90"
+                            }`}
+                          />
+                          {"New section"}
+                        </span>
+                      </button>
+
+                      {((expandedSections as any).placeholder ?? true) ? (
+                        <div className="px-6 pb-3">
+                          <div className="space-y-3 py-2">
+                            <label className="flex items-center gap-3 text-sm">
+                              <Checkbox
+                                checked={dummyAffectedIds.includes(
+                                  "placeholder-resource-1"
+                                )}
+                                onCheckedChange={(val) => {
+                                  const next = new Set(dummyAffectedIds);
+                                  if (Boolean(val))
+                                    next.add("placeholder-resource-1");
+                                  else next.delete("placeholder-resource-1");
+                                  setDummyAffectedIds(Array.from(next));
+                                }}
+                              />
+                              <span>{"sabcube.vercel.app"}</span>
+                            </label>
+                          </div>
+
+                          <div className="mt-2 border-t border-border/40 bg-muted/50 px-6 py-3">
+                            <button
+                              type="button"
+                              className="text-sm font-medium text-primary hover:underline"
+                              onClick={() => {
+                                const allIds = ["placeholder-resource-1"];
+                                const allSelected = allIds.every((rid) =>
+                                  dummyAffectedIds.includes(rid)
+                                );
+                                setDummyAffectedIds(allSelected ? [] : allIds);
+                              }}
+                            >
+                              {(() => {
+                                const allIds = ["placeholder-resource-1"];
+                                const allSelected = allIds.every((rid) =>
+                                  dummyAffectedIds.includes(rid)
+                                );
+                                return allSelected ? "Clear all" : "Select all";
+                              })()}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                 </CardContent>
               </Card>
