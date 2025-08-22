@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useDeleteMonitor, usePauseMonitor } from "@/hooks/useMonitors";
+import { useRouter } from "next/navigation";
 
 interface MonitorCardProps {
   monitor: Monitor;
@@ -33,7 +34,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pauseMutation = usePauseMonitor();
   const deleteMutation = useDeleteMonitor();
-
+  const router = useRouter();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -78,6 +79,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
 
   return (
     <>
+<<<<<<< HEAD
       <Link href={`/monitors/${monitor.id}`}>
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
@@ -153,6 +155,70 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+=======
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/monitors/${monitor.id}`)}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor.status)}`} />
+              <div className="space-y-1">
+                <div className="font-semibold hover:underline">
+                  {monitor.name}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Globe className="h-4 w-4" />
+                  <a 
+                    href={monitor.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {monitor.url}
+                  </a>
+                  <ExternalLink className="h-3 w-3" />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={getStatusVariant(monitor.status)}>
+                {monitor.status}
+              </Badge>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePauseToggle}>
+                    {monitor.status === "ACTIVE" ? (
+                      <>
+                        <Pause className="mr-2 h-4 w-4" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Resume
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <Link href={`/monitors/${monitor.id}/modify`}>
+                    <DropdownMenuItem>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem 
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+>>>>>>> c11b045fa8cbffbf55ff8e86f423c5ddb57fb0a1
             </div>
           </CardHeader>
           <CardContent>
@@ -164,10 +230,18 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
               </div>
               <span>Created {new Date(monitor.createdAt).toLocaleDateString()}</span>
             </div>
+<<<<<<< HEAD
           </CardContent>
         </Card>
       </Link>
 
+=======
+            <span>Created {new Date(monitor.createdAt).toLocaleDateString()}</span>
+          </div>
+        </CardContent>
+      </Card>
+  
+>>>>>>> c11b045fa8cbffbf55ff8e86f423c5ddb57fb0a1
       <DeleteConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
