@@ -3,6 +3,6 @@ import { receiveBatch } from "../controllers/batch";
 
 const router = Router();
 
-router.post('/batch', receiveBatch);
+router.post('/', receiveBatch);
 
 export default router;

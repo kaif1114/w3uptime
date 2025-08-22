@@ -456,7 +456,7 @@ BEGIN
             ) AS avg_latency,
             ROUND(MIN(agg.min_latency)::NUMERIC, 2) AS min_latency,
             ROUND(MAX(agg.max_latency)::NUMERIC, 2) AS max_latency,
-            SUM(agg.tick_count) AS sample_count
+            SUM(agg.tick_count)::BIGINT AS sample_count
         FROM %I agg
         WHERE agg."monitorId" = $1
             AND agg.time_bucket >= NOW() - $2::INTERVAL',
