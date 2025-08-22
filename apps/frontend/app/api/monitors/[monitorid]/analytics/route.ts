@@ -57,29 +57,83 @@ export const GET = withAuth(async (
       latencyByCity,
       sampleCountByCountry,
     ] = await Promise.all([
-      // Uptime data
-      prisma.$queryRaw`SELECT * FROM get_uptime_data(${monitorid}, ${period})`,
+      // Uptime data - cast bigint columns to avoid type mismatches
+      prisma.$queryRaw`
+        SELECT 
+          total_checks::numeric,
+          successful_checks::numeric,
+          failed_checks::numeric,
+          uptime_percentage,
+          availability_sla
+        FROM get_uptime_data(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Total latency statistics
-      prisma.$queryRaw`SELECT * FROM get_total_avg_latency(${monitorid}, ${period})`,
+      // Total latency statistics - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          avg_latency,
+          min_latency,
+          max_latency,
+          sample_count::numeric
+        FROM get_total_avg_latency(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Best performing region
-      prisma.$queryRaw`SELECT * FROM get_best_performing_region(${monitorid}, ${period})`,
+      // Best performing region - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          region_type,
+          region_name,
+          avg_latency,
+          sample_count::numeric
+        FROM get_best_performing_region(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Worst performing region
-      prisma.$queryRaw`SELECT * FROM get_worst_performing_region(${monitorid}, ${period})`,
+      // Worst performing region - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          region_type,
+          region_name,
+          avg_latency,
+          sample_count::numeric
+        FROM get_worst_performing_region(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Latency by country
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_country(${monitorid}, ${period})`,
+      // Latency by country - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          country_code,
+          avg_latency,
+          sample_count::numeric
+        FROM get_avg_latency_by_country(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Latency by continent
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_continent(${monitorid}, ${period})`,
+      // Latency by continent - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          continent_code,
+          avg_latency,
+          sample_count::numeric
+        FROM get_avg_latency_by_continent(${monitorid}::TEXT, ${period}::TEXT)
+      `,
       
-      // Latency by city
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_city(${monitorid}, ${period})`,
+      // Latency by city - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          city,
+          country_code,
+          avg_latency,
+          sample_count::numeric
+        FROM get_avg_latency_by_city(${monitorid}::TEXT, ${period}::TEXT)
+      `,
 
-      // Sample count by country (for world map)
-      prisma.$queryRaw`SELECT * FROM get_sample_count_by_country(${monitorid}, ${period})`,
+      // Sample count by country (for world map) - cast bigint columns
+      prisma.$queryRaw`
+        SELECT 
+          country_code,
+          sample_count::numeric,
+          avg_latency
+        FROM get_sample_count_by_country(${monitorid}::TEXT, ${period}::TEXT)
+      `,
     ]);
 
     // Helper function to convert BigInt to Number

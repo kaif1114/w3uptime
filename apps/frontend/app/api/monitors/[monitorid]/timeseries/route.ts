@@ -46,14 +46,14 @@ export const GET = withAuth(async (
       );
     }
 
-    // Get time series data - convert timestamp to string for proper serialization
+    // Get time series data - convert timestamp to string for proper serialization and cast bigint
     const timeseriesData = await prisma.$queryRaw`
       SELECT 
         time_bucket::text as time_bucket,
         avg_latency,
         uptime_percentage,
-        total_checks
-      FROM get_monitor_timeseries(${monitorid}, ${period})
+        total_checks::numeric
+      FROM get_monitor_timeseries(${monitorid}::TEXT, ${period}::TEXT)
     `;
 
     // Helper function to convert BigInt to Number
