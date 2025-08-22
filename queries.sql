@@ -507,6 +507,10 @@ $$ LANGUAGE plpgsql;
 -- =============================================================================
 -- 7. TIME SERIES DATA FOR CHARTING (Optimized)
 -- =============================================================================
+
+-- Drop function if it exists to avoid conflicts
+DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     monitor_id_param TEXT,
     period_param TEXT DEFAULT 'day'
