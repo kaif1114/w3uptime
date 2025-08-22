@@ -53,7 +53,7 @@ export const GET = withAuth(async (
         avg_latency,
         uptime_percentage,
         total_checks
-      FROM get_monitor_timeseries($1, $2)
+      FROM get_monitor_timeseries($1::TEXT, $2::TEXT)
     `, monitorid, period);
 
     // Helper function to convert BigInt to Number

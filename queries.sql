@@ -508,8 +508,10 @@ $$ LANGUAGE plpgsql;
 -- 7. TIME SERIES DATA FOR CHARTING (Optimized)
 -- =============================================================================
 
--- Drop function if it exists to avoid conflicts
-DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT);
+-- Drop function if it exists to avoid conflicts (try multiple signatures)
+DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS get_monitor_timeseries CASCADE;
 
 CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     monitor_id_param TEXT,
