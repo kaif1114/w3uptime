@@ -47,24 +47,22 @@ export const GET = withAuth(async (
     }
 
     // Get time series data
-    const timeseriesData = await prisma.$queryRawUnsafe(`
-      SELECT 
-        time_bucket::text as time_bucket,
-        avg_latency,
-        uptime_percentage,
-        total_checks
-      FROM get_monitor_timeseries($1::TEXT, $2::TEXT)
-    `, monitorid, period);
+    const timeseriesData = await prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_timeseries($1, $2)`, monitorid, period);
 
-    // Helper function to convert BigInt to Number
+    // Helper function to convert BigInt to Number and timestamp to string
     const convertBigIntToNumber = (obj: any): any => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);
+      if (obj instanceof Date) return obj.toISOString();
       if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
       if (typeof obj === 'object') {
         const converted: any = {};
         for (const key in obj) {
-          converted[key] = convertBigIntToNumber(obj[key]);
+          if (key === 'time_bucket' && obj[key] instanceof Date) {
+            converted[key] = obj[key].toISOString();
+          } else {
+            converted[key] = convertBigIntToNumber(obj[key]);
+          }
         }
         return converted;
       }
