@@ -216,7 +216,7 @@ BEGIN
                 (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
                 2
             ) AS avg_latency,
-            SUM(agg.tick_count) AS sample_count
+            SUM(agg.tick_count)::BIGINT AS sample_count
         FROM %I agg
         WHERE agg."monitorId" = $1
             AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -254,7 +254,7 @@ BEGIN
                 (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
                 2
             ) AS avg_latency,
-            SUM(agg.tick_count) AS sample_count
+            SUM(agg.tick_count)::BIGINT AS sample_count
         FROM %I agg
         WHERE agg."monitorId" = $1
             AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -294,7 +294,7 @@ BEGIN
                 (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
                 2
             ) AS avg_latency,
-            SUM(agg.tick_count) AS sample_count
+            SUM(agg.tick_count)::BIGINT AS sample_count
         FROM %I agg
         WHERE agg."monitorId" = $1
             AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -330,7 +330,7 @@ BEGIN
         WITH regional_performance AS (
             SELECT ''Country'' as region_type, agg."countryCode" as region_name, 
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -340,7 +340,7 @@ BEGIN
             
             SELECT ''Continent'' as region_type, agg."continentCode" as region_name,
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -350,7 +350,7 @@ BEGIN
             
             SELECT ''City'' as region_type, agg."city" as region_name,
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -390,7 +390,7 @@ BEGIN
         WITH regional_performance AS (
             SELECT ''Country'' as region_type, agg."countryCode" as region_name, 
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -400,7 +400,7 @@ BEGIN
             
             SELECT ''Continent'' as region_type, agg."continentCode" as region_name,
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -410,7 +410,7 @@ BEGIN
             
             SELECT ''City'' as region_type, agg."city" as region_name,
                    SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count) as sample_count
+                   SUM(agg.tick_count)::BIGINT as sample_count
             FROM %I agg
             WHERE agg."monitorId" = $1
                 AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -489,9 +489,9 @@ BEGIN
     
     query_text := FORMAT('
         SELECT 
-            SUM(agg.tick_count) AS total_checks,
-            SUM(agg.up_count) AS successful_checks,
-            SUM(agg.down_count) AS failed_checks,
+            SUM(agg.tick_count)::BIGINT AS total_checks,
+            SUM(agg.up_count)::BIGINT AS successful_checks,
+            SUM(agg.down_count)::BIGINT AS failed_checks,
             ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 4) AS uptime_percentage,
             ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS availability_sla
         FROM %I agg
@@ -531,7 +531,7 @@ BEGIN
                 2
             ) AS avg_latency,
             ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-            SUM(agg.tick_count) AS total_checks
+            SUM(agg.tick_count)::BIGINT AS total_checks
         FROM %I agg
         WHERE agg."monitorId" = $1
             AND agg.time_bucket >= NOW() - $2::INTERVAL
@@ -565,7 +565,7 @@ BEGIN
     query_text := FORMAT('
         SELECT 
             agg."countryCode"::TEXT,
-            SUM(agg.tick_count) AS sample_count,
+            SUM(agg.tick_count)::BIGINT AS sample_count,
             ROUND(
                 (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
                 2
@@ -643,7 +643,7 @@ BEGIN
                 2
             ) AS avg_latency,
             ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-            SUM(agg.tick_count) AS total_checks,
+            SUM(agg.tick_count)::BIGINT AS total_checks,
             $4::TEXT AS data_source
         FROM %I agg
         WHERE agg."monitorId" = $1
