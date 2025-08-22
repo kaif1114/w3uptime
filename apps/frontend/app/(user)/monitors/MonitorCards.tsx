@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useDeleteMonitor, usePauseMonitor } from "@/hooks/useMonitors";
+import { useRouter } from "next/navigation";
 
 interface MonitorCardProps {
   monitor: Monitor;
@@ -33,7 +34,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pauseMutation = usePauseMonitor();
   const deleteMutation = useDeleteMonitor();
-
+  const router = useRouter();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -78,8 +79,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
 
   return (
     <>
-    <Link href={`/monitors/${monitor.id}`}>
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/monitors/${monitor.id}`)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -126,12 +126,12 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                       </>
                     )}
                   </DropdownMenuItem>
-                  <a href={`/monitors/${monitor.id}/edit`}>
+                  <Link href={`/monitors/${monitor.id}/modify`}>
                     <DropdownMenuItem>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                  </a>
+                  </Link>
                   <DropdownMenuItem 
                     onClick={() => setShowDeleteDialog(true)}
                     className="text-destructive"
@@ -155,8 +155,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
           </div>
         </CardContent>
       </Card>
-      </Link> 
-
+  
       <DeleteConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
