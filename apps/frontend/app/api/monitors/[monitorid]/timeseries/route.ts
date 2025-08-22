@@ -4,8 +4,7 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const timeseriesQuerySchema = z.object({
-  period: z.enum(['1hr', '1day', '3days', '1week', '2weeks', '30days', '90days']).default('30days'),
-  bucket: z.enum(['1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour', '4 hours', '1 day']).default('1 hour'),
+  period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
 });
 
 // GET /api/monitors/[monitorid]/timeseries - Get time series data for charts
@@ -20,8 +19,7 @@ export const GET = withAuth(async (
     const { searchParams } = new URL(req.url);
     
     const validation = timeseriesQuerySchema.safeParse({
-      period: searchParams.get('period') || '30days',
-      bucket: searchParams.get('bucket') || '1 hour',
+      period: searchParams.get('period') || 'day',
     });
 
     if (!validation.success) {
@@ -31,7 +29,7 @@ export const GET = withAuth(async (
       );
     }
 
-    const { period, bucket } = validation.data;
+    const { period } = validation.data;
 
     // Verify monitor ownership
     const monitor = await prisma.monitor.findFirst({
@@ -55,7 +53,7 @@ export const GET = withAuth(async (
         avg_latency,
         uptime_percentage,
         total_checks
-      FROM get_monitor_timeseries(${monitorid}, ${period}, ${bucket})
+      FROM get_monitor_timeseries(${monitorid}, ${period})
     `;
 
     // Helper function to convert BigInt to Number
@@ -76,7 +74,6 @@ export const GET = withAuth(async (
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      bucketSize: bucket,
       data: convertBigIntToNumber(timeseriesData) || [],
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

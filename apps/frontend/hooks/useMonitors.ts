@@ -204,7 +204,7 @@ export function usePauseMonitor() {
 }
 
 // Fetch monitor analytics data
-export function useMonitorAnalytics(id: string, period: string = '30days') {
+export function useMonitorAnalytics(id: string, period: string = 'day') {
   return useQuery<MonitorAnalyticsResponse>({
     queryKey: ["monitor-analytics", id, period],
     queryFn: async () => {
@@ -226,11 +226,11 @@ export function useMonitorAnalytics(id: string, period: string = '30days') {
 }
 
 // Fetch monitor timeseries data for charts
-export function useMonitorTimeSeries(id: string, period: string = '30days', bucket: string = '1 hour') {
+export function useMonitorTimeSeries(id: string, period: string = 'day') {
   return useQuery<MonitorTimeSeriesResponse>({
-    queryKey: ["monitor-timeseries", id, period, bucket],
+    queryKey: ["monitor-timeseries", id, period],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/${id}/timeseries?period=${period}&bucket=${encodeURIComponent(bucket)}`, {
+      const response = await fetch(`${API_BASE}/${id}/timeseries?period=${period}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',

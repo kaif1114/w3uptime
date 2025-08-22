@@ -9,12 +9,11 @@ import { format } from 'date-fns';
 interface TimeSeriesChartProps {
   monitorId: string;
   period: string;
-  bucketSize: string;
   type: 'latency' | 'uptime';
 }
 
-export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSeriesChartProps) {
-  const { data: timeseriesData, isLoading, error } = useMonitorTimeSeries(monitorId, period, bucketSize);
+export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProps) {
+  const { data: timeseriesData, isLoading, error } = useMonitorTimeSeries(monitorId, period);
 
   if (isLoading) {
     return (
@@ -72,10 +71,21 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
     const dateObj = new Date(timeValue);
     const isValidDate = !isNaN(dateObj.getTime());
     
+    // Determine time format based on period
+    const getTimeFormat = (period: string) => {
+      switch(period) {
+        case 'hour': return 'HH:mm';
+        case 'day': return 'HH:mm';
+        case 'week': return 'MMM dd';
+        case 'month': return 'MMM dd';
+        default: return 'MMM dd HH:mm';
+      }
+    };
+    
     return {
       time: isValidDate ? dateObj.getTime() : Date.now(),
       timeFormatted: isValidDate 
-        ? format(dateObj, bucketSize.includes('day') ? 'MMM dd' : 'MMM dd HH:mm')
+        ? format(dateObj, getTimeFormat(period))
         : 'Invalid Date',
       latency: Math.round(Number(point.avg_latency) || 0),
       uptime: Math.round(Number(point.uptime_percentage) || 0),
@@ -91,7 +101,7 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
 
   const formatTooltipLabel = (label: unknown): string => {
     if (typeof label === 'number') {
-      return format(new Date(label), bucketSize.includes('day') ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm');
+      return format(new Date(label), 'MMM dd, yyyy HH:mm');
     }
     return String(label);
   };
@@ -140,7 +150,6 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>Period: {period}</span>
-            <span>Resolution: {bucketSize}</span>
           </div>
         </CardContent>
       </Card>
@@ -192,7 +201,6 @@ export function TimeSeriesChart({ monitorId, period, bucketSize, type }: TimeSer
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
           <span>Period: {period}</span>
-          <span>Resolution: {bucketSize}</span>
         </div>
       </CardContent>
     </Card>

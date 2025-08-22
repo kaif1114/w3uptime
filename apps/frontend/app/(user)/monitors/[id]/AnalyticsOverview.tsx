@@ -79,7 +79,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
     );
   }
 
-  const { uptime, latency, downtime, bestRegion, regional } = analytics;
+  const { uptime, latency, bestRegion, worstRegion, regional } = analytics;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -129,33 +129,28 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardContent>
       </Card>
 
-      {/* Downtime Overview */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Downtime</CardTitle>
-          <AlertTriangle className="h-4 w-4 text-red-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {downtime?.downtime_incidents || 0}
-          </div>
-          <p className="text-xs text-muted-foreground">incidents</p>
-          <div className="mt-4 space-y-1">
-            <div className="flex justify-between text-xs">
-              <span>Total duration:</span>
-              <span>{formatDuration(downtime?.total_downtime_duration || '')}</span>
+      {/* Worst Performing Region */}
+      {worstRegion && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Worst Region</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {worstRegion.avg_latency ? Number(worstRegion.avg_latency).toFixed(0) : '0'}ms
             </div>
-            <div className="flex justify-between text-xs">
-              <span>Avg duration:</span>
-              <span>{formatDuration(downtime?.avg_incident_duration || '')}</span>
+            <div className="mt-2">
+              <Badge variant="destructive">
+                {worstRegion.region_name}
+              </Badge>
             </div>
-            <div className="flex justify-between text-xs">
-              <span>Longest:</span>
-              <span>{formatDuration(downtime?.longest_incident || '')}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground mt-2">
+              {worstRegion.region_type} • {worstRegion.sample_count} samples
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Best Performing Region */}
       {bestRegion && (
@@ -215,23 +210,6 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardContent>
       </Card>
 
-      {/* MTTR (Mean Time To Recovery) */}
-      {downtime?.mttr && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">MTTR</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatDuration(downtime.mttr)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mean Time To Recovery
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

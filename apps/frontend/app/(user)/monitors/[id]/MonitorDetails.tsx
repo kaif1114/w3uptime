@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
-import { MonitoringControls, TimePeriod, BucketSize } from "./MonitoringControls";
+import { MonitoringControls, TimePeriod } from "./MonitoringControls";
 import { AnalyticsOverview } from "./AnalyticsOverview";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { ValidatorMap } from "./ValidatorMap";
@@ -64,8 +64,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   
   // State for tabs and controls
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('30days');
-  const [bucketSize, setBucketSize] = useState<BucketSize>('1 hour');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('day');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -179,11 +178,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       <MonitoringControls
         timePeriod={timePeriod}
         updateFrequency="5m" // This could be made dynamic later
-        bucketSize={bucketSize}
         autoRefresh={autoRefresh}
         onTimePeriodChange={setTimePeriod}
         onUpdateFrequencyChange={() => {}} // Placeholder for now
-        onBucketSizeChange={setBucketSize}
         onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
         onManualRefresh={handleManualRefresh}
         lastUpdated={lastUpdated}
@@ -242,16 +239,28 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
             {activeTab === 'performance' && (
               <div className="space-y-6">
+                {/* Performance Tab Time Period Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {(['hour', 'day', 'week', 'month'] as const).map((period) => (
+                    <Button
+                      key={period}
+                      variant={timePeriod === period ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTimePeriod(period)}
+                    >
+                      {period.charAt(0).toUpperCase() + period.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+
                 <TimeSeriesChart 
                   monitorId={monitorId}
                   period={timePeriod}
-                  bucketSize={bucketSize}
                   type="latency"
                 />
                 <TimeSeriesChart 
                   monitorId={monitorId}
                   period={timePeriod}
-                  bucketSize={bucketSize}
                   type="uptime"
                 />
               </div>

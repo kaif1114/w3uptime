@@ -121,6 +121,19 @@ export interface BestRegion {
   sample_count: number;
 }
 
+export interface WorstRegion {
+  region_type: 'Country' | 'Continent' | 'City';
+  region_name: string;
+  avg_latency: number;
+  sample_count: number;
+}
+
+export interface SampleCountData {
+  country_code: string;
+  sample_count: number;
+  avg_latency: number;
+}
+
 export interface RegionalLatency {
   country_code?: string;
   continent_code?: string;
@@ -134,12 +147,15 @@ export interface MonitorAnalyticsResponse {
   period: string;
   uptime: UptimeData | null;
   latency: LatencyData | null;
-  downtime: DowntimeData | null;
   bestRegion: BestRegion | null;
+  worstRegion: WorstRegion | null;
   regional: {
     byCountry: RegionalLatency[];
     byContinent: RegionalLatency[];
     byCity: RegionalLatency[];
+  };
+  worldMap: {
+    byCountry: SampleCountData[];
   };
   generatedAt: string;
 }
@@ -154,7 +170,6 @@ export interface TimeSeriesDataPoint {
 export interface MonitorTimeSeriesResponse {
   monitorId: string;
   period: string;
-  bucketSize: string;
   data: TimeSeriesDataPoint[];
   generatedAt: string;
 }
