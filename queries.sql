@@ -84,7 +84,7 @@ CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     p_monitor_id UUID,
     p_period TEXT DEFAULT 'day'
 ) RETURNS TABLE (
-    timestamp TIMESTAMPTZ,
+    time_bucket TIMESTAMPTZ,
     avg_latency NUMERIC,
     min_latency NUMERIC,
     max_latency NUMERIC,
