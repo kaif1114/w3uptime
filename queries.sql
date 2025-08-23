@@ -171,20 +171,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Legacy function for backward compatibility
-CREATE OR REPLACE FUNCTION get_time_range(period_type TEXT)
-RETURNS INTERVAL AS $$
-DECLARE
-    range_result INTERVAL;
-BEGIN
-    SELECT time_range INTO range_result 
-    FROM get_time_range_and_granularity(period_type) 
-    LIMIT 1;
-    
-    RETURN COALESCE(range_result, INTERVAL '1 day');
-END;
-$$ LANGUAGE plpgsql;
-
 -- =============================================================================
 -- OPTIMIZED QUERY FUNCTIONS
 -- =============================================================================
@@ -509,10 +495,10 @@ $$ LANGUAGE plpgsql;
 -- =============================================================================
 
 -- Drop all possible function signatures to avoid conflicts
-DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_monitor_timeseries() CASCADE;
-DROP FUNCTION IF EXISTS get_monitor_timeseries CASCADE;
+-- DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT) CASCADE;
+-- DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT) CASCADE;
+-- DROP FUNCTION IF EXISTS get_monitor_timeseries() CASCADE;
+-- DROP FUNCTION IF EXISTS get_monitor_timeseries CASCADE;
 
 CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     monitor_id_param TEXT,
@@ -548,6 +534,116 @@ BEGIN
     );
     
     RETURN QUERY EXECUTE query_text USING monitor_id_param::TEXT, query_info.time_range;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_monitor_timeseries_hybrid(
+    monitor_id_param TEXT,
+    period_param TEXT DEFAULT 'day'
+)
+RETURNS TABLE(
+    time_bucket TIMESTAMP WITH TIME ZONE,
+    avg_latency NUMERIC,
+    uptime_percentage NUMERIC,
+    total_checks BIGINT
+) AS $$
+DECLARE
+    time_range INTERVAL;
+    bucket_interval TEXT;
+    source_aggregate TEXT;
+    query_text TEXT;
+    end_time TIMESTAMP WITH TIME ZONE;
+    start_time TIMESTAMP WITH TIME ZONE;
+    aggregate_cutoff TIMESTAMP WITH TIME ZONE;
+BEGIN
+    -- Use current time (no lag for the hybrid approach)
+    end_time := NOW();
+    aggregate_cutoff := NOW() - INTERVAL '5 minutes';
+    
+    -- Set parameters based on period
+    CASE period_param
+        WHEN 'hour' THEN 
+            time_range := INTERVAL '1 hour';
+            bucket_interval := '5 minutes';
+            source_aggregate := 'monitor_tick_5min';
+        WHEN 'day' THEN 
+            time_range := INTERVAL '1 day';
+            bucket_interval := '15 minutes';
+            source_aggregate := 'monitor_tick_15min';
+        WHEN 'week' THEN 
+            time_range := INTERVAL '1 week';
+            bucket_interval := '1 hour';
+            source_aggregate := 'monitor_tick_hourly';
+        WHEN 'month' THEN 
+            time_range := INTERVAL '30 days';
+            bucket_interval := '6 hours';
+            source_aggregate := 'monitor_tick_6hour';
+        ELSE 
+            time_range := INTERVAL '1 day';
+            bucket_interval := '15 minutes';
+            source_aggregate := 'monitor_tick_15min';
+    END CASE;
+    
+    start_time := end_time - time_range;
+    
+    -- Hybrid query: use aggregates for older data, raw data for recent data
+    query_text := FORMAT('
+        WITH time_series AS (
+            SELECT generate_series(
+                time_bucket(''%s'', $3::timestamptz),
+                time_bucket(''%s'', $2::timestamptz),
+                ''%s''::interval
+            ) AS time_bucket
+        ),
+        -- Data from aggregates (older than 5 minutes)
+        aggregate_data AS (
+            SELECT 
+                time_bucket(''%s'', agg.time_bucket) AS time_bucket,
+                ROUND(
+                    (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
+                    2
+                ) AS avg_latency,
+                ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
+                SUM(agg.tick_count)::BIGINT AS total_checks
+            FROM %I agg
+            WHERE agg."monitorId" = $1
+                AND agg.time_bucket >= $3
+                AND agg.time_bucket < $4
+            GROUP BY time_bucket(''%s'', agg.time_bucket)
+        ),
+        -- Data from raw table (recent 5 minutes)
+        raw_data AS (
+            SELECT 
+                time_bucket(''%s'', mt."createdAt") AS time_bucket,
+                ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
+                ROUND((COUNT(CASE WHEN mt."status" = ''GOOD'' THEN 1 END)::NUMERIC / NULLIF(COUNT(*), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
+                COUNT(*)::BIGINT AS total_checks
+            FROM "MonitorTick" mt
+            WHERE mt."monitorId" = $1
+                AND mt."createdAt" >= $4
+                AND mt."createdAt" <= $2
+            GROUP BY time_bucket(''%s'', mt."createdAt")
+        ),
+        -- Combine both sources
+        combined_data AS (
+            SELECT * FROM aggregate_data
+            UNION ALL
+            SELECT * FROM raw_data
+        )
+        SELECT 
+            ts.time_bucket,
+            COALESCE(cd.avg_latency, 0) AS avg_latency,
+            COALESCE(cd.uptime_percentage, 100.0) AS uptime_percentage,
+            COALESCE(cd.total_checks, 0) AS total_checks
+        FROM time_series ts
+        LEFT JOIN combined_data cd ON ts.time_bucket = cd.time_bucket
+        ORDER BY ts.time_bucket ASC',
+        bucket_interval, bucket_interval, bucket_interval, bucket_interval,
+        source_aggregate, bucket_interval, bucket_interval, bucket_interval
+    );
+    
+    RETURN QUERY EXECUTE query_text USING monitor_id_param, end_time, start_time, aggregate_cutoff;
 END;
 $$ LANGUAGE plpgsql;
 
