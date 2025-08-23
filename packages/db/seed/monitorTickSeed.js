@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Set your monitor ID here - update this with your actual monitor ID
 const MONITOR_ID = '01a06e1f-df5b-41c8-a827-f2780df04e89';
+// Set the validator ID to use for all ticks
+const VALIDATOR_ID = '29444503-b22f-4318-9652-a934fcf38c42';
 
 // Sample cities with their coordinates and location data
 const SAMPLE_LOCATIONS = [
@@ -72,18 +74,17 @@ async function seedMonitorTicks() {
     return;
   }
   
-  // Get some validators to assign the ticks to
-  const validators = await prisma.user.findMany({
-    where: { type: 'VALIDATOR' },
-    take: 10
+  // Check if the validator exists
+  const validator = await prisma.user.findUnique({
+    where: { id: VALIDATOR_ID }
   });
   
-  if (validators.length === 0) {
-    console.error('No validators found. Please create some validators first.');
+  if (!validator) {
+    console.error(`Validator with ID ${VALIDATOR_ID} not found. Please update the VALIDATOR_ID in the seed file.`);
     return;
   }
   
-  console.log(`Found ${validators.length} validators`);
+  console.log(`Using validator: ${validator.id}`);
   
   const monitorTicks = [];
   const now = new Date();
@@ -93,27 +94,24 @@ async function seedMonitorTicks() {
   for (let i = 0; i < 24; i++) {
     const tickTime = new Date(twoHoursAgo.getTime() + i * 5 * 60 * 1000);
     
-    // Create multiple ticks at each time point from different validators
-    for (let j = 0; j < Math.min(validators.length, 5); j++) {
-      const validator = validators[j];
-      const location = getRandomLocation();
-      const status = getRandomStatus();
-      const latency = getRandomLatency(status);
-      
-      monitorTicks.push({
-        id: uuidv4(),
-        monitorId: MONITOR_ID,
-        validatorId: validator.id,
-        status,
-        latency,
-        longitude: location.longitude,
-        latitude: location.latitude,
-        countryCode: location.countryCode,
-        continentCode: location.continentCode,
-        city: location.city,
-        createdAt: tickTime
-      });
-    }
+    // Create one tick at each time point from the specified validator
+    const location = getRandomLocation();
+    const status = getRandomStatus();
+    const latency = getRandomLatency(status);
+    
+    monitorTicks.push({
+      id: uuidv4(),
+      monitorId: MONITOR_ID,
+      validatorId: VALIDATOR_ID,
+      status,
+      latency,
+      longitude: location.longitude,
+      latitude: location.latitude,
+      countryCode: location.countryCode,
+      continentCode: location.continentCode,
+      city: location.city,
+      createdAt: tickTime
+    });
   }
   
   console.log(`Creating ${monitorTicks.length} monitor ticks...`);
@@ -143,19 +141,21 @@ async function main() {
   }
 }
 
-// Check if this file is being run directly
-const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
-if (isMainModule) {
-  main()
-    .then(() => {
-      console.log('Seeding completed successfully');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Seeding failed:', error);
-      process.exit(1);
-    });
-}
+main()
+// // Check if this file is being run directly
+// const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
-export { seedMonitorTicks };
+// if (isMainModule) {
+//   main()
+//     .then(() => {
+//       console.log('Seeding completed successfully');
+//       process.exit(0);
+//     })
+//     .catch((error) => {
+//       console.error('Seeding failed:', error);
+//       process.exit(1);
+//     });
+// }
+
+// export { seedMonitorTicks };
