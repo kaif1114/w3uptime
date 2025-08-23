@@ -6,18 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
 
-export type TimePeriod = '1hr' | '1day' | '3days' | '1week' | '2weeks' | '30days' | '90days';
+export type TimePeriod = 'hour' | 'day' | 'week' | 'month';
 export type UpdateFrequency = '30s' | '1m' | '5m' | '15m' | '30m';
-export type BucketSize = '1 minute' | '5 minutes' | '15 minutes' | '30 minutes' | '1 hour' | '4 hours' | '1 day';
 
 interface MonitoringControlsProps {
   timePeriod: TimePeriod;
   updateFrequency: UpdateFrequency;
-  bucketSize: BucketSize;
   autoRefresh: boolean;
   onTimePeriodChange: (period: TimePeriod) => void;
   onUpdateFrequencyChange: (freq: UpdateFrequency) => void;
-  onBucketSizeChange: (bucket: BucketSize) => void;
   onAutoRefreshToggle: () => void;
   onManualRefresh: () => void;
   lastUpdated: Date;
@@ -25,33 +22,18 @@ interface MonitoringControlsProps {
 }
 
 const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
-  '1hr': '1 Hour',
-  '1day': '1 Day', 
-  '3days': '3 Days',
-  '1week': '1 Week',
-  '2weeks': '2 Weeks',
-  '30days': '30 Days',
-  '90days': '90 Days',
-};
-
-const BUCKET_SIZE_LABELS: Record<BucketSize, string> = {
-  '1 minute': '1 Minute',
-  '5 minutes': '5 Minutes',
-  '15 minutes': '15 Minutes',
-  '30 minutes': '30 Minutes',
-  '1 hour': '1 Hour',
-  '4 hours': '4 Hours',
-  '1 day': '1 Day',
+  'hour': 'Last Hour',
+  'day': 'Last Day', 
+  'week': 'Last Week',
+  'month': 'Last Month',
 };
 
 export function MonitoringControls({
   timePeriod,
   updateFrequency: _updateFrequency,
-  bucketSize,
   autoRefresh,
   onTimePeriodChange,
   onUpdateFrequencyChange: _onUpdateFrequencyChange,
-  onBucketSizeChange,
   onAutoRefreshToggle,
   onManualRefresh,
   lastUpdated,
@@ -71,23 +53,6 @@ export function MonitoringControls({
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(TIME_PERIOD_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Bucket Size Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Resolution:</span>
-              <Select value={bucketSize} onValueChange={onBucketSizeChange}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(BUCKET_SIZE_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>

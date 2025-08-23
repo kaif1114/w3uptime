@@ -1,30 +1,20 @@
-
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
-  Activity,
   AlertTriangle,
-  BarChart3,
   Calendar,
   Edit3,
-  Globe,
   Pause,
   Play,
-  Send,
-  Shield
+  Send
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from 'react';
-import { MonitoringControls, TimePeriod, BucketSize } from "./MonitoringControls";
-import { AnalyticsOverview } from "./AnalyticsOverview";
+import { useState } from "react";
+import { TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
-import { ValidatorMap } from "./ValidatorMap";
-import { MapboxGlobeMap } from "./MapboxGlobeMap";
-import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
-import { mockData } from "./mockData";
 interface MonitorDetailsProps {
   monitorId: string;
 }
@@ -55,20 +45,11 @@ function getStatusText(status: MonitorStatus): string {
   }
 }
 
-
-type TabType = 'overview' | 'global' | 'uptime' | 'performance';
-
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
-  
-  // State for tabs and controls
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('30days');
-  const [bucketSize, setBucketSize] = useState<BucketSize>('1 hour');
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
@@ -76,15 +57,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       pauseMonitor.mutate({ id: monitorId, status: newStatus });
     }
   };
-
-  const handleManualRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-    }, 2000);
-  };
-
 
   if (isLoading) {
     return (
@@ -106,7 +78,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
     return (
       <div className="text-center py-12">
         <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Failed to load monitor details</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          Failed to load monitor details
+        </h3>
         <p className="text-muted-foreground">Please try refreshing the page.</p>
       </div>
     );
@@ -114,29 +88,28 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
   if (!monitor) return null;
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: Activity },
-    { id: 'global', label: 'Global Map', icon: Globe },
-    { id: 'uptime', label: 'Uptime & Incidents', icon: Shield },
-    { id: 'performance', label: 'Performance', icon: BarChart3 }
-  ];
-
   return (
     <div className="space-y-6">
       {/* Monitor Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`} />
+          <div
+            className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`}
+          />
           <div>
-            <h1 className="text-2xl font-bold">{monitor?.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</h1>
+            <h1 className="text-2xl font-bold">
+              {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            </h1>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <span className="text-lg font-medium">{getStatusText(monitor?.status)}</span>
+              <span className="text-lg font-medium">
+                {getStatusText(monitor?.status)}
+              </span>
               <span>•</span>
               <span>Checked every {monitor?.checkInterval / 60} minutes</span>
             </div>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" size="sm">
             <Send className="mr-2 h-4 w-4" />
@@ -148,9 +121,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
               Incidents
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handlePauseToggle}
             disabled={pauseMonitor.isPending}
           >
@@ -175,87 +148,37 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         </div>
       </div>
 
-      {/* Monitoring Controls */}
-      <MonitoringControls
-        timePeriod={timePeriod}
-        updateFrequency="5m" // This could be made dynamic later
-        bucketSize={bucketSize}
-        autoRefresh={autoRefresh}
-        onTimePeriodChange={setTimePeriod}
-        onUpdateFrequencyChange={() => {}} // Placeholder for now
-        onBucketSizeChange={setBucketSize}
-        onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
-        onManualRefresh={handleManualRefresh}
-        lastUpdated={lastUpdated}
-        isRefreshing={isRefreshing}
-      />
-
       {/* Tab Navigation */}
       <div>
-        <div className="p-0"> 
-          <div className="border-b">
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`
-                      flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
-                      ${activeTab === tab.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }
-                    `}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-          
+        <div className="p-0">
           <div className="p-6">
-            {/* Tab Content */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <AnalyticsOverview monitorId={monitorId} period={timePeriod} />
+            {/* Performance Content */}
+            <div className="space-y-6">
+              {/* Performance Tab Time Period Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {(["hour", "day", "week", "month"] as const).map((period) => (
+                  <Button
+                    key={period}
+                    variant={timePeriod === period ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimePeriod(period)}
+                  >
+                    {period.charAt(0).toUpperCase() + period.slice(1)}
+                  </Button>
+                ))}
               </div>
-            )}
 
-            {activeTab === 'global' && (
-              <div className="space-y-6">
-                <MapboxGlobeMap monitorId={monitorId} />
-                <ValidatorMap monitorId={monitorId} />
-              </div>
-            )}
-
-            {activeTab === 'uptime' && (
-              <UptimeIncidentPanel
-                uptimeData={mockData.uptimeData}
-                incidents={mockData.incidents}
-                monitorName={monitor?.url || 'Monitor'}
+              <TimeSeriesChart
+                monitorId={monitorId}
+                period={timePeriod}
+                type="latency"
               />
-            )}
-
-            {activeTab === 'performance' && (
-              <div className="space-y-6">
-                <TimeSeriesChart 
-                  monitorId={monitorId}
-                  period={timePeriod}
-                  bucketSize={bucketSize}
-                  type="latency"
-                />
-                <TimeSeriesChart 
-                  monitorId={monitorId}
-                  period={timePeriod}
-                  bucketSize={bucketSize}
-                  type="uptime"
-                />
-              </div>
-            )}
+              <TimeSeriesChart
+                monitorId={monitorId}
+                period={timePeriod}
+                type="uptime"
+              />
+            </div>
           </div>
         </div>
       </div>

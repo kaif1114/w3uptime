@@ -4,38 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useMonitorAnalytics } from "@/hooks/useMonitors";
-import { AlertTriangle, CheckCircle, Clock, Activity, TrendingUp, MapPin } from "lucide-react";
+import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin } from "lucide-react";
 
 interface AnalyticsOverviewProps {
   monitorId: string;
   period: string;
 }
 
-function formatDuration(intervalString: string): string {
-  if (!intervalString) return 'N/A';
-  
-  // Parse PostgreSQL interval string (e.g., "2 days 14:30:00")
-  const match = intervalString.match(/(?:(\d+) days?\s*)?(?:(\d+):(\d+):(\d+))?/);
-  if (!match) return intervalString;
-
-  const [, days, hours, minutes, seconds] = match;
-  const parts = [];
-  
-  if (days && parseInt(days) > 0) {
-    parts.push(`${days}d`);
-  }
-  if (hours && parseInt(hours) > 0) {
-    parts.push(`${parseInt(hours)}h`);
-  }
-  if (minutes && parseInt(minutes) > 0) {
-    parts.push(`${parseInt(minutes)}m`);
-  }
-  if (seconds && parseInt(seconds) > 0 && !days && !hours) {
-    parts.push(`${parseInt(seconds)}s`);
-  }
-  
-  return parts.length > 0 ? parts.join(' ') : '0s';
-}
 
 export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps) {
   const { data: analytics, isLoading, error } = useMonitorAnalytics(monitorId, period);
