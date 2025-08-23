@@ -247,3 +247,25 @@ export function useMonitorTimeSeries(id: string, period: string = 'day') {
   });
 }
 
+// Fetch monitor statistics 
+export function useMonitorStats(id: string, period: string = 'day') {
+  return useQuery({
+    queryKey: ["monitor-stats", id, period],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/${id}/stats?period=${period}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch monitor stats");
+      }
+      return response.json();
+    },
+    enabled: !!id,
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
+}
+

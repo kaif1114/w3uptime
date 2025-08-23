@@ -49,30 +49,20 @@ export const GET = withAuth(async (
     // Get time series data
     const timeseriesData = await prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_timeseries($1, $2)`, monitorid, period);
 
-    // Helper function to convert BigInt to Number and timestamp to string
-    const convertBigIntToNumber = (obj: any): any => {
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj === 'bigint') return Number(obj);
-      if (obj instanceof Date) return obj.toISOString();
-      if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
-      if (typeof obj === 'object') {
-        const converted: any = {};
-        for (const key in obj) {
-          if (key === 'time_bucket' && obj[key] instanceof Date) {
-            converted[key] = obj[key].toISOString();
-          } else {
-            converted[key] = convertBigIntToNumber(obj[key]);
-          }
-        }
-        return converted;
-      }
-      return obj;
+    // Transform TimescaleDB data to match frontend types
+    const transformTimeSeriesData = (rawData: any[]): any[] => {
+      return rawData.map(point => ({
+        time_bucket: point.timestamp instanceof Date ? point.timestamp.toISOString() : point.timestamp,
+        avg_latency: Number(point.avg_latency) || 0,
+        uptime_percentage: Number(point.success_rate) || 0, // Map success_rate to uptime_percentage
+        total_checks: Number(point.total_ticks) || 0, // Map total_ticks to total_checks
+      }));
     };
 
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      data: convertBigIntToNumber(timeseriesData) || [],
+      data: transformTimeSeriesData(timeseriesData as any[]) || [],
       generatedAt: new Date().toISOString(),
     }, { status: 200 });
 
