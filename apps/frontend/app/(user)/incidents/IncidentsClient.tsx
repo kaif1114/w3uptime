@@ -101,9 +101,9 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2 pb-2">
         <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
 
         <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
       </div>
 
       {/* Incidents Table */}
-      <div className="mt-4">
+      <div className="mt-2">
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
