@@ -81,7 +81,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       await createMutation.mutateAsync(payload);
       onSuccess?.();
     } catch (error) {
-      // error handled via mutation
+      console.error(error);
     }
   };
 
