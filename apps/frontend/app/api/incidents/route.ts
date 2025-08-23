@@ -12,22 +12,8 @@ const createIncidentSchema = z.object({
   escalated: z.boolean().default(false),
 });
 
-
-
-
 // POST /api/incidents - Create new incident
-export const POST = withAuth(async (req: NextRequest, user) => {  
-  const body = await req.json();
-  const validation = createIncidentSchema.safeParse(body);
-
-  if (!validation.success) {
-    return NextResponse.json(
-      { error: validation.error.message },
-      { status: 400 }
-    );
-  }
-
-
+export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
     const validation = createIncidentSchema.safeParse(body);
@@ -95,26 +81,21 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 });
 
 // GET /api/incidents - Get all incidents (with optional monitor filter)
-export const GET = withAuth(async (req: NextRequest,user) => {
+export const GET = withAuth(async (req: NextRequest, user) => {
   try {
-    const body = await req.json();
-    const validation = createIncidentSchema.safeParse(body);
+    const { searchParams } = new URL(req.url);
+    const monitorId = searchParams.get("monitorId");
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.message },
-        { status: 400 }
-      );
-    }
     const whereClause: Prisma.IncidentWhereInput = {
       Monitor: {
         userId: user.id,
       },
     };
 
-    // Use query parameter if provided, otherwise use hardcoded monitor ID
-    const targetMonitorId = validation.data.monitorId || user.id;
-    whereClause.monitorId = targetMonitorId;
+    // Add monitor filter if provided
+    if (monitorId) {
+      whereClause.monitorId = monitorId;
+    }
 
     const incidents = await prisma.incident.findMany({
       where: whereClause,
@@ -135,13 +116,13 @@ export const GET = withAuth(async (req: NextRequest,user) => {
             },
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
         postmortem: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 

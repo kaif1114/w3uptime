@@ -1,10 +1,5 @@
+import IncidentsClient from "./IncidentsClient";
 
-function page() {
-  return (
-    <div>
-        <h1>Incidents</h1>
-    </div>
-  )
+export default function IncidentsPage() {
+  return <IncidentsClient />;
 }
-
-export default page
