@@ -1,0 +1,22 @@
+{
+  "name": "db-seed",
+  "version": "1.0.0",
+  "description": "Database seeding utilities for W3Uptime",
+  "main": "index.js",
+  "scripts": {
+    "seed:monitor-ticks": "ts-node monitorTickSeed.ts",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only monitorTickSeed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "workspace:*",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.0"
+  }
+}

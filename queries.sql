@@ -720,8 +720,8 @@ SELECT * FROM get_monitor_data_custom_range(
 
 -- DEBUG
 
--- SELECT * FROM get_total_avg_latency('98b370f9-d267-407a-8afc-ff390e3c8777', 'hour')
--- SELECT * FROM get_monitor_timeseries('98b370f9-d267-407a-8afc-ff390e3c8777', 'hour')
+-- SELECT * FROM get_total_avg_latency('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')
+-- SELECT * FROM get_monitor_timeseries('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')
 -- CALL refresh_continuous_aggregate('monitor_tick_5min', NULL, NULL);
 -- SELECT * FROM pg_stat_activity WHERE application_name LIKE '%timescale%';
 -- SELECT _timescaledb_functions.restart_background_workers();
@@ -740,12 +740,12 @@ SELECT * FROM get_monitor_data_custom_range(
 
 -- SELECT COUNT(*), MIN("createdAt"), MAX("createdAt") 
 -- FROM "MonitorTick" 
--- WHERE "monitorId" = '98b370f9-d267-407a-8afc-ff390e3c8777' 
+-- WHERE "monitorId" = '01a06e1f-df5b-41c8-a827-f2780df04e89' 
 -- AND "createdAt" >= '2025-08-22 20:00:00+00';
 
 -- SELECT COUNT(*), MIN("createdAt"), MAX("createdAt") 
 -- FROM "MonitorTick" 
--- WHERE "monitorId" = '98b370f9-d267-407a-8afc-ff390e3c8777' 
+-- WHERE "monitorId" = '01a06e1f-df5b-41c8-a827-f2780df04e89' 
 -- AND "createdAt" >= NOW() - INTERVAL '1 hour';
 
 -- CALL refresh_continuous_aggregate('monitor_tick_5min', 
