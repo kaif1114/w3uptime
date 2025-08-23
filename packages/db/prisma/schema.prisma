@@ -59,7 +59,7 @@ model Monitor {
   timeout             Int                 @default(30)
   escalationPolicyId  String?
   alerts              Alert[]
-  Incident            Incident?
+  Incident            Incident[]
   escalationPolicy    EscalationPolicy?   @relation(fields: [escalationPolicyId], references: [id])
   user                User                @relation(fields: [userId], references: [id])
   monitorTicks        MonitorTick[]
@@ -142,7 +142,7 @@ model Incident {
   title        String
   description  String?
   status       IncidentStatus   @default(ONGOING)
-  monitorId    String           @unique
+  monitorId    String          
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   resolvedAt   DateTime?
