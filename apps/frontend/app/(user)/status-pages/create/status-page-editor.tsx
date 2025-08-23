@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,9 +16,17 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useCreateStatusPage,
-  useStatusPage,
   useUpdateStatusPage,
+  useStatusPage,
 } from "@/hooks/useStatusPages";
+import {
+  useMaintenances,
+  useCreateMaintenance,
+  useUpdateMaintenance,
+  useDeleteMaintenance,
+  type Maintenance as MaintenanceType,
+  type CreateMaintenanceData,
+} from "@/hooks/useMaintenances";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
 import {
   Plus,
@@ -36,16 +44,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { z } from "zod";
+
+
+// Define Zod schema for validation
+const sectionSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  order: z.number().int().positive(),
+  type: z.enum(["STATUS", "HISTORY", "BOTH"]).default("BOTH"),
+  monitorId: z.string().min(1, "Monitor ID is required"),
+});
 
 type Props = { mode: "create" | "edit"; id?: string };
+
+// Use the maintenance type from hooks
+type Maintenance = MaintenanceType;
+
+// Define the update type
+interface StatusUpdate {
+  id: string;
+  title: string;
+  body?: string;
+  createdAt: string;
+}
 
 export default function StatusPageEditor({ mode, id }: Props) {
   const router = useRouter();
   const createMutation = useCreateStatusPage();
   const updateMutation = useUpdateStatusPage();
-  const { data } = useStatusPage(id || "");
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Core state management
   const [isPublished, setIsPublished] = useState(false);
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -53,19 +83,9 @@ export default function StatusPageEditor({ mode, id }: Props) {
   const [contactUrl, setContactUrl] = useState("");
   const [historyRange, setHistoryRange] = useState("7d");
   const [sections, setSections] = useState<StatusPageSection[]>([]);
-  const { data: monitorsData } = useMonitors();
+
+  // Maintenance state
   const maintenanceRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [maintenances, setMaintenances] = useState(
-    [] as {
-      id: string;
-      title: string;
-      description?: string;
-      start: string;
-      end: string;
-      status: "scheduled" | "in_progress" | "completed";
-      affectedResourceIds?: string[];
-    }[]
-  );
   const [maintenanceDraft, setMaintenanceDraft] = useState({
     title: "",
     description: "",
@@ -73,65 +93,75 @@ export default function StatusPageEditor({ mode, id }: Props) {
     end: "",
     affectedResourceIds: [] as string[],
   });
-  const [updates, setUpdates] = useState(
-    [] as { id: string; title: string; body?: string; createdAt: string }[]
-  );
-  const [expandedSections, setExpandedSections] = useState<
-    Record<string, boolean>
-  >({});
+
+  // Status updates state
+  const [updates, setUpdates] = useState<StatusUpdate[]>([]);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [dummyAffectedIds, setDummyAffectedIds] = useState<string[]>([]);
 
-  // Create report (status update) draft state – mirrors provided design
+  // Report draft state
   type AffectedStatus = "not_affected" | "downtime" | "degraded" | "resolved";
   const [reportDraft, setReportDraft] = useState({
     title: "",
     description: "",
-    publishedAt: new Date().toISOString().slice(0, 16), // for datetime-local
+    publishedAt: new Date().toISOString().slice(0, 16),
     notifySubscribers: false,
-    affected: {} as Record<string, AffectedStatus>, // key = resourceId
+    affected: {} as Record<string, AffectedStatus>,
   });
-  const [reportExpandedSections, setReportExpandedSections] = useState<
-    Record<string, boolean>
-  >({});
+  const [reportExpandedSections, setReportExpandedSections] = useState<Record<string, boolean>>({});
 
-  // UI state: show forms after user opts in from placeholder
+  // UI state
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
 
-  useMemo(() => {
-    if (mode === "edit" && data) {
-      setIsPublished(data.isPublished);
-      setName(data.name);
-      setLogoUrl(data.logoUrl || "");
-      setLogoHrefUrl(data.logoHrefUrl || "");
-      setContactUrl(data.contactUrl || "");
-      setHistoryRange(data.historyRange);
-      // Normalize resources to ensure stable ids and defaults
-      const normalized = (data.sections || []).map((s: any) => ({
+  // Data fetching
+  const { data: monitorsData } = useMonitors();
+  const { data: statusPageData, isLoading } = useStatusPage(id || "");
+  const { data: maintenancesData } = useMaintenances(id || "");
+  const createMaintenanceMutation = useCreateMaintenance();
+  const updateMaintenanceMutation = useUpdateMaintenance();
+  const deleteMaintenanceMutation = useDeleteMaintenance();
+
+  // Use maintenances from API instead of local state
+  const maintenances = maintenancesData?.maintenances || [];
+
+  // Load data when in edit mode
+  useEffect(() => {
+    if (mode === "edit" && statusPageData && !isLoading) {
+      setIsPublished(statusPageData.isPublished || false);
+      setName(statusPageData.name || "");
+      setLogoUrl(statusPageData.logoUrl || "");
+      setLogoHrefUrl(statusPageData.logoHrefUrl || "");
+      setContactUrl(statusPageData.contactUrl || "");
+      setHistoryRange(statusPageData.historyRange || "7d");
+      
+      // Normalize sections data
+      const normalizedSections = (statusPageData.sections || []).map((s: any) => ({
         ...s,
         resources: (s.resources || []).map((r: any) => ({
           id: r.id || crypto.randomUUID(),
-          type: r.type,
-          monitorId: r.monitorId,
+          type: r.type || "monitor",
+          monitorId: r.monitorId || "",
           publicName: r.publicName || "",
           explanation: r.explanation || "",
-          widgetType: r.widgetType || ("with_history" as const),
+          widgetType: r.widgetType || "with_history" as WidgetType,
         })),
       }));
-      setSections(normalized as unknown as StatusPageSection[]);
-      setMaintenances(data.maintenances || []);
-      setUpdates(data.updates || []);
+      
+      setSections(normalizedSections);
+      // Maintenances are now fetched separately via useMaintenances hook
+      setUpdates(statusPageData.updates || []);
     }
-    return undefined;
-  }, [mode, data]);
+  }, [mode, statusPageData, isLoading]);
 
+  // Section management functions
   function addSection() {
     const id = crypto.randomUUID();
     setSections((prev) => [
       ...prev,
       {
         id,
-        name: "New section",
+        name: "",
         resources: [
           {
             id: crypto.randomUUID(),
@@ -148,10 +178,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
   function removeSection(sectionId: string) {
     setSections((prev) => prev.filter((s) => s.id !== sectionId));
-  }
-
-  function addResource(sectionId: string) {
-    // Remove this function as we only allow one resource per section
   }
 
   function updateResource(sectionId: string, index: number, monitorId: string) {
@@ -197,7 +223,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
           ? {
               ...s,
               resources: s.resources.map((r, i) =>
-                i === index ? { ...(r as any), ...patch } : r
+                i === index ? { ...r, ...patch } : r
               ),
             }
           : s
@@ -205,60 +231,87 @@ export default function StatusPageEditor({ mode, id }: Props) {
     );
   }
 
+  // Check if there are unsaved changes
   const hasChanges = () => {
-    if (mode === "create") return true; // always allow first save
-    if (!data) return false;
+    // In create mode, always return true if name is provided (form is ready to save)
+    if (mode === "create") return name.trim() !== ""; 
+    
+    // In edit mode, compare with loaded data
+    if (!statusPageData) return false;
+    
     return (
-      isPublished !== data.isPublished ||
-      name !== data.name ||
-      (logoUrl || "") !== (data.logoUrl || "") ||
-      (logoHrefUrl || "") !== (data.logoHrefUrl || "") ||
-      (contactUrl || "") !== (data.contactUrl || "") ||
-      historyRange !== data.historyRange ||
-      JSON.stringify(sections) !== JSON.stringify(data.sections) ||
-      JSON.stringify(maintenances) !==
-        JSON.stringify(data.maintenances || []) ||
-      JSON.stringify(updates) !== JSON.stringify(data.updates || [])
+      isPublished !== (statusPageData.isPublished || false) ||
+      name !== (statusPageData.name || "") ||
+      logoUrl !== (statusPageData.logoUrl || "") ||
+      logoHrefUrl !== (statusPageData.logoHrefUrl || "") ||
+      contactUrl !== (statusPageData.contactUrl || "") ||
+      historyRange !== (statusPageData.historyRange || "7d") ||
+      JSON.stringify(sections) !== JSON.stringify(statusPageData.sections || []) ||
+      // Maintenances are now managed separately via API
+      JSON.stringify(updates) !== JSON.stringify(statusPageData.updates || [])
     );
   };
 
-  async function onSave() {
+  // Save handler
+  const handleSave = async () => {
     if (!name.trim()) {
       toast.error("Company name is required");
       return;
     }
-    if (mode === "edit" && !hasChanges()) return; // no-op if nothing changed
-    if (mode === "create") {
-      const res = await createMutation.mutateAsync({
-        name,
+
+    try {
+      const saveData = {
         isPublished,
+        name,
         logoUrl: logoUrl || null,
         logoHrefUrl: logoHrefUrl || null,
         contactUrl: contactUrl || null,
-        historyRange: historyRange as any,
+        historyRange: historyRange as "7d" | "30d" | "90d",
         sections,
-      });
-      router.push(`/status-pages/${res.statusPage.id}`);
-      toast.success("Status page created");
-    } else if (id) {
-      await updateMutation.mutateAsync({
-        id,
-        data: {
-          name,
-          isPublished,
-          logoUrl: logoUrl || null,
-          logoHrefUrl: logoHrefUrl || null,
-          contactUrl: contactUrl || null,
-          historyRange: historyRange as any,
-          sections,
-          maintenances,
-          updates,
-        },
-      });
-      toast.success("Changes saved");
-    }
-  }
+        // Maintenances are managed separately via dedicated API endpoints
+        maintenances: [],
+        updates,
+      };
 
+      console.log("🔍 Attempting to save with data:", saveData);
+      console.log("🔍 Mode:", mode);
+
+      if (mode === "create") {
+        console.log("🔍 Creating new status page...");
+        const result = await createMutation.mutateAsync(saveData);
+        console.log("✅ Create result:", result);
+        toast.success("Status page created successfully");
+        // Redirect to edit mode with the new ID
+        if (result?.statusPage?.id) {
+          console.log("🔍 Redirecting to:", `/status-pages/${result.statusPage.id}`);
+          router.push(`/status-pages/${result.statusPage.id}`);
+        }
+      } else {
+        console.log("🔍 Updating existing status page...", id);
+        const result = await updateMutation.mutateAsync({
+          id: id || "",
+          data: saveData,
+        });
+        console.log("✅ Update result:", result);
+        toast.success("Status page updated successfully");
+      }
+    } catch (error: any) {
+      console.error("❌ Save error:", error);
+      console.error("❌ Error message:", error?.message);
+      console.error("❌ Error response:", error?.response?.data);
+      
+      // Show more specific error messages
+      if (error?.message?.includes("authentication") || error?.message?.includes("unauthorized")) {
+        toast.error("Authentication failed. Please log in again.");
+      } else if (error?.message?.includes("validation") || error?.message?.includes("invalid")) {
+        toast.error("Invalid data. Please check your inputs.");
+      } else {
+        toast.error(`Failed to save status page: ${error?.message || "Unknown error"}`);
+      }
+    }
+  };
+
+  // Section reordering
   function moveSection(sectionId: string, direction: "up" | "down") {
     setSections((prev) => {
       const index = prev.findIndex((s) => s.id === sectionId);
@@ -272,49 +325,21 @@ export default function StatusPageEditor({ mode, id }: Props) {
     });
   }
 
-  // Maintenance handlers
-  function addMaintenanceDraft() {
-    const id = crypto.randomUUID();
-    const now = new Date();
-    const later = new Date(now.getTime() + 60 * 60 * 1000);
-    setMaintenances((m) => [
-      ...m,
-      {
-        id,
-        title: "New maintenance",
-        description: "",
-        start: now.toISOString().slice(0, 16),
-        end: later.toISOString().slice(0, 16),
-        status: "scheduled",
-      },
-    ]);
-    // Scroll the newly created maintenance block into view
-    setTimeout(() => {
-      const el = maintenanceRefs.current[id];
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 0);
-  }
+  // Maintenance handlers - now using API endpoints
 
-  function updateMaintenance(
-    id: string,
-    patch: Partial<{
-      title: string;
-      description?: string;
-      start: string;
-      end: string;
-      status: "scheduled" | "in_progress" | "completed";
-      affectedResourceIds?: string[];
-    }>
-  ) {
-    setMaintenances((items) =>
-      items.map((m) => (m.id === id ? { ...m, ...patch } : m))
-    );
-  }
-
-  function removeMaintenance(id: string) {
-    setMaintenances((items) => items.filter((m) => m.id !== id));
+  async function removeMaintenance(maintenanceId: string) {
+    if (!id) return; // Need status page ID
+    
+    try {
+      await deleteMaintenanceMutation.mutateAsync({
+        statusPageId: id,
+        maintenanceId,
+      });
+      toast.success("Maintenance deleted successfully");
+    } catch (error) {
+      console.error("Error deleting maintenance:", error);
+      toast.error("Failed to delete maintenance");
+    }
   }
 
   function updateMaintenanceDraft(
@@ -334,6 +359,12 @@ export default function StatusPageEditor({ mode, id }: Props) {
       toast.error("Save the status page first to schedule maintenance");
       return;
     }
+    
+    if (!id) {
+      toast.error("Status page ID is required");
+      return;
+    }
+
     const { title, start, end } = maintenanceDraft;
     if (!title.trim()) {
       toast.error("Title is required");
@@ -347,35 +378,33 @@ export default function StatusPageEditor({ mode, id }: Props) {
       toast.error("End time must be after start time");
       return;
     }
-    const newItem = {
-      id: crypto.randomUUID(),
-      title: maintenanceDraft.title,
-      description: maintenanceDraft.description || "",
-      start: maintenanceDraft.start,
-      end: maintenanceDraft.end,
-      status: "scheduled" as const,
-      affectedResourceIds: maintenanceDraft.affectedResourceIds,
-    };
 
-    const nextMaintenances = [...maintenances, newItem];
-    setMaintenances(nextMaintenances);
+    try {
+      const maintenanceData: CreateMaintenanceData = {
+        title: maintenanceDraft.title,
+        description: maintenanceDraft.description || "",
+        from: maintenanceDraft.start,
+        to: maintenanceDraft.end,
+      };
 
-    if (id) {
-      await updateMutation.mutateAsync({
-        id,
-        data: { maintenances: nextMaintenances },
+      await createMaintenanceMutation.mutateAsync({
+        statusPageId: id,
+        data: maintenanceData,
       });
-    }
 
-    // Reset draft after successful schedule
-    setMaintenanceDraft({
-      title: "",
-      description: "",
-      start: "",
-      end: "",
-      affectedResourceIds: [],
-    });
-    toast.success("Maintenance scheduled");
+      // Reset draft after successful schedule
+      setMaintenanceDraft({
+        title: "",
+        description: "",
+        start: "",
+        end: "",
+        affectedResourceIds: [],
+      });
+      toast.success("Maintenance scheduled");
+    } catch (error) {
+      console.error("Error scheduling maintenance:", error);
+      toast.error("Failed to schedule maintenance");
+    }
   }
 
   // Status updates handlers
@@ -405,7 +434,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
     setUpdates((items) => items.filter((u) => u.id !== id));
   }
 
-  // Create report handler (adds a new status update)
+  // Create report handler
   async function createReport() {
     if (mode === "create") {
       toast.error("Save the status page first to create a report");
@@ -415,7 +444,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
       toast.error("What's going on? is required");
       return;
     }
-    const newUpdate = {
+    const newUpdate: StatusUpdate = {
       id: crypto.randomUUID(),
       title: reportDraft.title,
       body: reportDraft.description,
@@ -423,16 +452,25 @@ export default function StatusPageEditor({ mode, id }: Props) {
     };
     const nextUpdates = [newUpdate, ...updates];
     setUpdates(nextUpdates);
-    if (id) {
-      await updateMutation.mutateAsync({ id, data: { updates: nextUpdates } });
-    }
+    
     toast.success("Report created");
     setReportDraft((prev) => ({
       ...prev,
       title: "",
       description: "",
-      // keep publishedAt as-is so users can post multiple
     }));
+  }
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="text-lg text-muted-foreground">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -544,6 +582,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Stripe"
                         className="h-11 border-border bg-background"
+                        required
                       />
                     </div>
                     <div className="space-y-3">
@@ -606,8 +645,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
                         className="h-11 border-border bg-background"
                       />
                     </div>
-
-                    {/** Removed homepage field per requirements */}
 
                     <div className="space-y-3">
                       <Label
@@ -700,6 +737,22 @@ export default function StatusPageEditor({ mode, id }: Props) {
                           }}
                         />
                       </div>
+                      {logoUrl && (
+                        <div className="mt-4 flex items-center gap-4">
+                          <img
+                            src={logoUrl}
+                            alt="Logo preview"
+                            className="h-12 w-12 object-contain border rounded"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLogoUrl("")}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -709,7 +762,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
           <div className="flex justify-end pt-8">
             <Button
-              onClick={onSave}
+              onClick={handleSave}
               disabled={
                 createMutation.isPending ||
                 updateMutation.isPending ||
@@ -717,7 +770,9 @@ export default function StatusPageEditor({ mode, id }: Props) {
               }
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
             >
-              Save changes
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : "Save changes"}
             </Button>
           </div>
         </TabsContent>
@@ -923,11 +978,15 @@ export default function StatusPageEditor({ mode, id }: Props) {
 
           <div className="flex justify-end pt-8">
             <Button
-              onClick={onSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
+              onClick={handleSave}
+              disabled={
+                createMutation.isPending || 
+                updateMutation.isPending || 
+                (mode === "edit" && !hasChanges())
+              }
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
             >
-              Save changes
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save changes"}
             </Button>
           </div>
         </TabsContent>
@@ -1249,6 +1308,57 @@ export default function StatusPageEditor({ mode, id }: Props) {
                   </div>
                 </div>
               </div>
+
+              {/* Display existing maintenances */}
+              {maintenances.length > 0 && (
+                <div className="flex gap-12">
+                  <div className="w-1/3 space-y-4">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Scheduled maintenances
+                    </h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      View and manage your scheduled maintenance windows.
+                    </p>
+                  </div>
+                  <div className="w-2/3">
+                    <div className="space-y-4">
+                      {maintenances.map((maintenance: Maintenance) => (
+                        <Card key={maintenance.id} className="border border-border/50 bg-card shadow-sm">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-foreground">
+                                  {maintenance.title}
+                                </h4>
+                                {maintenance.description && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {maintenance.description}
+                                  </p>
+                                )}
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(maintenance.start).toLocaleString()} -{" "}
+                                  {new Date(maintenance.end).toLocaleString()}
+                                </div>
+                                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  {maintenance.status}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeMaintenance(maintenance.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </TabsContent>
@@ -1548,29 +1658,17 @@ export default function StatusPageEditor({ mode, id }: Props) {
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </div>  
                           )}
                         </div>
                       )}
                     </CardContent>
                   </Card>
-
-                  <div className="pt-4 flex justify-end">
-                    <Button
-                      onClick={createReport}
-                      disabled={
-                        createMutation.isPending || updateMutation.isPending
-                      }
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
-                    >
-                      Create report
-                    </Button>
-                  </div>
                 </div>
               </div>
             </>
           )}
-        </TabsContent>
+        </TabsContent> 
       </Tabs>
     </div>
   );
