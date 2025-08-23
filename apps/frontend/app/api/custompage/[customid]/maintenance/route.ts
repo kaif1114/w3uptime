@@ -6,8 +6,71 @@ import { withAuth } from "@/lib/auth";
 const createMaintenanceSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string(),
-	from: z.string().datetime("Invalid ISO datetime"),
-	to: z.string().datetime("Invalid ISO datetime"),
+	from: z.string().refine((val) => {
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+		const isDatetimeLocal = datetimeLocalRegex.test(val);
+		const isValidDate = !isNaN(new Date(val).getTime());
+		return isDatetimeLocal || isValidDate;
+	}, "Invalid datetime format"),
+	to: z.string().refine((val) => {
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+		const isDatetimeLocal = datetimeLocalRegex.test(val);
+		const isValidDate = !isNaN(new Date(val).getTime());
+		return isDatetimeLocal || isValidDate;
+	}, "Invalid datetime format"),
+});
+
+// GET /api/custompage/[customid]/maintenance - Get all maintenances for a status page
+export const GET = withAuth(async (
+	req: NextRequest,
+	user,
+	session,
+	{ params }: { params: Promise<{ customid: string }> }
+) => {
+	try {
+		const { customid } = await params;
+
+		// Verify status page exists and belongs to user
+		const statusPage = await prisma.statusPage.findFirst({
+			where: { id: customid, userId: user.id },
+			select: { id: true },
+		});
+
+		if (!statusPage) {
+			return NextResponse.json(
+				{ error: "Status Page not found" },
+				{ status: 404 }
+			);
+		}
+
+		// Fetch all maintenances for this status page
+		const maintenances = await prisma.maintenance.findMany({
+			where: { statusPageId: customid },
+			orderBy: { from: 'desc' },
+		});
+
+		// Transform to frontend format
+		const formattedMaintenances = maintenances.map(maintenance => ({
+			id: maintenance.id,
+			title: maintenance.title,
+			description: maintenance.description,
+			start: maintenance.from.toISOString(),
+			end: maintenance.to.toISOString(),
+			status: "scheduled" as const, // You may want to add logic to determine actual status
+		}));
+
+		return NextResponse.json({
+			maintenances: formattedMaintenances,
+		});
+	} catch (error) {
+		console.error("Error fetching maintenances:", error);
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 }
+		);
+	}
 });
 
 export const POST = withAuth(async (
@@ -52,10 +115,20 @@ export const POST = withAuth(async (
 			},
 		});
 
+		// Transform to frontend format
+		const formattedMaintenance = {
+			id: maintenance.id,
+			title: maintenance.title,
+			description: maintenance.description,
+			start: maintenance.from.toISOString(),
+			end: maintenance.to.toISOString(),
+			status: "scheduled" as const,
+		};
+
 		return NextResponse.json(
 			{
 				message: "Maintenance created successfully",
-				maintenance,
+				maintenance: formattedMaintenance,
 			},
 			{ status: 201 }
 		);

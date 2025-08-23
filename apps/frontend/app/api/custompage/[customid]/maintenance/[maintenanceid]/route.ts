@@ -6,8 +6,20 @@ import { withAuth } from "@/lib/auth";
 const updateMaintenanceSchema = z.object({
 	title: z.string().min(1, "Title is required").optional(),
 	description: z.string().optional(),
-	from: z.string().datetime("Invalid ISO datetime").optional(),
-	to: z.string().datetime("Invalid ISO datetime").optional(),
+	from: z.string().refine((val) => {
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+		const isDatetimeLocal = datetimeLocalRegex.test(val);
+		const isValidDate = !isNaN(new Date(val).getTime());
+		return isDatetimeLocal || isValidDate;
+	}, "Invalid datetime format").optional(),
+	to: z.string().refine((val) => {
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+		const isDatetimeLocal = datetimeLocalRegex.test(val);
+		const isValidDate = !isNaN(new Date(val).getTime());
+		return isDatetimeLocal || isValidDate;
+	}, "Invalid datetime format").optional(),
 });
 
 // GET /api/custompage/[customid]/maintenance/[maintenanceid] - Get a specific maintenance
@@ -203,3 +215,4 @@ export const DELETE = withAuth(async (
 		);
 	}
 });
+

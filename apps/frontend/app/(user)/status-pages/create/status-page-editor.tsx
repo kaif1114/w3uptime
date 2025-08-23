@@ -407,33 +407,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
     }
   }
 
-  // Status updates handlers
-  function addUpdateDraft() {
-    const id = crypto.randomUUID();
-    setUpdates((u) => [
-      ...u,
-      {
-        id,
-        title: "New update",
-        body: "",
-        createdAt: new Date().toISOString(),
-      },
-    ]);
-  }
-
-  function updateUpdate(
-    id: string,
-    patch: Partial<{ title: string; body?: string }>
-  ) {
-    setUpdates((items) =>
-      items.map((u) => (u.id === id ? { ...u, ...patch } : u))
-    );
-  }
-
-  function removeUpdate(id: string) {
-    setUpdates((items) => items.filter((u) => u.id !== id));
-  }
-
   // Create report handler
   async function createReport() {
     if (mode === "create") {
@@ -444,21 +417,75 @@ export default function StatusPageEditor({ mode, id }: Props) {
       toast.error("What's going on? is required");
       return;
     }
-    const newUpdate: StatusUpdate = {
-      id: crypto.randomUUID(),
-      title: reportDraft.title,
-      body: reportDraft.description,
-      createdAt: new Date(reportDraft.publishedAt).toISOString(),
-    };
-    const nextUpdates = [newUpdate, ...updates];
-    setUpdates(nextUpdates);
-    
-    toast.success("Report created");
-    setReportDraft((prev) => ({
-      ...prev,
-      title: "",
-      description: "",
-    }));
+    if (!reportDraft.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+
+    try {
+      // Prepare affected sections data
+      const affectedSections = Object.entries(reportDraft.affected)
+        .filter(([_, status]) => status !== "not_affected")
+        .map(([resourceId, status]) => {
+          // Find the section that contains this resource
+          const section = sections.find(s => 
+            s.resources.some(r => r.id === resourceId)
+          );
+          return {
+            sectionId: section?.id || resourceId, // Use section ID if found, otherwise resource ID
+            status: status.toUpperCase() as "DOWNTIME" | "DEGRADED" | "RESOLVED"
+          };
+        });
+
+      const payload = {
+        title: reportDraft.title,
+        description: reportDraft.description,
+        publishedAt: new Date(reportDraft.publishedAt).toISOString(),
+        affectedSections
+      };
+
+      // Call the API to create the status update
+      const response = await fetch(`/api/custompage/${id}/reports`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create status update");
+      }
+
+      const result = await response.json();
+      
+      // Add the new update to local state
+      const newUpdate: StatusUpdate = {
+        id: result.update.id,
+        title: result.update.title,
+        body: result.update.description,
+        createdAt: result.update.publishedAt,
+      };
+      const nextUpdates = [newUpdate, ...updates];
+      setUpdates(nextUpdates);
+      
+      toast.success("Status report created successfully");
+      
+      // Reset the form
+      setReportDraft({
+        title: "",
+        description: "",
+        publishedAt: new Date().toISOString().slice(0, 16),
+        notifySubscribers: false,
+        affected: {},
+      });
+      setShowReportForm(false);
+      
+    } catch (error) {
+      console.error("Failed to create status report:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create status report");
+    }
   }
 
   if (isLoading) {
@@ -1666,7 +1693,63 @@ export default function StatusPageEditor({ mode, id }: Props) {
                   </Card>
                 </div>
               </div>
+
+              {/* Submit button */}
+              <div className="flex justify-end gap-4 pt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReportForm(false)}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={createReport}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-6"
+                >
+                  Create report
+                </Button>
+              </div>
             </>
+          )}
+
+          {/* Existing status updates */}
+          {updates.length > 0 && (
+            <div className="flex gap-12">
+              <div className="w-1/3 space-y-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Status updates
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Recent status updates for this status page.
+                </p>
+              </div>
+              <div className="w-2/3">
+                <div className="space-y-4">
+                  {updates.map((update) => (
+                    <Card key={update.id} className="border border-border/50 bg-card shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <h4 className="font-medium text-foreground">
+                              {update.title}
+                            </h4>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(update.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                          {update.body && (
+                            <p className="text-sm text-muted-foreground">
+                              {update.body}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </TabsContent> 
       </Tabs>
