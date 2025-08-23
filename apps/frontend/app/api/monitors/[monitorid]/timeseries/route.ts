@@ -46,8 +46,12 @@ export const GET = withAuth(async (
       );
     }
 
-    // Get time series data
-    const timeseriesData = await prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_timeseries($1, $2)`, monitorid, period);
+    // Get time series data with explicit type casting
+    const timeseriesData = await prisma.$queryRawUnsafe(
+      `SELECT * FROM get_monitor_timeseries($1::UUID, $2::TEXT)`, 
+      monitorid, 
+      period
+    );
 
     // Transform TimescaleDB data to match frontend types
     const transformTimeSeriesData = (rawData: any[]): any[] => {

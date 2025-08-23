@@ -46,9 +46,9 @@ export const GET = withAuth(async (
       );
     }
 
-    // Get monitor statistics
+    // Get monitor statistics with explicit type casting
     const statsData = await prisma.$queryRawUnsafe(
-      `SELECT * FROM get_monitor_stats($1, $2)`, 
+      `SELECT * FROM get_monitor_stats($1::UUID, $2::TEXT)`, 
       monitorid, 
       period
     );

@@ -184,7 +184,7 @@ BEGIN
                 AND time_bucket <= NOW()
             ORDER BY time_bucket ASC;
         ELSE
-            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
+            RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
@@ -281,7 +281,7 @@ BEGIN
             WHERE "monitorId" = p_monitor_id
                 AND time_bucket >= NOW() - INTERVAL '30 days';
         ELSE
-            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
+            RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
