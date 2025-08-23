@@ -113,7 +113,7 @@ BEGIN
                     ELSE 0
                 END AS success_rate
             FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour'
                 AND monitor_tick_5min.time_bucket <= NOW()
             ORDER BY monitor_tick_5min.time_bucket ASC;
@@ -135,7 +135,7 @@ BEGIN
                     ELSE 0
                 END AS success_rate
             FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '24 hours'
                 AND monitor_tick_5min.time_bucket <= NOW()
             ORDER BY monitor_tick_5min.time_bucket ASC;
@@ -157,7 +157,7 @@ BEGIN
                     ELSE 0
                 END AS success_rate
             FROM monitor_tick_30min
-            WHERE monitor_tick_30min."monitorId" = p_monitor_id
+            WHERE monitor_tick_30min."monitorId" = p_monitor_id::text
                 AND monitor_tick_30min.time_bucket >= NOW() - INTERVAL '7 days'
                 AND monitor_tick_30min.time_bucket <= NOW()
             ORDER BY monitor_tick_30min.time_bucket ASC;
@@ -179,7 +179,7 @@ BEGIN
                     ELSE 0
                 END AS success_rate
             FROM monitor_tick_2hour
-            WHERE monitor_tick_2hour."monitorId" = p_monitor_id
+            WHERE monitor_tick_2hour."monitorId" = p_monitor_id::text
                 AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days'
                 AND monitor_tick_2hour.time_bucket <= NOW()
             ORDER BY monitor_tick_2hour.time_bucket ASC;
@@ -221,7 +221,7 @@ BEGIN
                 ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour';
                 
         WHEN 'day' THEN
@@ -240,7 +240,7 @@ BEGIN
                 ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '24 hours';
                 
         WHEN 'week' THEN
@@ -259,7 +259,7 @@ BEGIN
                 ROUND(MAX(monitor_tick_30min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_30min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_30min
-            WHERE monitor_tick_30min."monitorId" = p_monitor_id
+            WHERE monitor_tick_30min."monitorId" = p_monitor_id::text
                 AND monitor_tick_30min.time_bucket >= NOW() - INTERVAL '7 days';
                 
         WHEN 'month' THEN
@@ -278,7 +278,7 @@ BEGIN
                 ROUND(MAX(monitor_tick_2hour.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_2hour.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_2hour
-            WHERE monitor_tick_2hour."monitorId" = p_monitor_id
+            WHERE monitor_tick_2hour."monitorId" = p_monitor_id::text
                 AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days';
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
