@@ -13,12 +13,16 @@ const updateIncidentSchema = z.object({
 });
 
 // GET /api/incidents/[incidentid] - Get specific incident
-export const GET = withAuth(async (req: NextRequest, user) => {
+export const GET = withAuth(async (
+  req: NextRequest,
+  user,
+  session,
+  { params }: { params: Promise<{ incidentid: string }> }
+) => {
   try {
-    // Extract incident ID from URL path
-    const incidentId = req.url.split("/").pop();
+    const { incidentid } = await params;
 
-    if (!incidentId) {
+    if (!incidentid) {
       return NextResponse.json(
         { error: "Incident ID is required" },
         { status: 400 }
@@ -27,7 +31,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentId,
+        id: incidentid,
         Monitor: {
           userId: user.id,
         },
@@ -73,8 +77,14 @@ export const GET = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-export const PUT = withAuth(async (req: NextRequest, user) => {
+export const PUT = withAuth(async (
+  req: NextRequest,
+  user,
+  session,
+  { params }: { params: Promise<{ incidentid: string }> }
+) => {
   try {
+    const { incidentid } = await params;
     const body = await req.json();
     const validation = updateIncidentSchema.safeParse(body);
 
@@ -85,9 +95,17 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
       );
     }
 
+    // Ensure the incident ID from params matches the one in the body
+    if (validation.data.id !== incidentid) {
+      return NextResponse.json(
+        { error: "Incident ID mismatch" },
+        { status: 400 }
+      );
+    }
+
     const existingIncident = await prisma.incident.findFirst({
       where: {
-        id: validation.data.id,
+        id: incidentid,
         Monitor: {
           userId: user.id,
         },
@@ -120,7 +138,7 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 
     const updatedIncident = await prisma.incident.update({
       where: {
-        id: validation.data.id,
+        id: incidentid,
       },
       data: updateData,
       include: {
@@ -149,12 +167,16 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 });
 
 // DELETE /api/incidents/[incidentid] - Delete incident
-export const DELETE = withAuth(async (req: NextRequest, user) => {
+export const DELETE = withAuth(async (
+  req: NextRequest,
+  user,
+  session,
+  { params }: { params: Promise<{ incidentid: string }> }
+) => {
   try {
-    // Extract incident ID from URL path
-    const incidentId = req.url.split("/").pop();
+    const { incidentid } = await params;
 
-    if (!incidentId) {
+    if (!incidentid) {
       return NextResponse.json(
         { error: "Incident ID is required" },
         { status: 400 }
@@ -163,7 +185,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: incidentId,
+        id: incidentid,
         Monitor: {
           userId: user.id,
         },
@@ -179,7 +201,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
 
     await prisma.incident.delete({
       where: {
-        id: incidentId,
+        id: incidentid,
       },
     });
 
