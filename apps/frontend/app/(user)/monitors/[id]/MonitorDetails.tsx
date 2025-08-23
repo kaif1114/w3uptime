@@ -5,16 +5,15 @@ import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
   AlertTriangle,
-  BarChart3,
   Calendar,
   Edit3,
   Pause,
   Play,
-  Send,
+  Send
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { MonitoringControls, TimePeriod } from "./MonitoringControls";
+import { TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 interface MonitorDetailsProps {
   monitorId: string;
@@ -46,32 +45,17 @@ function getStatusText(status: MonitorStatus): string {
   }
 }
 
-type TabType = "performance";
-
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
 
-  // State for tabs and controls
-  const [activeTab, setActiveTab] = useState<TabType>("performance");
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
       const newStatus = monitor?.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
       pauseMonitor.mutate({ id: monitorId, status: newStatus });
     }
-  };
-
-  const handleManualRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-    }, 2000);
   };
 
   if (isLoading) {
@@ -103,8 +87,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   }
 
   if (!monitor) return null;
-
-  const tabs = [{ id: "performance", label: "Performance", icon: BarChart3 }];
 
   return (
     <div className="space-y-6">
