@@ -12,24 +12,22 @@ const updateIncidentSchema = z.object({
   downtime: z.number().int().positive().optional(),
 });
 
-
 // GET /api/incidents/[incidentid] - Get specific incident
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
-    const body = await req.json();
-    const validation = updateIncidentSchema.safeParse(body);
+    // Extract incident ID from URL path
+    const incidentId = req.url.split("/").pop();
 
-    
-    if (!validation.success) {
+    if (!incidentId) {
       return NextResponse.json(
-        { error: validation.error.message },
+        { error: "Incident ID is required" },
         { status: 400 }
       );
     }
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: validation.data.id,
+        id: incidentId,
         Monitor: {
           userId: user.id,
         },
@@ -51,7 +49,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
             },
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
         postmortem: true,
@@ -73,9 +71,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       { status: 500 }
     );
   }
-}
-);
-
+});
 
 export const PUT = withAuth(async (req: NextRequest, user) => {
   try {
@@ -108,9 +104,12 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
     const updateData: any = { ...validation.data };
 
     // Auto-set resolvedAt when status changes to RESOLVED
-    if (validation.data.status === "RESOLVED" && existingIncident.status !== "RESOLVED") {
+    if (
+      validation.data.status === "RESOLVED" &&
+      existingIncident.status !== "RESOLVED"
+    ) {
       updateData.resolvedAt = new Date();
-      
+
       if (!validation.data.downtime) {
         const downtimeSeconds = Math.floor(
           (new Date().getTime() - existingIncident.createdAt.getTime()) / 1000
@@ -152,19 +151,19 @@ export const PUT = withAuth(async (req: NextRequest, user) => {
 // DELETE /api/incidents/[incidentid] - Delete incident
 export const DELETE = withAuth(async (req: NextRequest, user) => {
   try {
-    const body = await req.json();
-    const validation = updateIncidentSchema.safeParse(body);
+    // Extract incident ID from URL path
+    const incidentId = req.url.split("/").pop();
 
-    if (!validation.success) {
+    if (!incidentId) {
       return NextResponse.json(
-        { error: validation.error.message },
+        { error: "Incident ID is required" },
         { status: 400 }
       );
     }
 
     const incident = await prisma.incident.findFirst({
       where: {
-        id: validation.data.id,
+        id: incidentId,
         Monitor: {
           userId: user.id,
         },
@@ -180,7 +179,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
 
     await prisma.incident.delete({
       where: {
-        id: validation.data.id,
+        id: incidentId,
       },
     });
 

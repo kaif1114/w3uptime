@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIncidents } from "@/hooks/useIncidents";
 
 interface IncidentsClientProps {
   incidents: Incident[];
@@ -37,6 +38,7 @@ const ITEMS_PER_PAGE = 10;
 export default function IncidentsClient({ incidents }: IncidentsClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const { updateIncident, deleteIncident } = useIncidents();
 
   // Filter incidents based on search query
   const filteredIncidents = useMemo(() => {
@@ -95,9 +97,32 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
     }
   };
 
-  const handleIncidentAction = (action: string, incident: Incident) => {
-    console.log(`${action} incident:`, incident.id);
-    // TODO: Implement actual functionality
+  const handleIncidentAction = async (action: string, incident: Incident) => {
+    try {
+      switch (action) {
+        case "resolve":
+          await updateIncident(incident.id, { status: "RESOLVED" });
+          break;
+        case "remove":
+          if (confirm("Are you sure you want to delete this incident?")) {
+            await deleteIncident(incident.id);
+          }
+          break;
+        case "view":
+          // TODO: Navigate to incident detail page
+          console.log("View incident:", incident.id);
+          break;
+        case "edit":
+          // TODO: Open edit modal or navigate to edit page
+          console.log("Edit incident:", incident.id);
+          break;
+        default:
+          console.log(`${action} incident:`, incident.id);
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} incident:`, error);
+      // You could add a toast notification here
+    }
   };
 
   return (
@@ -132,124 +157,147 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
       {/* Incidents Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-gray-500">
-                    Incident
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-500">
-                    Started at
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-500">
-                    Length
-                  </th>
-                  <th className="text-right p-4 font-medium text-gray-500"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedIncidents.map((incident) => (
-                  <tr
-                    key={incident.id}
-                    className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+          {paginatedIncidents.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <p className="text-gray-500 mb-4">
+                  {searchQuery
+                    ? "No incidents found matching your search."
+                    : "No incidents found."}
+                </p>
+                {searchQuery && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchQuery("")}
+                    className="text-purple-600 hover:text-purple-700"
                   >
-                    <td className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(incident.status)}
-                          <div>
-                            <div className="font-medium">{incident.title}</div>
-                            <div className="text-sm text-gray-500">
-                              {incident.description}
+                    Clear search
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4 font-medium text-gray-500">
+                      Incident
+                    </th>
+                    <th className="text-left p-4 font-medium text-gray-500">
+                      Started at
+                    </th>
+                    <th className="text-left p-4 font-medium text-gray-500">
+                      Length
+                    </th>
+                    <th className="text-right p-4 font-medium text-gray-500"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedIncidents.map((incident) => (
+                    <tr
+                      key={incident.id}
+                      className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <td className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(incident.status)}
+                            <div>
+                              <div className="font-medium">
+                                {incident.title}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {incident.description}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        {incident.comments.length > 0 ? (
-                          <>
-                            <MessageCircle className="h-4 w-4" />
-                            <span className="bg-gray-100 dark:bg-gray-800 text-xs px-1 rounded">
-                              {incident.comments.length}
-                            </span>
-                          </>
-                        ) : (
-                          <Calendar className="h-4 w-4" />
-                        )}
-                        {formatStartedAt(incident.createdAt)}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            incident.status === "ACKNOWLEDGED"
-                              ? "bg-yellow-500"
-                              : incident.status === "ONGOING"
-                                ? "bg-red-500"
-                                : "bg-green-500"
-                          }`}
-                        />
-                        <Badge className={getStatusColor(incident.status)}>
-                          {incident.status}
-                        </Badge>
-                      </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleIncidentAction("view", incident)
-                            }
-                            className="flex items-center gap-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleIncidentAction("resolve", incident)
-                            }
-                            className="flex items-center gap-2"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Resolve
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleIncidentAction("edit", incident)
-                            }
-                            className="flex items-center gap-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleIncidentAction("remove", incident)
-                            }
-                            className="flex items-center gap-2 text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          {incident.comments.length > 0 ? (
+                            <>
+                              <MessageCircle className="h-4 w-4" />
+                              <span className="bg-gray-100 dark:bg-gray-800 text-xs px-1 rounded">
+                                {incident.comments.length}
+                              </span>
+                            </>
+                          ) : (
+                            <Calendar className="h-4 w-4" />
+                          )}
+                          {formatStartedAt(incident.createdAt)}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              incident.status === "ACKNOWLEDGED"
+                                ? "bg-yellow-500"
+                                : incident.status === "ONGOING"
+                                  ? "bg-red-500"
+                                  : "bg-green-500"
+                            }`}
+                          />
+                          <Badge className={getStatusColor(incident.status)}>
+                            {incident.status}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleIncidentAction("view", incident)
+                              }
+                              className="flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleIncidentAction("resolve", incident)
+                              }
+                              className="flex items-center gap-2"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Resolve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleIncidentAction("edit", incident)
+                              }
+                              className="flex items-center gap-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleIncidentAction("remove", incident)
+                              }
+                              className="flex items-center gap-2 text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -3,8 +3,8 @@ import {
   Incident,
   CreateIncidentRequest,
   UpdateIncidentRequest,
+  IncidentsResponse,
 } from "@/types/incident";
-import { generateDummyIncidents } from "@/lib/dummy-data";
 
 interface UseIncidentsReturn {
   incidents: Incident[];
@@ -26,10 +26,45 @@ export function useIncidents(): UseIncidentsReturn {
       setLoading(true);
       setError(null);
 
-      // For now, use dummy data
-      // TODO: Replace with actual API call when ready
-      const dummyData = generateDummyIncidents();
-      setIncidents(dummyData);
+      const response = await fetch("/api/incidents", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch incidents: ${response.statusText}`);
+      }
+
+      const data: IncidentsResponse = await response.json();
+
+      // Transform the API response to match the expected Incident type
+      const transformedIncidents: Incident[] = data.incidents.map(
+        (incident) => ({
+          ...incident,
+          // Provide default values for missing fields
+          severity: (incident as any).severity || "MINOR",
+          downtime: (incident as any).downtime || undefined,
+          createdAt: new Date(incident.createdAt),
+          updatedAt: new Date(incident.updatedAt),
+          resolvedAt: incident.resolvedAt
+            ? new Date(incident.resolvedAt)
+            : undefined,
+          comments: incident.comments.map((comment) => ({
+            ...comment,
+            createdAt: new Date(comment.createdAt),
+          })),
+          postmortem: incident.postmortem
+            ? {
+                ...incident.postmortem,
+                createdAt: new Date(incident.postmortem.createdAt),
+              }
+            : undefined,
+        })
+      );
+
+      setIncidents(transformedIncidents);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch incidents"
@@ -43,26 +78,20 @@ export function useIncidents(): UseIncidentsReturn {
     try {
       setError(null);
 
-      // TODO: Replace with actual API call when ready
-      const newIncident: Incident = {
-        id: `incident-${Date.now()}`,
-        title: data.title,
-        description: data.description,
-        severity: data.severity || "MINOR",
-        status: data.status || "ACKNOWLEDGED",
-        monitorId: data.monitorId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        escalated: data.escalated || false,
-        Monitor: {
-          id: data.monitorId,
-          name: "New Monitor",
-          url: "https://example.com",
+      const response = await fetch("/api/incidents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        comments: [],
-      };
+        body: JSON.stringify(data),
+      });
 
-      setIncidents((prev) => [newIncident, ...prev]);
+      if (!response.ok) {
+        throw new Error(`Failed to create incident: ${response.statusText}`);
+      }
+
+      // Refetch incidents to get the updated list
+      await fetchIncidents();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create incident"
@@ -75,20 +104,20 @@ export function useIncidents(): UseIncidentsReturn {
     try {
       setError(null);
 
-      // TODO: Replace with actual API call when ready
-      setIncidents((prev) =>
-        prev.map((incident) =>
-          incident.id === id
-            ? {
-                ...incident,
-                ...data,
-                updatedAt: new Date(),
-                resolvedAt:
-                  data.status === "RESOLVED" ? new Date() : incident.resolvedAt,
-              }
-            : incident
-        )
-      );
+      const response = await fetch(`/api/incidents/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update incident: ${response.statusText}`);
+      }
+
+      // Refetch incidents to get the updated list
+      await fetchIncidents();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to update incident"
@@ -101,8 +130,16 @@ export function useIncidents(): UseIncidentsReturn {
     try {
       setError(null);
 
-      // TODO: Replace with actual API call when ready
-      setIncidents((prev) => prev.filter((incident) => incident.id !== id));
+      const response = await fetch(`/api/incidents/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete incident: ${response.statusText}`);
+      }
+
+      // Refetch incidents to get the updated list
+      await fetchIncidents();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to delete incident"

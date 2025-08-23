@@ -14,16 +14,6 @@ const createIncidentSchema = z.object({
 
 // POST /api/incidents - Create new incident
 export const POST = withAuth(async (req: NextRequest, user) => {
-  const body = await req.json();
-  const validation = createIncidentSchema.safeParse(body);
-
-  if (!validation.success) {
-    return NextResponse.json(
-      { error: validation.error.message },
-      { status: 400 }
-    );
-  }
-
   try {
     const body = await req.json();
     const validation = createIncidentSchema.safeParse(body);
