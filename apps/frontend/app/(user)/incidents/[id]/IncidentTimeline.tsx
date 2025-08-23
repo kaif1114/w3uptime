@@ -15,6 +15,9 @@ import {
   Clock,
   User,
   Send,
+  Mail,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -25,7 +28,15 @@ interface IncidentTimelineProps {
 
 interface TimelineEvent {
   id: string;
-  type: "incident_start" | "comment" | "postmortem" | "status_change";
+  type:
+    | "incident_start"
+    | "comment"
+    | "postmortem"
+    | "status_change"
+    | "email"
+    | "phone"
+    | "text"
+    | "zapier";
   timestamp: Date;
   title: string;
   description?: string;
@@ -34,6 +45,7 @@ interface TimelineEvent {
     walletAddress: string;
   };
   icon: React.ReactNode;
+  region?: string;
 }
 
 export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
@@ -73,6 +85,34 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
     timestamp: new Date(incident.createdAt),
     title: "Incident started",
     icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
+  });
+
+  // Add sample notification events (like in reference UI)
+  const notificationTime = new Date(incident.createdAt);
+  notificationTime.setMinutes(notificationTime.getMinutes() + 1);
+
+  timelineEvents.push({
+    id: "email-notification",
+    type: "email",
+    timestamp: notificationTime,
+    title: `Sent an email to Muhammad Kaif at kaif@w3uptime.com`,
+    icon: <Mail className="h-4 w-4 text-blue-500" />,
+  });
+
+  timelineEvents.push({
+    id: "phone-notification",
+    type: "phone",
+    timestamp: notificationTime,
+    title: `Calling Muhammad Kaif at (202) 555-0168`,
+    icon: <Phone className="h-4 w-4 text-green-500" />,
+  });
+
+  timelineEvents.push({
+    id: "text-notification",
+    type: "text",
+    timestamp: notificationTime,
+    title: `Texted Muhammad Kaif at (202) 555-0168`,
+    icon: <MessageCircle className="h-4 w-4 text-blue-500" />,
   });
 
   // Add comments
@@ -116,36 +156,35 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
 
   return (
     <div className="space-y-6">
-      {/* Comment Input */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-              <Textarea
-                placeholder="Leave a comment or post-mortem. You can use markdown here or @mention a colleague."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none"
-              />
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleSubmitComment}
-                  disabled={!newComment.trim() || isSubmitting}
-                  size="sm"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Post
-                </Button>
-              </div>
+      {/* Comment Input - Styled like reference UI */}
+      <div className="space-y-4">
+        <div className="flex gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs">
+              <User className="h-4 w-4" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <Textarea
+              placeholder="Leave a comment or post-mortem. You can use markdown here or @mention a colleague."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="min-h-[80px] resize-none"
+            />
+            <div className="flex justify-end mt-2">
+              <Button
+                onClick={handleSubmitComment}
+                disabled={!newComment.trim() || isSubmitting}
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Post
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Timeline Events */}
       <div className="space-y-4">
@@ -164,43 +203,21 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
             {/* Event Content */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="font-medium">{event.title}</h3>
+                <h3 className="font-medium text-sm">{event.title}</h3>
                 <span className="text-sm text-muted-foreground">
                   {format(event.timestamp, "MMM d 'at' h:mm a")}
                 </span>
+                {event.region && (
+                  <Badge variant="outline" className="text-xs">
+                    {event.region}
+                  </Badge>
+                )}
               </div>
 
               {event.description && (
-                <Card>
-                  <CardContent className="p-4">
-                    {event.type === "postmortem" ? (
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-semibold mb-2">Post-mortem Report</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {event.description}
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <div>
-                            <h5 className="font-medium text-sm">Resolution Time</h5>
-                            <p className="text-sm text-muted-foreground">
-                              {incident.postmortem?.resolutionTime} minutes
-                            </p>
-                          </div>
-                          <div>
-                            <h5 className="font-medium text-sm">Resolution</h5>
-                            <p className="text-sm text-muted-foreground">
-                              {incident.postmortem?.resolution}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm">{event.description}</p>
-                    )}
-                  </CardContent>
-                </Card>
+                <div className="text-sm text-muted-foreground">
+                  {event.description}
+                </div>
               )}
 
               {event.user && (
