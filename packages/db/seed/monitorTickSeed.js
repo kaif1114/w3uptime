@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../src/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
-
-// Set your monitor ID here
-const MONITOR_ID = 'your-monitor-id-here';
+// Set your monitor ID here - update this with your actual monitor ID
+const MONITOR_ID = '01a06e1f-df5b-41c8-a827-f2780df04e89';
 
 // Sample cities with their coordinates and location data
 const SAMPLE_LOCATIONS = [
@@ -49,11 +47,11 @@ function getRandomLocation() {
   return SAMPLE_LOCATIONS[Math.floor(Math.random() * SAMPLE_LOCATIONS.length)];
 }
 
-function getRandomStatus(): 'GOOD' | 'BAD' {
+function getRandomStatus() {
   return Math.random() < 0.85 ? 'GOOD' : 'BAD';
 }
 
-function getRandomLatency(status: 'GOOD' | 'BAD'): number {
+function getRandomLatency(status) {
   if (status === 'GOOD') {
     return Math.floor(Math.random() * 500) + 50; // 50-550ms for good status
   } else {
@@ -145,7 +143,10 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+// Check if this file is being run directly
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
   main()
     .then(() => {
       console.log('Seeding completed successfully');
