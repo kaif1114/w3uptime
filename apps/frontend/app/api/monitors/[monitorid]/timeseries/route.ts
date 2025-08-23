@@ -56,7 +56,7 @@ export const GET = withAuth(async (
     // Transform TimescaleDB data to match frontend types
     const transformTimeSeriesData = (rawData: any[]): any[] => {
       return rawData.map(point => ({
-        time_bucket: point.time_bucket instanceof Date ? point.time_bucket.toISOString() : point.time_bucket,
+        time_bucket: point.timestamp_bucket instanceof Date ? point.timestamp_bucket.toISOString() : point.timestamp_bucket,
         avg_latency: Number(point.avg_latency) || 0,
         uptime_percentage: Number(point.success_rate) || 0, // Map success_rate to uptime_percentage
         total_checks: Number(point.total_ticks) || 0, // Map total_ticks to total_checks

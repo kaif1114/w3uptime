@@ -84,7 +84,7 @@ CREATE OR REPLACE FUNCTION get_monitor_timeseries(
     p_monitor_id UUID,
     p_period TEXT DEFAULT 'day'
 ) RETURNS TABLE (
-    time_bucket TIMESTAMPTZ,
+    timestamp_bucket TIMESTAMPTZ,
     avg_latency NUMERIC,
     min_latency NUMERIC,
     max_latency NUMERIC,
@@ -99,19 +99,19 @@ BEGIN
         WHEN 'hour' THEN
             RETURN QUERY
             SELECT 
-                monitor_tick_5min.time_bucket::TIMESTAMPTZ,
-                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
-                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
-                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
-                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) as median_latency,
-                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) as p95_latency,
-                monitor_tick_5min.total_ticks,
-                monitor_tick_5min.successful_ticks,
+                monitor_tick_5min.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) AS avg_latency,
+                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) AS min_latency,
+                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) AS max_latency,
+                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) AS median_latency,
+                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) AS p95_latency,
+                monitor_tick_5min.total_ticks AS total_ticks,
+                monitor_tick_5min.successful_ticks AS successful_ticks,
                 CASE 
                     WHEN monitor_tick_5min.total_ticks > 0 
                     THEN ROUND((monitor_tick_5min.successful_ticks::NUMERIC / monitor_tick_5min.total_ticks::NUMERIC) * 100, 2)
                     ELSE 0
-                END as success_rate
+                END AS success_rate
             FROM monitor_tick_5min
             WHERE monitor_tick_5min."monitorId" = p_monitor_id
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour'
@@ -121,19 +121,19 @@ BEGIN
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                monitor_tick_5min.time_bucket::TIMESTAMPTZ,
-                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
-                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
-                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
-                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) as median_latency,
-                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) as p95_latency,
-                monitor_tick_5min.total_ticks,
-                monitor_tick_5min.successful_ticks,
+                monitor_tick_5min.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) AS avg_latency,
+                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) AS min_latency,
+                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) AS max_latency,
+                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) AS median_latency,
+                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) AS p95_latency,
+                monitor_tick_5min.total_ticks AS total_ticks,
+                monitor_tick_5min.successful_ticks AS successful_ticks,
                 CASE 
                     WHEN monitor_tick_5min.total_ticks > 0 
                     THEN ROUND((monitor_tick_5min.successful_ticks::NUMERIC / monitor_tick_5min.total_ticks::NUMERIC) * 100, 2)
                     ELSE 0
-                END as success_rate
+                END AS success_rate
             FROM monitor_tick_5min
             WHERE monitor_tick_5min."monitorId" = p_monitor_id
                 AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '24 hours'
@@ -143,19 +143,19 @@ BEGIN
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                monitor_tick_30min.time_bucket::TIMESTAMPTZ,
-                ROUND(monitor_tick_30min.avg_latency::NUMERIC, 2) as avg_latency,
-                ROUND(monitor_tick_30min.min_latency::NUMERIC, 2) as min_latency,
-                ROUND(monitor_tick_30min.max_latency::NUMERIC, 2) as max_latency,
-                ROUND(monitor_tick_30min.median_latency::NUMERIC, 2) as median_latency,
-                ROUND(monitor_tick_30min.p95_latency::NUMERIC, 2) as p95_latency,
-                monitor_tick_30min.total_ticks,
-                monitor_tick_30min.successful_ticks,
+                monitor_tick_30min.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                ROUND(monitor_tick_30min.avg_latency::NUMERIC, 2) AS avg_latency,
+                ROUND(monitor_tick_30min.min_latency::NUMERIC, 2) AS min_latency,
+                ROUND(monitor_tick_30min.max_latency::NUMERIC, 2) AS max_latency,
+                ROUND(monitor_tick_30min.median_latency::NUMERIC, 2) AS median_latency,
+                ROUND(monitor_tick_30min.p95_latency::NUMERIC, 2) AS p95_latency,
+                monitor_tick_30min.total_ticks AS total_ticks,
+                monitor_tick_30min.successful_ticks AS successful_ticks,
                 CASE 
                     WHEN monitor_tick_30min.total_ticks > 0 
                     THEN ROUND((monitor_tick_30min.successful_ticks::NUMERIC / monitor_tick_30min.total_ticks::NUMERIC) * 100, 2)
                     ELSE 0
-                END as success_rate
+                END AS success_rate
             FROM monitor_tick_30min
             WHERE monitor_tick_30min."monitorId" = p_monitor_id
                 AND monitor_tick_30min.time_bucket >= NOW() - INTERVAL '7 days'
@@ -165,19 +165,19 @@ BEGIN
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                monitor_tick_2hour.time_bucket::TIMESTAMPTZ,
-                ROUND(monitor_tick_2hour.avg_latency::NUMERIC, 2) as avg_latency,
-                ROUND(monitor_tick_2hour.min_latency::NUMERIC, 2) as min_latency,
-                ROUND(monitor_tick_2hour.max_latency::NUMERIC, 2) as max_latency,
-                ROUND(monitor_tick_2hour.median_latency::NUMERIC, 2) as median_latency,
-                ROUND(monitor_tick_2hour.p95_latency::NUMERIC, 2) as p95_latency,
-                monitor_tick_2hour.total_ticks,
-                monitor_tick_2hour.successful_ticks,
+                monitor_tick_2hour.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                ROUND(monitor_tick_2hour.avg_latency::NUMERIC, 2) AS avg_latency,
+                ROUND(monitor_tick_2hour.min_latency::NUMERIC, 2) AS min_latency,
+                ROUND(monitor_tick_2hour.max_latency::NUMERIC, 2) AS max_latency,
+                ROUND(monitor_tick_2hour.median_latency::NUMERIC, 2) AS median_latency,
+                ROUND(monitor_tick_2hour.p95_latency::NUMERIC, 2) AS p95_latency,
+                monitor_tick_2hour.total_ticks AS total_ticks,
+                monitor_tick_2hour.successful_ticks AS successful_ticks,
                 CASE 
                     WHEN monitor_tick_2hour.total_ticks > 0 
                     THEN ROUND((monitor_tick_2hour.successful_ticks::NUMERIC / monitor_tick_2hour.total_ticks::NUMERIC) * 100, 2)
                     ELSE 0
-                END as success_rate
+                END AS success_rate
             FROM monitor_tick_2hour
             WHERE monitor_tick_2hour."monitorId" = p_monitor_id
                 AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days'
