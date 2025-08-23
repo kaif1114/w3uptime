@@ -99,7 +99,7 @@ BEGIN
         WHEN 'hour' THEN
             RETURN QUERY
             SELECT 
-                time_bucket::TIMESTAMPTZ,
+                monitor_tick_5min.time_bucket::TIMESTAMPTZ,
                 ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
                 ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
                 ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
@@ -113,15 +113,15 @@ BEGIN
                     ELSE 0
                 END as success_rate
             FROM monitor_tick_5min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '1 hour'
-                AND time_bucket <= NOW()
-            ORDER BY time_bucket ASC;
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour'
+                AND monitor_tick_5min.time_bucket <= NOW()
+            ORDER BY monitor_tick_5min.time_bucket ASC;
             
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                time_bucket::TIMESTAMPTZ,
+                monitor_tick_5min.time_bucket::TIMESTAMPTZ,
                 ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
                 ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
                 ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
@@ -135,15 +135,15 @@ BEGIN
                     ELSE 0
                 END as success_rate
             FROM monitor_tick_5min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '24 hours'
-                AND time_bucket <= NOW()
-            ORDER BY time_bucket ASC;
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '24 hours'
+                AND monitor_tick_5min.time_bucket <= NOW()
+            ORDER BY monitor_tick_5min.time_bucket ASC;
             
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                time_bucket::TIMESTAMPTZ,
+                monitor_tick_30min.time_bucket::TIMESTAMPTZ,
                 ROUND(monitor_tick_30min.avg_latency::NUMERIC, 2) as avg_latency,
                 ROUND(monitor_tick_30min.min_latency::NUMERIC, 2) as min_latency,
                 ROUND(monitor_tick_30min.max_latency::NUMERIC, 2) as max_latency,
@@ -157,15 +157,15 @@ BEGIN
                     ELSE 0
                 END as success_rate
             FROM monitor_tick_30min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '7 days'
-                AND time_bucket <= NOW()
-            ORDER BY time_bucket ASC;
+            WHERE monitor_tick_30min."monitorId" = p_monitor_id
+                AND monitor_tick_30min.time_bucket >= NOW() - INTERVAL '7 days'
+                AND monitor_tick_30min.time_bucket <= NOW()
+            ORDER BY monitor_tick_30min.time_bucket ASC;
             
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                time_bucket::TIMESTAMPTZ,
+                monitor_tick_2hour.time_bucket::TIMESTAMPTZ,
                 ROUND(monitor_tick_2hour.avg_latency::NUMERIC, 2) as avg_latency,
                 ROUND(monitor_tick_2hour.min_latency::NUMERIC, 2) as min_latency,
                 ROUND(monitor_tick_2hour.max_latency::NUMERIC, 2) as max_latency,
@@ -179,10 +179,10 @@ BEGIN
                     ELSE 0
                 END as success_rate
             FROM monitor_tick_2hour
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '30 days'
-                AND time_bucket <= NOW()
-            ORDER BY time_bucket ASC;
+            WHERE monitor_tick_2hour."monitorId" = p_monitor_id
+                AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days'
+                AND monitor_tick_2hour.time_bucket <= NOW()
+            ORDER BY monitor_tick_2hour.time_bucket ASC;
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
     END CASE;
@@ -221,8 +221,8 @@ BEGIN
                 ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_5min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '1 hour';
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour';
                 
         WHEN 'day' THEN
             RETURN QUERY
@@ -240,8 +240,8 @@ BEGIN
                 ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_5min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '24 hours';
+            WHERE monitor_tick_5min."monitorId" = p_monitor_id
+                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '24 hours';
                 
         WHEN 'week' THEN
             RETURN QUERY
@@ -259,8 +259,8 @@ BEGIN
                 ROUND(MAX(monitor_tick_30min.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_30min.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_30min
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '7 days';
+            WHERE monitor_tick_30min."monitorId" = p_monitor_id
+                AND monitor_tick_30min.time_bucket >= NOW() - INTERVAL '7 days';
                 
         WHEN 'month' THEN
             RETURN QUERY
@@ -278,8 +278,8 @@ BEGIN
                 ROUND(MAX(monitor_tick_2hour.max_latency)::NUMERIC, 2) as max_response_time,
                 ROUND(AVG(monitor_tick_2hour.p95_latency)::NUMERIC, 2) as p95_response_time
             FROM monitor_tick_2hour
-            WHERE "monitorId" = p_monitor_id
-                AND time_bucket >= NOW() - INTERVAL '30 days';
+            WHERE monitor_tick_2hour."monitorId" = p_monitor_id
+                AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days';
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
     END CASE;
