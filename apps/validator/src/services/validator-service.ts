@@ -37,9 +37,9 @@ export class ValidatorService extends EventEmitter {
     
     // Initialize signer based on paranoid mode
     if (securityConfig.paranoidMode) {
-      this.signer = new ParanoidMessageSigner(securityConfig.sessionTimeoutMinutes);
+      this.signer = new ParanoidMessageSigner(securityConfig.keystoreDir);
     } else {
-      this.signer = new SecureMessageSigner(securityConfig.sessionTimeoutMinutes);
+      this.signer = new SecureMessageSigner(securityConfig.keystoreDir);
     }
     
     this.monitor = new WebsiteMonitor(configManager.getMonitoringConfig());
