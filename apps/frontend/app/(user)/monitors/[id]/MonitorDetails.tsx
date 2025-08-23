@@ -1,5 +1,4 @@
-
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
@@ -11,10 +10,10 @@ import {
   Edit3,
   Pause,
   Play,
-  Send
+  Send,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from 'react';
+import { useState } from "react";
 import { MonitoringControls, TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 interface MonitorDetailsProps {
@@ -47,16 +46,15 @@ function getStatusText(status: MonitorStatus): string {
   }
 }
 
-
-type TabType = 'performance';
+type TabType = "performance";
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
-  
+
   // State for tabs and controls
-  const [activeTab, setActiveTab] = useState<TabType>('performance');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('day');
+  const [activeTab, setActiveTab] = useState<TabType>("performance");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -75,7 +73,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       setIsRefreshing(false);
     }, 2000);
   };
-
 
   if (isLoading) {
     return (
@@ -97,7 +94,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
     return (
       <div className="text-center py-12">
         <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Failed to load monitor details</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          Failed to load monitor details
+        </h3>
         <p className="text-muted-foreground">Please try refreshing the page.</p>
       </div>
     );
@@ -105,26 +104,30 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
 
   if (!monitor) return null;
 
-  const tabs = [
-    { id: 'performance', label: 'Performance', icon: BarChart3 }
-  ];
+  const tabs = [{ id: "performance", label: "Performance", icon: BarChart3 }];
 
   return (
     <div className="space-y-6">
       {/* Monitor Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`} />
+          <div
+            className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`}
+          />
           <div>
-            <h1 className="text-2xl font-bold">{monitor?.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</h1>
+            <h1 className="text-2xl font-bold">
+              {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            </h1>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <span className="text-lg font-medium">{getStatusText(monitor?.status)}</span>
+              <span className="text-lg font-medium">
+                {getStatusText(monitor?.status)}
+              </span>
               <span>•</span>
               <span>Checked every {monitor?.checkInterval / 60} minutes</span>
             </div>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" size="sm">
             <Send className="mr-2 h-4 w-4" />
@@ -136,9 +139,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
               Incidents
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handlePauseToggle}
             disabled={pauseMonitor.isPending}
           >
@@ -163,52 +166,15 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         </div>
       </div>
 
-      {/* Monitoring Controls */}
-      <MonitoringControls
-        timePeriod={timePeriod}
-        updateFrequency="5m" // This could be made dynamic later
-        autoRefresh={autoRefresh}
-        onTimePeriodChange={setTimePeriod}
-        onUpdateFrequencyChange={() => {}} // Placeholder for now
-        onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
-        onManualRefresh={handleManualRefresh}
-        lastUpdated={lastUpdated}
-        isRefreshing={isRefreshing}
-      />
-
       {/* Tab Navigation */}
       <div>
-        <div className="p-0"> 
-          <div className="border-b">
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`
-                      flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
-                      ${activeTab === tab.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }
-                    `}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-          
+        <div className="p-0">
           <div className="p-6">
             {/* Performance Content */}
             <div className="space-y-6">
               {/* Performance Tab Time Period Buttons */}
               <div className="flex flex-wrap gap-2">
-                {(['hour', 'day', 'week', 'month'] as const).map((period) => (
+                {(["hour", "day", "week", "month"] as const).map((period) => (
                   <Button
                     key={period}
                     variant={timePeriod === period ? "default" : "outline"}
@@ -220,12 +186,12 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
                 ))}
               </div>
 
-              <TimeSeriesChart 
+              <TimeSeriesChart
                 monitorId={monitorId}
                 period={timePeriod}
                 type="latency"
               />
-              <TimeSeriesChart 
+              <TimeSeriesChart
                 monitorId={monitorId}
                 period={timePeriod}
                 type="uptime"
