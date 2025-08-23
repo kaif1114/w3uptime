@@ -508,9 +508,10 @@ $$ LANGUAGE plpgsql;
 -- 7. TIME SERIES DATA FOR CHARTING (Optimized)
 -- =============================================================================
 
--- Drop function if it exists to avoid conflicts (try multiple signatures)
+-- Drop all possible function signatures to avoid conflicts
 DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS get_monitor_timeseries() CASCADE;
 DROP FUNCTION IF EXISTS get_monitor_timeseries CASCADE;
 
 CREATE OR REPLACE FUNCTION get_monitor_timeseries(
@@ -539,14 +540,14 @@ BEGIN
             ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
             SUM(agg.tick_count)::BIGINT AS total_checks
         FROM %I agg
-        WHERE agg."monitorId" = $1
+        WHERE agg."monitorId" = $1::TEXT
             AND agg.time_bucket >= NOW() - $2::INTERVAL
         GROUP BY agg.time_bucket
         ORDER BY agg.time_bucket ASC',
         query_info.aggregate_view
     );
     
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
+    RETURN QUERY EXECUTE query_text USING monitor_id_param::TEXT, query_info.time_range;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -715,3 +716,44 @@ SELECT * FROM get_monitor_data_custom_range(
 -- -- Check refresh job status
 -- SELECT job_id, application_name, last_run_status, next_start
 -- FROM timescaledb_information.jobs;
+
+
+-- DEBUG
+
+-- SELECT * FROM get_total_avg_latency('98b370f9-d267-407a-8afc-ff390e3c8777', 'hour')
+-- SELECT * FROM get_monitor_timeseries('98b370f9-d267-407a-8afc-ff390e3c8777', 'hour')
+-- CALL refresh_continuous_aggregate('monitor_tick_5min', NULL, NULL);
+-- SELECT * FROM pg_stat_activity WHERE application_name LIKE '%timescale%';
+-- SELECT _timescaledb_functions.restart_background_workers();
+-- SELECT * FROM pg_extension WHERE extname = 'timescaledb';
+-- SELECT * FROM timescaledb_information.jobs;
+-- SHOW timescaledb.max_background_workers;
+-- SHOW max_worker_processes;
+-- SHOW shared_preload_libraries;
+-- SELECT * FROM pg_stat_activity WHERE backend_type = 'background worker';
+-- CALL run_job(1003);
+-- CALL run_job(1004);
+-- CALL run_job(1005); 
+-- CALL run_job(1006);  
+
+
+
+-- SELECT COUNT(*), MIN("createdAt"), MAX("createdAt") 
+-- FROM "MonitorTick" 
+-- WHERE "monitorId" = '98b370f9-d267-407a-8afc-ff390e3c8777' 
+-- AND "createdAt" >= '2025-08-22 20:00:00+00';
+
+-- SELECT COUNT(*), MIN("createdAt"), MAX("createdAt") 
+-- FROM "MonitorTick" 
+-- WHERE "monitorId" = '98b370f9-d267-407a-8afc-ff390e3c8777' 
+-- AND "createdAt" >= NOW() - INTERVAL '1 hour';
+
+-- CALL refresh_continuous_aggregate('monitor_tick_5min', 
+--     '2025-08-22 19:00:00+00', 
+--     '2025-08-22 20:00:00+00'
+-- );
+
+
+-- For changing the timezone
+-- ALTER SYSTEM SET timezone = 'Asia/Karachi';
+-- SELECT pg_reload_conf();
