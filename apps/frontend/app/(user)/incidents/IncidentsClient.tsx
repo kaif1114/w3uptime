@@ -101,10 +101,10 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2 pb-2">
-        <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
@@ -130,132 +130,128 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
       </div>
 
       {/* Incidents Table */}
-      <div className="mt-2">
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-4 font-medium text-gray-500">
-                      Incident
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-500">
-                      Started at
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-500">
-                      Length
-                    </th>
-                    <th className="text-right p-4 font-medium text-gray-500"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedIncidents.map((incident) => (
-                    <tr
-                      key={incident.id}
-                      className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <td className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(incident.status)}
-                            <div>
-                              <div className="font-medium">
-                                {incident.title}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {incident.description}
-                              </div>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-4 font-medium text-gray-500">
+                    Incident
+                  </th>
+                  <th className="text-left p-4 font-medium text-gray-500">
+                    Started at
+                  </th>
+                  <th className="text-left p-4 font-medium text-gray-500">
+                    Length
+                  </th>
+                  <th className="text-right p-4 font-medium text-gray-500"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedIncidents.map((incident) => (
+                  <tr
+                    key={incident.id}
+                    className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(incident.status)}
+                          <div>
+                            <div className="font-medium">{incident.title}</div>
+                            <div className="text-sm text-gray-500">
+                              {incident.description}
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          {incident.comments.length > 0 ? (
-                            <>
-                              <MessageCircle className="h-4 w-4" />
-                              <span className="bg-gray-100 dark:bg-gray-800 text-xs px-1 rounded">
-                                {incident.comments.length}
-                              </span>
-                            </>
-                          ) : (
-                            <Calendar className="h-4 w-4" />
-                          )}
-                          {formatStartedAt(incident.createdAt)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              incident.status === "ACKNOWLEDGED"
-                                ? "bg-yellow-500"
-                                : incident.status === "ONGOING"
-                                  ? "bg-red-500"
-                                  : "bg-green-500"
-                            }`}
-                          />
-                          <Badge className={getStatusColor(incident.status)}>
-                            {incident.status}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleIncidentAction("view", incident)
-                              }
-                              className="flex items-center gap-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleIncidentAction("resolve", incident)
-                              }
-                              className="flex items-center gap-2"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              Resolve
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleIncidentAction("edit", incident)
-                              }
-                              className="flex items-center gap-2"
-                            >
-                              <Edit className="h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleIncidentAction("remove", incident)
-                              }
-                              className="flex items-center gap-2 text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        {incident.comments.length > 0 ? (
+                          <>
+                            <MessageCircle className="h-4 w-4" />
+                            <span className="bg-gray-100 dark:bg-gray-800 text-xs px-1 rounded">
+                              {incident.comments.length}
+                            </span>
+                          </>
+                        ) : (
+                          <Calendar className="h-4 w-4" />
+                        )}
+                        {formatStartedAt(incident.createdAt)}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            incident.status === "ACKNOWLEDGED"
+                              ? "bg-yellow-500"
+                              : incident.status === "ONGOING"
+                                ? "bg-red-500"
+                                : "bg-green-500"
+                          }`}
+                        />
+                        <Badge className={getStatusColor(incident.status)}>
+                          {incident.status}
+                        </Badge>
+                      </div>
+                    </td>
+                    <td className="p-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleIncidentAction("view", incident)
+                            }
+                            className="flex items-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleIncidentAction("resolve", incident)
+                            }
+                            className="flex items-center gap-2"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Resolve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleIncidentAction("edit", incident)
+                            }
+                            className="flex items-center gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleIncidentAction("remove", incident)
+                            }
+                            className="flex items-center gap-2 text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -297,7 +293,7 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
       )}
 
       {/* Footer */}
-      <div className="text-center text-sm text-gray-500 py-8">
+      <div className="text-center text-sm text-gray-500 py-6">
         <div className="flex items-center justify-center gap-2">
           <span>?</span>
           <span>Need help? Let us know at</span>
