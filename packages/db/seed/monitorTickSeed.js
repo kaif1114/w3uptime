@@ -90,28 +90,30 @@ async function seedMonitorTicks() {
   const now = new Date();
   const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
   
-  // Generate ticks every 5 minutes for the last 2 hours (24 data points)
-  for (let i = 0; i < 24; i++) {
-    const tickTime = new Date(twoHoursAgo.getTime() + i * 5 * 60 * 1000);
+  // Generate 2 ticks for each minute for the last 2 hours (240 data points)
+  for (let i = 0; i < 120; i++) {
+    const tickTime = new Date(twoHoursAgo.getTime() + i * 60 * 1000);
     
-    // Create one tick at each time point from the specified validator
-    const location = getRandomLocation();
-    const status = getRandomStatus();
-    const latency = getRandomLatency(status);
-    
-    monitorTicks.push({
-      id: uuidv4(),
-      monitorId: MONITOR_ID,
-      validatorId: VALIDATOR_ID,
-      status,
-      latency,
-      longitude: location.longitude,
-      latitude: location.latitude,
-      countryCode: location.countryCode,
-      continentCode: location.continentCode,
-      city: location.city,
-      createdAt: tickTime
-    });
+    // Create 2 ticks per minute
+    for (let j = 0; j < 2; j++) {
+      const location = getRandomLocation();
+      const status = getRandomStatus();
+      const latency = getRandomLatency(status);
+      
+      monitorTicks.push({
+        id: uuidv4(),
+        monitorId: MONITOR_ID,
+        validatorId: VALIDATOR_ID,
+        status,
+        latency,
+        longitude: location.longitude,
+        latitude: location.latitude,
+        countryCode: location.countryCode,
+        continentCode: location.continentCode,
+        city: location.city,
+        createdAt: new Date(tickTime.getTime() + j * 30 * 1000) // Spread within the minute
+      });
+    }
   }
   
   console.log(`Creating ${monitorTicks.length} monitor ticks...`);
