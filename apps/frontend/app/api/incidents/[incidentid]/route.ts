@@ -7,8 +7,7 @@ const updateIncidentSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).optional(),
   description: z.string(),
-  severity: z.enum(["CRITICAL", "MAJOR", "MINOR", "MAINTENANCE"]).optional(),
-  status: z.enum(["INVESTIGATING", "IDENTIFIED", "MONITORING", "RESOLVED", "POSTMORTEM"]).optional(),
+  status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]).optional(),
   escalated: z.boolean().optional(),
   downtime: z.number().int().positive().optional(),
 });

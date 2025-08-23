@@ -7,18 +7,7 @@ import { Prisma } from "@prisma/client";
 const createIncidentSchema = z.object({
   title: z.string().min(1),
   description: z.string(),
-  severity: z
-    .enum(["CRITICAL", "MAJOR", "MINOR", "MAINTENANCE"])
-    .default("MINOR"),
-  status: z
-    .enum([
-      "INVESTIGATING",
-      "IDENTIFIED",
-      "MONITORING",
-      "RESOLVED",
-      "POSTMORTEM",
-    ])
-    .default("INVESTIGATING"),
+  status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]).default("ONGOING"),
   monitorId: z.string().min(1),
   escalated: z.boolean().default(false),
 });
@@ -46,7 +35,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { title, description, severity, status, escalated } = validation.data;
+    const { title, description, status, escalated } = validation.data;
     // Use hardcoded monitor ID instead of from request body
     const monitorId = validation.data.monitorId;
 
@@ -70,7 +59,6 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       data: {
         title,
         description,
-        severity,
         status,
         monitorId,
         escalated,
