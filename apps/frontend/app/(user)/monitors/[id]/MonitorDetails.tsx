@@ -5,26 +5,18 @@ import { Button } from "@/components/ui/button";
 import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
-  Activity,
   AlertTriangle,
   BarChart3,
   Calendar,
   Edit3,
-  Globe,
   Pause,
   Play,
-  Send,
-  Shield
+  Send
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from 'react';
 import { MonitoringControls, TimePeriod } from "./MonitoringControls";
-import { AnalyticsOverview } from "./AnalyticsOverview";
 import { TimeSeriesChart } from "./TimeSeriesChart";
-import { ValidatorMap } from "./ValidatorMap";
-import { MapboxGlobeMap } from "./MapboxGlobeMap";
-import { UptimeIncidentPanel } from "./UptimeIncidentPanel";
-import { mockData } from "./mockData";
 interface MonitorDetailsProps {
   monitorId: string;
 }
@@ -56,14 +48,14 @@ function getStatusText(status: MonitorStatus): string {
 }
 
 
-type TabType = 'overview' | 'global' | 'uptime' | 'performance';
+type TabType = 'performance';
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
   const pauseMonitor = usePauseMonitor();
   
   // State for tabs and controls
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('performance');
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('day');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -114,9 +106,6 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   if (!monitor) return null;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: Activity },
-    { id: 'global', label: 'Global Map', icon: Globe },
-    { id: 'uptime', label: 'Uptime & Incidents', icon: Shield },
     { id: 'performance', label: 'Performance', icon: BarChart3 }
   ];
 
@@ -215,70 +204,33 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           </div>
           
           <div className="p-6">
-            {/* Tab Content */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                {/* commenting this out because we will implement it later */}
-                {/* <AnalyticsOverview monitorId={monitorId} period={timePeriod} /> */}
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-semibold">Overview</h2>
-                    <p>This is the overview tab. It will display the monitor's performance data.</p>
-                  </div>
-                </div>
+            {/* Performance Content */}
+            <div className="space-y-6">
+              {/* Performance Tab Time Period Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {(['hour', 'day', 'week', 'month'] as const).map((period) => (
+                  <Button
+                    key={period}
+                    variant={timePeriod === period ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimePeriod(period)}
+                  >
+                    {period.charAt(0).toUpperCase() + period.slice(1)}
+                  </Button>
+                ))}
               </div>
-            )}
 
-            {activeTab === 'global' && (
-              <div className="space-y-6">
-                <MapboxGlobeMap monitorId={monitorId} />
-                <ValidatorMap monitorId={monitorId} />
-              </div>
-            )}
-
-            {activeTab === 'uptime' && (
-              // commenting this out because we will implement it later
-              // <UptimeIncidentPanel
-              //   uptimeData={mockData.uptimeData}
-              //   incidents={mockData.incidents}
-              //   monitorName={monitor?.url || 'Monitor'}
-              // />
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold">Uptime & Incidents</h2>
-                  <p>This is the uptime & incidents tab. It will display the monitor's uptime and incidents.</p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'performance' && (
-              <div className="space-y-6">
-                {/* Performance Tab Time Period Buttons */}
-                <div className="flex flex-wrap gap-2">
-                  {(['hour', 'day', 'week', 'month'] as const).map((period) => (
-                    <Button
-                      key={period}
-                      variant={timePeriod === period ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setTimePeriod(period)}
-                    >
-                      {period.charAt(0).toUpperCase() + period.slice(1)}
-                    </Button>
-                  ))}
-                </div>
-
-                <TimeSeriesChart 
-                  monitorId={monitorId}
-                  period={timePeriod}
-                  type="latency"
-                />
-                <TimeSeriesChart 
-                  monitorId={monitorId}
-                  period={timePeriod}
-                  type="uptime"
-                />
-              </div>
-            )}
+              <TimeSeriesChart 
+                monitorId={monitorId}
+                period={timePeriod}
+                type="latency"
+              />
+              <TimeSeriesChart 
+                monitorId={monitorId}
+                period={timePeriod}
+                type="uptime"
+              />
+            </div>
           </div>
         </div>
       </div>
