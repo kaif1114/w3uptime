@@ -1,820 +1,252 @@
 -- 1. First, ensure TimescaleDB extension is enabled
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
--- 2. Convert MonitorTick table to hypertable
--- This should be run AFTER your Prisma migration creates the table
--- Note: The table now uses a composite primary key (id, createdAt) to support hypertable partitioning
-SELECT create_hypertable('"MonitorTick"', 'createdAt', 
-  chunk_time_interval => INTERVAL '1 day',
-  if_not_exists => TRUE
-);
+-- 2. Convert MonitorTick table to hypertable (run this once after table creation)
+-- This should be done after the Prisma migration creates the table
+SELECT create_hypertable('"MonitorTick"', 'createdAt', if_not_exists => TRUE);
 
--- 3. Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_monitor_tick_monitor_id_time 
-ON "MonitorTick" ("monitorId", "createdAt" DESC);
+-- 3. Create continuous aggregates for different time intervals
 
-CREATE INDEX IF NOT EXISTS idx_monitor_tick_country_time 
-ON "MonitorTick" ("countryCode", "createdAt" DESC);
-
-CREATE INDEX IF NOT EXISTS idx_monitor_tick_continent_time 
-ON "MonitorTick" ("continentCode", "createdAt" DESC);
-
-CREATE INDEX IF NOT EXISTS idx_monitor_tick_city_time 
-ON "MonitorTick" ("city", "createdAt" DESC);
-
-CREATE INDEX IF NOT EXISTS idx_monitor_tick_status_time 
-ON "MonitorTick" ("status", "createdAt" DESC);
-
--- =============================================================================
--- CONTINUOUS AGGREGATES SETUP
--- =============================================================================
-
--- 4a. Create 5-minute continuous aggregate (for hour period)
-CREATE MATERIALIZED VIEW monitor_tick_5min
+-- 3a. 5-minute continuous aggregate (for day view - 288 data points over 24 hours)
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_5min
 WITH (timescaledb.continuous) AS
 SELECT 
     time_bucket('5 minutes', "createdAt") AS time_bucket,
     "monitorId",
-    "countryCode",
-    "continentCode",
-    "city",
-    "status",
-    AVG("latency") AS avg_latency,
-    MIN("latency") AS min_latency,
-    MAX("latency") AS max_latency,
-    COUNT(*) AS tick_count,
-    COUNT(CASE WHEN "status" = 'GOOD' THEN 1 END) AS up_count,
-    COUNT(CASE WHEN "status" = 'BAD' THEN 1 END) AS down_count
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
 FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId", "countryCode", "continentCode", "city", "status";
+GROUP BY time_bucket, "monitorId";
 
--- 4b. Create 15-minute continuous aggregate (for day period)
-CREATE MATERIALIZED VIEW monitor_tick_15min
+-- 3b. 30-minute continuous aggregate (for week view - 336 data points over 7 days)
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_30min
 WITH (timescaledb.continuous) AS
 SELECT 
-    time_bucket('15 minutes', "createdAt") AS time_bucket,
+    time_bucket('30 minutes', "createdAt") AS time_bucket,
     "monitorId",
-    "countryCode",
-    "continentCode",
-    "city",
-    "status",
-    AVG("latency") AS avg_latency,
-    MIN("latency") AS min_latency,
-    MAX("latency") AS max_latency,
-    COUNT(*) AS tick_count,
-    COUNT(CASE WHEN "status" = 'GOOD' THEN 1 END) AS up_count,
-    COUNT(CASE WHEN "status" = 'BAD' THEN 1 END) AS down_count
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
 FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId", "countryCode", "continentCode", "city", "status";
+GROUP BY time_bucket, "monitorId";
 
--- 4c. Create hourly continuous aggregate (for week period)
-CREATE MATERIALIZED VIEW monitor_tick_hourly
+-- 3c. 2-hour continuous aggregate (for month view - 360 data points over 30 days)
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_2hour
 WITH (timescaledb.continuous) AS
 SELECT 
-    time_bucket('1 hour', "createdAt") AS time_bucket,
+    time_bucket('2 hours', "createdAt") AS time_bucket,
     "monitorId",
-    "countryCode",
-    "continentCode",
-    "city",
-    "status",
-    AVG("latency") AS avg_latency,
-    MIN("latency") AS min_latency,
-    MAX("latency") AS max_latency,
-    COUNT(*) AS tick_count,
-    COUNT(CASE WHEN "status" = 'GOOD' THEN 1 END) AS up_count,
-    COUNT(CASE WHEN "status" = 'BAD' THEN 1 END) AS down_count
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
 FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId", "countryCode", "continentCode", "city", "status";
+GROUP BY time_bucket, "monitorId";
 
--- 4d. Create 6-hour continuous aggregate (for month period)
-CREATE MATERIALIZED VIEW monitor_tick_6hour
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('6 hours', "createdAt") AS time_bucket,
-    "monitorId",
-    "countryCode",
-    "continentCode",
-    "city",
-    "status",
-    AVG("latency") AS avg_latency,
-    MIN("latency") AS min_latency,
-    MAX("latency") AS max_latency,
-    COUNT(*) AS tick_count,
-    COUNT(CASE WHEN "status" = 'GOOD' THEN 1 END) AS up_count,
-    COUNT(CASE WHEN "status" = 'BAD' THEN 1 END) AS down_count
-FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId", "countryCode", "continentCode", "city", "status";
-
--- =============================================================================
--- REFRESH POLICIES (Staggered for performance)
--- =============================================================================
-
--- 5-minute aggregate refresh policy (keep only last 2 hours of data)
+-- 4. Create refresh policies for continuous aggregates
+-- Refresh every 30 seconds for 5-minute aggregate (for near real-time updates)
 SELECT add_continuous_aggregate_policy('monitor_tick_5min',
-    start_offset => INTERVAL '2 hours',
+    start_offset => INTERVAL '1 hour',
+    end_offset => INTERVAL '1 minute',
+    schedule_interval => INTERVAL '30 seconds',
+    if_not_exists => TRUE);
+
+-- Refresh every 5 minutes for 30-minute aggregate
+SELECT add_continuous_aggregate_policy('monitor_tick_30min',
+    start_offset => INTERVAL '6 hours', 
     end_offset => INTERVAL '5 minutes',
-    schedule_interval => INTERVAL '5 minutes');
+    schedule_interval => INTERVAL '5 minutes',
+    if_not_exists => TRUE);
 
--- 15-minute aggregate refresh policy (keep only last 2 days of data)
-SELECT add_continuous_aggregate_policy('monitor_tick_15min',
-    start_offset => INTERVAL '2 days',
-    end_offset => INTERVAL '15 minutes',
-    schedule_interval => INTERVAL '15 minutes');
+-- Refresh every 15 minutes for 2-hour aggregate
+SELECT add_continuous_aggregate_policy('monitor_tick_2hour',
+    start_offset => INTERVAL '1 day',
+    end_offset => INTERVAL '15 minutes', 
+    schedule_interval => INTERVAL '15 minutes',
+    if_not_exists => TRUE);
 
--- Hourly aggregate refresh policy (keep only last 8 days of data)
-SELECT add_continuous_aggregate_policy('monitor_tick_hourly',
-    start_offset => INTERVAL '8 days',
-    end_offset => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour');
+-- 5. Create functions to query monitor timeseries data
 
--- 6-hour aggregate refresh policy (keep all data older than 8 days)
-SELECT add_continuous_aggregate_policy('monitor_tick_6hour',
-    start_offset => INTERVAL '32 days',
-    end_offset => INTERVAL '6 hours',
-    schedule_interval => INTERVAL '6 hours');
-
--- =============================================================================
--- RETENTION POLICIES (Optional - to manage storage)
--- =============================================================================
-
--- Keep 5-minute aggregates for only 2 hours
-SELECT add_retention_policy('monitor_tick_5min', INTERVAL '2 hours');
-
--- Keep 15-minute aggregates for only 2 days
-SELECT add_retention_policy('monitor_tick_15min', INTERVAL '2 days');
-
--- Keep hourly aggregates for only 8 days
-SELECT add_retention_policy('monitor_tick_hourly', INTERVAL '8 days');
-
--- Keep 6-hour aggregates indefinitely (no retention policy)
-
--- =============================================================================
--- UTILITY FUNCTIONS
--- =============================================================================
-
--- Enhanced function to get time range and appropriate granularity
-CREATE OR REPLACE FUNCTION get_time_range_and_granularity(period_type TEXT)
-RETURNS TABLE(time_range INTERVAL, granularity TEXT, aggregate_view TEXT) AS $$
+-- Function to get monitor timeseries for different time periods
+CREATE OR REPLACE FUNCTION get_monitor_timeseries(
+    p_monitor_id UUID,
+    p_period TEXT DEFAULT 'day'
+) RETURNS TABLE (
+    timestamp TIMESTAMPTZ,
+    avg_latency NUMERIC,
+    min_latency NUMERIC,
+    max_latency NUMERIC,
+    median_latency NUMERIC,
+    p95_latency NUMERIC,
+    total_ticks BIGINT,
+    successful_ticks BIGINT,
+    success_rate NUMERIC
+) AS $$
 BEGIN
-    CASE period_type
-        WHEN 'hour' THEN 
-            RETURN QUERY SELECT INTERVAL '1 hour', '5 minutes'::TEXT, 'monitor_tick_5min'::TEXT;
-        WHEN 'day' THEN 
-            RETURN QUERY SELECT INTERVAL '1 day', '15 minutes'::TEXT, 'monitor_tick_15min'::TEXT;
-        WHEN 'week' THEN 
-            RETURN QUERY SELECT INTERVAL '1 week', '1 hour'::TEXT, 'monitor_tick_hourly'::TEXT;
-        WHEN 'month' THEN 
-            RETURN QUERY SELECT INTERVAL '30 days', '6 hours'::TEXT, 'monitor_tick_6hour'::TEXT;
-        ELSE 
-            RETURN QUERY SELECT INTERVAL '1 day', '15 minutes'::TEXT, 'monitor_tick_15min'::TEXT;
+    CASE p_period
+        WHEN 'day' THEN
+            RETURN QUERY
+            SELECT 
+                time_bucket::TIMESTAMPTZ,
+                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
+                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
+                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
+                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) as median_latency,
+                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) as p95_latency,
+                monitor_tick_5min.total_ticks,
+                monitor_tick_5min.successful_ticks,
+                CASE 
+                    WHEN monitor_tick_5min.total_ticks > 0 
+                    THEN ROUND((monitor_tick_5min.successful_ticks::NUMERIC / monitor_tick_5min.total_ticks::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as success_rate
+            FROM monitor_tick_5min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '24 hours'
+                AND time_bucket <= NOW()
+            ORDER BY time_bucket ASC;
+            
+        WHEN 'week' THEN
+            RETURN QUERY
+            SELECT 
+                time_bucket::TIMESTAMPTZ,
+                ROUND(monitor_tick_30min.avg_latency::NUMERIC, 2) as avg_latency,
+                ROUND(monitor_tick_30min.min_latency::NUMERIC, 2) as min_latency,
+                ROUND(monitor_tick_30min.max_latency::NUMERIC, 2) as max_latency,
+                ROUND(monitor_tick_30min.median_latency::NUMERIC, 2) as median_latency,
+                ROUND(monitor_tick_30min.p95_latency::NUMERIC, 2) as p95_latency,
+                monitor_tick_30min.total_ticks,
+                monitor_tick_30min.successful_ticks,
+                CASE 
+                    WHEN monitor_tick_30min.total_ticks > 0 
+                    THEN ROUND((monitor_tick_30min.successful_ticks::NUMERIC / monitor_tick_30min.total_ticks::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as success_rate
+            FROM monitor_tick_30min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '7 days'
+                AND time_bucket <= NOW()
+            ORDER BY time_bucket ASC;
+            
+        WHEN 'month' THEN
+            RETURN QUERY
+            SELECT 
+                time_bucket::TIMESTAMPTZ,
+                ROUND(monitor_tick_2hour.avg_latency::NUMERIC, 2) as avg_latency,
+                ROUND(monitor_tick_2hour.min_latency::NUMERIC, 2) as min_latency,
+                ROUND(monitor_tick_2hour.max_latency::NUMERIC, 2) as max_latency,
+                ROUND(monitor_tick_2hour.median_latency::NUMERIC, 2) as median_latency,
+                ROUND(monitor_tick_2hour.p95_latency::NUMERIC, 2) as p95_latency,
+                monitor_tick_2hour.total_ticks,
+                monitor_tick_2hour.successful_ticks,
+                CASE 
+                    WHEN monitor_tick_2hour.total_ticks > 0 
+                    THEN ROUND((monitor_tick_2hour.successful_ticks::NUMERIC / monitor_tick_2hour.total_ticks::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as success_rate
+            FROM monitor_tick_2hour
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '30 days'
+                AND time_bucket <= NOW()
+            ORDER BY time_bucket ASC;
+        ELSE
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
 
--- =============================================================================
--- OPTIMIZED QUERY FUNCTIONS
--- =============================================================================
-
--- =============================================================================
--- 1. AVERAGE LATENCY BY COUNTRY (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_avg_latency_by_country(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    country_code TEXT,
-    avg_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    -- Get appropriate aggregate view and time range
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    -- Build dynamic query based on appropriate aggregate
-    query_text := FORMAT('
-        SELECT 
-            agg."countryCode"::TEXT,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            SUM(agg.tick_count)::BIGINT AS sample_count
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL
-        GROUP BY agg."countryCode"
-        ORDER BY avg_latency ASC',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 2. AVERAGE LATENCY BY CONTINENT (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_avg_latency_by_continent(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    continent_code TEXT,
-    avg_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            agg."continentCode"::TEXT,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            SUM(agg.tick_count)::BIGINT AS sample_count
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL
-        GROUP BY agg."continentCode"
-        ORDER BY avg_latency ASC',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 3. AVERAGE LATENCY BY CITY (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_avg_latency_by_city(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    city TEXT,
-    country_code TEXT,
-    avg_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            agg."city"::TEXT,
-            agg."countryCode"::TEXT,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            SUM(agg.tick_count)::BIGINT AS sample_count
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL
-        GROUP BY agg."city", agg."countryCode"
-        ORDER BY avg_latency ASC',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 4. BEST AND WORST PERFORMING REGIONS (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_best_performing_region(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    region_type TEXT,
-    region_name TEXT,
-    avg_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        WITH regional_performance AS (
-            SELECT ''Country'' as region_type, agg."countryCode" as region_name, 
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."countryCode"
-            
-            UNION ALL
-            
-            SELECT ''Continent'' as region_type, agg."continentCode" as region_name,
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."continentCode"
-            
-            UNION ALL
-            
-            SELECT ''City'' as region_type, agg."city" as region_name,
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."city"
-        )
-        SELECT rp.region_type::TEXT, rp.region_name::TEXT, 
-               ROUND(rp.avg_latency::NUMERIC, 2), rp.sample_count
-        FROM regional_performance rp
-        WHERE rp.avg_latency IS NOT NULL
-        ORDER BY rp.avg_latency ASC
-        LIMIT 1',
-        query_info.aggregate_view, query_info.aggregate_view, query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to get worst performing region
-CREATE OR REPLACE FUNCTION get_worst_performing_region(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    region_type TEXT,
-    region_name TEXT,
-    avg_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        WITH regional_performance AS (
-            SELECT ''Country'' as region_type, agg."countryCode" as region_name, 
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."countryCode"
-            
-            UNION ALL
-            
-            SELECT ''Continent'' as region_type, agg."continentCode" as region_name,
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."continentCode"
-            
-            UNION ALL
-            
-            SELECT ''City'' as region_type, agg."city" as region_name,
-                   SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0) as avg_latency, 
-                   SUM(agg.tick_count)::BIGINT as sample_count
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= NOW() - $2::INTERVAL
-            GROUP BY agg."city"
-        )
-        SELECT rp.region_type::TEXT, rp.region_name::TEXT, 
-               ROUND(rp.avg_latency::NUMERIC, 2), rp.sample_count
-        FROM regional_performance rp
-        WHERE rp.avg_latency IS NOT NULL
-        ORDER BY rp.avg_latency DESC
-        LIMIT 1',
-        query_info.aggregate_view, query_info.aggregate_view, query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 5. TOTAL AVERAGE LATENCY (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_total_avg_latency(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    avg_latency NUMERIC,
-    min_latency NUMERIC,
-    max_latency NUMERIC,
-    sample_count BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            ROUND(MIN(agg.min_latency)::NUMERIC, 2) AS min_latency,
-            ROUND(MAX(agg.max_latency)::NUMERIC, 2) AS max_latency,
-            SUM(agg.tick_count)::BIGINT AS sample_count
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 6. UPTIME DATA (Optimized)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_uptime_data(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
+-- Function to get overall monitor statistics
+CREATE OR REPLACE FUNCTION get_monitor_stats(
+    p_monitor_id UUID,
+    p_period TEXT DEFAULT 'day'
+) RETURNS TABLE (
     total_checks BIGINT,
     successful_checks BIGINT,
     failed_checks BIGINT,
     uptime_percentage NUMERIC,
-    availability_sla NUMERIC
+    avg_response_time NUMERIC,
+    min_response_time NUMERIC,
+    max_response_time NUMERIC,
+    p95_response_time NUMERIC
 ) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
 BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            SUM(agg.tick_count)::BIGINT AS total_checks,
-            SUM(agg.up_count)::BIGINT AS successful_checks,
-            SUM(agg.down_count)::BIGINT AS failed_checks,
-            ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 4) AS uptime_percentage,
-            ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS availability_sla
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 7. TIME SERIES DATA FOR CHARTING (Optimized)
--- =============================================================================
-
--- Drop all possible function signatures to avoid conflicts
--- DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT, TEXT) CASCADE;
--- DROP FUNCTION IF EXISTS get_monitor_timeseries(TEXT) CASCADE;
--- DROP FUNCTION IF EXISTS get_monitor_timeseries() CASCADE;
--- DROP FUNCTION IF EXISTS get_monitor_timeseries CASCADE;
-
-CREATE OR REPLACE FUNCTION get_monitor_timeseries(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    time_bucket TIMESTAMP WITH TIME ZONE,
-    avg_latency NUMERIC,
-    uptime_percentage NUMERIC,
-    total_checks BIGINT
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            agg.time_bucket,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-            SUM(agg.tick_count)::BIGINT AS total_checks
-        FROM %I agg
-        WHERE agg."monitorId" = $1::TEXT
-            AND agg.time_bucket >= NOW() - $2::INTERVAL
-        GROUP BY agg.time_bucket
-        ORDER BY agg.time_bucket ASC',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param::TEXT, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION get_monitor_timeseries_hybrid(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    time_bucket TIMESTAMP WITH TIME ZONE,
-    avg_latency NUMERIC,
-    uptime_percentage NUMERIC,
-    total_checks BIGINT
-) AS $$
-DECLARE
-    time_range INTERVAL;
-    bucket_interval TEXT;
-    source_aggregate TEXT;
-    query_text TEXT;
-    end_time TIMESTAMP WITH TIME ZONE;
-    start_time TIMESTAMP WITH TIME ZONE;
-    aggregate_cutoff TIMESTAMP WITH TIME ZONE;
-BEGIN
-    -- Use current time (no lag for the hybrid approach)
-    end_time := NOW();
-    aggregate_cutoff := NOW() - INTERVAL '5 minutes';
-    
-    -- Set parameters based on period
-    CASE period_param
-        WHEN 'hour' THEN 
-            time_range := INTERVAL '1 hour';
-            bucket_interval := '5 minutes';
-            source_aggregate := 'monitor_tick_5min';
-        WHEN 'day' THEN 
-            time_range := INTERVAL '1 day';
-            bucket_interval := '15 minutes';
-            source_aggregate := 'monitor_tick_15min';
-        WHEN 'week' THEN 
-            time_range := INTERVAL '1 week';
-            bucket_interval := '1 hour';
-            source_aggregate := 'monitor_tick_hourly';
-        WHEN 'month' THEN 
-            time_range := INTERVAL '30 days';
-            bucket_interval := '6 hours';
-            source_aggregate := 'monitor_tick_6hour';
-        ELSE 
-            time_range := INTERVAL '1 day';
-            bucket_interval := '15 minutes';
-            source_aggregate := 'monitor_tick_15min';
-    END CASE;
-    
-    start_time := end_time - time_range;
-    
-    -- Hybrid query: use aggregates for older data, raw data for recent data
-    query_text := FORMAT('
-        WITH time_series AS (
-            SELECT generate_series(
-                time_bucket(''%s'', $3::timestamptz),
-                time_bucket(''%s'', $2::timestamptz),
-                ''%s''::interval
-            ) AS time_bucket
-        ),
-        -- Data from aggregates (older than 5 minutes)
-        aggregate_data AS (
+    CASE p_period
+        WHEN 'day' THEN
+            RETURN QUERY
             SELECT 
-                time_bucket(''%s'', agg.time_bucket) AS time_bucket,
-                ROUND(
-                    (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                    2
-                ) AS avg_latency,
-                ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-                SUM(agg.tick_count)::BIGINT AS total_checks
-            FROM %I agg
-            WHERE agg."monitorId" = $1
-                AND agg.time_bucket >= $3
-                AND agg.time_bucket < $4
-            GROUP BY time_bucket(''%s'', agg.time_bucket)
-        ),
-        -- Data from raw table (recent 5 minutes)
-        raw_data AS (
+                COALESCE(SUM(monitor_tick_5min.total_ticks), 0) as total_checks,
+                COALESCE(SUM(monitor_tick_5min.successful_ticks), 0) as successful_checks,
+                COALESCE(SUM(monitor_tick_5min.total_ticks - monitor_tick_5min.successful_ticks), 0) as failed_checks,
+                CASE 
+                    WHEN SUM(monitor_tick_5min.total_ticks) > 0 
+                    THEN ROUND((SUM(monitor_tick_5min.successful_ticks)::NUMERIC / SUM(monitor_tick_5min.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as uptime_percentage,
+                ROUND(AVG(monitor_tick_5min.avg_latency)::NUMERIC, 2) as avg_response_time,
+                ROUND(MIN(monitor_tick_5min.min_latency)::NUMERIC, 2) as min_response_time,
+                ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
+                ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
+            FROM monitor_tick_5min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '24 hours';
+                
+        WHEN 'week' THEN
+            RETURN QUERY
             SELECT 
-                time_bucket(''%s'', mt."createdAt") AS time_bucket,
-                ROUND(AVG(mt."latency")::NUMERIC, 2) AS avg_latency,
-                ROUND((COUNT(CASE WHEN mt."status" = ''GOOD'' THEN 1 END)::NUMERIC / NULLIF(COUNT(*), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-                COUNT(*)::BIGINT AS total_checks
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = $1
-                AND mt."createdAt" >= $4
-                AND mt."createdAt" <= $2
-            GROUP BY time_bucket(''%s'', mt."createdAt")
-        ),
-        -- Combine both sources
-        combined_data AS (
-            SELECT * FROM aggregate_data
-            UNION ALL
-            SELECT * FROM raw_data
-        )
-        SELECT 
-            ts.time_bucket,
-            COALESCE(cd.avg_latency, 0) AS avg_latency,
-            COALESCE(cd.uptime_percentage, 100.0) AS uptime_percentage,
-            COALESCE(cd.total_checks, 0) AS total_checks
-        FROM time_series ts
-        LEFT JOIN combined_data cd ON ts.time_bucket = cd.time_bucket
-        ORDER BY ts.time_bucket ASC',
-        bucket_interval, bucket_interval, bucket_interval, bucket_interval,
-        source_aggregate, bucket_interval, bucket_interval, bucket_interval
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, end_time, start_time, aggregate_cutoff;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- 8. SAMPLE COUNT BY COUNTRY (New function for world map)
--- =============================================================================
-CREATE OR REPLACE FUNCTION get_sample_count_by_country(
-    monitor_id_param TEXT,
-    period_param TEXT DEFAULT 'day'
-)
-RETURNS TABLE(
-    country_code TEXT,
-    sample_count BIGINT,
-    avg_latency NUMERIC
-) AS $$
-DECLARE
-    query_info RECORD;
-    query_text TEXT;
-BEGIN
-    SELECT * INTO query_info FROM get_time_range_and_granularity(period_param) LIMIT 1;
-    
-    query_text := FORMAT('
-        SELECT 
-            agg."countryCode"::TEXT,
-            SUM(agg.tick_count)::BIGINT AS sample_count,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= NOW() - $2::INTERVAL
-        GROUP BY agg."countryCode"
-        ORDER BY sample_count DESC',
-        query_info.aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, query_info.time_range;
-END;
-$$ LANGUAGE plpgsql;
-
--- =============================================================================
--- CUSTOM TIME RANGE FUNCTIONS (For future use)
--- =============================================================================
-
--- Function to handle custom time ranges
-CREATE OR REPLACE FUNCTION get_monitor_data_custom_range(
-    monitor_id_param TEXT,
-    start_time TIMESTAMP WITH TIME ZONE,
-    end_time TIMESTAMP WITH TIME ZONE,
-    desired_granularity TEXT DEFAULT 'auto'
-)
-RETURNS TABLE(
-    time_bucket TIMESTAMP WITH TIME ZONE,
-    avg_latency NUMERIC,
-    uptime_percentage NUMERIC,
-    total_checks BIGINT,
-    data_source TEXT
-) AS $$
-DECLARE
-    time_diff INTERVAL;
-    chosen_granularity TEXT;
-    aggregate_view TEXT;
-    query_text TEXT;
-BEGIN
-    time_diff := end_time - start_time;
-    
-    -- Auto-select granularity based on time range
-    IF desired_granularity = 'auto' THEN
-        IF time_diff <= INTERVAL '2 hours' THEN
-            chosen_granularity := '5 minutes';
-            aggregate_view := 'monitor_tick_5min';
-        ELSIF time_diff <= INTERVAL '2 days' THEN
-            chosen_granularity := '15 minutes';
-            aggregate_view := 'monitor_tick_15min';
-        ELSIF time_diff <= INTERVAL '8 days' THEN
-            chosen_granularity := '1 hour';
-            aggregate_view := 'monitor_tick_hourly';
+                COALESCE(SUM(monitor_tick_30min.total_ticks), 0) as total_checks,
+                COALESCE(SUM(monitor_tick_30min.successful_ticks), 0) as successful_checks,
+                COALESCE(SUM(monitor_tick_30min.total_ticks - monitor_tick_30min.successful_ticks), 0) as failed_checks,
+                CASE 
+                    WHEN SUM(monitor_tick_30min.total_ticks) > 0 
+                    THEN ROUND((SUM(monitor_tick_30min.successful_ticks)::NUMERIC / SUM(monitor_tick_30min.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as uptime_percentage,
+                ROUND(AVG(monitor_tick_30min.avg_latency)::NUMERIC, 2) as avg_response_time,
+                ROUND(MIN(monitor_tick_30min.min_latency)::NUMERIC, 2) as min_response_time,
+                ROUND(MAX(monitor_tick_30min.max_latency)::NUMERIC, 2) as max_response_time,
+                ROUND(AVG(monitor_tick_30min.p95_latency)::NUMERIC, 2) as p95_response_time
+            FROM monitor_tick_30min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '7 days';
+                
+        WHEN 'month' THEN
+            RETURN QUERY
+            SELECT 
+                COALESCE(SUM(monitor_tick_2hour.total_ticks), 0) as total_checks,
+                COALESCE(SUM(monitor_tick_2hour.successful_ticks), 0) as successful_checks,
+                COALESCE(SUM(monitor_tick_2hour.total_ticks - monitor_tick_2hour.successful_ticks), 0) as failed_checks,
+                CASE 
+                    WHEN SUM(monitor_tick_2hour.total_ticks) > 0 
+                    THEN ROUND((SUM(monitor_tick_2hour.successful_ticks)::NUMERIC / SUM(monitor_tick_2hour.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as uptime_percentage,
+                ROUND(AVG(monitor_tick_2hour.avg_latency)::NUMERIC, 2) as avg_response_time,
+                ROUND(MIN(monitor_tick_2hour.min_latency)::NUMERIC, 2) as min_response_time,
+                ROUND(MAX(monitor_tick_2hour.max_latency)::NUMERIC, 2) as max_response_time,
+                ROUND(AVG(monitor_tick_2hour.p95_latency)::NUMERIC, 2) as p95_response_time
+            FROM monitor_tick_2hour
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '30 days';
         ELSE
-            chosen_granularity := '6 hours';
-            aggregate_view := 'monitor_tick_6hour';
-        END IF;
-    ELSE
-        chosen_granularity := desired_granularity;
-        -- Map granularity to appropriate view
-        CASE chosen_granularity
-            WHEN '5 minutes' THEN aggregate_view := 'monitor_tick_5min';
-            WHEN '15 minutes' THEN aggregate_view := 'monitor_tick_15min';
-            WHEN '1 hour' THEN aggregate_view := 'monitor_tick_hourly';
-            WHEN '6 hours' THEN aggregate_view := 'monitor_tick_6hour';
-            ELSE aggregate_view := 'monitor_tick_15min';
-        END CASE;
-    END IF;
-    
-    query_text := FORMAT('
-        SELECT 
-            agg.time_bucket,
-            ROUND(
-                (SUM(agg.avg_latency * agg.tick_count) / NULLIF(SUM(agg.tick_count), 0))::NUMERIC, 
-                2
-            ) AS avg_latency,
-            ROUND((SUM(agg.up_count)::NUMERIC / NULLIF(SUM(agg.tick_count), 0)::NUMERIC) * 100, 2) AS uptime_percentage,
-            SUM(agg.tick_count)::BIGINT AS total_checks,
-            $4::TEXT AS data_source
-        FROM %I agg
-        WHERE agg."monitorId" = $1
-            AND agg.time_bucket >= $2
-            AND agg.time_bucket <= $3
-        GROUP BY agg.time_bucket
-        ORDER BY agg.time_bucket ASC',
-        aggregate_view
-    );
-    
-    RETURN QUERY EXECUTE query_text USING monitor_id_param, start_time, end_time, aggregate_view;
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
+    END CASE;
 END;
 $$ LANGUAGE plpgsql;
 
--- =============================================================================
--- EXAMPLE USAGE QUERIES
--- =============================================================================
 
-/*
--- Examples with new period parameters:
-
--- Get average latency by country for the last hour (5-minute granularity)
-SELECT * FROM get_avg_latency_by_country('your-monitor-uuid', 'hour');
-
--- Get average latency by country for the last day (15-minute granularity)
-SELECT * FROM get_avg_latency_by_country('your-monitor-uuid', 'day');
-
--- Get average latency by country for the last week (1-hour granularity)
-SELECT * FROM get_avg_latency_by_country('your-monitor-uuid', 'week');
-
--- Get average latency by country for the last month (6-hour granularity)
-SELECT * FROM get_avg_latency_by_country('your-monitor-uuid', 'month');
-
--- Get time series data for charting
-SELECT * FROM get_monitor_timeseries('your-monitor-uuid', 'day');
-
--- Get best and worst performing regions
-SELECT * FROM get_best_performing_region('your-monitor-uuid', 'week');
-SELECT * FROM get_worst_performing_region('your-monitor-uuid', 'week');
-
--- Get sample counts by country (for world map coloring)
-SELECT * FROM get_sample_count_by_country('your-monitor-uuid', 'day');
-
--- Custom time range query (future use)
-SELECT * FROM get_monitor_data_custom_range(
-    'your-monitor-uuid', 
-    '2025-01-01 00:00:00+00', 
-    '2025-01-07 23:59:59+00', 
-    'auto'
-);
-*/
-
-
--------------------------------------------------------------------------------------------------------
-
--- Check aggregate sizes
--- SELECT 
---     schemaname, tablename,
---     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
--- FROM pg_tables 
--- WHERE tablename LIKE 'monitor_tick_%';
-
--- -- Check refresh job status
--- SELECT job_id, application_name, last_run_status, next_start
--- FROM timescaledb_information.jobs;
-
-
--- DEBUG
+-- LET THESE DEBUG QUERIES BE THERE AT THE END OF FILE COMMENTED OUT
 
 -- SELECT * FROM get_total_avg_latency('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')
 -- SELECT * FROM get_monitor_timeseries('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')

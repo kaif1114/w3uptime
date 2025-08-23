@@ -218,7 +218,14 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
             {/* Tab Content */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <AnalyticsOverview monitorId={monitorId} period={timePeriod} />
+                {/* commenting this out because we will implement it later */}
+                {/* <AnalyticsOverview monitorId={monitorId} period={timePeriod} /> */}
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold">Overview</h2>
+                    <p>This is the overview tab. It will display the monitor's performance data.</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -230,11 +237,18 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
             )}
 
             {activeTab === 'uptime' && (
-              <UptimeIncidentPanel
-                uptimeData={mockData.uptimeData}
-                incidents={mockData.incidents}
-                monitorName={monitor?.url || 'Monitor'}
-              />
+              // commenting this out because we will implement it later
+              // <UptimeIncidentPanel
+              //   uptimeData={mockData.uptimeData}
+              //   incidents={mockData.incidents}
+              //   monitorName={monitor?.url || 'Monitor'}
+              // />
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold">Uptime & Incidents</h2>
+                  <p>This is the uptime & incidents tab. It will display the monitor's uptime and incidents.</p>
+                </div>
+              </div>
             )}
 
             {activeTab === 'performance' && (
