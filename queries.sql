@@ -63,6 +63,13 @@ SELECT add_continuous_aggregate_policy('monitor_tick_5min',
     schedule_interval => INTERVAL '30 seconds',
     if_not_exists => TRUE);
 
+-- a little more optimized but includes the lag
+-- SELECT add_continuous_aggregate_policy('monitor_tick_5min',
+--     start_offset => INTERVAL '1 hour',
+--     end_offset => INTERVAL '2 minutes',
+--     schedule_interval => INTERVAL '1 minutes',
+--     if_not_exists => TRUE);
+
 -- Refresh every 5 minutes for 30-minute aggregate
 SELECT add_continuous_aggregate_policy('monitor_tick_30min',
     start_offset => INTERVAL '6 hours', 

@@ -88,11 +88,11 @@ async function seedMonitorTicks() {
   
   const monitorTicks = [];
   const now = new Date();
-  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   
-  // Generate 2 ticks for each minute for the last 2 hours (240 data points)
-  for (let i = 0; i < 120; i++) {
-    const tickTime = new Date(twoHoursAgo.getTime() + i * 60 * 1000);
+  // Generate 2 ticks for each minute for the last 24 hours (2880 data points)
+  for (let i = 0; i < 1440; i++) {
+    const tickTime = new Date(twentyFourHoursAgo.getTime() + i * 60 * 1000);
     
     // Create 2 ticks per minute
     for (let j = 0; j < 2; j++) {
@@ -128,8 +128,8 @@ async function seedMonitorTicks() {
     console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(monitorTicks.length / batchSize)}`);
   }
   
-  console.log(`Successfully seeded ${monitorTicks.length} MonitorTick records for the last 2 hours`);
-  console.log(`Time range: ${twoHoursAgo.toISOString()} to ${now.toISOString()}`);
+  console.log(`Successfully seeded ${monitorTicks.length} MonitorTick records for the last 24 hours`);
+  console.log(`Time range: ${twentyFourHoursAgo.toISOString()} to ${now.toISOString()}`);
 }
 
 async function main() {
