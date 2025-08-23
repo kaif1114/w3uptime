@@ -176,7 +176,6 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
                 onClick={handleSubmitComment}
                 disabled={!newComment.trim() || isSubmitting}
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-700"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Post

@@ -102,10 +102,8 @@ export default function IncidentDetailPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-            Escalate
-          </Button>
-          <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+          <Button variant="default">Escalate</Button>
+          <Button variant="default">
             Acknowledge
             <ChevronDown className="h-4 w-4 ml-2" />
           </Button>
