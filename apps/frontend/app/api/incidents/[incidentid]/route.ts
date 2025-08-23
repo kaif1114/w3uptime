@@ -29,6 +29,8 @@ export const GET = withAuth(async (
       );
     }
 
+    console.log(`Fetching incident with ID: ${incidentid} for user: ${user.id}`);
+
     const incident = await prisma.incident.findFirst({
       where: {
         id: incidentid,
@@ -42,6 +44,12 @@ export const GET = withAuth(async (
             id: true,
             name: true,
             url: true,
+            escalationPolicy: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         comments: {
@@ -49,6 +57,7 @@ export const GET = withAuth(async (
             user: {
               select: {
                 id: true,
+                walletAddress: true,
               },
             },
           },
@@ -61,12 +70,14 @@ export const GET = withAuth(async (
     });
 
     if (!incident) {
+      console.log(`Incident not found for ID: ${incidentid}`);
       return NextResponse.json(
         { error: "Incident not found" },
         { status: 404 }
       );
     }
 
+    console.log(`Incident found: ${incident.id}`);
     return NextResponse.json({ incident });
   } catch (error) {
     console.error("Failed to fetch incident:", error);
@@ -147,6 +158,12 @@ export const PUT = withAuth(async (
             id: true,
             name: true,
             url: true,
+            escalationPolicy: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         postmortem: true,

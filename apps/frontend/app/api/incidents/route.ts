@@ -59,6 +59,12 @@ export const POST = withAuth(async (req: NextRequest, user) => {
             id: true,
             name: true,
             url: true,
+            escalationPolicy: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -105,6 +111,12 @@ export const GET = withAuth(async (req: NextRequest, user) => {
             id: true,
             name: true,
             url: true,
+            escalationPolicy: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         comments: {
@@ -112,6 +124,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
             user: {
               select: {
                 id: true,
+                walletAddress: true,
               },
             },
           },

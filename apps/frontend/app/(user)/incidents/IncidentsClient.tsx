@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import { useIncidents } from "@/hooks/useIncidents";
 const ITEMS_PER_PAGE = 10;
 
 export default function IncidentsClient() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { updateIncident, deleteIncident } = useIncidents();
@@ -106,8 +108,7 @@ export default function IncidentsClient() {
           }
           break;
         case "view":
-          // TODO: Navigate to incident detail page
-          console.log("View incident:", incident.id);
+          router.push(`/incidents/${incident.id}`);
           break;
         case "edit":
           // TODO: Open edit modal or navigate to edit page
@@ -240,7 +241,10 @@ export default function IncidentsClient() {
                           <div className="flex items-center gap-2">
                             {getStatusIcon(incident.status)}
                             <div>
-                              <div className="font-medium">
+                              <div 
+                                className="font-medium cursor-pointer hover:text-purple-600 transition-colors"
+                                onClick={() => router.push(`/incidents/${incident.id}`)}
+                              >
                                 {incident.title}
                               </div>
                               <div className="text-sm text-gray-500">
