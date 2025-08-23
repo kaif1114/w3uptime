@@ -152,6 +152,10 @@ model Incident {
   comments     Comment[]
   Monitor      Monitor          @relation(fields: [monitorId], references: [id])
   postmortem   Postmortem?
+
+  @@index(monitorId)
+
+  @@index([monitorId, status])
 }
 
 model Comment {
