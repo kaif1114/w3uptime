@@ -101,7 +101,7 @@ export default function IncidentsClient({ incidents }: IncidentsClientProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="mx-auto container space-y-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
