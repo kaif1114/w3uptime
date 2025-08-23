@@ -1,10 +1,9 @@
+import { generateDummyIncidents } from "@/lib/dummy-data";
+import IncidentsClient from "./IncidentsClient";
 
-function page() {
-  return (
-    <div>
-        <h1>Incidents</h1>
-    </div>
-  )
+export default function IncidentsPage() {
+  // Generate dummy incidents data
+  const incidents = generateDummyIncidents();
+
+  return <IncidentsClient incidents={incidents} />;
 }
-
-export default page
