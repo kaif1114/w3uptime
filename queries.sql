@@ -96,6 +96,28 @@ CREATE OR REPLACE FUNCTION get_monitor_timeseries(
 ) AS $$
 BEGIN
     CASE p_period
+        WHEN 'hour' THEN
+            RETURN QUERY
+            SELECT 
+                time_bucket::TIMESTAMPTZ,
+                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) as avg_latency,
+                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) as min_latency,
+                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) as max_latency,
+                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) as median_latency,
+                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) as p95_latency,
+                monitor_tick_5min.total_ticks,
+                monitor_tick_5min.successful_ticks,
+                CASE 
+                    WHEN monitor_tick_5min.total_ticks > 0 
+                    THEN ROUND((monitor_tick_5min.successful_ticks::NUMERIC / monitor_tick_5min.total_ticks::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as success_rate
+            FROM monitor_tick_5min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '1 hour'
+                AND time_bucket <= NOW()
+            ORDER BY time_bucket ASC;
+            
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
@@ -183,6 +205,25 @@ CREATE OR REPLACE FUNCTION get_monitor_stats(
 ) AS $$
 BEGIN
     CASE p_period
+        WHEN 'hour' THEN
+            RETURN QUERY
+            SELECT 
+                COALESCE(SUM(monitor_tick_5min.total_ticks), 0) as total_checks,
+                COALESCE(SUM(monitor_tick_5min.successful_ticks), 0) as successful_checks,
+                COALESCE(SUM(monitor_tick_5min.total_ticks - monitor_tick_5min.successful_ticks), 0) as failed_checks,
+                CASE 
+                    WHEN SUM(monitor_tick_5min.total_ticks) > 0 
+                    THEN ROUND((SUM(monitor_tick_5min.successful_ticks)::NUMERIC / SUM(monitor_tick_5min.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END as uptime_percentage,
+                ROUND(AVG(monitor_tick_5min.avg_latency)::NUMERIC, 2) as avg_response_time,
+                ROUND(MIN(monitor_tick_5min.min_latency)::NUMERIC, 2) as min_response_time,
+                ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
+                ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
+            FROM monitor_tick_5min
+            WHERE "monitorId" = p_monitor_id
+                AND time_bucket >= NOW() - INTERVAL '1 hour';
+                
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
