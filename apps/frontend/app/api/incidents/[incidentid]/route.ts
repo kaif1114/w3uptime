@@ -6,9 +6,9 @@ import { withAuth } from "@/lib/auth";
 const updateIncidentSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).optional(),
-  description: z.string(),
+  cause: z.enum(["TEST", "URL_UNAVAILABLE"]).optional(),
   status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]).optional(),
-  escalated: z.boolean().optional(),
+  acknowledged: z.boolean().optional(),
   downtime: z.number().int().positive().optional(),
 });
 
@@ -144,7 +144,9 @@ export const PUT = withAuth(async (
       );
     }
 
-    const updateData: any = { ...validation.data };
+    const updateData = { ...validation.data };
+    let statusChanged = false;
+    let acknowledgedChanged = false;
 
     // Auto-set resolvedAt when status changes to RESOLVED
     if (
@@ -152,6 +154,7 @@ export const PUT = withAuth(async (
       existingIncident.status !== "RESOLVED"
     ) {
       updateData.resolvedAt = new Date();
+      statusChanged = true;
 
       if (!validation.data.downtime) {
         const downtimeSeconds = Math.floor(
@@ -161,26 +164,67 @@ export const PUT = withAuth(async (
       }
     }
 
-    const updatedIncident = await prisma.incident.update({
-      where: {
-        id: incidentid,
-      },
-      data: updateData,
-      include: {
-        Monitor: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
+    // Check if acknowledged status changed
+    if (
+      validation.data.acknowledged !== undefined &&
+      validation.data.acknowledged !== existingIncident.acknowledged
+    ) {
+      acknowledgedChanged = true;
+    }
+
+    // Update incident and create timeline events in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedIncident = await tx.incident.update({
+        where: {
+          id: incidentid,
+        },
+        data: updateData,
+        include: {
+          Monitor: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              escalationPolicy: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
           },
         },
-        postmortem: true,
-      },
+      });
+
+      // Create timeline events for status changes
+      if (statusChanged && validation.data.status === "RESOLVED") {
+        await tx.timelineEvent.create({
+          data: {
+            description: `Incident was marked as resolved`,
+            incidentId: incidentid,
+            type: "INCIDENT",
+            userId: user.id,
+          },
+        });
+      }
+
+      if (acknowledgedChanged && validation.data.acknowledged === true) {
+        await tx.timelineEvent.create({
+          data: {
+            description: `Incident was acknowledged`,
+            incidentId: incidentid,
+            type: "INCIDENT",
+            userId: user.id,
+          },
+        });
+      }
+
+      return updatedIncident;
     });
 
     return NextResponse.json({
       message: "Incident updated successfully",
-      incident: updatedIncident,
+      incident: result,
     });
   } catch (error) {
     console.error("Failed to update incident:", error);
@@ -224,10 +268,21 @@ export const DELETE = withAuth(async (
       );
     }
 
-    await prisma.incident.delete({
-      where: {
-        id: incidentid,
-      },
+    // Delete incident in a transaction to ensure timeline events are deleted first
+    await prisma.$transaction(async (tx) => {
+      // Delete all timeline events first
+      await tx.timelineEvent.deleteMany({
+        where: {
+          incidentId: incidentid,
+        },
+      });
+
+      // Then delete the incident
+      await tx.incident.delete({
+        where: {
+          id: incidentid,
+        },
+      });
     });
 
     return NextResponse.json({ message: "Incident deleted successfully" });
