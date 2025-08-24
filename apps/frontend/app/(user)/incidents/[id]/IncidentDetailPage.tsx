@@ -19,6 +19,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import IncidentTimeline from "./IncidentTimeline";
 import { useIncident } from "@/hooks/useIncident";
+import { useUpdateIncident } from "@/hooks/useIncidents";
 
 
 
@@ -29,6 +30,7 @@ export default function IncidentDetailPage({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: incident, isLoading, error } = useIncident(incidentId);
+  const updateIncidentMutation = useUpdateIncident();
   
   if (isLoading) {
     return (
@@ -91,6 +93,34 @@ export default function IncidentDetailPage({
     toast.success("Copied to clipboard");
   };
 
+  const handleAcknowledge = async () => {
+    if (!incident) return;
+    
+    try {
+      await updateIncidentMutation.mutateAsync({
+        id: incident.id,
+        data: { status: "ACKNOWLEDGED" }
+      });
+      toast.success("Incident acknowledged");
+    } catch (error) {
+      toast.error("Failed to acknowledge incident");
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!incident) return;
+    
+    try {
+      await updateIncidentMutation.mutateAsync({
+        id: incident.id,
+        data: { status: "RESOLVED" }
+      });
+      toast.success("Incident resolved");
+    } catch (error) {
+      toast.error("Failed to resolve incident");
+    }
+  };
+
   const formatDuration = (seconds?: number) => {
     if (!seconds) return "Ongoing";
 
@@ -128,11 +158,36 @@ export default function IncidentDetailPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="default">Escalate</Button>
-          <Button variant="default">
-            Acknowledge
-            <ChevronDown className="h-4 w-4 ml-2" />
-          </Button>
+          <Button variant="outline">Escalate</Button>
+          {incident.status === "ONGOING" && (
+            <Button 
+              variant="default"
+              onClick={handleAcknowledge}
+              disabled={updateIncidentMutation.isPending}
+            >
+              {updateIncidentMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Acknowledge
+            </Button>
+          )}
+          {incident.status === "ACKNOWLEDGED" && (
+            <Button 
+              variant="default"
+              onClick={handleResolve}
+              disabled={updateIncidentMutation.isPending}
+            >
+              {updateIncidentMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Resolve
+            </Button>
+          )}
+          {incident.status === "RESOLVED" && (
+            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+              Resolved
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -141,11 +196,11 @@ export default function IncidentDetailPage({
         <div className="text-sm text-muted-foreground">
           {format(new Date(incident.createdAt), "MMM d, yyyy 'at' h:mm a")}
         </div>
-        {incident.status === "ONGOING" && (
-          <div className="text-sm text-muted-foreground">
-            Not acknowledged yet
-          </div>
-        )}
+        <div className="text-sm text-muted-foreground">
+          {incident.status === "ONGOING" && "Not acknowledged yet"}
+          {incident.status === "ACKNOWLEDGED" && "Acknowledged - awaiting resolution"}
+          {incident.status === "RESOLVED" && `Resolved ${incident.resolvedAt ? format(incident.resolvedAt, "MMM d 'at' h:mm a") : ""}`}
+        </div>
       </div>
 
       {/* Incident Details - Three side-by-side boxes */}
