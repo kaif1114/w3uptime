@@ -18,7 +18,7 @@ model User {
   type               UserType           @default(USER)
   publicKey          String?            @unique
   geoLocationId      String?            @unique
-  comments           Comment[]
+  timelineEvents     TimelineEvent[]
   escalationPolicies EscalationPolicy[]
   monitors           Monitor[]
   monitorTicks       MonitorTick[]
@@ -114,85 +114,69 @@ model EscalationLevel {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   escalation   EscalationPolicy  @relation(fields: [escalationId], references: [id])
+  escalationLogs EscalationLog[]
 
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
 }
 
 model Alert {
-  id                     String          @id @default(uuid())
-  severity               AlertSeverity   @default(MEDIUM)
-  title                  String
-  message                String
-  triggerStatusCode      Int?
-  expectedStatusCode     Int?
-  status                 AlertStatus     @default(PENDING)
-  triggeredAt            DateTime        @default(now())
-  acknowledgedAt         DateTime?
-  acknowledgedBy         String?
-  currentEscalationLevel Int             @default(1)
-  escalationCompleted    Boolean         @default(false)
-  monitorId              String
-  monitor                Monitor         @relation(fields: [monitorId], references: [id])
-  EscalationLog          EscalationLog[]
+  id                 String          @id @default(uuid())
+  title              String
+  type               AlertType       @default(TEST)
+  message            String
+  triggerStatusCode  Int?
+  expectedStatusCode Int?
+  triggeredAt        DateTime        @default(now())
+  monitorId          String
+  monitor            Monitor         @relation(fields: [monitorId], references: [id])
+  EscalationLog      EscalationLog[]
 }
 
 model Incident {
-  id           String           @id @default(uuid())
-  title        String
-  description  String?
-  status       IncidentStatus   @default(ONGOING)
-  monitorId    String          
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  resolvedAt   DateTime?
-  downtime     Int?
-  escalated    Boolean          @default(false)
-  postmortemId String?          @unique
-  comments     Comment[]
-  Monitor      Monitor          @relation(fields: [monitorId], references: [id])
-  postmortem   Postmortem?
+  id             String          @id @default(uuid())
+  title          String
+  description    String?
+  status         IncidentStatus  @default(ONGOING)
+  monitorId      String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  resolvedAt     DateTime?
+  downtime       Int?
+  escalated      Boolean         @default(false)
+  postmortemId   String?         @unique
+  timelineEvents TimelineEvent[]
+  Monitor        Monitor         @relation(fields: [monitorId], references: [id])
 
   @@index(monitorId)
-
   @@index([monitorId, status])
 }
 
-model Comment {
-  id          String   @id @default(uuid())
-  description String
-  incidentId  String
-  userId      String
-  createdAt   DateTime @default(now())
-  incident    Incident @relation(fields: [incidentId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-model Postmortem {
-  id             String   @id @default(uuid())
-  resolutionTime Int
-  rootCause      String
-  resolution     String
-  incidentId     String   @unique
-  createdAt      DateTime @default(now())
-  incident       Incident @relation(fields: [incidentId], references: [id])
+model TimelineEvent {
+  id              String            @id @default(uuid())
+  description     String
+  incidentId      String
+  type            TimelineEventType @default(USER_COMMENT)
+  userId          String?
+  escalationLogId String?           @unique
+  createdAt       DateTime          @default(now())
+  incident        Incident          @relation(fields: [incidentId], references: [id])
+  user            User?             @relation(fields: [userId], references: [id])
+  escalationLog   EscalationLog?    @relation(fields: [escalationLogId], references: [id])
 }
 
 model EscalationLog {
-  id              String            @id
+  id              String          @id @default(uuid())
   alertId         String
-  levelOrder      Int
-  levelName       String?
-  triggeredAt     DateTime          @default(now())
-  sentTo          String[]
-  channel         EscalationChannel
-  wasAcknowledged Boolean           @default(false)
+  escalationLevelId String
+  wasAcknowledged Boolean         @default(false)
   acknowledgedAt  DateTime?
-  acknowledgedBy  String?
-  resolvedIssue   Boolean           @default(false)
-  Alert           Alert             @relation(fields: [alertId], references: [id])
+  timelineEvent   TimelineEvent?
+  Alert           Alert           @relation(fields: [alertId], references: [id])
+  escalationLevel EscalationLevel @relation(fields: [escalationLevelId], references: [id])
 
-  @@index([alertId, levelOrder])
+  @@index([alertId])
+  @@index([escalationLevelId])
 }
 
 model Session {
@@ -279,24 +263,17 @@ enum MonitorStatus {
   DISABLED
 }
 
-enum AlertSeverity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum AlertStatus {
-  PENDING
-  SENT
-  ACKNOWLEDGED
-  RESOLVED
-}
-
 enum IncidentStatus {
   ONGOING
   ACKNOWLEDGED
   RESOLVED
+}
+
+enum TimelineEventType {
+  INCIDENT
+  USER_COMMENT
+  POSTMORTEM
+  ESCALATION
 }
 
 enum EscalationChannel {
@@ -329,9 +306,6 @@ enum AffectedStatus {
 }
 
 enum AlertType {
-  STATUS_CODE_ERROR
+  TEST
   URL_UNAVAILABLE
-  PING_FAILURE
-  TIMEOUT
-  RESOLVED
 }
