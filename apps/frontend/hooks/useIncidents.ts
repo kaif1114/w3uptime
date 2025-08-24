@@ -4,29 +4,69 @@ import {
   CreateIncidentRequest,
   UpdateIncidentRequest,
   IncidentsResponse,
+  PaginationMetadata,
+  IncidentFilters,
 } from "@/types/incident";
+
+interface FetchIncidentsOptions {
+  monitorId?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  status?: string;
+}
 
 interface UseIncidentsReturn {
   incidents: Incident[];
   loading: boolean;
   error: string | null;
+  pagination?: PaginationMetadata;
+  filters?: IncidentFilters;
   createIncident: (data: CreateIncidentRequest) => Promise<void>;
   updateIncident: (id: string, data: UpdateIncidentRequest) => Promise<void>;
   deleteIncident: (id: string) => Promise<void>;
-  refetch: () => Promise<void>;
+  refetch: (options?: FetchIncidentsOptions) => Promise<void>;
+  fetchIncidents: (options?: FetchIncidentsOptions) => Promise<void>;
 }
 
 export function useIncidents(): UseIncidentsReturn {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationMetadata>();
+  const [filters, setFilters] = useState<IncidentFilters>();
 
-  const fetchIncidents = async () => {
+  const fetchIncidents = async (options?: FetchIncidentsOptions) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/incidents", {
+      // Build query parameters
+      const searchParams = new URLSearchParams();
+      
+      if (options?.monitorId) {
+        searchParams.append("monitorId", options.monitorId);
+      }
+      if (options?.page) {
+        searchParams.append("page", options.page.toString());
+      }
+      if (options?.limit) {
+        searchParams.append("limit", options.limit.toString());
+      }
+      if (options?.sortBy) {
+        searchParams.append("sortBy", options.sortBy);
+      }
+      if (options?.sortOrder) {
+        searchParams.append("sortOrder", options.sortOrder);
+      }
+      if (options?.status) {
+        searchParams.append("status", options.status);
+      }
+
+      const url = `/api/incidents${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -65,6 +105,8 @@ export function useIncidents(): UseIncidentsReturn {
       );
 
       setIncidents(transformedIncidents);
+      setPagination(data.pagination);
+      setFilters(data.filters);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch incidents"
@@ -156,9 +198,12 @@ export function useIncidents(): UseIncidentsReturn {
     incidents,
     loading,
     error,
+    pagination,
+    filters,
     createIncident,
     updateIncident,
     deleteIncident,
     refetch: fetchIncidents,
+    fetchIncidents,
   };
 }

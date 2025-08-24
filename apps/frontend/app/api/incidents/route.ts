@@ -26,10 +26,9 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     }
 
     const { title, description, status, escalated } = validation.data;
-    // Use hardcoded monitor ID instead of from request body
+
     const monitorId = validation.data.monitorId;
 
-    // Check if monitor exists and belongs to user
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorId,
@@ -80,25 +79,15 @@ export const POST = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-// GET /api/incidents - Get all incidents (with optional monitor filter)
+// GET /api/incidents - Get all incidents
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const monitorId = searchParams.get("monitorId");
-
-    const whereClause: Prisma.IncidentWhereInput = {
-      Monitor: {
-        userId: user.id,
-      },
-    };
-
-    // Add monitor filter if provided
-    if (monitorId) {
-      whereClause.monitorId = monitorId;
-    }
-
     const incidents = await prisma.incident.findMany({
-      where: whereClause,
+      where: {
+        Monitor: {
+          userId: user.id,
+        },
+      },
       include: {
         Monitor: {
           select: {

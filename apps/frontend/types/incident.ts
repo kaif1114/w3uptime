@@ -62,8 +62,26 @@ export interface UpdateIncidentRequest {
   downtime?: number;
 }
 
+export interface PaginationMetadata {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface IncidentFilters {
+  monitorId?: string | null;
+  status?: string | null;
+  sortBy: string;
+  sortOrder: string;
+}
+
 export interface IncidentsResponse {
   incidents: Incident[];
+  pagination?: PaginationMetadata;
+  filters?: IncidentFilters;
 }
 
 export interface IncidentResponse {
