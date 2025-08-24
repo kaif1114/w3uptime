@@ -187,41 +187,41 @@ export default function IncidentDetailPage({
       {/* Incident Details - Three side-by-side boxes */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="">
+            <CardTitle className="text-md font-medium text-muted-foreground">
               Cause
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">
+            <p className="text-2xl">
               {data?.incident?.cause === "TEST" ? "Test incident" : "URL unavailable"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="">
+            <CardTitle className="text-md font-medium text-muted-foreground">
               Started at
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">
+            <p className="text-2xl">
               {format(new Date(data?.incident?.createdAt || ""), "MMM d 'at' h:mm a")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="">
+            <CardTitle className="text-md font-medium text-muted-foreground">
               Current Status
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Badge
               variant="outline"
-              className={`${getStatusColor(data?.incident?.status || "ONGOING")}`}
+              className={`${getStatusColor(data?.incident?.status || "ONGOING")} text-2xl`}
             >
               {data?.incident?.status}
             </Badge>
@@ -231,7 +231,7 @@ export default function IncidentDetailPage({
 
       {/* Checked URL */}
       <div className="space-y-2">
-        <h3 className="text-sm font-medium">Checked URL</h3>
+        <h3 className="text-md font-medium">Checked URL</h3>
         <div className="bg-muted p-3 rounded-md flex items-center justify-between">
           <code className="text-sm">GET {data?.incident?.Monitor?.url || "No URL"}</code>
           <Button
@@ -247,8 +247,8 @@ export default function IncidentDetailPage({
 
       {/* Escalation */}
       <div className="space-y-2">
-        <h3 className="text-sm font-medium">Escalation</h3>
-        <p className="text-sm">
+        <h3 className="text-md font-medium">Escalation</h3>
+        <p className="text-xl">
           {data?.incident?.Monitor?.escalationPolicy?.name ||
             "No escalation policy assigned"}
         </p>

@@ -27,7 +27,7 @@ export default function IncidentTimeline({
   incidentId,
 }: IncidentTimelineProps) {
   const [newComment, setNewComment] = useState("");
-  const { data, isLoading, error } = useIncidentTimeline(incidentId);
+  const { data, isLoading, error, refetch: refetchTimeline } = useIncidentTimeline(incidentId);
   const addCommentMutation = useAddComment();
 
   const handleSubmitComment = async () => {
@@ -40,6 +40,7 @@ export default function IncidentTimeline({
       });
       setNewComment("");
       toast.success("Comment posted successfully");
+      refetchTimeline();
     } catch (error) {
       toast.error("Failed to post comment");
     }
