@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "db/client";
+import { withAuth } from "@/lib/auth";
+
+// GET /api/incidents/[incidentid]/timeline - Get all timeline events for specific incident
+export const GET = withAuth(async (
+  req: NextRequest,
+  user,
+  session,
+  { params }: { params: Promise<{ incidentid: string }> }
+) => {
+  try {
+    const { incidentid } = await params;
+
+    if (!incidentid) {
+      return NextResponse.json(
+        { error: "Incident ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // First verify the incident exists and belongs to the user
+    const incident = await prisma.incident.findFirst({
+      where: {
+        id: incidentid,
+        Monitor: {
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!incident) {
+      return NextResponse.json(
+        { error: "Incident not found" },
+        { status: 404 }
+      );
+    }
+
+    const timelineEvents = await prisma.timelineEvent.findMany({
+      where: {
+        incidentId: incidentid,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            walletAddress: true,
+          },
+        },
+        escalationLog: {
+          include: {
+            Alert: {
+              select: {
+                id: true,
+                title: true,
+                message: true,
+                type: true,
+                triggerStatusCode: true,
+                expectedStatusCode: true,
+                triggeredAt: true,
+              },
+            },
+            escalationLevel: {
+              select: {
+                id: true,
+                name: true,
+                levelOrder: true,
+                waitMinutes: true,
+                channel: true,
+                contacts: true,
+                message: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json({ timelineEvents });
+  } catch (error) {
+    console.error("Failed to fetch timeline events:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch timeline events" },
+      { status: 500 }
+    );
+  }
+});

@@ -42,13 +42,39 @@ export const GET = withAuth(async (
             id: true,
             name: true,
             url: true,
+            escalationPolicy: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
-        comments: {
+        timelineEvents: {
           include: {
             user: {
               select: {
                 id: true,
+                walletAddress: true,
+              },
+            },
+            escalationLog: {
+              include: {
+                Alert: {
+                  select: {
+                    id: true,
+                    title: true,
+                    message: true,
+                  },
+                },
+                escalationLevel: {
+                  select: {
+                    id: true,
+                    name: true,
+                    levelOrder: true,
+                    channel: true,
+                  },
+                },
               },
             },
           },
@@ -56,7 +82,6 @@ export const GET = withAuth(async (
             createdAt: "desc",
           },
         },
-        postmortem: true,
       },
     });
 
