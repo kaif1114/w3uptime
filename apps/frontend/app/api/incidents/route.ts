@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
 
 const createIncidentSchema = z.object({
   title: z.string().min(1),
-  description: z.string(),
+  cause: z.enum(["TEST", "URL_UNAVAILABLE"]).default("URL_UNAVAILABLE"),
   status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]).default("ONGOING"),
   monitorId: z.string().min(1),
-  escalated: z.boolean().default(false),
 });
 
 // POST /api/incidents - Create new incident
@@ -25,9 +23,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { title, description, status, escalated } = validation.data;
-
-    const monitorId = validation.data.monitorId;
+    const { title, cause, status, monitorId } = validation.data;
 
     const monitor = await prisma.monitor.findFirst({
       where: {
@@ -43,30 +39,50 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    // No unique constraint check needed - multiple incidents allowed per monitor
-    const incident = await prisma.incident.create({
-      data: {
-        title,
-        description,
-        status,
-        monitorId,
-        escalated,
-      },
-      include: {
-        Monitor: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
+    // Create incident with initial timeline event in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the incident
+      const incident = await tx.incident.create({
+        data: {
+          title,
+          cause,
+          status,
+          monitorId,
+        },
+        include: {
+          Monitor: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              escalationPolicy: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
           },
         },
-      },
+      });
+
+      // Create initial timeline event
+      await tx.timelineEvent.create({
+        data: {
+          description: `Incident "${title}" was created`,
+          incidentId: incident.id,
+          type: "INCIDENT",
+          userId: user.id,
+        },
+      });
+
+      return incident;
     });
 
     return NextResponse.json(
       {
         message: "Incident created successfully",
-        incident,
+        incident: result,
       },
       { status: 201 }
     );
@@ -87,28 +103,6 @@ export const GET = withAuth(async (req: NextRequest, user) => {
         Monitor: {
           userId: user.id,
         },
-      },
-      include: {
-        Monitor: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
-          },
-        },
-        comments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-        postmortem: true,
       },
       orderBy: {
         createdAt: "desc",
