@@ -123,7 +123,7 @@ model EscalationLevel {
 model Alert {
   id                 String          @id @default(uuid())
   title              String
-  type               AlertType       @default(TEST)
+  type               IncidentType    @default(TEST)
   message            String
   triggerStatusCode  Int?
   expectedStatusCode Int?
@@ -136,14 +136,14 @@ model Alert {
 model Incident {
   id             String          @id @default(uuid())
   title          String
-  description    String?
+  cause          IncidentType
   status         IncidentStatus  @default(ONGOING)
   monitorId      String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   resolvedAt     DateTime?
   downtime       Int?
-  escalated      Boolean         @default(false)
+  acknowledged   Boolean         @default(false)
   postmortemId   String?         @unique
   timelineEvents TimelineEvent[]
   Monitor        Monitor         @relation(fields: [monitorId], references: [id])
@@ -305,7 +305,7 @@ enum AffectedStatus {
   RESOLVED
 }
 
-enum AlertType {
+enum IncidentType {
   TEST
   URL_UNAVAILABLE
 }
