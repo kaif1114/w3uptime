@@ -108,17 +108,6 @@ export default function IncidentDetailPage({
     }
   };
 
-  const formatDuration = (seconds?: number) => {
-    if (!seconds) return "Ongoing";
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
 
   return (
     <div className="space-y-6 p-6">
@@ -200,12 +189,12 @@ export default function IncidentDetailPage({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Started at
+              Cause
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm">
-              {format(new Date(data?.incident?.createdAt || ""), "MMM d 'at' h:mm a")}
+              {data?.incident?.cause === "TEST" ? "Test incident" : "URL unavailable"}
             </p>
           </CardContent>
         </Card>
@@ -213,11 +202,13 @@ export default function IncidentDetailPage({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Length
+              Started at
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{formatDuration(data?.incident?.downtime ?? 0)}</p>
+            <p className="text-sm">
+              {format(new Date(data?.incident?.createdAt || ""), "MMM d 'at' h:mm a")}
+            </p>
           </CardContent>
         </Card>
 
@@ -236,12 +227,6 @@ export default function IncidentDetailPage({
             </Badge>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Cause - Inline with details */}
-      <div className="text-sm">
-        <span className="font-medium">Cause:</span>{" "}
-        {data?.incident?.cause === "TEST" ? "Test incident" : "URL unavailable"}
       </div>
 
       {/* Checked URL */}
@@ -269,42 +254,8 @@ export default function IncidentDetailPage({
         </p>
       </div>
 
-      {/* Replay Section */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Replay</h3>
-        <p className="text-sm text-muted-foreground">
-          Use this command to simulate the request:
-        </p>
-        <div className="relative">
-          <pre className="bg-muted p-4 rounded-md text-sm overflow-x-auto">
-            <code>
-              {`curl -L --connect-timeout 20 --max-time 30 \\
--H 'User-Agent: W3Uptime Bot Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome' \\
-'${data?.incident?.Monitor?.url || "No URL"}'`}
-            </code>
-          </pre>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 h-8 w-8 p-0"
-            onClick={() =>
-              copyToClipboard(
-                `curl -L --connect-timeout 20 --max-time 30 -H 'User-Agent: W3Uptime Bot Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome' '${data?.incident?.Monitor?.url || "No URL"}'`
-              )
-            }
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Metadata */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Metadata</h3>
-        <Button variant="outline" size="sm">
-          + Add
-        </Button>
-      </div>
+     
+    
 
       <Separator />
 
