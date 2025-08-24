@@ -1,38 +1,64 @@
 "use client";
 
-import { useState } from "react";
-import { Incident } from "@/types/incident";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
 import {
-  AlertTriangle,
-  Clock,
-  Globe,
-  Shield,
-  MessageSquare,
-  Copy,
-  CheckCircle,
-  XCircle,
   AlertCircle,
+  AlertTriangle,
+  CheckCircle,
   ChevronDown,
-  ChevronUp,
   ChevronRight,
+  Copy,
+  Shield,
+  Loader2
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { useState } from "react";
 import { toast } from "sonner";
 import IncidentTimeline from "./IncidentTimeline";
-import IncidentActions from "./IncidentActions";
+import { useIncident } from "@/hooks/useIncident";
 
-interface IncidentDetailPageProps {
-  incident: Incident;
-}
+
 
 export default function IncidentDetailPage({
-  incident,
-}: IncidentDetailPageProps) {
+  incidentId,
+}: {
+  incidentId: string;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { data: incident, isLoading, error } = useIncident(incidentId);
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
+            <p className="text-gray-500">Loading incident details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error || !incident) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">
+              Error loading incident: {error?.message || "Incident not found"}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -238,7 +264,7 @@ export default function IncidentDetailPage({
       {/* Timeline */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Timeline</h2>
-        <IncidentTimeline incident={incident} />
+        <IncidentTimeline incidentId={incidentId} />
       </div>
     </div>
   );

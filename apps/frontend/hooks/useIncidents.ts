@@ -1,209 +1,131 @@
-import { useState, useEffect } from "react";
-import {
-  Incident,
-  CreateIncidentRequest,
-  UpdateIncidentRequest,
-  IncidentsResponse,
-  PaginationMetadata,
-  IncidentFilters,
-} from "@/types/incident";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Incident, UpdateIncidentRequest } from "@/types/incident";
+
+interface IncidentsApiResponse {
+  incidents: Array<{
+    id: string;
+    title: string;
+    cause: string;
+    status: "ONGOING" | "ACKNOWLEDGED" | "RESOLVED";
+    createdAt: string;
+    updatedAt: string;
+    resolvedAt: string | null;
+    monitorId: string;
+    Monitor: {
+      id: string;
+      name: string;
+      url: string;
+      escalationPolicy?: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
+}
 
 interface FetchIncidentsOptions {
   monitorId?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
   status?: string;
 }
 
-interface UseIncidentsReturn {
-  incidents: Incident[];
-  loading: boolean;
-  error: string | null;
-  pagination?: PaginationMetadata;
-  filters?: IncidentFilters;
-  createIncident: (data: CreateIncidentRequest) => Promise<void>;
-  updateIncident: (id: string, data: UpdateIncidentRequest) => Promise<void>;
-  deleteIncident: (id: string) => Promise<void>;
-  refetch: (options?: FetchIncidentsOptions) => Promise<void>;
-  fetchIncidents: (options?: FetchIncidentsOptions) => Promise<void>;
+const fetchIncidents = async (options?: FetchIncidentsOptions): Promise<Incident[]> => {
+  const searchParams = new URLSearchParams();
+  
+  if (options?.monitorId) {
+    searchParams.append("monitorId", options.monitorId);
+  }
+  if (options?.status) {
+    searchParams.append("status", options.status);
+  }
+
+  const url = `/api/incidents${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch incidents: ${response.statusText}`);
+  }
+
+  const data: IncidentsApiResponse = await response.json();
+
+  return data.incidents.map(incident => ({
+    id: incident.id,
+    title: incident.title,
+    description: incident.cause === "TEST" ? "Test incident" : "URL unavailable",
+    severity: "MINOR" as const,
+    status: incident.status,
+    monitorId: incident.monitorId,
+    createdAt: new Date(incident.createdAt),
+    updatedAt: new Date(incident.updatedAt),
+    resolvedAt: incident.resolvedAt ? new Date(incident.resolvedAt) : undefined,
+    downtime: undefined,
+    escalated: false,
+    Monitor: incident.Monitor,
+    comments: [],
+    postmortem: undefined,
+  }));
+};
+
+export function useIncidents(options?: FetchIncidentsOptions) {
+  return useQuery({
+    queryKey: ["incidents", options],
+    queryFn: () => fetchIncidents(options),
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
 }
 
-export function useIncidents(): UseIncidentsReturn {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationMetadata>();
-  const [filters, setFilters] = useState<IncidentFilters>();
+const updateIncident = async ({ id, data }: { id: string; data: { status: "ONGOING" | "ACKNOWLEDGED" | "RESOLVED" } }) => {
+  const response = await fetch(`/api/incidents/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
 
-  const fetchIncidents = async (options?: FetchIncidentsOptions) => {
-    try {
-      setLoading(true);
-      setError(null);
+  if (!response.ok) {
+    throw new Error(`Failed to update incident: ${response.statusText}`);
+  }
 
-      // Build query parameters
-      const searchParams = new URLSearchParams();
-      
-      if (options?.monitorId) {
-        searchParams.append("monitorId", options.monitorId);
-      }
-      if (options?.page) {
-        searchParams.append("page", options.page.toString());
-      }
-      if (options?.limit) {
-        searchParams.append("limit", options.limit.toString());
-      }
-      if (options?.sortBy) {
-        searchParams.append("sortBy", options.sortBy);
-      }
-      if (options?.sortOrder) {
-        searchParams.append("sortOrder", options.sortOrder);
-      }
-      if (options?.status) {
-        searchParams.append("status", options.status);
-      }
+  return response.json();
+};
 
-      const url = `/api/incidents${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+const deleteIncident = async (id: string) => {
+  const response = await fetch(`/api/incidents/${id}`, {
+    method: "DELETE",
+  });
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+  if (!response.ok) {
+    throw new Error(`Failed to delete incident: ${response.statusText}`);
+  }
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch incidents: ${response.statusText}`);
-      }
+  return response.json();
+};
 
-      const data: IncidentsResponse = await response.json();
+export function useUpdateIncident() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateIncident,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
+}
 
-      // Transform the API response to match the expected Incident type
-      const transformedIncidents: Incident[] = data.incidents.map(
-        (incident) => ({
-          ...incident,
-          // Provide default values for missing fields
-          severity: (incident as any).severity || "MINOR",
-          downtime: (incident as any).downtime || undefined,
-          createdAt: new Date(incident.createdAt),
-          updatedAt: new Date(incident.updatedAt),
-          resolvedAt: incident.resolvedAt
-            ? new Date(incident.resolvedAt)
-            : undefined,
-          comments: incident.comments.map((comment) => ({
-            ...comment,
-            createdAt: new Date(comment.createdAt),
-          })),
-          postmortem: incident.postmortem
-            ? {
-                ...incident.postmortem,
-                createdAt: new Date(incident.postmortem.createdAt),
-              }
-            : undefined,
-        })
-      );
-
-      setIncidents(transformedIncidents);
-      setPagination(data.pagination);
-      setFilters(data.filters);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch incidents"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createIncident = async (data: CreateIncidentRequest) => {
-    try {
-      setError(null);
-
-      const response = await fetch("/api/incidents", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create incident: ${response.statusText}`);
-      }
-
-      // Refetch incidents to get the updated list
-      await fetchIncidents();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create incident"
-      );
-      throw err;
-    }
-  };
-
-  const updateIncident = async (id: string, data: UpdateIncidentRequest) => {
-    try {
-      setError(null);
-
-      const response = await fetch(`/api/incidents/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update incident: ${response.statusText}`);
-      }
-
-      // Refetch incidents to get the updated list
-      await fetchIncidents();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update incident"
-      );
-      throw err;
-    }
-  };
-
-  const deleteIncident = async (id: string) => {
-    try {
-      setError(null);
-
-      const response = await fetch(`/api/incidents/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete incident: ${response.statusText}`);
-      }
-
-      // Refetch incidents to get the updated list
-      await fetchIncidents();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete incident"
-      );
-      throw err;
-    }
-  };
-
-  useEffect(() => {
-    fetchIncidents();
-  }, []);
-
-  return {
-    incidents,
-    loading,
-    error,
-    pagination,
-    filters,
-    createIncident,
-    updateIncident,
-    deleteIncident,
-    refetch: fetchIncidents,
-    fetchIncidents,
-  };
+export function useDeleteIncident() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteIncident,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
 }

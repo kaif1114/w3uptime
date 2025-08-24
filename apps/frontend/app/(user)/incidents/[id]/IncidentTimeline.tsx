@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Incident, Comment } from "@/types/incident";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,12 +17,15 @@ import {
   Mail,
   Phone,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useIncidentTimeline } from "@/hooks/useIncidentTimeline";
+import { useAddComment } from "@/hooks/useAddComment";
 
 interface IncidentTimelineProps {
-  incident: Incident;
+  incidentId: string;
 }
 
 interface TimelineEvent {
@@ -48,9 +50,10 @@ interface TimelineEvent {
   region?: string;
 }
 
-export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
+export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) {
   const [newComment, setNewComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: timelineEvents, isLoading, error } = useIncidentTimeline(incidentId);
+  const addCommentMutation = useAddComment();
 
   const getInitials = (walletAddress: string) => {
     return walletAddress.slice(2, 4).toUpperCase();
@@ -63,96 +66,71 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
-    setIsSubmitting(true);
     try {
-      // TODO: Implement comment submission
-      toast.info("Comment functionality will be implemented later");
+      await addCommentMutation.mutateAsync({
+        incidentId,
+        description: newComment,
+      });
       setNewComment("");
+      toast.success("Comment posted successfully");
     } catch (error) {
       toast.error("Failed to post comment");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // Create timeline events
-  const timelineEvents: TimelineEvent[] = [];
+  const getTimelineIcon = (type: string) => {
+    switch (type) {
+      case "INCIDENT":
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case "USER_COMMENT":
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      case "ESCALATION":
+        return <Mail className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
-  // Add incident start event
-  timelineEvents.push({
-    id: "incident-start",
-    type: "incident_start",
-    timestamp: new Date(incident.createdAt),
-    title: "Incident started",
-    icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
-  });
-
-  // Add sample notification events (like in reference UI)
-  const notificationTime = new Date(incident.createdAt);
-  notificationTime.setMinutes(notificationTime.getMinutes() + 1);
-
-  timelineEvents.push({
-    id: "email-notification",
-    type: "email",
-    timestamp: notificationTime,
-    title: `Sent an email to Muhammad Kaif at kaif@w3uptime.com`,
-    icon: <Mail className="h-4 w-4 text-blue-500" />,
-  });
-
-  timelineEvents.push({
-    id: "phone-notification",
-    type: "phone",
-    timestamp: notificationTime,
-    title: `Calling Muhammad Kaif at (202) 555-0168`,
-    icon: <Phone className="h-4 w-4 text-green-500" />,
-  });
-
-  timelineEvents.push({
-    id: "text-notification",
-    type: "text",
-    timestamp: notificationTime,
-    title: `Texted Muhammad Kaif at (202) 555-0168`,
-    icon: <MessageCircle className="h-4 w-4 text-blue-500" />,
-  });
-
-  // Add comments
-  incident.comments.forEach((comment) => {
-    timelineEvents.push({
-      id: comment.id,
-      type: "comment",
-      timestamp: new Date(comment.createdAt),
-      title: "Comment",
-      description: comment.description,
-      user: comment.user,
-      icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
-    });
-  });
-
-  // Add post-mortem if exists
-  if (incident.postmortem) {
-    timelineEvents.push({
-      id: incident.postmortem.id,
-      type: "postmortem",
-      timestamp: new Date(incident.postmortem.createdAt),
-      title: "Post-mortem created",
-      description: incident.postmortem.rootCause,
-      icon: <CheckCircle className="h-4 w-4 text-green-500" />,
-    });
+  const getTimelineTitle = (event: any) => {
+    switch (event.type) {
+      case "INCIDENT":
+        return event.description;
+      case "USER_COMMENT":
+        return "Comment";
+      case "ESCALATION":
+        return "Escalation triggered";
+      default:
+        return "Timeline event";
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-purple-600" />
+            <p className="text-sm text-gray-500">Loading timeline...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  // Add status change events
-  if (incident.status === "ACKNOWLEDGED" || incident.status === "RESOLVED") {
-    timelineEvents.push({
-      id: "status-change",
-      type: "status_change",
-      timestamp: new Date(incident.updatedAt),
-      title: `Status changed to ${incident.status}`,
-      icon: <CheckCircle className="h-4 w-4 text-green-500" />,
-    });
+  
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Error loading timeline: {error.message}</p>
+            <Button onClick={() => window.location.reload()} size="sm">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  // Sort events by timestamp (newest first)
-  timelineEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return (
     <div className="space-y-6">
@@ -174,10 +152,14 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
             <div className="flex justify-end mt-2">
               <Button
                 onClick={handleSubmitComment}
-                disabled={!newComment.trim() || isSubmitting}
+                disabled={!newComment.trim() || addCommentMutation.isPending}
                 size="sm"
               >
-                <Send className="h-4 w-4 mr-2" />
+                {addCommentMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
                 Post
               </Button>
             </div>
@@ -187,59 +169,83 @@ export default function IncidentTimeline({ incident }: IncidentTimelineProps) {
 
       {/* Timeline Events */}
       <div className="space-y-4">
-        {timelineEvents.map((event, index) => (
-          <div key={event.id} className="flex gap-4">
-            {/* Timeline Line */}
-            <div className="flex flex-col items-center">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
-                {event.icon}
-              </div>
-              {index < timelineEvents.length - 1 && (
-                <div className="w-0.5 h-8 bg-border mt-2" />
-              )}
-            </div>
-
-            {/* Event Content */}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-sm">{event.title}</h3>
-                <span className="text-sm text-muted-foreground">
-                  {format(event.timestamp, "MMM d 'at' h:mm a")}
-                </span>
-                {event.region && (
-                  <Badge variant="outline" className="text-xs">
-                    {event.region}
-                  </Badge>
+        {timelineEvents && timelineEvents.length > 0 ? (
+          timelineEvents.map((event, index) => (
+            <div key={event.id} className="flex gap-4">
+              {/* Timeline Line */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
+                  {getTimelineIcon(event.type)}
+                </div>
+                {index < timelineEvents.length - 1 && (
+                  <div className="w-0.5 h-8 bg-border mt-2" />
                 )}
               </div>
 
-              {event.description && (
-                <div className="text-sm text-muted-foreground">
-                  {event.description}
+              {/* Event Content */}
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-sm">{getTimelineTitle(event)}</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(event.createdAt), "MMM d 'at' h:mm a")}
+                  </span>
                 </div>
-              )}
 
-              {event.user && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs">
-                      {getInitials(event.user.walletAddress)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{getShortAddress(event.user.walletAddress)}</span>
-                </div>
-              )}
+                {event.type === "USER_COMMENT" && (
+                  <div className="text-sm text-muted-foreground">
+                    {event.description}
+                  </div>
+                )}
+
+                {event.user && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-xs">
+                        <User className="h-3 w-3" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>User {event.user.id}</span>
+                  </div>
+                )}
+
+                {/* Escalation details */}
+                {event.escalationLog && (
+                  <div className="bg-muted p-3 rounded-md text-sm space-y-2">
+                    {event.escalationLog.Alert && (
+                      <div>
+                        <p className="font-medium">{event.escalationLog.Alert.title}</p>
+                        <p className="text-muted-foreground">{event.escalationLog.Alert.message}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            Status Code: {event.escalationLog.Alert.triggerStatusCode}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            Expected: {event.escalationLog.Alert.expectedStatusCode}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {event.escalationLog.escalationLevel && (
+                      <div>
+                        <p className="font-medium">Level {event.escalationLog.escalationLevel.levelOrder}: {event.escalationLog.escalationLevel.name}</p>
+                        <p className="text-muted-foreground">Channel: {event.escalationLog.escalationLevel.channel}</p>
+                        {event.escalationLog.escalationLevel.contacts.length > 0 && (
+                          <p className="text-muted-foreground">Contacts: {event.escalationLog.escalationLevel.contacts.join(", ")}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageSquare className="h-8 w-8 mx-auto mb-2" />
+            <p>No timeline events yet</p>
           </div>
-        ))}
+        )}
       </div>
-
-      {timelineEvents.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <MessageSquare className="h-8 w-8 mx-auto mb-2" />
-          <p>No timeline events yet</p>
-        </div>
-      )}
     </div>
   );
 }

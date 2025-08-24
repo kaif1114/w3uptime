@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useIncidents } from "@/hooks/useIncidents";
+import { useIncidents, useUpdateIncident, useDeleteIncident } from "@/hooks/useIncidents";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,8 +36,11 @@ export default function IncidentsClient() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const { updateIncident, deleteIncident } = useIncidents();
-  const { incidents, loading, error } = useIncidents();
+  const { data: incidents = [], isLoading: loading, error: queryError } = useIncidents();
+  const updateIncidentMutation = useUpdateIncident();
+  const deleteIncidentMutation = useDeleteIncident();
+  
+  const error = queryError?.message || null;
 
   // Filter incidents based on search query
   const filteredIncidents = useMemo(() => {
@@ -100,11 +103,11 @@ export default function IncidentsClient() {
     try {
       switch (action) {
         case "resolve":
-          await updateIncident(incident.id, { status: "RESOLVED" });
+          await updateIncidentMutation.mutateAsync({ id: incident.id, data: { status: "RESOLVED" } });
           break;
         case "remove":
           if (confirm("Are you sure you want to delete this incident?")) {
-            await deleteIncident(incident.id);
+            await deleteIncidentMutation.mutateAsync(incident.id);
           }
           break;
         case "view":
