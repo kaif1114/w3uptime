@@ -123,7 +123,6 @@ export const GET = withAuth(async (req: NextRequest, user) => {
             user: {
               select: {
                 id: true,
-                walletAddress: true,
               },
             },
             escalationLog: {

@@ -44,7 +44,6 @@ export const GET = withAuth(async (
         user: {
           select: {
             id: true,
-            walletAddress: true,
           },
         },
         escalationLog: {

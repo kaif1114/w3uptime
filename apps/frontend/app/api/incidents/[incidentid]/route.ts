@@ -4,12 +4,8 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const updateIncidentSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1).optional(),
-  cause: z.enum(["TEST", "URL_UNAVAILABLE"]).optional(),
   status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]).optional(),
   acknowledged: z.boolean().optional(),
-  downtime: z.number().int().positive().optional(),
 });
 
 // GET /api/incidents/[incidentid] - Get specific incident
@@ -55,7 +51,6 @@ export const GET = withAuth(async (
             user: {
               select: {
                 id: true,
-                walletAddress: true,
               },
             },
             escalationLog: {
@@ -102,7 +97,7 @@ export const GET = withAuth(async (
   }
 });
 
-export const PUT = withAuth(async (
+export const PATCH = withAuth(async (
   req: NextRequest,
   user,
   session,
@@ -116,14 +111,6 @@ export const PUT = withAuth(async (
     if (!validation.success) {
       return NextResponse.json(
         { error: validation.error.message },
-        { status: 400 }
-      );
-    }
-
-    // Ensure the incident ID from params matches the one in the body
-    if (validation.data.id !== incidentid) {
-      return NextResponse.json(
-        { error: "Incident ID mismatch" },
         { status: 400 }
       );
     }
@@ -144,19 +131,27 @@ export const PUT = withAuth(async (
       );
     }
 
-    const updateData = { ...validation.data };
+    const { status, acknowledged } = validation.data;
     let statusChanged = false;
     let acknowledgedChanged = false;
 
-    // Auto-set resolvedAt when status changes to RESOLVED
-    if (
-      validation.data.status === "RESOLVED" &&
-      existingIncident.status !== "RESOLVED"
-    ) {
-      updateData.resolvedAt = new Date();
+    const updateData: {
+      status?: string;
+      acknowledged?: boolean;
+      resolvedAt?: Date;
+      downtime?: number;
+    } = {};
+
+    // Check for status change
+    if (status && status !== existingIncident.status) {
+      updateData.status = status;
       statusChanged = true;
 
-      if (!validation.data.downtime) {
+      // Auto-set resolvedAt when status changes to RESOLVED
+      if (status === "RESOLVED") {
+        updateData.resolvedAt = new Date();
+        
+        // Calculate downtime
         const downtimeSeconds = Math.floor(
           (new Date().getTime() - existingIncident.createdAt.getTime()) / 1000
         );
@@ -164,11 +159,9 @@ export const PUT = withAuth(async (
       }
     }
 
-    // Check if acknowledged status changed
-    if (
-      validation.data.acknowledged !== undefined &&
-      validation.data.acknowledged !== existingIncident.acknowledged
-    ) {
+    // Check for acknowledged change
+    if (acknowledged !== undefined && acknowledged !== existingIncident.acknowledged) {
+      updateData.acknowledged = acknowledged;
       acknowledgedChanged = true;
     }
 
@@ -197,7 +190,7 @@ export const PUT = withAuth(async (
       });
 
       // Create timeline events for status changes
-      if (statusChanged && validation.data.status === "RESOLVED") {
+      if (statusChanged && status === "RESOLVED") {
         await tx.timelineEvent.create({
           data: {
             description: `Incident was marked as resolved`,
@@ -208,7 +201,7 @@ export const PUT = withAuth(async (
         });
       }
 
-      if (acknowledgedChanged && validation.data.acknowledged === true) {
+      if (acknowledgedChanged && acknowledged === true) {
         await tx.timelineEvent.create({
           data: {
             description: `Incident was acknowledged`,
