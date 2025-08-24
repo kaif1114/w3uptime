@@ -4,34 +4,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useIncident } from "@/hooks/useIncident";
+import { useUpdateIncident } from "@/hooks/useIncidents";
 import { format } from "date-fns";
 import {
   AlertCircle,
   AlertTriangle,
   CheckCircle,
-  ChevronDown,
   ChevronRight,
   Copy,
+  Loader2,
   Shield,
-  Loader2
 } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import IncidentTimeline from "./IncidentTimeline";
-import { useIncident } from "@/hooks/useIncident";
-import { useUpdateIncident } from "@/hooks/useIncidents";
-
-
 
 export default function IncidentDetailPage({
   incidentId,
 }: {
   incidentId: string;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { data: incident, isLoading, error } = useIncident(incidentId);
+  const {
+    data,
+    isLoading,
+    error,
+    refetch: refetchIncident,
+  } = useIncident(incidentId);
   const updateIncidentMutation = useUpdateIncident();
-  
+
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
@@ -44,8 +44,8 @@ export default function IncidentDetailPage({
       </div>
     );
   }
-  
-  if (error || !incident) {
+
+  if (error || !data) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-center py-12">
@@ -53,27 +53,12 @@ export default function IncidentDetailPage({
             <p className="text-red-500 mb-4">
               Error loading incident: {error?.message || "Incident not found"}
             </p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
           </div>
         </div>
       </div>
     );
   }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "ONGOING":
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
-      case "ACKNOWLEDGED":
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-      case "RESOLVED":
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      default:
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,28 +79,30 @@ export default function IncidentDetailPage({
   };
 
   const handleAcknowledge = async () => {
-    if (!incident) return;
-    
+    if (!data) return;
+
     try {
       await updateIncidentMutation.mutateAsync({
-        id: incident.id,
-        data: { status: "ACKNOWLEDGED" }
+        id: data.incident.id,
+        data: { status: "ACKNOWLEDGED" },
       });
       toast.success("Incident acknowledged");
+      refetchIncident();
     } catch (error) {
       toast.error("Failed to acknowledge incident");
     }
   };
 
   const handleResolve = async () => {
-    if (!incident) return;
-    
+    if (!data) return;
+
     try {
       await updateIncidentMutation.mutateAsync({
-        id: incident.id,
-        data: { status: "RESOLVED" }
+        id: data.incident.id,
+        data: { status: "RESOLVED" },
       });
       toast.success("Incident resolved");
+      refetchIncident();
     } catch (error) {
       toast.error("Failed to resolve incident");
     }
@@ -139,7 +126,7 @@ export default function IncidentDetailPage({
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>Incidents</span>
         <ChevronRight className="h-4 w-4" />
-        <span>{incident.Monitor.name}</span>
+        <span>{data?.incident?.Monitor?.name || "No Monitor Name"}</span>
       </div>
 
       {/* Header - Aligned like reference UI */}
@@ -147,20 +134,20 @@ export default function IncidentDetailPage({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-500" />
-            <h1 className="text-xl font-semibold">{incident.Monitor.name}</h1>
+            <h1 className="text-xl font-semibold">{data?.incident?.Monitor?.name || "No Monitor Name"}</h1>
           </div>
           <Badge
             variant="outline"
-            className={`flex items-center gap-2 ${getStatusColor(incident.status)}`}
+            className={`flex items-center gap-2 ${getStatusColor(data?.incident?.status || "ONGOING")}`}
           >
-            {incident.status}
+            {data?.incident?.status}
           </Badge>
         </div>
 
         <div className="flex items-center gap-3">
           <Button variant="outline">Escalate</Button>
-          {incident.status === "ONGOING" && (
-            <Button 
+          {data?.incident?.status === "ONGOING" && (
+            <Button
               variant="default"
               onClick={handleAcknowledge}
               disabled={updateIncidentMutation.isPending}
@@ -171,8 +158,8 @@ export default function IncidentDetailPage({
               Acknowledge
             </Button>
           )}
-          {incident.status === "ACKNOWLEDGED" && (
-            <Button 
+          {data?.incident?.status === "ACKNOWLEDGED" && (
+            <Button
               variant="default"
               onClick={handleResolve}
               disabled={updateIncidentMutation.isPending}
@@ -183,8 +170,11 @@ export default function IncidentDetailPage({
               Resolve
             </Button>
           )}
-          {incident.status === "RESOLVED" && (
-            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+          {data?.incident?.status === "RESOLVED" && (
+            <Badge
+              variant="outline"
+              className="bg-green-500/10 text-green-500 border-green-500/20"
+            >
               Resolved
             </Badge>
           )}
@@ -194,12 +184,14 @@ export default function IncidentDetailPage({
       {/* Date/Time and acknowledgment status */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          {format(new Date(incident.createdAt), "MMM d, yyyy 'at' h:mm a")}
+            {format(new Date(data?.incident?.createdAt || ""), "MMM d, yyyy 'at' h:mm a")}
         </div>
         <div className="text-sm text-muted-foreground">
-          {incident.status === "ONGOING" && "Not acknowledged yet"}
-          {incident.status === "ACKNOWLEDGED" && "Acknowledged - awaiting resolution"}
-          {incident.status === "RESOLVED" && `Resolved ${incident.resolvedAt ? format(incident.resolvedAt, "MMM d 'at' h:mm a") : ""}`}
+          {data?.incident?.status === "ONGOING" && "Not acknowledged yet"}
+          {data?.incident?.status === "ACKNOWLEDGED" &&
+            "Acknowledged - awaiting resolution"}
+          {data?.incident?.status === "RESOLVED" &&
+            `Resolved ${data?.incident?.resolvedAt ? format(data?.incident?.resolvedAt, "MMM d 'at' h:mm a") : ""}`}
         </div>
       </div>
 
@@ -213,7 +205,7 @@ export default function IncidentDetailPage({
           </CardHeader>
           <CardContent>
             <p className="text-sm">
-              {format(new Date(incident.createdAt), "MMM d 'at' h:mm a")}
+              {format(new Date(data?.incident?.createdAt || ""), "MMM d 'at' h:mm a")}
             </p>
           </CardContent>
         </Card>
@@ -225,7 +217,7 @@ export default function IncidentDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{formatDuration(incident.downtime)}</p>
+            <p className="text-sm">{formatDuration(data?.incident?.downtime ?? 0)}</p>
           </CardContent>
         </Card>
 
@@ -238,9 +230,9 @@ export default function IncidentDetailPage({
           <CardContent>
             <Badge
               variant="outline"
-              className={`${getStatusColor(incident.status)}`}
+              className={`${getStatusColor(data?.incident?.status || "ONGOING")}`}
             >
-              {incident.status}
+              {data?.incident?.status}
             </Badge>
           </CardContent>
         </Card>
@@ -249,19 +241,19 @@ export default function IncidentDetailPage({
       {/* Cause - Inline with details */}
       <div className="text-sm">
         <span className="font-medium">Cause:</span>{" "}
-        {incident.description || "No description provided"}
+        {data?.incident?.cause === "TEST" ? "Test incident" : "URL unavailable"}
       </div>
 
       {/* Checked URL */}
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Checked URL</h3>
         <div className="bg-muted p-3 rounded-md flex items-center justify-between">
-          <code className="text-sm">GET {incident.Monitor.url}</code>
+          <code className="text-sm">GET {data?.incident?.Monitor?.url || "No URL"}</code>
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
-            onClick={() => copyToClipboard(`GET ${incident.Monitor.url}`)}
+            onClick={() => copyToClipboard(`GET ${data?.incident?.Monitor?.url || "No URL"}`)}
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -272,7 +264,7 @@ export default function IncidentDetailPage({
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Escalation</h3>
         <p className="text-sm">
-          {incident.Monitor.escalationPolicy?.name ||
+          {data?.incident?.Monitor?.escalationPolicy?.name ||
             "No escalation policy assigned"}
         </p>
       </div>
@@ -288,7 +280,7 @@ export default function IncidentDetailPage({
             <code>
               {`curl -L --connect-timeout 20 --max-time 30 \\
 -H 'User-Agent: W3Uptime Bot Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome' \\
-'${incident.Monitor.url}'`}
+'${data?.incident?.Monitor?.url || "No URL"}'`}
             </code>
           </pre>
           <Button
@@ -297,7 +289,7 @@ export default function IncidentDetailPage({
             className="absolute top-2 right-2 h-8 w-8 p-0"
             onClick={() =>
               copyToClipboard(
-                `curl -L --connect-timeout 20 --max-time 30 -H 'User-Agent: W3Uptime Bot Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome' '${incident.Monitor.url}'`
+                `curl -L --connect-timeout 20 --max-time 30 -H 'User-Agent: W3Uptime Bot Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome' '${data?.incident?.Monitor?.url || "No URL"}'`
               )
             }
           >

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
 interface IncidentApiResponse {
-  incident: {
+ 
+    incident: {
     id: string;
     title: string;
     cause: string;
@@ -10,6 +11,7 @@ interface IncidentApiResponse {
     updatedAt: string;
     resolvedAt: string | null;
     monitorId: string;
+    downtime: number | null;
     Monitor: {
       id: string;
       name: string;
@@ -19,7 +21,7 @@ interface IncidentApiResponse {
         name: string;
       };
     };
-  };
+    }
 }
 
 const fetchIncident = async (id: string) => {
@@ -34,29 +36,12 @@ const fetchIncident = async (id: string) => {
     throw new Error(`Failed to fetch incident: ${response.statusText}`);
   }
 
-  const data: IncidentApiResponse = await response.json();
-  
-  return {
-    id: data.incident.id,
-    title: data.incident.title,
-    description: data.incident.cause === "TEST" ? "Test incident" : "URL unavailable",
-    cause: data.incident.cause,
-    severity: "MINOR" as const,
-    status: data.incident.status,
-    monitorId: data.incident.monitorId,
-    createdAt: new Date(data.incident.createdAt),
-    updatedAt: new Date(data.incident.updatedAt),
-    resolvedAt: data.incident.resolvedAt ? new Date(data.incident.resolvedAt) : undefined,
-    downtime: undefined,
-    escalated: false,
-    Monitor: data.incident.Monitor,
-    comments: [],
-    postmortem: undefined,
-  };
+  return response.json();
+
 };
 
 export function useIncident(id: string) {
-  return useQuery({
+  return useQuery<IncidentApiResponse, Error>({
     queryKey: ["incident", id],
     queryFn: () => fetchIncident(id),
     enabled: Boolean(id),

@@ -1,67 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  MessageSquare,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  User,
-  Send,
-  Mail,
-  Phone,
-  MessageCircle,
-  Loader2,
-} from "lucide-react";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { useIncidentTimeline } from "@/hooks/useIncidentTimeline";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useAddComment } from "@/hooks/useAddComment";
+import { useIncidentTimeline } from "@/hooks/useIncidentTimeline";
+import { format } from "date-fns";
+import {
+  AlertTriangle,
+  Clock,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Send,
+  User,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface IncidentTimelineProps {
   incidentId: string;
 }
 
-interface TimelineEvent {
-  id: string;
-  type:
-    | "incident_start"
-    | "comment"
-    | "postmortem"
-    | "status_change"
-    | "email"
-    | "phone"
-    | "text"
-    | "zapier";
-  timestamp: Date;
-  title: string;
-  description?: string;
-  user?: {
-    id: string;
-    walletAddress: string;
-  };
-  icon: React.ReactNode;
-  region?: string;
-}
-
-export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) {
+export default function IncidentTimeline({
+  incidentId,
+}: IncidentTimelineProps) {
   const [newComment, setNewComment] = useState("");
-  const { data: timelineEvents, isLoading, error } = useIncidentTimeline(incidentId);
+  const { data, isLoading, error } = useIncidentTimeline(incidentId);
   const addCommentMutation = useAddComment();
-
-  const getInitials = (walletAddress: string) => {
-    return walletAddress.slice(2, 4).toUpperCase();
-  };
-
-  const getShortAddress = (walletAddress: string) => {
-    return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-  };
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
@@ -103,7 +70,7 @@ export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) 
         return "Timeline event";
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -116,13 +83,15 @@ export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) 
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <p className="text-red-500 mb-4">Error loading timeline: {error.message}</p>
+            <p className="text-red-500 mb-4">
+              Error loading timeline: {error.message}
+            </p>
             <Button onClick={() => window.location.reload()} size="sm">
               Try Again
             </Button>
@@ -169,15 +138,15 @@ export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) 
 
       {/* Timeline Events */}
       <div className="space-y-4">
-        {timelineEvents && timelineEvents.length > 0 ? (
-          timelineEvents.map((event, index) => (
+        {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
+          data?.timelineEvents.map((event, index) => (
             <div key={event.id} className="flex gap-4">
               {/* Timeline Line */}
               <div className="flex flex-col items-center">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
                   {getTimelineIcon(event.type)}
                 </div>
-                {index < timelineEvents.length - 1 && (
+                {index < data?.timelineEvents.length - 1 && (
                   <div className="w-0.5 h-8 bg-border mt-2" />
                 )}
               </div>
@@ -185,7 +154,9 @@ export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) 
               {/* Event Content */}
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-sm">{getTimelineTitle(event)}</h3>
+                  <h3 className="font-medium text-sm">
+                    {getTimelineTitle(event)}
+                  </h3>
                   <span className="text-sm text-muted-foreground">
                     {format(new Date(event.createdAt), "MMM d 'at' h:mm a")}
                   </span>
@@ -213,24 +184,41 @@ export default function IncidentTimeline({ incidentId }: IncidentTimelineProps) 
                   <div className="bg-muted p-3 rounded-md text-sm space-y-2">
                     {event.escalationLog.Alert && (
                       <div>
-                        <p className="font-medium">{event.escalationLog.Alert.title}</p>
-                        <p className="text-muted-foreground">{event.escalationLog.Alert.message}</p>
+                        <p className="font-medium">
+                          {event.escalationLog.Alert.title}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {event.escalationLog.Alert.message}
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
-                            Status Code: {event.escalationLog.Alert.triggerStatusCode}
+                            Status Code:{" "}
+                            {event.escalationLog.Alert.triggerStatusCode}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            Expected: {event.escalationLog.Alert.expectedStatusCode}
+                            Expected:{" "}
+                            {event.escalationLog.Alert.expectedStatusCode}
                           </span>
                         </div>
                       </div>
                     )}
                     {event.escalationLog.escalationLevel && (
                       <div>
-                        <p className="font-medium">Level {event.escalationLog.escalationLevel.levelOrder}: {event.escalationLog.escalationLevel.name}</p>
-                        <p className="text-muted-foreground">Channel: {event.escalationLog.escalationLevel.channel}</p>
-                        {event.escalationLog.escalationLevel.contacts.length > 0 && (
-                          <p className="text-muted-foreground">Contacts: {event.escalationLog.escalationLevel.contacts.join(", ")}</p>
+                        <p className="font-medium">
+                          Level {event.escalationLog.escalationLevel.levelOrder}
+                          : {event.escalationLog.escalationLevel.name}
+                        </p>
+                        <p className="text-muted-foreground">
+                          Channel: {event.escalationLog.escalationLevel.channel}
+                        </p>
+                        {event.escalationLog.escalationLevel.contacts.length >
+                          0 && (
+                          <p className="text-muted-foreground">
+                            Contacts:{" "}
+                            {event.escalationLog.escalationLevel.contacts.join(
+                              ", "
+                            )}
+                          </p>
                         )}
                       </div>
                     )}

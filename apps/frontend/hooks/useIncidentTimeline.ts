@@ -37,7 +37,7 @@ interface TimelineApiResponse {
   timelineEvents: TimelineEvent[];
 }
 
-const fetchIncidentTimeline = async (incidentId: string): Promise<TimelineEvent[]> => {
+const fetchIncidentTimeline = async (incidentId: string) => {
   const response = await fetch(`/api/incidents/${incidentId}/timeline`, {
     method: "GET",
     headers: {
@@ -49,12 +49,12 @@ const fetchIncidentTimeline = async (incidentId: string): Promise<TimelineEvent[
     throw new Error(`Failed to fetch timeline: ${response.statusText}`);
   }
 
-  const data: TimelineApiResponse = await response.json();
-  return data.timelineEvents;
+  return response.json();
+
 };
 
 export function useIncidentTimeline(incidentId: string) {
-  return useQuery({
+  return useQuery<TimelineApiResponse, Error>({
     queryKey: ["incident-timeline", incidentId],
     queryFn: () => fetchIncidentTimeline(incidentId),
     enabled: Boolean(incidentId),
