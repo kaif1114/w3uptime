@@ -143,7 +143,6 @@ model Incident {
   updatedAt      DateTime        @updatedAt
   resolvedAt     DateTime?
   downtime       Int?
-  acknowledged   Boolean         @default(false)
   postmortemId   String?         @unique
   timelineEvents TimelineEvent[]
   Monitor        Monitor         @relation(fields: [monitorId], references: [id])
