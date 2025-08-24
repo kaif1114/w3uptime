@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import { randomUUID } from "crypto";
-
-// In-memory store for demo purposes. Replace with DB later.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const globalAny: any = globalThis as any;
-if (!globalAny.__STATUS_PAGE_STORE__) {
-  globalAny.__STATUS_PAGE_STORE__ = new Map<string, any>();
-}
-const store: Map<string, any> = globalAny.__STATUS_PAGE_STORE__;
+import { prisma } from "db/client";
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -58,52 +50,125 @@ const createSchema = z.object({
 });
 
 export const GET = withAuth(async (_req: NextRequest, user) => {
-  const items = Array.from(store.values()).filter((s) => s.userId === user.id);
-  return NextResponse.json({
-    statusPages: items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      isPublished: i.isPublished,
-      historyRange: i.historyRange,
-    })),
-  });
+  try {
+    const statusPages = await prisma.statusPage.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        isPublished: true,
+        logoUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return NextResponse.json({
+      statusPages: statusPages.map((page) => ({
+        id: page.id,
+        name: page.name,
+        isPublished: page.isPublished,
+        historyRange: "7d", // Default value since it's not in DB yet
+        createdAt: page.createdAt.toISOString(),
+        updatedAt: page.updatedAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching status pages:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 });
 
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
+    console.log("🔍 POST /api/status-pages - User:", user.id);
     const body = await req.json();
+    console.log("🔍 Request body:", body);
+    
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
+      console.error("❌ Validation error:", parsed.error);
       return NextResponse.json(
         { error: parsed.error.message },
         { status: 400 }
       );
     }
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    const record = {
-      id,
-      userId: user.id,
-      name: parsed.data.name,
-      isPublished: parsed.data.isPublished ?? false,
-      logoUrl: parsed.data.logoUrl ?? null,
-      logoHrefUrl: parsed.data.logoHrefUrl ?? null,
-      contactUrl: parsed.data.contactUrl ?? null,
-      historyRange: parsed.data.historyRange ?? "7d",
-      sections: parsed.data.sections ?? [],
-      maintenances: parsed.data.maintenances ?? [],
-      updates: parsed.data.updates ?? [],
-      createdAt: now,
-      updatedAt: now,
+    console.log("✅ Validation passed:", parsed.data);
+
+    // Create the status page in the database
+    const statusPage = await prisma.statusPage.create({
+      data: {
+        name: parsed.data.name,
+        isPublished: parsed.data.isPublished ?? false,
+        logoUrl: parsed.data.logoUrl,
+        userId: user.id,
+      },
+    });
+
+    // Create sections if provided
+    if (parsed.data.sections && parsed.data.sections.length > 0) {
+      await prisma.statusPageSection.createMany({
+        data: parsed.data.sections.map((section, index) => ({
+          name: section.name,
+          description: null,
+          order: index + 1,
+          type: "BOTH", // Default type
+          monitorId: section.resources[0]?.monitorId || "", // Use first monitor if available
+          statusPageId: statusPage.id,
+        })),
+      });
+    }
+
+    // Fetch the complete status page with sections
+    const completeStatusPage = await prisma.statusPage.findUnique({
+      where: { id: statusPage.id },
+      include: {
+        statusPageSections: {
+          orderBy: { order: "asc" },
+        },
+        maintenances: true,
+        updates: true,
+      },
+    });
+
+    const response = {
+      id: statusPage.id,
+      userId: statusPage.userId,
+      name: statusPage.name,
+      isPublished: statusPage.isPublished,
+      logoUrl: statusPage.logoUrl,
+      logoHrefUrl: null, // Not in DB schema yet
+      contactUrl: null, // Not in DB schema yet  
+      historyRange: "7d", // Default value
+      sections: completeStatusPage?.statusPageSections.map(section => ({
+        id: section.id,
+        name: section.name,
+        resources: [{ type: "monitor", monitorId: section.monitorId }],
+      })) || [],
+      maintenances: [],
+      updates: [],
+      createdAt: statusPage.createdAt.toISOString(),
+      updatedAt: statusPage.updatedAt.toISOString(),
     };
-    store.set(id, record);
+
+    console.log("✅ Status page created successfully:", response);
     return NextResponse.json(
-      { message: "Status page created", statusPage: record },
+      { message: "Status page created", statusPage: response },
       { status: 201 }
     );
-  } catch (e) {
+  } catch (error) {
+    console.error("❌ Error creating status page:", error);
+    console.error("❌ Error stack:", (error as Error).stack);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: (error as Error).message },
       { status: 500 }
     );
   }

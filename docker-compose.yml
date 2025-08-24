@@ -20,6 +20,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    command: 
+      - postgres
+      - -c
+      - max_worker_processes=24
+      - -c  
+      - timescaledb.max_background_workers=16
 
   pgadmin:
     image: dpage/pgadmin4:latest

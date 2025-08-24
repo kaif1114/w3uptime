@@ -4,6 +4,7 @@ import {
   CreateStatusPageResponse,
   DeleteStatusPageResponse,
   GetStatusPageResponse,
+  StatusPage,
   StatusPagesListResponse,
   UpdateStatusPageData,
   UpdateStatusPageResponse,
@@ -11,6 +12,7 @@ import {
 
 const API_BASE = "/api/status-pages";
 
+// Fetch all status pages
 export function useStatusPages() {
   return useQuery<StatusPagesListResponse>({
     queryKey: ["status-pages"],
@@ -19,12 +21,21 @@ export function useStatusPages() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      if (!res.ok) throw new Error("Failed to fetch status pages");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to fetch status pages");
+      }
       return res.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.status === 403) return false;
+      return failureCount < 2;
     },
   });
 }
 
+// Fetch single status page
 export function useStatusPage(id: string) {
   return useQuery<GetStatusPageResponse>({
     queryKey: ["status-page", id],
@@ -33,41 +44,63 @@ export function useStatusPage(id: string) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      if (!res.ok) throw new Error("Failed to fetch status page");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to fetch status page");
+      }
       return res.json();
     },
     enabled: !!id,
+    staleTime: 1000 * 60 * 2, // 2 minutes for individual pages
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.status === 403) return false;
+      return failureCount < 2;
+    },
   });
 }
 
+// Create status page
 export function useCreateStatusPage() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation<CreateStatusPageResponse, Error, CreateStatusPageData>({
     mutationFn: async (data) => {
       const res = await fetch(API_BASE, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
+
       if (!res.ok) {
-        let message = "Failed to create status page";
-        try {
-          const err = await res.json();
-          message = err.error || message;
-        } catch {}
-        throw new Error(message);
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to create status page");
       }
+
       return res.json();
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["status-pages"] });
+    onSuccess: (response) => {
+      console.log("Status page created successfully:", response.statusPage);
+      // Invalidate and refetch status pages list
+      queryClient.invalidateQueries({ queryKey: ["status-pages"] });
+      // Set the new status page in cache
+      queryClient.setQueryData(
+        ["status-page", response.statusPage.id],
+        response.statusPage
+      );
+    },
+    onError: (error: any) => {
+      console.error("Error creating status page:", error);
     },
   });
 }
 
+// Update status page
 export function useUpdateStatusPage() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation<
     UpdateStatusPageResponse,
     Error,
@@ -77,43 +110,107 @@ export function useUpdateStatusPage() {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
+
       if (!res.ok) {
-        let message = "Failed to update status page";
-        try {
-          const err = await res.json();
-          message = err.error || message;
-        } catch {}
-        throw new Error(message);
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to update status page");
       }
+
       return res.json();
     },
-    onSuccess: (data, vars) => {
-      qc.invalidateQueries({ queryKey: ["status-pages"] });
-      qc.invalidateQueries({ queryKey: ["status-page", vars.id] });
+    onSuccess: (response, variables) => {
+      console.log("Status page updated successfully:", response.statusPage);
+      // Invalidate and refetch status pages list
+      queryClient.invalidateQueries({ queryKey: ["status-pages"] });
+      // Update the specific status page in cache
+      queryClient.setQueryData(
+        ["status-page", variables.id],
+        response.statusPage
+      );
+    },
+    onError: (error: any) => {
+      console.error("Error updating status page:", error);
     },
   });
 }
 
+// Delete status page
 export function useDeleteStatusPage() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation<DeleteStatusPageResponse, Error, string>({
     mutationFn: async (id) => {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to delete status page");
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to delete status page");
       }
+
       return res.json();
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["status-pages"] });
+    onSuccess: (response, id) => {
+      console.log("Status page deleted successfully:", response.message);
+      // Invalidate and refetch status pages list
+      queryClient.invalidateQueries({ queryKey: ["status-pages"] });
+      // Remove the specific status page from cache
+      queryClient.removeQueries({ queryKey: ["status-page", id] });
+    },
+    onError: (error: any) => {
+      console.error("Error deleting status page:", error);
+    },
+  });
+}
+
+// Publish/Unpublish status page (convenience hook)
+export function useToggleStatusPagePublication() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    UpdateStatusPageResponse,
+    Error,
+    { id: string; isPublished: boolean }
+  >({
+    mutationFn: async ({ id, isPublished }) => {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isPublished }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to update status page publication status");
+      }
+
+      return res.json();
+    },
+    onSuccess: (response, variables) => {
+      console.log(`Status page ${variables.isPublished ? 'published' : 'unpublished'} successfully:`, response.statusPage);
+      // Invalidate and refetch status pages list
+      queryClient.invalidateQueries({ queryKey: ["status-pages"] });
+      // Update the specific status page in cache
+      queryClient.setQueryData(
+        ["status-page", variables.id],
+        response.statusPage
+      );
+    },
+    onError: (error: any) => {
+      console.error("Error updating status page publication status:", error);
     },
   });
 }

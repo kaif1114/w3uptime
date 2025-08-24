@@ -4,7 +4,7 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const analyticsQuerySchema = z.object({
-  period: z.enum(['1hr', '1day', '3days', '1week', '2weeks', '30days', '90days']).default('30days'),
+  period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
 });
 
 // GET /api/monitors/[monitorid]/analytics - Get comprehensive monitor analytics
@@ -19,7 +19,7 @@ export const GET = withAuth(async (
     const { searchParams } = new URL(req.url);
     
     const validation = analyticsQuerySchema.safeParse({
-      period: searchParams.get('period') || '30days',
+      period: searchParams.get('period') || 'day',
     });
 
     if (!validation.success) {
@@ -50,40 +50,36 @@ export const GET = withAuth(async (
     const [
       uptimeData,
       totalLatencyData,
-      downtimeData,
       bestRegion,
+      worstRegion,
       latencyByCountry,
       latencyByContinent,
       latencyByCity,
+      sampleCountByCountry,
     ] = await Promise.all([
       // Uptime data
-      prisma.$queryRaw`SELECT * FROM get_uptime_data(${monitorid}, ${period})`,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_uptime_data($1, $2)`, monitorid, period),
       
       // Total latency statistics
-      prisma.$queryRaw`SELECT * FROM get_total_avg_latency(${monitorid}, ${period})`,
-      
-      // Downtime data - cast intervals to text
-      prisma.$queryRaw`
-        SELECT 
-          total_downtime_duration::text,
-          downtime_incidents,
-          avg_incident_duration::text,
-          longest_incident::text,
-          mttr::text
-        FROM get_downtime_data(${monitorid}, ${period})
-      `,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_total_avg_latency($1, $2)`, monitorid, period),
       
       // Best performing region
-      prisma.$queryRaw`SELECT * FROM get_best_performing_region(${monitorid}, ${period})`,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_best_performing_region($1, $2)`, monitorid, period),
+      
+      // Worst performing region
+      prisma.$queryRawUnsafe(`SELECT * FROM get_worst_performing_region($1, $2)`, monitorid, period),
       
       // Latency by country
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_country(${monitorid}, ${period})`,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_country($1, $2)`, monitorid, period),
       
       // Latency by continent
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_continent(${monitorid}, ${period})`,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_continent($1, $2)`, monitorid, period),
       
       // Latency by city
-      prisma.$queryRaw`SELECT * FROM get_avg_latency_by_city(${monitorid}, ${period})`,
+      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_city($1, $2)`, monitorid, period),
+
+      // Sample count by country (for world map)
+      prisma.$queryRawUnsafe(`SELECT * FROM get_sample_count_by_country($1, $2)`, monitorid, period),
     ]);
 
     // Helper function to convert BigInt to Number
@@ -106,12 +102,15 @@ export const GET = withAuth(async (
       period,
       uptime: convertBigIntToNumber((uptimeData as any[])[0]) || null,
       latency: convertBigIntToNumber((totalLatencyData as any[])[0]) || null,
-      downtime: convertBigIntToNumber((downtimeData as any[])[0]) || null,
       bestRegion: convertBigIntToNumber((bestRegion as any[])[0]) || null,
+      worstRegion: convertBigIntToNumber((worstRegion as any[])[0]) || null,
       regional: {
         byCountry: convertBigIntToNumber(latencyByCountry as any[]) || [],
         byContinent: convertBigIntToNumber(latencyByContinent as any[]) || [],
         byCity: convertBigIntToNumber(latencyByCity as any[]) || [],
+      },
+      worldMap: {
+        byCountry: convertBigIntToNumber(sampleCountByCountry as any[]) || [],
       },
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

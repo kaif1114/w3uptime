@@ -9,29 +9,27 @@ datasource db {
 
 model User {
   id                 String             @id @default(uuid())
-  walletAddress      String             @unique
-  publicKey          String?            @unique
-  type               UserType           @default(USER)
-  balance            Int                @default(0)
+  createdAt          DateTime           @default(now())
   nonce              String?
   nonceExpiry        DateTime?
-  createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  sessions           Session[]
-  comments           Comment[]
-  monitors           Monitor[]
-  customPage         StatusPage[]
-  monitorTicks       MonitorTick[]
-  escalationPolicies EscalationPolicy[]
+  walletAddress      String             @unique
+  balance            Int                @default(0)
+  type               UserType           @default(USER)
+  publicKey          String?            @unique
   geoLocationId      String?            @unique
+  comments           Comment[]
+  escalationPolicies EscalationPolicy[]
+  monitors           Monitor[]
+  monitorTicks       MonitorTick[]
+  sessions           Session[]
+  customPage         StatusPage[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
 }
 
 model GeoLocation {
   id                   String   @id @default(uuid())
   ip                   String
-  region               String?
-  regionCode           String?
   country              String
   countryCode          String?
   city                 String
@@ -43,6 +41,8 @@ model GeoLocation {
   timezoneAbbreviation String?
   flag                 String?
   updatedAt            DateTime @updatedAt
+  region               String?
+  regionCode           String?
   user                 User?
 }
 
@@ -57,22 +57,16 @@ model Monitor {
   lastCheckedAt       DateTime?
   status              MonitorStatus       @default(ACTIVE)
   timeout             Int                 @default(30)
-  alerts              Alert[]
   escalationPolicyId  String?
+  alerts              Alert[]
+  Incident            Incident[]
   escalationPolicy    EscalationPolicy?   @relation(fields: [escalationPolicyId], references: [id])
-  Incident            Incident?
   user                User                @relation(fields: [userId], references: [id])
   monitorTicks        MonitorTick[]
   statusPageSections  StatusPageSection[]
 }
 
-//IMPORTANT
-
-//storing the location data in monitorTick as well even if there we can join it from monitorTick -> userId -> geoLocation but since we will be using timescale aggregation this will cause a lot of joins and slow down the queries causing performance issues
-//we need to store the geolocation reference for user(validator) because if we don't we will need ip address lookup from api on every sign up resulting in a lot of api calls for getting geolocation data and ip address does not change very often, if it does we get new geolocation data from api and update in database for that user.
-// we will be needing geolocation data for a user(validator) to provide geographical insights on the distributed network of validators
-
-model MonitorTick { 
+model MonitorTick {
   id            String            @default(uuid())
   monitorId     String
   validatorId   String
@@ -83,10 +77,10 @@ model MonitorTick {
   countryCode   String
   continentCode String
   city          String
-  createdAt     DateTime          @default(now()) @db.Timestamptz
+  createdAt     DateTime          @default(now()) @db.Timestamptz(6)
   monitor       Monitor           @relation(fields: [monitorId], references: [id])
   user          User              @relation(fields: [validatorId], references: [id])
-  
+
   @@id([id, createdAt])
   @@index([createdAt])
   @@index([city, createdAt])
@@ -99,13 +93,13 @@ model MonitorTick {
 model EscalationPolicy {
   id        String            @id @default(uuid())
   name      String
-  userId    String // Add userId to associate policy with user
   enabled   Boolean           @default(true)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
+  userId    String
   levels    EscalationLevel[]
-  monitors  Monitor[]
   user      User              @relation(fields: [userId], references: [id])
+  monitors  Monitor[]
 }
 
 model EscalationLevel {
@@ -148,7 +142,7 @@ model Incident {
   title        String
   description  String?
   status       IncidentStatus   @default(ONGOING)
-  monitorId    String           @unique
+  monitorId    String          
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   resolvedAt   DateTime?
@@ -158,6 +152,10 @@ model Incident {
   comments     Comment[]
   Monitor      Monitor          @relation(fields: [monitorId], references: [id])
   postmortem   Postmortem?
+
+  @@index(monitorId)
+
+  @@index([monitorId, status])
 }
 
 model Comment {
@@ -201,11 +199,11 @@ model Session {
   id            String   @id @default(uuid())
   userId        String
   sessionId     String   @unique
-  walletAddress String // Store wallet address directly in session for quick access
   userAgent     String?
   ipAddress     String?
   createdAt     DateTime @default(now())
   expiresAt     DateTime
+  walletAddress String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
@@ -220,13 +218,13 @@ model StatusPage {
   logoUrl            String?
   logo               String?
   supportUrl         String?
-  userId             String
   announcement       String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  statusPageSections StatusPageSection[]
+  userId             String
   maintenances       Maintenance[]
-  user                User                @relation(fields: [userId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  statusPageSections StatusPageSection[]
   updates            Update[]
 }
 
@@ -240,9 +238,9 @@ model StatusPageSection {
   statusPageId     String
   maintenanceId    String?
   affectedSections AffectedSections[]
-  statusPage       StatusPage            @relation(fields: [statusPageId], references: [id])
-  monitor          Monitor?              @relation(fields: [monitorId], references: [id])
   maintenance      Maintenance?          @relation(fields: [maintenanceId], references: [id])
+  monitor          Monitor               @relation(fields: [monitorId], references: [id])
+  statusPage       StatusPage            @relation(fields: [statusPageId], references: [id])
 }
 
 model Update {
@@ -260,8 +258,8 @@ model AffectedSections {
   updateId  String
   sectionId String
   status    AffectedStatus
-  update    Update            @relation(fields: [updateId], references: [id])
   section   StatusPageSection @relation(fields: [sectionId], references: [id])
+  update    Update            @relation(fields: [updateId], references: [id])
 }
 
 model Maintenance {
@@ -271,8 +269,8 @@ model Maintenance {
   from               DateTime
   to                 DateTime
   statusPageId       String
-  statusPageSections StatusPageSection[]
   statusPage         StatusPage          @relation(fields: [statusPageId], references: [id])
+  statusPageSections StatusPageSection[]
 }
 
 enum MonitorStatus {

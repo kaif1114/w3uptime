@@ -17,12 +17,9 @@ export interface MessageToSign {
 export class SecureMessageSigner {
   private wallet: DecryptedWallet | null = null;
   private ethersWallet: ethers.Wallet | null = null;
-  private sessionTimeout: number;
-  private sessionTimer: NodeJS.Timeout | null = null;
   private keystoreManager: KeystoreManager;
 
-  constructor(sessionTimeoutMinutes: number = 30, keystoreDir?: string) {
-    this.sessionTimeout = sessionTimeoutMinutes * 60 * 1000; // Convert to milliseconds
+  constructor(keystoreDir?: string) {
     this.keystoreManager = new KeystoreManager(keystoreDir);
   }
 
@@ -34,8 +31,6 @@ export class SecureMessageSigner {
       this.wallet = await this.keystoreManager.loadWallet(keystorePath, password);
       this.ethersWallet = new ethers.Wallet(this.wallet.privateKey);
       
-      // Start session timer
-      this.startSessionTimer();
       
       console.log(`Authenticated with wallet: ${this.wallet.address}`);
     } catch (error) {
@@ -113,43 +108,6 @@ export class SecureMessageSigner {
     console.log('Session locked');
   }
 
-  /**
-   * Extend the current session
-   */
-  extendSession(): void {
-    if (this.isAuthenticated()) {
-      this.startSessionTimer();
-      console.log('Session extended');
-    }
-  }
-
-  /**
-   * Get remaining session time in minutes
-   */
-  getSessionTimeRemaining(): number {
-    if (!this.sessionTimer) {
-      return 0;
-    }
-    
-    // This is a simplified version - in practice you'd track the exact expiry time
-    return Math.round(this.sessionTimeout / 60000);
-  }
-
-  /**
-   * Start or restart the session timeout timer
-   */
-  private startSessionTimer(): void {
-    // Clear existing timer
-    if (this.sessionTimer) {
-      clearTimeout(this.sessionTimer);
-    }
-
-    // Set new timer
-    this.sessionTimer = setTimeout(() => {
-      console.log('Session expired due to timeout');
-      this.clearSession();
-    }, this.sessionTimeout);
-  }
 
   /**
    * Clear session data from memory
@@ -166,12 +124,6 @@ export class SecureMessageSigner {
     }
 
     this.ethersWallet = null;
-
-    // Clear timer
-    if (this.sessionTimer) {
-      clearTimeout(this.sessionTimer);
-      this.sessionTimer = null;
-    }
 
     // Force garbage collection if available
     if (global.gc) {
