@@ -46,37 +46,7 @@ export const GET = withAuth(
               },
             },
           },
-          timelineEvents: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                },
-              },
-              escalationLog: {
-                include: {
-                  Alert: {
-                    select: {
-                      id: true,
-                      title: true,
-                      message: true,
-                    },
-                  },
-                  escalationLevel: {
-                    select: {
-                      id: true,
-                      name: true,
-                      levelOrder: true,
-                      channel: true,
-                    },
-                  },
-                },
-              },
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
+          
         },
       });
 

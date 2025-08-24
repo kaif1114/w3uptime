@@ -104,53 +104,6 @@ export const GET = withAuth(async (req: NextRequest, user) => {
           userId: user.id,
         },
       },
-      include: {
-        Monitor: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
-            escalationPolicy: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        timelineEvents: {
-          include: {
-            user: {
-              select: {
-                id: true,
-              },
-            },
-            escalationLog: {
-              include: {
-                Alert: {
-                  select: {
-                    id: true,
-                    title: true,
-                    message: true,
-                  },
-                },
-                escalationLevel: {
-                  select: {
-                    id: true,
-                    name: true,
-                    levelOrder: true,
-                    channel: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 5, // Limit to latest 5 timeline events for list view
-        },
-      },
       orderBy: {
         createdAt: "desc",
       },
