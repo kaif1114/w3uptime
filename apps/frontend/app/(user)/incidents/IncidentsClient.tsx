@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,15 +28,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useIncidents } from "@/hooks/useIncidents";
+import { useIncidents, useUpdateIncident, useDeleteIncident } from "@/hooks/useIncidents";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function IncidentsClient() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const { updateIncident, deleteIncident } = useIncidents();
-  const { incidents, loading, error } = useIncidents();
+  const { data: incidents = [], isLoading: loading, error: queryError } = useIncidents();
+  const updateIncidentMutation = useUpdateIncident();
+  const deleteIncidentMutation = useDeleteIncident();
+  
+  const error = queryError?.message || null;
 
   // Filter incidents based on search query
   const filteredIncidents = useMemo(() => {
@@ -98,16 +103,15 @@ export default function IncidentsClient() {
     try {
       switch (action) {
         case "resolve":
-          await updateIncident(incident.id, { status: "RESOLVED" });
+          await updateIncidentMutation.mutateAsync({ id: incident.id, data: { status: "RESOLVED" } });
           break;
         case "remove":
           if (confirm("Are you sure you want to delete this incident?")) {
-            await deleteIncident(incident.id);
+            await deleteIncidentMutation.mutateAsync(incident.id);
           }
           break;
         case "view":
-          // TODO: Navigate to incident detail page
-          console.log("View incident:", incident.id);
+          router.push(`/incidents/${incident.id}`);
           break;
         case "edit":
           // TODO: Open edit modal or navigate to edit page
@@ -240,7 +244,10 @@ export default function IncidentsClient() {
                           <div className="flex items-center gap-2">
                             {getStatusIcon(incident.status)}
                             <div>
-                              <div className="font-medium">
+                              <div 
+                                className="font-medium cursor-pointer hover:text-purple-600 transition-colors"
+                                onClick={() => router.push(`/incidents/${incident.id}`)}
+                              >
                                 {incident.title}
                               </div>
                               <div className="text-sm text-gray-500">

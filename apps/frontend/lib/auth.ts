@@ -20,6 +20,8 @@ export async function authenticateRequest(
   try {
     const sessionId = request.cookies.get("sessionId")?.value;
 
+    console.log("Authenticating request with sessionId:", sessionId ? "present" : "missing");
+
     if (!sessionId) {
       return {
         authenticated: false,
@@ -43,6 +45,8 @@ export async function authenticateRequest(
       },
     });
 
+    console.log("Session lookup result:", session ? "found" : "not found");
+
     if (!session) {
       return {
         authenticated: false,
@@ -53,6 +57,7 @@ export async function authenticateRequest(
     }
 
     if (new Date() > session.expiresAt) {
+      console.log("Session expired, deleting session");
       await prisma.session.delete({
         where: { sessionId },
       });
@@ -64,6 +69,7 @@ export async function authenticateRequest(
         error: "Session expired",
       };
     }
+    console.log("Authentication successful for user:", session.user.id);
     return {
       authenticated: true,
       user: session.user as AuthenticatedUser,

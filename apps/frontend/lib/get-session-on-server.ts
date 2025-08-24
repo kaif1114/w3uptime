@@ -5,10 +5,10 @@ import { prisma } from "db/client";
 export async function getSessionOnServer() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
+  console.log("Getting session on server, sessionId:", sessionId ? "present" : "missing");
   if (!sessionId) {
     return { success: false, authenticated: false };
   }
-  console.log("Getting session on server")
   const session = await prisma.session.findUnique({
     where: { sessionId },
     include: {
@@ -23,14 +23,18 @@ export async function getSessionOnServer() {
     },
   });
 
+  console.log("Server session lookup result:", session ? "found" : "not found");
+
   if (!session) {
     return { success: false, authenticated: false };
   }
 
   if (new Date() > session.expiresAt) {
+    console.log("Server session expired");
     return { success: false, authenticated: false };
   }
 
+  console.log("Server session successful for user:", session.user.id);
   return {
     success: true,
     authenticated: true,

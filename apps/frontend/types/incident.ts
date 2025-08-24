@@ -18,6 +18,10 @@ export interface Incident {
     id: string;
     name: string;
     url: string;
+    escalationPolicy?: {
+      id: string;
+      name: string;
+    };
   };
   comments: Comment[];
   postmortem?: Postmortem;
@@ -31,6 +35,7 @@ export interface Comment {
   createdAt: Date;
   user: {
     id: string;
+    walletAddress: string;
   };
 }
 
