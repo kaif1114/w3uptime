@@ -26,7 +26,6 @@ CREATE TYPE "public"."TimelineEventType" AS ENUM ('INCIDENT', 'USER_COMMENT', 'P
 -- AlterEnum
 BEGIN;
 CREATE TYPE "public"."AlertType_new" AS ENUM ('TEST', 'URL_UNAVAILABLE');
-ALTER TABLE "public"."Alert" ALTER COLUMN "type" TYPE "public"."AlertType_new" USING ("type"::text::"public"."AlertType_new");
 ALTER TYPE "public"."AlertType" RENAME TO "AlertType_old";
 ALTER TYPE "public"."AlertType_new" RENAME TO "AlertType";
 DROP TYPE "public"."AlertType_old";
