@@ -1,79 +1,40 @@
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { TimelineEvent } from "@prisma/client";
 
-interface AddCommentRequest {
-  description: string;
-}
-
-interface TimelineEvent {
-  id: string;
-  description: string;
-  type: string;
-  createdAt: Date;
-  user: {
-    id: string;
-    walletAddress: string;
-  } | null;
-}
-
-interface UseAddCommentReturn {
-  addComment: (incidentId: string, data: AddCommentRequest) => Promise<TimelineEvent>;
-  loading: boolean;
-  error: string | null;
-}
-
-export function useAddComment(): UseAddCommentReturn {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const addComment = async (incidentId: string, data: AddCommentRequest): Promise<TimelineEvent> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!incidentId) {
-        throw new Error("Incident ID is required");
-      }
-
-      if (!data.description?.trim()) {
-        throw new Error("Comment description is required");
-      }
-
+export function useAddComment() {
+  return useMutation<
+    TimelineEvent,
+    Error,
+    {
+      incidentId: string;
+      description: string;
+    }
+  >({
+    mutationFn: async ({
+      incidentId,
+      description,
+    }: {
+      incidentId: string;
+      description: string;
+    }) => {
       const response = await fetch(`/api/incidents/${incidentId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          description: data.description.trim(),
+          description: description.trim(),
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to add comment: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `Failed to add comment: ${response.statusText}`
+        );
       }
 
-      const result = await response.json();
-      
-      // Transform the response to ensure dates are properly converted
-      const timelineEvent: TimelineEvent = {
-        ...result.timelineEvent,
-        createdAt: new Date(result.timelineEvent.createdAt),
-      };
-
-      return timelineEvent;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add comment";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    addComment,
-    loading,
-    error,
-  };
+      return response.json();
+    },
+  });
 }

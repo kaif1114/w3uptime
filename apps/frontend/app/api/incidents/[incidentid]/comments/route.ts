@@ -60,14 +60,6 @@ export const POST = withAuth(async (
         type: "USER_COMMENT",
         userId: user.id,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            walletAddress: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json(
