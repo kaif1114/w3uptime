@@ -10,6 +10,7 @@ export interface Monitor {
   expectedStatusCodes: number[];
   createdAt: string;
   updatedAt: string;
+  lastCheckedAt?: string | null;
 }
 
 export interface CreateMonitorData {

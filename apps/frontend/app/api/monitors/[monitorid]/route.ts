@@ -12,9 +12,7 @@ const patchMonitorSchema = z.object({
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
 });
 
-const pauseMonitorSchema = z.object({
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("PAUSED"),
-});
+
 
 // GET /api/monitors/[monitorid] - Get single monitor
 export const GET = withAuth(async (
@@ -51,6 +49,7 @@ export const GET = withAuth(async (
         expectedStatusCodes: monitor.expectedStatusCodes,
         createdAt: monitor.createdAt.toISOString(),
         updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
+        lastCheckedAt: monitor.lastCheckedAt ? monitor.lastCheckedAt.toISOString() : null,
       },
       { status: 200 }
     );
