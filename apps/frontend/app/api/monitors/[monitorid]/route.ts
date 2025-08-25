@@ -51,6 +51,7 @@ export const GET = withAuth(async (
         expectedStatusCodes: monitor.expectedStatusCodes,
         createdAt: monitor.createdAt.toISOString(),
         updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
+        lastCheckedAt: monitor.lastCheckedAt ? monitor.lastCheckedAt.toISOString() : null,
       },
       { status: 200 }
     );

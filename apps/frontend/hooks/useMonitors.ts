@@ -269,3 +269,25 @@ export function useMonitorStats(id: string, period: string = 'day') {
   });
 }
 
+// Fetch monitor incidents count
+export function useMonitorIncidents(id: string) {
+  return useQuery<{ monitorId: string; incidentCount: number }>({
+    queryKey: ["monitor-incidents", id],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/${id}/incidents`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch monitor incidents");
+      }
+      return response.json();
+    },
+    enabled: !!id,
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
+}
+

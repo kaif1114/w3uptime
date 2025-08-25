@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useMonitorDetails, usePauseMonitor } from "@/hooks/useMonitors";
+import { useMonitorDetails, useMonitorIncidents, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
   AlertTriangle,
@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
+import { MetricsCards } from "./MetricsCards";
 interface MonitorDetailsProps {
   monitorId: string;
 }
@@ -47,6 +48,7 @@ function getStatusText(status: MonitorStatus): string {
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
+  const { data: incidentsData } = useMonitorIncidents(monitorId);
   const pauseMonitor = usePauseMonitor();
 
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
@@ -147,6 +149,14 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           </Link>
         </div>
       </div>
+
+      {/* Metrics Cards */}
+      <MetricsCards
+        monitorId={monitorId}
+        createdAt={monitor?.createdAt}
+        lastCheckedAt={monitor?.lastCheckedAt}
+        incidentCount={incidentsData?.incidentCount || 0}
+      />
 
       {/* Tab Navigation */}
       <div>
