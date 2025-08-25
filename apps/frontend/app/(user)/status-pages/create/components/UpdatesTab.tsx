@@ -30,6 +30,7 @@ interface UpdatesTabProps {
   updates: StatusUpdate[];
   onCreateReport: (reportData: any) => Promise<void>;
   isSaving: boolean;
+  isCreatingReport: boolean;
   mode: "create" | "edit";
 }
 
@@ -39,6 +40,7 @@ export function UpdatesTab({
   updates,
   onCreateReport,
   isSaving,
+  isCreatingReport,
   mode,
 }: UpdatesTabProps) {
   const [showReportForm, setShowReportForm] = useState(false);
@@ -417,10 +419,10 @@ export function UpdatesTab({
         </Button>
         <Button
           onClick={createReport}
-          disabled={isSaving}
+          disabled={isSaving || isCreatingReport}
           className="bg-primary text-primary-foreground hover:bg-primary/90 px-6"
         >
-          Create report
+          {isCreatingReport ? "Creating..." : "Create report"}
         </Button>
       </div>
 

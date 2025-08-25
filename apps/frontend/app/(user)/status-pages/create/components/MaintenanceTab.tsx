@@ -20,6 +20,8 @@ interface MaintenanceTabProps {
   onRemoveMaintenance: (maintenanceId: string) => void;
   onCreateMaintenance: (maintenanceData: any) => Promise<void>;
   isSaving: boolean;
+  isCreatingMaintenance: boolean;
+  isDeletingMaintenance: boolean;
   mode: "create" | "edit";
 }
 
@@ -30,6 +32,8 @@ export function MaintenanceTab({
   onRemoveMaintenance,
   onCreateMaintenance,
   isSaving,
+  isCreatingMaintenance,
+  isDeletingMaintenance,
   mode,
 }: MaintenanceTabProps) {
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
@@ -402,10 +406,10 @@ export function MaintenanceTab({
           <div className="pt-4">
             <Button
               onClick={scheduleMaintenance}
-              disabled={isSaving}
+              disabled={isSaving || isCreatingMaintenance}
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 h-12 text-base font-medium"
             >
-              Schedule maintenance
+              {isCreatingMaintenance ? "Scheduling..." : "Schedule maintenance"}
             </Button>
           </div>
         </div>
@@ -449,6 +453,7 @@ export function MaintenanceTab({
                         variant="ghost"
                         size="sm"
                         onClick={() => onRemoveMaintenance(maintenance.id)}
+                        disabled={isDeletingMaintenance}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />

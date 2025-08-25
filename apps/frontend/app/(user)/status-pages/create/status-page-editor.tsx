@@ -36,6 +36,13 @@ export default function StatusPageEditor({ mode, id }: Props) {
     // Loading states
     isLoading,
     isSaving,
+    isCreatingReport,
+    isCreatingMaintenance,
+    isDeletingMaintenance,
+    
+    // Error states
+    statusPageError,
+    maintenancesError,
     
     // Computed values
     hasChanges,
@@ -46,6 +53,23 @@ export default function StatusPageEditor({ mode, id }: Props) {
     createMaintenance,
     createReport,
   } = useStatusPageEditor(mode, id);
+
+  // Show error states if any
+  if (statusPageError) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load status page: {statusPageError.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (maintenancesError) {
+    console.warn("Failed to load maintenances:", maintenancesError);
+  }
 
   if (isLoading) {
     return (
@@ -146,6 +170,8 @@ export default function StatusPageEditor({ mode, id }: Props) {
             onRemoveMaintenance={removeMaintenance}
             onCreateMaintenance={createMaintenance}
             isSaving={isSaving}
+            isCreatingMaintenance={isCreatingMaintenance}
+            isDeletingMaintenance={isDeletingMaintenance}
             mode={mode}
           />
         </TabsContent>
@@ -157,6 +183,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
             updates={updates}
             onCreateReport={createReport}
             isSaving={isSaving}
+            isCreatingReport={isCreatingReport}
             mode={mode}
           />
         </TabsContent>

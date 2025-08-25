@@ -142,12 +142,10 @@ export function StructureTab({
                       );
                       const to = idx;
                       if (Number.isNaN(from) || from === to) return;
-                      setSections((prev) => {
-                        const next = [...prev];
-                        const [item] = next.splice(from, 1);
-                        next.splice(to, 0, item);
-                        return next;
-                      });
+                      const next = [...sections];
+                      const [item] = next.splice(from, 1);
+                      next.splice(to, 0, item);
+                      setSections(next);
                     }}
                   >
                     <div className="space-y-4">

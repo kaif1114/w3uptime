@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   useCreateStatusPage,
@@ -25,10 +26,93 @@ interface StatusUpdate {
   createdAt: string;
 }
 
+interface CreateReportData {
+  title: string;
+  description: string;
+  publishedAt: string;
+  affectedSections: Array<{
+    sectionId: string;
+    status: "DOWNTIME" | "DEGRADED" | "RESOLVED";
+  }>;
+}
+
+interface CreateReportResponse {
+  update: {
+    id: string;
+    title: string;
+    description: string;
+    publishedAt: string;
+  };
+}
+
 export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  
+  // TanStack Query mutations
   const createMutation = useCreateStatusPage();
   const updateMutation = useUpdateStatusPage();
+  const createMaintenanceMutation = useCreateMaintenance();
+  const updateMaintenanceMutation = useUpdateMaintenance();
+  const deleteMaintenanceMutation = useDeleteMaintenance();
+
+  // Custom mutation for creating status reports
+  const createReportMutation = useMutation<
+    CreateReportResponse,
+    Error,
+    { statusPageId: string; data: CreateReportData }
+  >({
+    mutationFn: async ({ statusPageId, data }) => {
+      const response = await fetch(`/api/custompage/${statusPageId}/reports`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create status update");
+      }
+
+      return response.json();
+    },
+    onSuccess: (response, variables) => {
+      console.log("Status report created successfully:", response.update);
+      
+      // Invalidate status page data to refresh updates
+      queryClient.invalidateQueries({ 
+        queryKey: ["status-page", variables.statusPageId] 
+      });
+      
+      // Optimistically update the status page cache with the new update
+      queryClient.setQueryData(
+        ["status-page", variables.statusPageId],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          
+          const newUpdate: StatusUpdate = {
+            id: response.update.id,
+            title: response.update.title,
+            body: response.update.description,
+            createdAt: response.update.publishedAt,
+          };
+          
+          return {
+            ...oldData,
+            updates: [newUpdate, ...(oldData.updates || [])],
+          };
+        }
+      );
+      
+      toast.success("Status report created successfully");
+    },
+    onError: (error: any) => {
+      console.error("Error creating status report:", error);
+      toast.error(error.message || "Failed to create status report");
+    },
+  });
 
   // Core state management
   const [isPublished, setIsPublished] = useState(false);
@@ -40,12 +124,17 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const [sections, setSections] = useState<StatusPageSection[]>([]);
   const [updates, setUpdates] = useState<StatusUpdate[]>([]);
 
-  // Data fetching
-  const { data: statusPageData, isLoading } = useStatusPage(id || "");
-  const { data: maintenancesData } = useMaintenances(id || "");
-  const createMaintenanceMutation = useCreateMaintenance();
-  const updateMaintenanceMutation = useUpdateMaintenance();
-  const deleteMaintenanceMutation = useDeleteMaintenance();
+  // Data fetching with TanStack Query
+  const { 
+    data: statusPageData, 
+    isLoading,
+    error: statusPageError 
+  } = useStatusPage(id || "");
+  
+  const { 
+    data: maintenancesData,
+    error: maintenancesError 
+  } = useMaintenances(id || "");
 
   // Use maintenances from API instead of local state
   const maintenances = maintenancesData?.maintenances || [];
@@ -98,34 +187,34 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     );
   };
 
-  // Save handler
+  // Save handler with improved error handling
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error("Company name is required");
       return;
     }
 
+    const saveData = {
+      isPublished,
+      name,
+      logoUrl: logoUrl || null,
+      logoHrefUrl: logoHrefUrl || null,
+      contactUrl: contactUrl || null,
+      historyRange: historyRange as "7d" | "30d" | "90d",
+      sections,
+      maintenances: [],
+      updates,
+    };
+
+    console.log("🔍 Attempting to save with data:", saveData);
+    console.log("🔍 Mode:", mode);
+
     try {
-      const saveData = {
-        isPublished,
-        name,
-        logoUrl: logoUrl || null,
-        logoHrefUrl: logoHrefUrl || null,
-        contactUrl: contactUrl || null,
-        historyRange: historyRange as "7d" | "30d" | "90d",
-        sections,
-        maintenances: [],
-        updates,
-      };
-
-      console.log("🔍 Attempting to save with data:", saveData);
-      console.log("🔍 Mode:", mode);
-
       if (mode === "create") {
         console.log("🔍 Creating new status page...");
         const result = await createMutation.mutateAsync(saveData);
         console.log("✅ Create result:", result);
-        toast.success("Status page created successfully");
+        
         // Redirect to edit mode with the new ID
         if (result?.statusPage?.id) {
           console.log("🔍 Redirecting to:", `/status-pages/${result.statusPage.id}`);
@@ -138,7 +227,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
           data: saveData,
         });
         console.log("✅ Update result:", result);
-        toast.success("Status page updated successfully");
       }
     } catch (error: any) {
       console.error("❌ Save error:", error);
@@ -156,7 +244,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     }
   };
 
-  // Maintenance handlers
+  // Maintenance handlers with TanStack Query
   const removeMaintenance = async (maintenanceId: string) => {
     if (!id) return; // Need status page ID
     
@@ -165,10 +253,10 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
         statusPageId: id,
         maintenanceId,
       });
-      toast.success("Maintenance deleted successfully");
+      // Success toast is handled in the mutation's onSuccess
     } catch (error) {
       console.error("Error deleting maintenance:", error);
-      toast.error("Failed to delete maintenance");
+      // Error toast is handled in the mutation's onError
     }
   };
 
@@ -181,42 +269,20 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       statusPageId: id,
       data: maintenanceData,
     });
-    toast.success("Maintenance scheduled");
+    // Success toast is handled in the mutation's onSuccess
   };
 
-  // Create report handler
-  const createReport = async (payload: any) => {
+  // Create report handler with TanStack Query
+  const createReport = async (payload: CreateReportData) => {
     if (!id) {
       throw new Error("Status page ID is required");
     }
 
-    // Call the API to create the status update
-    const response = await fetch(`/api/custompage/${id}/reports`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    await createReportMutation.mutateAsync({
+      statusPageId: id,
+      data: payload,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to create status update");
-    }
-
-    const result = await response.json();
-    
-    // Add the new update to local state
-    const newUpdate: StatusUpdate = {
-      id: result.update.id,
-      title: result.update.title,
-      body: result.update.description,
-      createdAt: result.update.publishedAt,
-    };
-    const nextUpdates = [newUpdate, ...updates];
-    setUpdates(nextUpdates);
-    
-    toast.success("Status report created successfully");
+    // Success/error handling is done in the mutation's callbacks
   };
 
   return {
@@ -242,6 +308,13 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     // Loading states
     isLoading,
     isSaving: createMutation.isPending || updateMutation.isPending,
+    isCreatingReport: createReportMutation.isPending,
+    isCreatingMaintenance: createMaintenanceMutation.isPending,
+    isDeletingMaintenance: deleteMaintenanceMutation.isPending,
+    
+    // Error states
+    statusPageError,
+    maintenancesError,
     
     // Computed values
     hasChanges: hasChanges(),
