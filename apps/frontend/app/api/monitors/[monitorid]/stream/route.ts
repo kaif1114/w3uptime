@@ -91,9 +91,6 @@ export const GET = withAuth(async (
           controller.error(error);
           cleanupConnection(monitorid);
         });
-
-        // Store the connection
-        monitorClients.set(monitorid, { client: pgClient, responseStream: stream });
       },
 
       cancel() {
@@ -101,6 +98,9 @@ export const GET = withAuth(async (
         cleanupConnection(monitorid);
       },
     });
+
+    // Store the connection after stream is created
+    monitorClients.set(monitorid, { client: pgClient, responseStream: stream });
 
     // Return SSE response
     return new Response(stream, {
