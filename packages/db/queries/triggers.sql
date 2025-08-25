@@ -8,16 +8,16 @@ DECLARE
 BEGIN
   -- Create payload with monitor update information
   payload := json_build_object(
-    'monitorId', NEW.monitorId,
-    'status', NEW.status,
-    'latency', NEW.latency,
-    'checkedAt', NEW.createdAt,
+    'monitorId', NEW."monitorId",
+    'status', NEW."status",
+    'latency', NEW."latency",
+    'checkedAt', NEW."createdAt",
     'location', json_build_object(
-      'city', NEW.city,
-      'countryCode', NEW.countryCode,
-      'continentCode', NEW.continentCode,
-      'latitude', NEW.latitude,
-      'longitude', NEW.longitude
+      'city', NEW."city",
+      'countryCode', NEW."countryCode",
+      'continentCode', NEW."continentCode",
+      'latitude', NEW."latitude",
+      'longitude', NEW."longitude"
     )
   );
   
@@ -40,8 +40,8 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Update the Monitor's lastCheckedAt timestamp
   UPDATE "Monitor" 
-  SET "lastCheckedAt" = NEW.createdAt 
-  WHERE id = NEW.monitorId;
+  SET "lastCheckedAt" = NEW."createdAt" 
+  WHERE id = NEW."monitorId";
   
   RETURN NEW;
 END;
