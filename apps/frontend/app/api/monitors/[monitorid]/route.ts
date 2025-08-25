@@ -12,9 +12,7 @@ const patchMonitorSchema = z.object({
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
 });
 
-const pauseMonitorSchema = z.object({
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("PAUSED"),
-});
+
 
 // GET /api/monitors/[monitorid] - Get single monitor
 export const GET = withAuth(async (
