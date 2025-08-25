@@ -46,15 +46,37 @@ function formatUptime(createdAt: string): string {
 function formatTimeAgo(timestamp: string | null): string {
   if (!timestamp) return 'Never';
   
-  const checkedTime = new Date(timestamp);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - checkedTime.getTime()) / 1000);
+  try {
+    const checkedTime = new Date(timestamp);
+    const now = new Date();
+    
+    // Check if the timestamp is valid
+    if (isNaN(checkedTime.getTime())) {
+      return 'Invalid time';
+    }
+    
+    const diff = Math.floor((now.getTime() - checkedTime.getTime()) / 1000);
 
-  if (diff < 60) return `${diff} second${diff !== 1 ? 's' : ''} ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} minute${Math.floor(diff / 60) !== 1 ? 's' : ''} ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hour${Math.floor(diff / 3600) !== 1 ? 's' : ''} ago`;
-  
-  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) !== 1 ? 's' : ''} ago`;
+    // Handle negative differences (future timestamps)
+    if (diff < 0) {
+      return 'Just now';
+    }
+
+    if (diff < 10) return 'Just now';
+    if (diff < 60) return `${diff} second${diff !== 1 ? 's' : ''} ago`;
+    
+    const minutes = Math.floor(diff / 60);
+    if (diff < 3600) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    
+    const hours = Math.floor(diff / 3600);
+    if (diff < 86400) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    
+    const days = Math.floor(diff / 86400);
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  } catch (error) {
+    console.error('Error formatting time ago:', error);
+    return 'Unknown';
+  }
 }
 
 export function MetricsCards({ monitorId, createdAt, lastCheckedAt: initialLastCheckedAt, incidentCount = 0 }: MetricsCardsProps) {
