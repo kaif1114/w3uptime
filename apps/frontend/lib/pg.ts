@@ -6,7 +6,6 @@ const activeStreams = new Map<string, {
   monitorId: string;
   userId: string;
   controller: ReadableStreamDefaultController;
-  connectedAt: Date;
 }>();
 
 // Connection state management
@@ -15,7 +14,6 @@ let isConnected = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BASE_DELAY = 1000; // 1 second
-const STREAM_CLEANUP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const HEARTBEAT_INTERVAL = 30 * 1000; // 30 seconds
 
 // Create a new PostgreSQL client for listening to notifications
@@ -31,34 +29,6 @@ const createPgClient = () => {
   return pgClient;
 };
 
-// Clean up expired streams periodically
-const cleanupExpiredStreams = () => {
-  const now = new Date();
-  const expiredStreams: string[] = [];
-  
-  activeStreams.forEach((stream, monitorId) => {
-    const timeDiff = now.getTime() - stream.connectedAt.getTime();
-    if (timeDiff > STREAM_CLEANUP_TIMEOUT) {
-      expiredStreams.push(monitorId);
-    }
-  });
-  
-  expiredStreams.forEach((monitorId) => {
-    const stream = activeStreams.get(monitorId);
-    if (stream) {
-      try {
-        stream.controller.close();
-      } catch (error) {
-        console.error(`Error closing expired stream ${monitorId}:`, error);
-      }
-      activeStreams.delete(monitorId);
-    }
-  });
-  
-  if (expiredStreams.length > 0) {
-    console.log(`Cleaned up ${expiredStreams.length} expired streams`);
-  }
-};
 
 // Heartbeat mechanism to keep connection alive
 const startHeartbeat = () => {
@@ -72,9 +42,6 @@ const startHeartbeat = () => {
         reconnectWithBackoff();
       }
     }
-    
-    // Clean up expired streams during heartbeat
-    cleanupExpiredStreams();
   }, HEARTBEAT_INTERVAL);
 };
 
@@ -199,8 +166,7 @@ export const registerStream = (monitorId: string, userId: string, controller: Re
   activeStreams.set(monitorId, { 
     monitorId, 
     userId,
-    controller,
-    connectedAt: new Date()
+    controller
   });
   console.log(`Stream registered for monitor ${monitorId}, user ${userId}. Active streams: ${activeStreams.size}`);
 };
