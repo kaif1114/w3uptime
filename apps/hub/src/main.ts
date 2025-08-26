@@ -346,7 +346,7 @@ setInterval(async () => {
       };
     });
   }
-}, 5 * 1000);
+}, 30 * 1000);
 
 function verifyMessage(
   signature: string,
