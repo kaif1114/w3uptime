@@ -303,7 +303,9 @@ ws.on("connection", (socket: WebSocket) => {
 setInterval(async () => {
   const monitorsToValidate = await prisma.monitor.findMany({
     where: {
-      status: "ACTIVE",
+      status: {
+        not: "PAUSED",
+      },
     },
   });
 
