@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
-import { registerStream, unregisterStream } from "@/lib/pg";
+import { registerStream, unregisterStream } from "@/lib/notifications";
 
 
 // Clean up function to unregister streams

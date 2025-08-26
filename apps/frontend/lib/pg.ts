@@ -1,12 +1,4 @@
 import { Client } from "pg";
-import { prisma } from "db/client";
-
-// Global registry for active SSE streams with user authorization
-const activeStreams = new Map<string, {
-  monitorId: string;
-  userId: string;
-  controller: ReadableStreamDefaultController;
-}>();
 
 // Connection state management
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -18,6 +10,7 @@ const globalForPg = globalThis as unknown as {
   pgNotificationClient: Client | undefined;
   isConnected: boolean | undefined;
   reconnectAttempts: number | undefined;
+  heartbeatInterval: NodeJS.Timeout | undefined;
 };
 
 let pgClient = globalForPg.pgNotificationClient;
@@ -40,16 +33,21 @@ const createPgClient = () => {
   return pgClient;
 };
 
-
 // Heartbeat mechanism to keep connection alive
 const startHeartbeat = () => {
-  setInterval(async () => {
+  // Clear existing heartbeat if any
+  if (globalForPg.heartbeatInterval) {
+    clearInterval(globalForPg.heartbeatInterval);
+  }
+  
+  globalForPg.heartbeatInterval = setInterval(async () => {
     if (isConnected && pgClient) {
       try {
         await pgClient.query('SELECT 1');
       } catch (error) {
         console.error('Heartbeat failed:', error);
         isConnected = false;
+        globalForPg.isConnected = false;
         reconnectWithBackoff();
       }
     }
@@ -93,33 +91,6 @@ const initializePgClient = async () => {
     globalForPg.isConnected = true;
     console.log('PostgreSQL notification client connected successfully');
     
-    // Set up global notification handler
-    pgClient.on('notification', (msg) => {
-      try {
-        if (msg.channel === 'monitor_update') {
-          const payload = JSON.parse(msg.payload || '{}');
-          
-          // Find the stream for this monitor
-          const stream = activeStreams.get(payload.monitorId);
-          if (stream) {
-            // Authorization was already verified during stream registration
-            const sseData = `data: ${JSON.stringify({
-              type: 'monitor_update',
-              monitorId: payload.monitorId,
-              status: payload.status,
-              latency: payload.latency,
-              checkedAt: payload.checkedAt,
-              location: payload.location
-            })}\n\n`;
-            
-            stream.controller.enqueue(new TextEncoder().encode(sseData));
-          }
-        }
-      } catch (error) {
-        console.error('Error processing notification:', error);
-      }
-    });
-
     // Handle connection errors with improved error isolation
     pgClient.on('error', (error) => {
       console.error('PostgreSQL client error:', error);
@@ -138,14 +109,10 @@ const initializePgClient = async () => {
       
       // Only close streams if we're not attempting to reconnect
       if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        activeStreams.forEach((stream) => {
-          try {
-            stream.controller.close();
-          } catch (error) {
-            console.error('Error closing stream on connection end:', error);
-          }
+        // Import here to avoid circular dependency
+        import('./notifications').then(({ cleanupAllStreams }) => {
+          cleanupAllStreams();
         });
-        activeStreams.clear();
       } else {
         reconnectWithBackoff();
       }
@@ -159,32 +126,10 @@ const initializePgClient = async () => {
   }
 };
 
-// Register a new SSE stream for a monitor with user authorization
-export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
-  activeStreams.set(monitorId, { 
-    monitorId, 
-    userId,
-    controller
-  });
-  console.log(`Stream registered for monitor ${monitorId}, user ${userId}. Active streams: ${activeStreams.size}`);
-};
-
-// Unregister an SSE stream
-export const unregisterStream = (monitorId: string) => {
-  const existed = activeStreams.delete(monitorId);
-  if (existed) {
-    console.log(`Stream unregistered for monitor ${monitorId}. Active streams: ${activeStreams.size}`);
-  }
-};
-
-// Get count of active streams (for debugging)
-export const getActiveStreamCount = () => activeStreams.size;
-
 // Get connection status (for health checks)
 export const getConnectionStatus = () => ({
   isConnected,
   reconnectAttempts,
-  activeStreamCount: activeStreams.size,
   clientExists: !!pgClient
 });
 
@@ -202,6 +147,25 @@ export const forceReconnect = async () => {
     }
   }
   await initializePgClient();
+};
+
+// Get the notification client (main export for notifications module)
+export const getNotificationClient = async (): Promise<Client> => {
+  // If already connected via global singleton, return existing client
+  if (pgClient && isConnected) {
+    console.log('Using existing PostgreSQL notification connection');
+    return pgClient;
+  }
+  
+  // Initialize if not connected
+  await initializePgClient();
+  startHeartbeat();
+  
+  if (!pgClient) {
+    throw new Error('Failed to initialize PostgreSQL notification client');
+  }
+  
+  return pgClient;
 };
 
 // Initialize the client when the module loads
@@ -241,15 +205,10 @@ if (process.env.NODE_ENV === 'production' || !pgClient || !isConnected) {
 const cleanup = async () => {
   console.log('Cleaning up PostgreSQL notification system...');
   
-  // Close all active streams gracefully
-  activeStreams.forEach((stream, monitorId) => {
-    try {
-      stream.controller.close();
-    } catch (error) {
-      console.error(`Error closing stream ${monitorId} during cleanup:`, error);
-    }
-  });
-  activeStreams.clear();
+  // Clear heartbeat
+  if (globalForPg.heartbeatInterval) {
+    clearInterval(globalForPg.heartbeatInterval);
+  }
   
   // Close PostgreSQL connection
   if (pgClient && isConnected) {
@@ -269,4 +228,4 @@ if (process.env.NODE_ENV === 'development') {
   process.on('SIGUSR2', cleanup);
 }
 
-export { pgClient as default, initialize };
+export { pgClient as default };
