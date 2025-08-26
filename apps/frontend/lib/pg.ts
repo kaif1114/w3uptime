@@ -83,7 +83,7 @@ const reconnectWithBackoff = async () => {
 // Initialize connection and set up notification handling
 const initializePgClient = async () => {
   try {
-    createPgClient();
+    const pgClient = createPgClient();
     await pgClient.connect();
     await pgClient.query('LISTEN monitor_update');
     
@@ -149,24 +149,6 @@ export const forceReconnect = async () => {
   await initializePgClient();
 };
 
-// Get the notification client (main export for notifications module)
-export const getNotificationClient = async (): Promise<Client> => {
-  // If already connected via global singleton, return existing client
-  if (pgClient && isConnected) {
-    console.log('Using existing PostgreSQL notification connection');
-    return pgClient;
-  }
-  
-  // Initialize if not connected
-  await initializePgClient();
-  startHeartbeat();
-  
-  if (!pgClient) {
-    throw new Error('Failed to initialize PostgreSQL notification client');
-  }
-  
-  return pgClient;
-};
 
 // Initialize the client when the module loads
 let initializationPromise: Promise<void> | null = null;
@@ -194,12 +176,14 @@ const initialize = async () => {
   return initializationPromise;
 };
 
-// Start initialization only in production or if not already connected
-if (process.env.NODE_ENV === 'production' || !pgClient || !isConnected) {
-  initialize().catch((error) => {
-    console.error('Initial PostgreSQL connection failed:', error);
-  });
-}
+// Initialize only when explicitly called (not on module load)
+export const initializeConnection = () => {
+  if (!pgClient || !isConnected) {
+    initialize().catch((error) => {
+      console.error('PostgreSQL connection failed:', error);
+    });
+  }
+};
 
 // Clean up on process termination
 const cleanup = async () => {

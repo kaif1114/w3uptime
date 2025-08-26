@@ -1,4 +1,4 @@
-import { getNotificationClient } from "./pg";
+import pgClient, { initializeConnection } from "./pg";
 
 // Global registry for active SSE streams with user authorization
 const activeStreams = new Map<string, {
@@ -7,9 +7,16 @@ const activeStreams = new Map<string, {
   controller: ReadableStreamDefaultController;
 }>();
 
-// Initialize notification handling
-export const initializeNotificationHandler = async () => {
-  const pgClient = await getNotificationClient();
+// Global flag to ensure notification handler is only set up once
+let notificationHandlerInitialized = false;
+
+// Initialize notification handling (called lazily when first stream is registered)
+export const initializeNotificationHandler = () => {
+  if (notificationHandlerInitialized || !pgClient) {
+    return;
+  }
+  
+  notificationHandlerInitialized = true;
   
   // Set up global notification handler
   pgClient.on('notification', (msg) => {
@@ -37,10 +44,18 @@ export const initializeNotificationHandler = async () => {
       console.error('Error processing notification:', error);
     }
   });
+  
+  console.log('PostgreSQL notification handler initialized');
 };
 
 // Register a new SSE stream for a monitor with user authorization
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
+  // Ensure PostgreSQL connection is initialized
+  initializeConnection();
+  
+  // Initialize notification handler lazily when first stream is registered
+  initializeNotificationHandler();
+  
   activeStreams.set(monitorId, { 
     monitorId, 
     userId,
@@ -73,7 +88,4 @@ export const cleanupAllStreams = () => {
   console.log('All streams cleaned up');
 };
 
-// Initialize notification handling when module loads
-initializeNotificationHandler().catch((error) => {
-  console.error('Failed to initialize notification handler:', error);
-});
+// Notification handler will be initialized lazily when first stream is registered
