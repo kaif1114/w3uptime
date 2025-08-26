@@ -94,12 +94,11 @@ const initializePgClient = async () => {
     console.log('PostgreSQL notification client connected successfully');
     
     // Initialize notification handler globally (only once)
-    if (!notificationHandlerInitialized) {
+    if (!notificationHandlerInitialized && isConnected) {
       const { initializeNotificationHandler } = await import('./notifications');
       initializeNotificationHandler();
-      notificationHandlerInitialized = true;
       globalForPg.notificationHandlerInitialized = true;
-      console.log('PostgreSQL notification handler initialized globally');
+      notificationHandlerInitialized = true;
     }
     
     // Handle connection errors with improved error isolation
@@ -168,7 +167,7 @@ let initializationPromise: Promise<void> | null = null;
 const initialize = async () => {
   // If already connected via global singleton, don't reinitialize
   if (pgClient && isConnected) {
-    console.log('Using existing PostgreSQL notification connection');
+    console.log('Using existing PostgreSQL connection');
     return;
   }
   

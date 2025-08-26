@@ -27,3 +27,25 @@ export async function createIncident(monitorId: string, title: string, time: Dat
     console.error("Error creating incident:", error);
   }
 }
+
+export async function resolveIncident(monitorId: string, time: Date) {
+    try {
+        const incident = await prisma.incident.findFirst({
+            where: {
+                monitorId,
+                cause: "URL_UNAVAILABLE",
+                status: {
+                    in: ["ONGOING", "ACKNOWLEDGED"]
+                }
+            },
+        })
+        if(incident) {
+            await prisma.incident.update({
+                where: { id: incident.id },
+                data: { status: "RESOLVED", resolvedAt: time }
+            })
+        }
+    } catch (error) {
+        console.error("Error resolving incident:", error);
+    }
+}

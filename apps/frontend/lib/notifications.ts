@@ -1,5 +1,5 @@
 import pgClient, { initializeConnection } from "./pg";
-import { createIncident } from "./incident";
+import { createIncident, resolveIncident } from "./incident";
 // Global registry for active SSE streams with user authorization
 const activeStreams = new Map<string, {
   monitorId: string;
@@ -8,16 +8,13 @@ const activeStreams = new Map<string, {
 }>();
 
 // Global flag to ensure notification handler is only set up once
-let notificationHandlerInitialized = false;
 
 // Initialize notification handling (called lazily when first stream is registered)
 export const initializeNotificationHandler = () => {
-  if (notificationHandlerInitialized || !pgClient) {
+  if (!pgClient) {
     return;
   }
-  
-  notificationHandlerInitialized = true;
-  
+
   // Set up global notification handler
   pgClient.on('notification', (msg) => {
     try {
@@ -42,6 +39,9 @@ export const initializeNotificationHandler = () => {
         if(payload.status === 'BAD') {
           createIncident(payload.monitorId, 'Monitor is down', new Date(payload.checkedAt));
         }
+        else if(payload.status === 'GOOD') {
+          resolveIncident(payload.monitorId, new Date(payload.checkedAt));
+        }
       }
     } catch (error) {
       console.error('Error processing notification:', error);
@@ -55,9 +55,6 @@ export const initializeNotificationHandler = () => {
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
   // Ensure PostgreSQL connection is initialized
   initializeConnection();
-  
-  // Initialize notification handler lazily when first stream is registered
-  initializeNotificationHandler();
   
   activeStreams.set(monitorId, { 
     monitorId, 
