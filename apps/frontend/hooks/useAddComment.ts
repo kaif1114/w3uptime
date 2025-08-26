@@ -30,7 +30,7 @@ export function useAddComment() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || `Failed to add comment: ${response.statusText}`
+          errorData.error || `Failed to add any comment: ${response.statusText}`
         );
       }
 
