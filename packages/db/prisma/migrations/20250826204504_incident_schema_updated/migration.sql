@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "public"."Alert" ALTER COLUMN "type" SET DEFAULT 'URL_UNAVAILABLE';
+
+-- AlterTable
+ALTER TABLE "public"."Incident" ALTER COLUMN "updatedAt" DROP NOT NULL,
+ALTER COLUMN "cause" SET DEFAULT 'URL_UNAVAILABLE';

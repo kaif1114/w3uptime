@@ -91,6 +91,10 @@ const initializePgClient = async () => {
     globalForPg.isConnected = true;
     console.log('PostgreSQL notification client connected successfully');
     
+    // Initialize notification handler globally
+    const { initializeNotificationHandler } = await import('./notifications');
+    initializeNotificationHandler();
+    
     // Handle connection errors with improved error isolation
     pgClient.on('error', (error) => {
       console.error('PostgreSQL client error:', error);
