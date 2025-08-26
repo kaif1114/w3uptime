@@ -25,11 +25,13 @@ function getStatusColor(status: MonitorStatus): string {
     case "ACTIVE":
       return "bg-green-500";
     case "PAUSED":
-      return "bg-yellow-500";
-    case "DISABLED":
       return "bg-gray-500";
+    case "DOWN":
+      return "bg-red-500";
+    case "RECOVERING":
+      return "bg-blue-500";
     default:
-      return "bg-gray-500";
+      return "bg-green-500";
   }
 }
 
@@ -39,7 +41,7 @@ function getStatusText(status: MonitorStatus): string {
       return "Up";
     case "PAUSED":
       return "Paused";
-    case "DISABLED":
+    case "DOWN":
       return "Down";
     default:
       return "Unknown";
@@ -47,7 +49,7 @@ function getStatusText(status: MonitorStatus): string {
 }
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
-  const { data: monitor, isLoading, error } = useMonitorDetails(monitorId);
+  const { data: monitor, isLoading, error, refetch: refetchMonitor } = useMonitorDetails(monitorId);
   const { data: incidentsData } = useMonitorIncidents(monitorId);
   const pauseMonitor = usePauseMonitor();
 
@@ -156,6 +158,8 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
         createdAt={monitor?.createdAt}
         lastCheckedAt={monitor?.lastCheckedAt}
         incidentCount={incidentsData?.incidentCount || 0}
+        refetchMonitor={refetchMonitor}
+        currentStatus={monitor?.status}
       />
 
       {/* Tab Navigation */}

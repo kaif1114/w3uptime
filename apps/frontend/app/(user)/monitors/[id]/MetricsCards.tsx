@@ -3,12 +3,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Clock, Shield, AlertTriangle } from "lucide-react";
+import { MonitorStatus } from "@/types/monitor";
 
 interface MetricsCardsProps {
   monitorId: string;
   createdAt?: string;
   lastCheckedAt?: string | null;
   incidentCount?: number;
+  refetchMonitor: () => void;
+  currentStatus: MonitorStatus;
 }
 
 interface SSEMessage {
@@ -79,7 +82,7 @@ function formatTimeAgo(timestamp: string | null): string {
   }
 }
 
-export function MetricsCards({ monitorId, createdAt, lastCheckedAt: initialLastCheckedAt, incidentCount = 0 }: MetricsCardsProps) {
+export function MetricsCards({ monitorId, createdAt, lastCheckedAt: initialLastCheckedAt, incidentCount = 0, refetchMonitor, currentStatus }: MetricsCardsProps) {
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(initialLastCheckedAt || null);
   const [liveTimeAgo, setLiveTimeAgo] = useState<string>('');
 
@@ -105,6 +108,9 @@ export function MetricsCards({ monitorId, createdAt, lastCheckedAt: initialLastC
         
         if (data.type === 'monitor_update' && data.monitorId === monitorId) {
           setLastCheckedAt(data.checkedAt || null);
+          if(data.status === 'DOWN' && currentStatus !== 'DOWN' || data.status === 'ACTIVE' && currentStatus !== 'ACTIVE' || data.status === 'RECOVERING' && currentStatus !== 'RECOVERING') {
+            refetchMonitor();
+          }
         }
       } catch (error) {
         console.error('Error parsing SSE message:', error);

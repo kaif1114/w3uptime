@@ -31,7 +31,7 @@ export const initializeNotificationHandler = () => {
           const sseData = `data: ${JSON.stringify({
             type: 'monitor_update',
             monitorId: payload.monitorId,
-            status: payload.status,
+            status: payload.status == 'BAD' ? 'DOWN' : 'ACTIVE',
             latency: payload.latency,
             checkedAt: payload.checkedAt,
             location: payload.location
