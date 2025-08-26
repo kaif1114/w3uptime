@@ -258,7 +258,8 @@ model Maintenance {
 enum MonitorStatus {
   ACTIVE
   PAUSED
-  DISABLED
+  DOWN
+  RECOVERING
 }
 
 enum IncidentStatus {

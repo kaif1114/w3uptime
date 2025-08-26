@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
-import { Client } from "pg";
+import { registerStream, unregisterStream } from "@/lib/notifications";
 
-// Global clients map to manage PostgreSQL connections per monitor
-const monitorClients = new Map<string, { client: Client; responseStream: ReadableStream }>();
 
-// Clean up function to close connections
+// Clean up function to unregister streams
 const cleanupConnection = (monitorId: string) => {
-  const connection = monitorClients.get(monitorId);
-  if (connection) {
-    connection.client.end().catch(console.error);
-    monitorClients.delete(monitorId);
-  }
+  unregisterStream(monitorId);
 };
 
 // GET /api/monitors/[monitorid]/stream - SSE endpoint for real-time updates
@@ -40,57 +34,15 @@ export const GET = withAuth(async (
       );
     }
 
-    // Create a new PostgreSQL client for listening to notifications
-    const pgClient = new Client({
-      connectionString: process.env.DATABASE_URL,
-    });
-
-    await pgClient.connect();
-    await pgClient.query('LISTEN monitor_update');
-
     // Create SSE stream
     const stream = new ReadableStream({
       start(controller) {
+        // Register this stream with the global pg client (with user authorization)
+        registerStream(monitorid, user.id, controller);
+        
         // Send initial connection message
         const data = `data: ${JSON.stringify({ type: 'connected', monitorId: monitorid })}\n\n`;
         controller.enqueue(new TextEncoder().encode(data));
-
-        // Listen for PostgreSQL notifications
-        pgClient.on('notification', (msg) => {
-          try {
-            if (msg.channel === 'monitor_update') {
-              const payload = JSON.parse(msg.payload || '{}');
-              
-              // Only send notifications for this specific monitor
-              if (payload.monitorId === monitorid) {
-                const sseData = `data: ${JSON.stringify({
-                  type: 'monitor_update',
-                  monitorId: payload.monitorId,
-                  status: payload.status,
-                  latency: payload.latency,
-                  checkedAt: payload.checkedAt,
-                  location: payload.location
-                })}\n\n`;
-                
-                controller.enqueue(new TextEncoder().encode(sseData));
-              }
-            }
-          } catch (error) {
-            console.error('Error processing notification:', error);
-          }
-        });
-
-        // Handle client disconnection
-        pgClient.on('end', () => {
-          controller.close();
-          cleanupConnection(monitorid);
-        });
-
-        pgClient.on('error', (error) => {
-          console.error('PostgreSQL client error:', error);
-          controller.error(error);
-          cleanupConnection(monitorid);
-        });
       },
 
       cancel() {
@@ -98,9 +50,6 @@ export const GET = withAuth(async (
         cleanupConnection(monitorid);
       },
     });
-
-    // Store the connection after stream is created
-    monitorClients.set(monitorid, { client: pgClient, responseStream: stream });
 
     // Return SSE response
     return new Response(stream, {
@@ -123,11 +72,3 @@ export const GET = withAuth(async (
   }
 });
 
-// Clean up connections on process termination
-process.on('SIGTERM', () => {
-  monitorClients.forEach((_, monitorId) => cleanupConnection(monitorId));
-});
-
-process.on('SIGINT', () => {
-  monitorClients.forEach((_, monitorId) => cleanupConnection(monitorId));
-});
