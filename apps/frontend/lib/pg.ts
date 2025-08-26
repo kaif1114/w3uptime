@@ -79,8 +79,8 @@ const initializePgClient = async () => {
     isConnected = true;
     console.log('PostgreSQL notification client connected successfully');
     
-    // Set up global notification handler with authorization
-    pgClient.on('notification', async (msg) => {
+    // Set up global notification handler
+    pgClient.on('notification', (msg) => {
       try {
         if (msg.channel === 'monitor_update') {
           const payload = JSON.parse(msg.payload || '{}');
@@ -88,36 +88,17 @@ const initializePgClient = async () => {
           // Find the stream for this monitor
           const stream = activeStreams.get(payload.monitorId);
           if (stream) {
-            // Verify user owns this monitor (authorization check)
-            try {
-              const monitor = await prisma.monitor.findFirst({
-                where: {
-                  id: payload.monitorId,
-                  userId: stream.userId,
-                },
-                select: { id: true }
-              });
-              
-              if (monitor) {
-                const sseData = `data: ${JSON.stringify({
-                  type: 'monitor_update',
-                  monitorId: payload.monitorId,
-                  status: payload.status,
-                  latency: payload.latency,
-                  checkedAt: payload.checkedAt,
-                  location: payload.location
-                })}\n\n`;
-                
-                stream.controller.enqueue(new TextEncoder().encode(sseData));
-              } else {
-                console.warn(`Unauthorized access attempt for monitor ${payload.monitorId} by user ${stream.userId}`);
-                // Remove unauthorized stream
-                activeStreams.delete(payload.monitorId);
-                stream.controller.close();
-              }
-            } catch (authError) {
-              console.error('Error checking monitor authorization:', authError);
-            }
+            // Authorization was already verified during stream registration
+            const sseData = `data: ${JSON.stringify({
+              type: 'monitor_update',
+              monitorId: payload.monitorId,
+              status: payload.status,
+              latency: payload.latency,
+              checkedAt: payload.checkedAt,
+              location: payload.location
+            })}\n\n`;
+            
+            stream.controller.enqueue(new TextEncoder().encode(sseData));
           }
         }
       } catch (error) {
