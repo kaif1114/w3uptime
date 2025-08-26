@@ -9,12 +9,20 @@ const activeStreams = new Map<string, {
 }>();
 
 // Connection state management
-let pgClient: Client;
-let isConnected = false;
-let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BASE_DELAY = 1000; // 1 second
 const HEARTBEAT_INTERVAL = 30 * 1000; // 30 seconds
+
+// Global singleton for PostgreSQL notification client
+const globalForPg = globalThis as unknown as {
+  pgNotificationClient: Client | undefined;
+  isConnected: boolean | undefined;
+  reconnectAttempts: number | undefined;
+};
+
+let pgClient = globalForPg.pgNotificationClient;
+let isConnected = globalForPg.isConnected ?? false;
+let reconnectAttempts = globalForPg.reconnectAttempts ?? 0;
 
 // Create a new PostgreSQL client for listening to notifications
 const createPgClient = () => {
@@ -25,6 +33,9 @@ const createPgClient = () => {
   pgClient = new Client({
     connectionString: process.env.DATABASE_URL,
   });
+  
+  // Store in global for development hot reload persistence
+  globalForPg.pgNotificationClient = pgClient;
   
   return pgClient;
 };
@@ -58,9 +69,11 @@ const reconnectWithBackoff = async () => {
   setTimeout(async () => {
     try {
       await initializePgClient();
-      reconnectAttempts = 0; // Reset on successful connection
+      reconnectAttempts = 0;
+      globalForPg.reconnectAttempts = 0;
     } catch (error) {
       reconnectAttempts++;
+      globalForPg.reconnectAttempts = reconnectAttempts;
       console.error(`Reconnection attempt ${reconnectAttempts} failed:`, error);
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectWithBackoff();
@@ -77,6 +90,7 @@ const initializePgClient = async () => {
     await pgClient.query('LISTEN monitor_update');
     
     isConnected = true;
+    globalForPg.isConnected = true;
     console.log('PostgreSQL notification client connected successfully');
     
     // Set up global notification handler
@@ -110,6 +124,7 @@ const initializePgClient = async () => {
     pgClient.on('error', (error) => {
       console.error('PostgreSQL client error:', error);
       isConnected = false;
+      globalForPg.isConnected = false;
       
       // Don't immediately close all streams - let them stay open
       // and attempt to reconnect first
@@ -119,6 +134,7 @@ const initializePgClient = async () => {
     pgClient.on('end', () => {
       console.log('PostgreSQL connection ended');
       isConnected = false;
+      globalForPg.isConnected = false;
       
       // Only close streams if we're not attempting to reconnect
       if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
@@ -138,6 +154,7 @@ const initializePgClient = async () => {
   } catch (error) {
     console.error('Failed to initialize PostgreSQL client:', error);
     isConnected = false;
+    globalForPg.isConnected = false;
     throw error;
   }
 };
@@ -174,7 +191,9 @@ export const getConnectionStatus = () => ({
 // Force reconnection (for manual intervention)
 export const forceReconnect = async () => {
   reconnectAttempts = 0;
+  globalForPg.reconnectAttempts = 0;
   isConnected = false;
+  globalForPg.isConnected = false;
   if (pgClient) {
     try {
       await pgClient.end();
@@ -189,6 +208,12 @@ export const forceReconnect = async () => {
 let initializationPromise: Promise<void> | null = null;
 
 const initialize = async () => {
+  // If already connected via global singleton, don't reinitialize
+  if (pgClient && isConnected) {
+    console.log('Using existing PostgreSQL notification connection');
+    return;
+  }
+  
   if (!initializationPromise) {
     initializationPromise = (async () => {
       try {
@@ -205,10 +230,12 @@ const initialize = async () => {
   return initializationPromise;
 };
 
-// Start initialization
-initialize().catch((error) => {
-  console.error('Initial PostgreSQL connection failed:', error);
-});
+// Start initialization only in production or if not already connected
+if (process.env.NODE_ENV === 'production' || !pgClient || !isConnected) {
+  initialize().catch((error) => {
+    console.error('Initial PostgreSQL connection failed:', error);
+  });
+}
 
 // Clean up on process termination
 const cleanup = async () => {
