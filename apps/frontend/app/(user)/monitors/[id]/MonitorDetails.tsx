@@ -38,13 +38,15 @@ function getStatusColor(status: MonitorStatus): string {
 function getStatusText(status: MonitorStatus): string {
   switch (status) {
     case "ACTIVE":
-      return "Up";
+      return "Active";
     case "PAUSED":
       return "Paused";
     case "DOWN":
       return "Down";
+    case "RECOVERING":
+      return "Recovering";
     default:
-      return "Unknown";
+      return "Active";
   }
 }
 
