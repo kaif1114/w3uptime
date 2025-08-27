@@ -1,11 +1,23 @@
-import pgClient, { initializeConnection } from "./pg";
+import pgClient from "./pg";
 import { createIncident, resolveIncident } from "./incident";
-// Global registry for active SSE streams with user authorization
-const activeStreams = new Map<string, {
+
+// Global registry for active SSE streams with user authorization (using globalThis for persistence)
+const globalForStreams = globalThis as unknown as {
+  activeStreams: Map<string, {
+    monitorId: string;
+    userId: string;
+    controller: ReadableStreamDefaultController;
+  }> | undefined;
+};
+
+const activeStreams = globalForStreams.activeStreams ?? new Map<string, {
   monitorId: string;
   userId: string;
   controller: ReadableStreamDefaultController;
 }>();
+
+// Store in global for development hot reload persistence
+globalForStreams.activeStreams = activeStreams;
 
 // Global flag to ensure notification handler is only set up once
 
@@ -21,9 +33,13 @@ export const initializeNotificationHandler = () => {
     try {
       if (msg.channel === 'monitor_update') {
         const payload = JSON.parse(msg.payload || '{}');
+        console.log("Parsed payload:", payload);
+        console.log("Active streams:", Array.from(activeStreams.keys()));
         
         // Find the stream for this monitor
         const stream = activeStreams.get(payload.monitorId);
+        console.log("Found stream for monitor", payload.monitorId, ":", !!stream);
+        
         if (stream) {
           // Authorization was already verified during stream registration
           const sseData = `data: ${JSON.stringify({
@@ -35,7 +51,10 @@ export const initializeNotificationHandler = () => {
             location: payload.location
           })}\n\n`;
           
+          console.log("Sending SSE data:", sseData.trim());
           stream.controller.enqueue(new TextEncoder().encode(sseData));
+        } else {
+          console.log("No active stream found for monitor:", payload.monitorId);
         }
         if(payload.status === 'BAD') {
           createIncident(payload.monitorId, 'Monitor is down', new Date(payload.checkedAt));
@@ -55,7 +74,6 @@ export const initializeNotificationHandler = () => {
 // Register a new SSE stream for a monitor with user authorization
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
   // Connection is already initialized at application startup via instrumentation.ts
-  initializeConnection()
   activeStreams.set(monitorId, { 
     monitorId, 
     userId,
