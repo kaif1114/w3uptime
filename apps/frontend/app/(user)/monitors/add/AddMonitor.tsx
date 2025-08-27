@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
 import MonitorsHeader from "../MonitorHeaders";
-import AddMonitorForm from "./add-monitor-form";
+import AddMonitorForm from "./AddMonitorForm";
 
 export default function AddMonitor() {
   const router = useRouter();

@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { authenticateWallet, connectWallet } from "@/lib/auth-client";
+import {  connectWallet } from "@/lib/auth";
 
 function LoginClient() {
   const router = useRouter();
