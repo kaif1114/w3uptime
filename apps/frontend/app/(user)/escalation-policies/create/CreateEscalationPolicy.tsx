@@ -63,6 +63,7 @@ export function CreateEscalationPolicyForm() {
   const [policyName, setPolicyName] = useState("");
   const [nameError, setNameError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [expandedIndex, setExpandedIndex] = useState<number>(0);
 
   const {
     formState: { isSubmitting },
@@ -87,21 +88,27 @@ export function CreateEscalationPolicyForm() {
 
   const addLevel = () => {
     if (levels.length < 10) {
-      setLevels([
-        ...levels,
-        {
-          id: uuidv4(),
-          method: "",
-          target: "",
-          waitTimeMinutes: 60,
-        },
-      ]);
+      const newLevel = {
+        id: uuidv4(),
+        method: "" as EscalationMethod | "",
+        target: "",
+        waitTimeMinutes: 60,
+      };
+      setLevels([...levels, newLevel]);
+      setExpandedIndex(levels.length); // focus newly added level
     }
   };
 
   const removeLevel = (index: number) => {
     if (levels.length > 1) {
-      setLevels(levels.filter((_, i) => i !== index));
+      const updated = levels.filter((_, i) => i !== index);
+      setLevels(updated);
+      // keep expanded index valid
+      if (expandedIndex === index) {
+        setExpandedIndex(Math.max(0, index - 1));
+      } else if (expandedIndex > index) {
+        setExpandedIndex(expandedIndex - 1);
+      }
     }
   };
 
@@ -298,6 +305,8 @@ export function CreateEscalationPolicyForm() {
                     onDrop={(e) => handleDrop(e, index)}
                     isDragging={draggedIndex === index}
                     isLast={index === levels.length - 1}
+                    isExpanded={expandedIndex === index}
+                    onToggleExpand={() => setExpandedIndex(index)}
                   />
                 ))}
               </div>
