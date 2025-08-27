@@ -143,102 +143,104 @@ export default function IncidentTimeline({
       </div>
 
       {/* Timeline Events */}
-      <div className="space-y-4">
-        {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
-          data?.timelineEvents.map((event, index) => (
-            <div key={event.id} className="flex gap-4">
-              {/* Timeline Line */}
-              <div className="flex flex-col items-center">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
+      <div className="relative">
+        {/* Continuous vertical line */}
+        {data?.timelineEvents && data?.timelineEvents.length > 1 && (
+          <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-border" />
+        )}
+        
+        <div className="space-y-6">
+          {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
+            data?.timelineEvents.map((event, index) => (
+              <div key={event.id} className="flex gap-4 relative">
+                {/* Timeline Node */}
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border-2 border-background relative z-10">
                   {getTimelineIcon(event.type)}
                 </div>
-                {index < data?.timelineEvents.length - 1 && (
-                  <div className="w-0.5 h-8 bg-border mt-2" />
-                )}
-              </div>
 
-              {/* Event Content */}
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-sm">
-                    {getTimelineTitle(event)}
-                  </h3>
-                  <span className="text-sm text-muted-foreground">
-                    {format(new Date(event.createdAt), "MMM d 'at' h:mm a")}
-                  </span>
-                </div>
-
-                {event.type === "USER_COMMENT" && (
-                  <div className="text-sm text-muted-foreground">
-                    {event.description}
+                {/* Event Content */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-sm">
+                      {getTimelineTitle(event)}
+                    </h3>
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(event.createdAt), "MMM d 'at' h:mm a")}
+                    </span>
                   </div>
-                )}
 
-                {event.user && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
-                        <User className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>User {event.user.id}</span>
-                  </div>
-                )}
+                  {event.type === "USER_COMMENT" && (
+                    <div className="text-sm text-muted-foreground">
+                      {event.description}
+                    </div>
+                  )}
 
-                {/* Escalation details */}
-                {event.escalationLog && (
-                  <div className="bg-muted p-3 rounded-md text-sm space-y-2">
-                    {event.escalationLog.Alert && (
-                      <div>
-                        <p className="font-medium">
-                          {event.escalationLog.Alert.title}
-                        </p>
-                        <p className="text-muted-foreground">
-                          {event.escalationLog.Alert.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            Status Code:{" "}
-                            {event.escalationLog.Alert.triggerStatusCode}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            Expected:{" "}
-                            {event.escalationLog.Alert.expectedStatusCode}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {event.escalationLog.escalationLevel && (
-                      <div>
-                        <p className="font-medium">
-                          Level {event.escalationLog.escalationLevel.levelOrder}
-                          : {event.escalationLog.escalationLevel.name}
-                        </p>
-                        <p className="text-muted-foreground">
-                          Channel: {event.escalationLog.escalationLevel.channel}
-                        </p>
-                        {event.escalationLog.escalationLevel.contacts.length >
-                          0 && (
-                          <p className="text-muted-foreground">
-                            Contacts:{" "}
-                            {event.escalationLog.escalationLevel.contacts.join(
-                              ", "
-                            )}
+                  {event.user && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          <User className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>User {event.user.id}</span>
+                    </div>
+                  )}
+
+                  {/* Escalation details */}
+                  {event.escalationLog && (
+                    <div className="bg-muted p-3 rounded-md text-sm space-y-2">
+                      {event.escalationLog.Alert && (
+                        <div>
+                          <p className="font-medium">
+                            {event.escalationLog.Alert.title}
                           </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                          <p className="text-muted-foreground">
+                            {event.escalationLog.Alert.message}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              Status Code:{" "}
+                              {event.escalationLog.Alert.triggerStatusCode}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Expected:{" "}
+                              {event.escalationLog.Alert.expectedStatusCode}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {event.escalationLog.escalationLevel && (
+                        <div>
+                          <p className="font-medium">
+                            Level {event.escalationLog.escalationLevel.levelOrder}
+                            : {event.escalationLog.escalationLevel.name}
+                          </p>
+                          <p className="text-muted-foreground">
+                            Channel: {event.escalationLog.escalationLevel.channel}
+                          </p>
+                          {event.escalationLog.escalationLevel.contacts.length >
+                            0 && (
+                            <p className="text-muted-foreground">
+                              Contacts:{" "}
+                              {event.escalationLog.escalationLevel.contacts.join(
+                                ", "
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2" />
+              <p>No timeline events yet</p>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="h-8 w-8 mx-auto mb-2" />
-            <p>No timeline events yet</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
