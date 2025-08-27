@@ -2,8 +2,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import http from "http";
-import { authenticateUser } from "../auth/auth.js";
-import { validators } from "../validators/validatorManager.js";
+import { authenticateUser } from "../auth/auth";
+import { validators } from "../validators/validatorManager";
 
 export function createExpressServer(): { app: express.Application, httpServer: http.Server } {
   const app = express();
