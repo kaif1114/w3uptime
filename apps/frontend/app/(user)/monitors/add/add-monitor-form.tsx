@@ -229,7 +229,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
               Select an existing policy or create one.
             </p>
           </div>
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 z-0!">
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="escalationPolicy">Escalation policy</Label>
@@ -249,7 +249,10 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setIsCreatePolicyOpen(true)}
+                      onClick={() => {
+                        console.log("Creating policy");
+                        setIsCreatePolicyOpen(true);
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Your First Policy
@@ -281,337 +284,6 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                         <Plus className="h-4 w-4 mr-2" />
                         Create
                       </Button>
-                      <Dialog
-                        open={isCreatePolicyOpen}
-                        onOpenChange={setIsCreatePolicyOpen}
-                      >
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Create Escalation Policy</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-6 py-4">
-                            {/* Policy Name */}
-                            <div className="space-y-2">
-                              <Label htmlFor="newPolicyName">
-                                Policy Name *
-                              </Label>
-                              <Input
-                                id="newPolicyName"
-                                placeholder="Enter policy name"
-                                value={newPolicyName}
-                                onChange={(e) =>
-                                  setNewPolicyName(e.target.value)
-                                }
-                                className={
-                                  newPolicyErrors.name
-                                    ? "border-destructive"
-                                    : ""
-                                }
-                              />
-                              {newPolicyErrors.name && (
-                                <p className="text-sm text-destructive">
-                                  {newPolicyErrors.name}
-                                </p>
-                              )}
-                            </div>
-
-                            <Separator />
-
-                            {/* Escalation Levels */}
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-base font-medium">
-                                  Escalation Levels
-                                </Label>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (newPolicyLevels.length < 10) {
-                                      setNewPolicyLevels([
-                                        ...newPolicyLevels,
-                                        {
-                                          id: Date.now().toString(),
-                                          method: "EMAIL" as
-                                            | "EMAIL"
-                                            | "SLACK"
-                                            | "WEBHOOK",
-                                          target: "",
-                                          waitTimeMinutes: 60,
-                                        },
-                                      ]);
-                                    }
-                                  }}
-                                >
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add Level
-                                </Button>
-                              </div>
-
-                              <div className="space-y-4">
-                                {newPolicyLevels.map((level, index) => (
-                                  <Card key={level.id} className="p-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <h4 className="font-medium">
-                                        Level {index + 1}
-                                      </h4>
-                                      {newPolicyLevels.length > 1 && (
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => {
-                                            setNewPolicyLevels(
-                                              newPolicyLevels.filter(
-                                                (_, i) => i !== index
-                                              )
-                                            );
-                                          }}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                      <div className="space-y-2">
-                                        <Label>Method *</Label>
-                                        <Select
-                                          value={level.method}
-                                          onValueChange={(value) => {
-                                            const updatedLevels = [
-                                              ...newPolicyLevels,
-                                            ];
-                                            updatedLevels[index].method =
-                                              value as
-                                                | "EMAIL"
-                                                | "SLACK"
-                                                | "WEBHOOK";
-                                            updatedLevels[index].target = ""; // Reset target when method changes
-                                            setNewPolicyLevels(updatedLevels);
-                                          }}
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="EMAIL">
-                                              Email
-                                            </SelectItem>
-                                            <SelectItem value="SLACK">
-                                              Slack
-                                            </SelectItem>
-                                            <SelectItem value="WEBHOOK">
-                                              Webhook
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <Label>Target *</Label>
-                                        <Input
-                                          placeholder={
-                                            level.method === "EMAIL"
-                                              ? "email@example.com"
-                                              : level.method === "SLACK"
-                                                ? "#channel-name"
-                                                : "https://webhook-url.com"
-                                          }
-                                          value={level.target}
-                                          onChange={(e) => {
-                                            const updatedLevels = [
-                                              ...newPolicyLevels,
-                                            ];
-                                            updatedLevels[index].target =
-                                              e.target.value;
-                                            setNewPolicyLevels(updatedLevels);
-                                          }}
-                                          className={
-                                            newPolicyErrors[
-                                              `level-${index}-target`
-                                            ]
-                                              ? "border-destructive"
-                                              : ""
-                                          }
-                                        />
-                                        {newPolicyErrors[
-                                          `level-${index}-target`
-                                        ] && (
-                                          <p className="text-sm text-destructive">
-                                            {
-                                              newPolicyErrors[
-                                                `level-${index}-target`
-                                              ]
-                                            }
-                                          </p>
-                                        )}
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <Label>Wait Time (minutes) *</Label>
-                                        <Input
-                                          type="number"
-                                          min={1}
-                                          max={1440}
-                                          placeholder="60"
-                                          value={level.waitTimeMinutes}
-                                          onChange={(e) => {
-                                            const updatedLevels = [
-                                              ...newPolicyLevels,
-                                            ];
-                                            updatedLevels[
-                                              index
-                                            ].waitTimeMinutes =
-                                              parseInt(e.target.value) || 0;
-                                            setNewPolicyLevels(updatedLevels);
-                                          }}
-                                          className={
-                                            newPolicyErrors[
-                                              `level-${index}-waitTime`
-                                            ]
-                                              ? "border-destructive"
-                                              : ""
-                                          }
-                                        />
-                                        {newPolicyErrors[
-                                          `level-${index}-waitTime`
-                                        ] && (
-                                          <p className="text-sm text-destructive">
-                                            {
-                                              newPolicyErrors[
-                                                `level-${index}-waitTime`
-                                              ]
-                                            }
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </Card>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <DialogFooter>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                setIsCreatePolicyOpen(false);
-                                setNewPolicyName("");
-                                setNewPolicyLevels([
-                                  {
-                                    id: "1",
-                                    method: "EMAIL",
-                                    target: "",
-                                    waitTimeMinutes: 60,
-                                  },
-                                ]);
-                                setNewPolicyErrors({});
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              onClick={async () => {
-                                // Validate form
-                                const errors: Record<string, string> = {};
-
-                                // Validate policy name
-                                if (!newPolicyName.trim()) {
-                                  errors.name = "Policy name is required";
-                                } else if (newPolicyName.length > 100) {
-                                  errors.name =
-                                    "Policy name cannot exceed 100 characters";
-                                }
-
-                                // Validate levels
-                                newPolicyLevels.forEach((level, index) => {
-                                  if (!level.target.trim()) {
-                                    errors[`level-${index}-target`] =
-                                      "Target is required";
-                                  } else if (level.method === "EMAIL") {
-                                    const emailRegex =
-                                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                                    if (!emailRegex.test(level.target)) {
-                                      errors[`level-${index}-target`] =
-                                        "Please enter a valid email address";
-                                    }
-                                  } else if (level.method === "WEBHOOK") {
-                                    try {
-                                      new URL(level.target);
-                                    } catch {
-                                      errors[`level-${index}-target`] =
-                                        "Please enter a valid URL";
-                                    }
-                                  }
-
-                                  if (level.waitTimeMinutes < 1) {
-                                    errors[`level-${index}-waitTime`] =
-                                      "Wait time must be at least 1 minute";
-                                  } else if (level.waitTimeMinutes > 1440) {
-                                    errors[`level-${index}-waitTime`] =
-                                      "Wait time cannot exceed 24 hours";
-                                  }
-                                });
-
-                                if (Object.keys(errors).length > 0) {
-                                  setNewPolicyErrors(errors);
-                                  return;
-                                }
-
-                                try {
-                                  const res =
-                                    await createPolicyMutation.mutateAsync({
-                                      name: newPolicyName.trim(),
-                                      levels: newPolicyLevels.map(
-                                        (level, index) => ({
-                                          method: level.method,
-                                          target: level.target.trim(),
-                                          waitTimeMinutes:
-                                            index === newPolicyLevels.length - 1
-                                              ? 0
-                                              : level.waitTimeMinutes,
-                                        })
-                                      ),
-                                    });
-
-                                  setSelectedPolicyId(res.escalationPolicy.id);
-                                  setIsCreatePolicyOpen(false);
-                                  setNewPolicyName("");
-                                  setNewPolicyLevels([
-                                    {
-                                      id: "1",
-                                      method: "EMAIL",
-                                      target: "",
-                                      waitTimeMinutes: 60,
-                                    },
-                                  ]);
-                                  setNewPolicyErrors({});
-                                } catch (error) {
-                                  console.error(
-                                    "Failed to create escalation policy:",
-                                    error
-                                  );
-                                }
-                              }}
-                              disabled={createPolicyMutation.isPending}
-                            >
-                              {createPolicyMutation.isPending ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
-                                  Creating...
-                                </div>
-                              ) : (
-                                "Create Policy"
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       This policy will be linked to the monitor.
@@ -752,6 +424,277 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
           </div>
         </details>
       </div>
+
+      {/* Global Escalation Policy Dialog (always mounted) */}
+      <Dialog open={isCreatePolicyOpen} onOpenChange={setIsCreatePolicyOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Escalation Policy</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Policy Name */}
+            <div className="space-y-2">
+              <Label htmlFor="newPolicyName">Policy Name *</Label>
+              <Input
+                id="newPolicyName"
+                placeholder="Enter policy name"
+                value={newPolicyName}
+                onChange={(e) => setNewPolicyName(e.target.value)}
+                className={newPolicyErrors.name ? "border-destructive" : ""}
+              />
+              {newPolicyErrors.name && (
+                <p className="text-sm text-destructive">
+                  {newPolicyErrors.name}
+                </p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Escalation Levels */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">
+                  Escalation Levels
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (newPolicyLevels.length < 10) {
+                      setNewPolicyLevels([
+                        ...newPolicyLevels,
+                        {
+                          id: Date.now().toString(),
+                          method: "EMAIL" as "EMAIL" | "SLACK" | "WEBHOOK",
+                          target: "",
+                          waitTimeMinutes: 60,
+                        },
+                      ]);
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Level
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {newPolicyLevels.map((level, index) => (
+                  <Card key={level.id} className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Level {index + 1}</h4>
+                      {newPolicyLevels.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setNewPolicyLevels(
+                              newPolicyLevels.filter((_, i) => i !== index)
+                            );
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label>Method *</Label>
+                        <Select
+                          value={level.method}
+                          onValueChange={(value) => {
+                            const updatedLevels = [...newPolicyLevels];
+                            updatedLevels[index].method = value as
+                              | "EMAIL"
+                              | "SLACK"
+                              | "WEBHOOK";
+                            updatedLevels[index].target = "";
+                            setNewPolicyLevels(updatedLevels);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EMAIL">Email</SelectItem>
+                            <SelectItem value="SLACK">Slack</SelectItem>
+                            <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Target *</Label>
+                        <Input
+                          placeholder={
+                            level.method === "EMAIL"
+                              ? "email@example.com"
+                              : level.method === "SLACK"
+                                ? "#channel-name"
+                                : "https://webhook-url.com"
+                          }
+                          value={level.target}
+                          onChange={(e) => {
+                            const updatedLevels = [...newPolicyLevels];
+                            updatedLevels[index].target = e.target.value;
+                            setNewPolicyLevels(updatedLevels);
+                          }}
+                          className={
+                            newPolicyErrors[`level-${index}-target`]
+                              ? "border-destructive"
+                              : ""
+                          }
+                        />
+                        {newPolicyErrors[`level-${index}-target`] && (
+                          <p className="text-sm text-destructive">
+                            {newPolicyErrors[`level-${index}-target`]}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Wait Time (minutes) *</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={1440}
+                          placeholder="60"
+                          value={level.waitTimeMinutes}
+                          onChange={(e) => {
+                            const updatedLevels = [...newPolicyLevels];
+                            updatedLevels[index].waitTimeMinutes =
+                              parseInt(e.target.value) || 0;
+                            setNewPolicyLevels(updatedLevels);
+                          }}
+                          className={
+                            newPolicyErrors[`level-${index}-waitTime`]
+                              ? "border-destructive"
+                              : ""
+                          }
+                        />
+                        {newPolicyErrors[`level-${index}-waitTime`] && (
+                          <p className="text-sm text-destructive">
+                            {newPolicyErrors[`level-${index}-waitTime`]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsCreatePolicyOpen(false);
+                setNewPolicyName("");
+                setNewPolicyLevels([
+                  {
+                    id: "1",
+                    method: "EMAIL",
+                    target: "",
+                    waitTimeMinutes: 60,
+                  },
+                ]);
+                setNewPolicyErrors({});
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                const errors: Record<string, string> = {};
+
+                if (!newPolicyName.trim()) {
+                  errors.name = "Policy name is required";
+                } else if (newPolicyName.length > 100) {
+                  errors.name = "Policy name cannot exceed 100 characters";
+                }
+
+                newPolicyLevels.forEach((level, index) => {
+                  if (!level.target.trim()) {
+                    errors[`level-${index}-target`] = "Target is required";
+                  } else if (level.method === "EMAIL") {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(level.target)) {
+                      errors[`level-${index}-target`] =
+                        "Please enter a valid email address";
+                    }
+                  } else if (level.method === "WEBHOOK") {
+                    try {
+                      new URL(level.target);
+                    } catch {
+                      errors[`level-${index}-target`] =
+                        "Please enter a valid URL";
+                    }
+                  }
+
+                  if (level.waitTimeMinutes < 1) {
+                    errors[`level-${index}-waitTime`] =
+                      "Wait time must be at least 1 minute";
+                  } else if (level.waitTimeMinutes > 1440) {
+                    errors[`level-${index}-waitTime`] =
+                      "Wait time cannot exceed 24 hours";
+                  }
+                });
+
+                if (Object.keys(errors).length > 0) {
+                  setNewPolicyErrors(errors);
+                  return;
+                }
+
+                try {
+                  const res = await createPolicyMutation.mutateAsync({
+                    name: newPolicyName.trim(),
+                    levels: newPolicyLevels.map((level, index) => ({
+                      method: level.method,
+                      target: level.target.trim(),
+                      waitTimeMinutes:
+                        index === newPolicyLevels.length - 1
+                          ? 0
+                          : level.waitTimeMinutes,
+                    })),
+                  });
+
+                  setSelectedPolicyId(res.escalationPolicy.id);
+                  setIsCreatePolicyOpen(false);
+                  setNewPolicyName("");
+                  setNewPolicyLevels([
+                    {
+                      id: "1",
+                      method: "EMAIL",
+                      target: "",
+                      waitTimeMinutes: 60,
+                    },
+                  ]);
+                  setNewPolicyErrors({});
+                } catch (error) {
+                  console.error("Failed to create escalation policy:", error);
+                }
+              }}
+              disabled={createPolicyMutation.isPending}
+            >
+              {createPolicyMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                  Creating...
+                </div>
+              ) : (
+                "Create Policy"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Primary Actions */}
       <div className="flex justify-end">
