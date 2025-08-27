@@ -105,7 +105,7 @@ export function MetricsCards({ monitorId, createdAt, lastCheckedAt: initialLastC
     eventSource.onmessage = (event) => {
       try {
         const data: SSEMessage = JSON.parse(event.data);
-        
+        console.log("Message received:", data);
         if (data.type === 'monitor_update' && data.monitorId === monitorId) {
           setLastCheckedAt(data.checkedAt || null);
           if(data.status === 'DOWN' && currentStatus !== 'DOWN' || data.status === 'ACTIVE' && currentStatus !== 'ACTIVE' || data.status === 'RECOVERING' && currentStatus !== 'RECOVERING') {

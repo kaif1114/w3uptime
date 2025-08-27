@@ -1,4 +1,4 @@
-import pgClient from "./pg";
+import pgClient, { initializeConnection } from "./pg";
 import { createIncident, resolveIncident } from "./incident";
 // Global registry for active SSE streams with user authorization
 const activeStreams = new Map<string, {
@@ -17,6 +17,7 @@ export const initializeNotificationHandler = () => {
 
   // Set up global notification handler
   pgClient.on('notification', (msg) => {
+    console.log("Notification received from PG:", msg);
     try {
       if (msg.channel === 'monitor_update') {
         const payload = JSON.parse(msg.payload || '{}');
@@ -54,7 +55,7 @@ export const initializeNotificationHandler = () => {
 // Register a new SSE stream for a monitor with user authorization
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
   // Connection is already initialized at application startup via instrumentation.ts
-  
+  initializeConnection()
   activeStreams.set(monitorId, { 
     monitorId, 
     userId,
