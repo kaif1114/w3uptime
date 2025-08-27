@@ -3,31 +3,39 @@ import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
-const createMonitorSchema = z.object({
-  name: z.string().min(1),
-  url: z.url().min(1),
-  timeout: z.number().int().positive().default(30), // seconds
-  checkInterval: z.number().int().positive().default(300), // seconds
-  expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
-  escalationPolicyId: z.string().uuid().optional().nullable(),
-  // Optional inline creation payload (minimal: one level)
-  escalationPolicy: z
-    .object({
-      name: z.string().min(1),
-      levels: z
-        .array(
-          z.object({
-            method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
-            target: z.string().min(1),
-            waitTimeMinutes: z.number().min(0).max(1440),
-          })
-        )
-        .min(1)
-        .max(10),
-    })
-    .optional(),
-});
+const createMonitorSchema = z
+  .object({
+    name: z.string().min(1),
+    url: z.url().min(1),
+    timeout: z.number().int().positive().default(30), // seconds
+    checkInterval: z.number().int().positive().default(300), // seconds
+    expectedStatusCodes: z
+      .array(z.number().int())
+      .default([200, 201, 202, 204]),
+    status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
+    escalationPolicyId: z.string().uuid().optional().nullable(),
+    // Optional inline creation payload (minimal: one level)
+    escalationPolicy: z
+      .object({
+        name: z.string().min(1),
+        levels: z
+          .array(
+            z.object({
+              method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
+              target: z.string().min(1),
+              waitTimeMinutes: z.number().min(0).max(1440),
+            })
+          )
+          .min(1)
+          .max(10),
+      })
+      .optional(),
+  })
+  .refine((data) => !!data.escalationPolicyId || !!data.escalationPolicy, {
+    message:
+      "Either escalationPolicyId or escalationPolicy is required to create a monitor",
+    path: ["escalationPolicyId"],
+  });
 
 // POST /api/monitors - Create monitor
 export const POST = withAuth(async (req: NextRequest, user) => {
@@ -82,6 +90,10 @@ export const POST = withAuth(async (req: NextRequest, user) => {
         );
 
         policyId = createdPolicy.id;
+      }
+
+      if (!policyId) {
+        throw new Error("Missing escalation policy after validation");
       }
 
       const createdMonitor = await tx.monitor.create({

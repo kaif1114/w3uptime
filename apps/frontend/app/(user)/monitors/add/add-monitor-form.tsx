@@ -103,6 +103,11 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     )
       newErrors.expectedStatusCodes = "At least one status code is required";
 
+    // Require an escalation policy selection (or creation)
+    if (!selectedPolicyId) {
+      newErrors.escalationPolicy = "Escalation policy is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -117,6 +122,14 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       const payload: CreateMonitorData = { ...formData, name: derivedName };
       if (selectedPolicyId) {
         payload.escalationPolicyId = selectedPolicyId;
+      }
+      // Safety: API requires a policy; stop if missing
+      if (!payload.escalationPolicyId) {
+        setErrors((prev) => ({
+          ...prev,
+          escalationPolicy: "Escalation policy is required",
+        }));
+        return;
       }
       await createMutation.mutateAsync(payload);
       onSuccess?.();
@@ -285,6 +298,11 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                         Create
                       </Button>
                     </div>
+                    {errors.escalationPolicy && (
+                      <p className="text-sm text-destructive mt-1">
+                        {errors.escalationPolicy}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       This policy will be linked to the monitor.
                     </p>
