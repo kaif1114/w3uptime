@@ -28,7 +28,12 @@ export default function IncidentTimeline({
   incidentId,
 }: IncidentTimelineProps) {
   const [newComment, setNewComment] = useState("");
-  const { data, isLoading, error, refetch: refetchTimeline } = useIncidentTimeline(incidentId);
+  const {
+    data,
+    isLoading,
+    error,
+    refetch: refetchTimeline,
+  } = useIncidentTimeline(incidentId);
   const addCommentMutation = useAddComment();
 
   const handleSubmitComment = async () => {
@@ -148,7 +153,7 @@ export default function IncidentTimeline({
         {data?.timelineEvents && data?.timelineEvents.length > 1 && (
           <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-border" />
         )}
-        
+
         <div className="space-y-6">
           {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
             data?.timelineEvents.map((event, index) => (
@@ -212,11 +217,13 @@ export default function IncidentTimeline({
                       {event.escalationLog.escalationLevel && (
                         <div>
                           <p className="font-medium">
-                            Level {event.escalationLog.escalationLevel.levelOrder}
-                            : {event.escalationLog.escalationLevel.name}
+                            Level{" "}
+                            {event.escalationLog.escalationLevel.levelOrder}:{" "}
+                            {event.escalationLog.escalationLevel.name}
                           </p>
                           <p className="text-muted-foreground">
-                            Channel: {event.escalationLog.escalationLevel.channel}
+                            Channel:{" "}
+                            {event.escalationLog.escalationLevel.channel}
                           </p>
                           {event.escalationLog.escalationLevel.contacts.length >
                             0 && (
