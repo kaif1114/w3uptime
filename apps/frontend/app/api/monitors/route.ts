@@ -3,18 +3,43 @@ import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
-const createMonitorSchema = z.object({
-  name: z.string().min(1),
-  url: z.url().min(1),
-  timeout: z.number().int().positive().default(30), // seconds
-  checkInterval: z.number().int().positive().default(300), // seconds
-  expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
-});
+const createMonitorSchema = z
+  .object({
+    name: z.string().min(1),
+    url: z.url().min(1),
+    timeout: z.number().int().positive().default(30), // seconds
+    checkInterval: z.number().int().positive().default(300), // seconds
+    expectedStatusCodes: z
+      .array(z.number().int())
+      .default([200, 201, 202, 204]),
+    status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
+    escalationPolicyId: z.string().uuid().optional().nullable(),
+    // Optional inline creation payload (minimal: one level)
+    escalationPolicy: z
+      .object({
+        name: z.string().min(1),
+        levels: z
+          .array(
+            z.object({
+              method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
+              target: z.string().min(1),
+              waitTimeMinutes: z.number().min(0).max(1440),
+            })
+          )
+          .min(1)
+          .max(10),
+      })
+      .optional(),
+  })
+  .refine((data) => !!data.escalationPolicyId || !!data.escalationPolicy, {
+    message:
+      "Either escalationPolicyId or escalationPolicy is required to create a monitor",
+    path: ["escalationPolicyId"],
+  });
 
 // POST /api/monitors - Create monitor
 export const POST = withAuth(async (req: NextRequest, user) => {
-  try { 
+  try {
     const body = await req.json();
     const validation = createMonitorSchema.safeParse(body);
 
@@ -25,18 +50,66 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { name, url, timeout, checkInterval, expectedStatusCodes, status } = validation.data;
+    const {
+      name,
+      url,
+      timeout,
+      checkInterval,
+      expectedStatusCodes,
+      status,
+      escalationPolicyId,
+      escalationPolicy,
+    } = validation.data;
 
-    const monitor = await prisma.monitor.create({
-      data: {
-        name,
-        url,
-        userId: user.id, // Use authenticated user's ID
-        timeout,
-        checkInterval,
-        expectedStatusCodes,
-        status,
-      },
+    const monitor = await prisma.$transaction(async (tx) => {
+      let policyId: string | undefined = escalationPolicyId ?? undefined;
+
+      if (!policyId && escalationPolicy) {
+        const createdPolicy = await tx.escalationPolicy.create({
+          data: {
+            name: escalationPolicy.name,
+            userId: user.id,
+            enabled: true,
+          },
+        });
+
+        await Promise.all(
+          escalationPolicy.levels.map((level, index) =>
+            tx.escalationLevel.create({
+              data: {
+                escalationId: createdPolicy.id,
+                levelOrder: index + 1,
+                waitMinutes: level.waitTimeMinutes,
+                contacts: [level.target],
+                channel: level.method,
+                name: `Level ${index + 1}`,
+                message: `Escalation level ${index + 1} for ${escalationPolicy.name}`,
+              },
+            })
+          )
+        );
+
+        policyId = createdPolicy.id;
+      }
+
+      if (!policyId) {
+        throw new Error("Missing escalation policy after validation");
+      }
+
+      const createdMonitor = await tx.monitor.create({
+        data: {
+          name,
+          url,
+          userId: user.id,
+          timeout,
+          checkInterval,
+          expectedStatusCodes,
+          status,
+          escalationPolicyId: policyId,
+        },
+      });
+
+      return createdMonitor;
     });
 
     return NextResponse.json(
@@ -50,6 +123,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
           timeout: monitor.timeout,
           checkInterval: monitor.checkInterval,
           expectedStatusCodes: monitor.expectedStatusCodes,
+          escalationPolicyId: monitor.escalationPolicyId ?? null,
         },
       },
       { status: 201 }
@@ -71,12 +145,12 @@ export const GET = withAuth(async (req: NextRequest, user) => {
         userId: user.id, // Use authenticated user's ID
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     // Format monitors to match frontend interface
-    const formattedMonitors = monitors.map(monitor => ({
+    const formattedMonitors = monitors.map((monitor) => ({
       id: monitor.id,
       name: monitor.name,
       url: monitor.url,

@@ -1,3 +1,4 @@
+import "server-only";
 import { Client } from "pg";
 
 // Connection state management
