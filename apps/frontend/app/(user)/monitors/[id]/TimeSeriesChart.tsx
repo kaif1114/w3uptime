@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMonitorTimeSeries } from "@/hooks/useMonitors";
 import { AlertTriangle } from "lucide-react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
@@ -17,47 +16,41 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="capitalize">{type} Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <h1 className="capitalize">{type} Over Time</h1>
+        <div>
           <div className="animate-pulse">
             <div className="h-80 bg-muted rounded"></div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="capitalize">{type} Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <h1 className="capitalize">{type} Over Time</h1>
+        <div>
           <div className="text-center py-12">
             <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
             <p className="text-destructive">Failed to load {type} data</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (!timeseriesData?.data || timeseriesData.data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="capitalize">{type} Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <h1 className="capitalize">{type} Over Time</h1>
+        <div>
           <div className="text-center py-12">
             <p className="text-muted-foreground">No {type} data available for this period</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -108,11 +101,9 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
 
   if (type === 'latency') {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Response Time Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <h1>Response Time Over Time</h1>
+        <div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -151,18 +142,16 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>Period: {period}</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   // Uptime chart
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Uptime Over Time</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <div>
+      <h1>Uptime Over Time</h1>
+      <div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
@@ -202,7 +191,7 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
           <span>Period: {period}</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
