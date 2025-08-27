@@ -12,11 +12,13 @@ const globalForPg = globalThis as unknown as {
   isConnected: boolean | undefined;
   reconnectAttempts: number | undefined;
   heartbeatInterval: NodeJS.Timeout | undefined;
+  notificationHandlerInitialized: boolean | undefined;
 };
 
 let pgClient = globalForPg.pgNotificationClient;
 let isConnected = globalForPg.isConnected ?? false;
 let reconnectAttempts = globalForPg.reconnectAttempts ?? 0;
+let notificationHandlerInitialized = globalForPg.notificationHandlerInitialized ?? false;
 
 // Create a new PostgreSQL client for listening to notifications
 const createPgClient = () => {
@@ -92,6 +94,14 @@ const initializePgClient = async () => {
     globalForPg.isConnected = true;
     console.log('PostgreSQL notification client connected successfully');
     
+    // Initialize notification handler globally (only once)
+    if (!notificationHandlerInitialized && isConnected) {
+      const { initializeNotificationHandler } = await import('./notifications');
+      initializeNotificationHandler();
+      globalForPg.notificationHandlerInitialized = true;
+      notificationHandlerInitialized = true;
+    }
+    
     // Handle connection errors with improved error isolation
     pgClient.on('error', (error) => {
       console.error('PostgreSQL client error:', error);
@@ -131,7 +141,8 @@ const initializePgClient = async () => {
 export const getConnectionStatus = () => ({
   isConnected,
   reconnectAttempts,
-  clientExists: !!pgClient
+  clientExists: !!pgClient,
+  notificationHandlerInitialized
 });
 
 // Force reconnection (for manual intervention)
@@ -157,7 +168,7 @@ let initializationPromise: Promise<void> | null = null;
 const initialize = async () => {
   // If already connected via global singleton, don't reinitialize
   if (pgClient && isConnected) {
-    console.log('Using existing PostgreSQL notification connection');
+    console.log('Using existing PostgreSQL connection');
     return;
   }
   

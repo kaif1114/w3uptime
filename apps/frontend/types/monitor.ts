@@ -1,4 +1,4 @@
-export type MonitorStatus = "ACTIVE" | "PAUSED" | "DISABLED";
+export type MonitorStatus = "ACTIVE" | "PAUSED" | "DOWN" | "RECOVERING";
 
 export interface Monitor {
   id: string;

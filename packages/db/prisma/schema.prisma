@@ -123,7 +123,7 @@ model EscalationLevel {
 model Alert {
   id                 String          @id @default(uuid())
   title              String
-  type               IncidentType    @default(TEST)
+  type               IncidentType    @default(URL_UNAVAILABLE)
   message            String
   triggerStatusCode  Int?
   expectedStatusCode Int?
@@ -136,11 +136,11 @@ model Alert {
 model Incident {
   id             String          @id @default(uuid())
   title          String
-  cause          IncidentType
+  cause          IncidentType    @default(URL_UNAVAILABLE)
   status         IncidentStatus  @default(ONGOING)
   monitorId      String
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  updatedAt      DateTime?       @updatedAt
   resolvedAt     DateTime?
   downtime       Int?
   timelineEvents TimelineEvent[]
@@ -273,6 +273,7 @@ enum TimelineEventType {
   USER_COMMENT
   POSTMORTEM
   ESCALATION
+  RESOLUTION
 }
 
 enum EscalationChannel {

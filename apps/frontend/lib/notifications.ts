@@ -1,24 +1,32 @@
-import "server-only";
-import pgClient, { initializeConnection } from "./pg";
+import pgClient from "./pg";
+import { createIncident, resolveIncident } from "./incident";
 
-// Global registry for active SSE streams with user authorization
-const activeStreams = new Map<string, {
+// Global registry for active SSE streams with user authorization (using globalThis for persistence)
+const globalForStreams = globalThis as unknown as {
+  activeStreams: Map<string, {
+    monitorId: string;
+    userId: string;
+    controller: ReadableStreamDefaultController;
+  }> | undefined;
+};
+
+const activeStreams = globalForStreams.activeStreams ?? new Map<string, {
   monitorId: string;
   userId: string;
   controller: ReadableStreamDefaultController;
 }>();
 
+// Store in global for development hot reload persistence
+globalForStreams.activeStreams = activeStreams;
+
 // Global flag to ensure notification handler is only set up once
-let notificationHandlerInitialized = false;
 
 // Initialize notification handling (called lazily when first stream is registered)
 export const initializeNotificationHandler = () => {
-  if (notificationHandlerInitialized || !pgClient) {
+  if (!pgClient) {
     return;
   }
-  
-  notificationHandlerInitialized = true;
-  
+
   // Set up global notification handler
   pgClient.on('notification', (msg) => {
     try {
@@ -32,13 +40,19 @@ export const initializeNotificationHandler = () => {
           const sseData = `data: ${JSON.stringify({
             type: 'monitor_update',
             monitorId: payload.monitorId,
-            status: payload.status,
+            status: payload.status == 'BAD' ? 'DOWN' : 'ACTIVE',
             latency: payload.latency,
             checkedAt: payload.checkedAt,
             location: payload.location
           })}\n\n`;
           
           stream.controller.enqueue(new TextEncoder().encode(sseData));
+        }
+        if(payload.status === 'BAD') {
+          createIncident(payload.monitorId, 'Monitor is down', new Date(payload.checkedAt));
+        }
+        else if(payload.status === 'GOOD') {
+          resolveIncident(payload.monitorId, new Date(payload.checkedAt));
         }
       }
     } catch (error) {
@@ -51,12 +65,7 @@ export const initializeNotificationHandler = () => {
 
 // Register a new SSE stream for a monitor with user authorization
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
-  // Ensure PostgreSQL connection is initialized
-  initializeConnection();
-  
-  // Initialize notification handler lazily when first stream is registered
-  initializeNotificationHandler();
-  
+  // Connection is already initialized at application startup via instrumentation.ts
   activeStreams.set(monitorId, { 
     monitorId, 
     userId,

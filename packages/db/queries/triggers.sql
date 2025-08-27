@@ -34,13 +34,19 @@ CREATE OR REPLACE TRIGGER monitor_tick_notify_trigger
   FOR EACH ROW
   EXECUTE FUNCTION notify_monitor_update();
 
--- Additional trigger to update the lastCheckedAt field in Monitor table
+-- Additional trigger to update the status and lastCheckedAt field in Monitor table
+
 CREATE OR REPLACE FUNCTION update_monitor_last_checked()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Update the Monitor's lastCheckedAt timestamp
+  -- Update the Monitor's lastCheckedAt timestamp and status
   UPDATE "Monitor" 
-  SET "lastCheckedAt" = NEW."createdAt" 
+  SET "lastCheckedAt" = NEW."createdAt",
+      "status" = CASE 
+          WHEN NEW."status" = 'BAD' THEN 'DOWN'::"MonitorStatus"
+          WHEN NEW."status" = 'GOOD' THEN 'ACTIVE'::"MonitorStatus"
+          ELSE 'ACTIVE'::"MonitorStatus"  -- Default to ACTIVE for any other status
+      END
   WHERE id = NEW."monitorId";
   
   RETURN NEW;
