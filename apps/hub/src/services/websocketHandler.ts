@@ -1,8 +1,8 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage } from "common/types";
-import { verifyMessage } from "../crypto/signature";
-import { handleSignup, removeValidator } from "../validators/validatorManager";
-import { CALLBACKS } from "../monitoring/monitorDistribution";
+import { verifyMessage } from "../services/signature";
+import { handleSignup, removeValidator } from "../services/validatorManager";
+import { CALLBACKS } from "../services/monitorDistribution";
 import http from "http";
 
 export function createWebSocketServer(httpServer: http.Server): WebSocketServer {

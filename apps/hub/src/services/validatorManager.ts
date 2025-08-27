@@ -5,7 +5,7 @@ const { prisma } = require("db/client");
 import { WebSocket } from "ws";
 import { v7 as uuidv7 } from "uuid";
 import { SignupIncomingMessage } from "common/types";
-import { getGeoLocation } from "../geo/geoLocation";
+import { getGeoLocation } from "./geoLocation";
 
 export interface Validator {
   validatorId: string;

@@ -4,8 +4,8 @@
 const { prisma } = require("db/client");
 import { v7 as uuidv7 } from "uuid";
 import { IncomingMessage } from "common/types";
-import { validators } from "../validators/validatorManager";
-import { addToBatch } from "../batch/batchProcessor";
+import { validators } from "./validatorManager";
+import { addToBatch } from "./batchProcessor";
 
 export const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } = {};
 

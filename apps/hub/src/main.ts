@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createExpressServer } from "./server/expressServer";
-import { createWebSocketServer } from "./websocket/websocketHandler";
-import { startMonitorDistribution } from "./monitoring/monitorDistribution";
+import { createWebSocketServer } from "./services/websocketHandler";
+import { startMonitorDistribution } from "./services/monitorDistribution";
 
 const COST_PER_VALIDATION = 1;
 
