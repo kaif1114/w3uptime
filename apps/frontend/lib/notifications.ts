@@ -29,17 +29,12 @@ export const initializeNotificationHandler = () => {
 
   // Set up global notification handler
   pgClient.on('notification', (msg) => {
-    console.log("Notification received from PG:", msg);
     try {
       if (msg.channel === 'monitor_update') {
         const payload = JSON.parse(msg.payload || '{}');
-        console.log("Parsed payload:", payload);
-        console.log("Active streams:", Array.from(activeStreams.keys()));
         
         // Find the stream for this monitor
         const stream = activeStreams.get(payload.monitorId);
-        console.log("Found stream for monitor", payload.monitorId, ":", !!stream);
-        
         if (stream) {
           // Authorization was already verified during stream registration
           const sseData = `data: ${JSON.stringify({
@@ -51,10 +46,7 @@ export const initializeNotificationHandler = () => {
             location: payload.location
           })}\n\n`;
           
-          console.log("Sending SSE data:", sseData.trim());
           stream.controller.enqueue(new TextEncoder().encode(sseData));
-        } else {
-          console.log("No active stream found for monitor:", payload.monitorId);
         }
         if(payload.status === 'BAD') {
           createIncident(payload.monitorId, 'Monitor is down', new Date(payload.checkedAt));
