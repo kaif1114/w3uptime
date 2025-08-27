@@ -53,8 +53,7 @@ export const initializeNotificationHandler = () => {
 
 // Register a new SSE stream for a monitor with user authorization
 export const registerStream = (monitorId: string, userId: string, controller: ReadableStreamDefaultController) => {
-  // Ensure PostgreSQL connection is initialized
-  initializeConnection();
+  // Connection is already initialized at application startup via instrumentation.ts
   
   activeStreams.set(monitorId, { 
     monitorId, 
