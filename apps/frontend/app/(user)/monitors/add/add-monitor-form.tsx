@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -227,121 +227,142 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="escalationPolicy">Escalation policy</Label>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={selectedPolicyId}
-                    onValueChange={(v) => setSelectedPolicyId(v)}
-                  >
-                    <SelectTrigger id="escalationPolicy" className="w-full">
-                      <SelectValue placeholder="Select an escalation policy" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {policiesData?.escalationPolicies?.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Dialog
-                    open={isCreatePolicyOpen}
-                    onOpenChange={setIsCreatePolicyOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button type="button" variant="outline">
-                        Create
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create escalation policy</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="newPolicyName">Name</Label>
-                          <Input
-                            id="newPolicyName"
-                            value={newPolicyName}
-                            onChange={(e) => setNewPolicyName(e.target.value)}
-                          />
-                        </div>
-                        <Separator />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                          <div className="space-y-2">
-                            <Label>Method</Label>
-                            <Select
-                              value={newPolicyMethod}
-                              onValueChange={(v) =>
-                                setNewPolicyMethod(v as any)
-                              }
+                
+                {!policiesData?.escalationPolicies || policiesData.escalationPolicies.length === 0 ? (
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                    <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                    <h4 className="text-sm font-medium mb-2">No escalation policies yet</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Create your first escalation policy to define how incidents should be handled when they are not acknowledged in time.
+                    </p>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsCreatePolicyOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Policy
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={selectedPolicyId}
+                        onValueChange={(v) => setSelectedPolicyId(v)}
+                      >
+                        <SelectTrigger id="escalationPolicy" className="w-full">
+                          <SelectValue placeholder="Select an escalation policy" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {policiesData?.escalationPolicies?.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Dialog
+                        open={isCreatePolicyOpen}
+                        onOpenChange={setIsCreatePolicyOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="outline">
+                            Create
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Create escalation policy</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="newPolicyName">Name</Label>
+                              <Input
+                                id="newPolicyName"
+                                value={newPolicyName}
+                                onChange={(e) => setNewPolicyName(e.target.value)}
+                              />
+                            </div>
+                            <Separator />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                              <div className="space-y-2">
+                                <Label>Method</Label>
+                                <Select
+                                  value={newPolicyMethod}
+                                  onValueChange={(v) =>
+                                    setNewPolicyMethod(v as any)
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="EMAIL">Email</SelectItem>
+                                    <SelectItem value="SLACK">Slack</SelectItem>
+                                    <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Target</Label>
+                                <Input
+                                  placeholder="email/channel/url"
+                                  value={newPolicyTarget}
+                                  onChange={(e) =>
+                                    setNewPolicyTarget(e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Wait (min)</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  value={newPolicyWait}
+                                  onChange={(e) =>
+                                    setNewPolicyWait(parseInt(e.target.value) || 0)
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              type="button"
+                              onClick={async () => {
+                                if (!newPolicyName || !newPolicyTarget) return;
+                                const res = await createPolicyMutation.mutateAsync({
+                                  name: newPolicyName,
+                                  levels: [
+                                    {
+                                      method: newPolicyMethod,
+                                      target: newPolicyTarget,
+                                      waitTimeMinutes: newPolicyWait,
+                                    },
+                                  ],
+                                });
+                                setSelectedPolicyId(res.escalationPolicy.id);
+                                setIsCreatePolicyOpen(false);
+                                setNewPolicyName("");
+                                setNewPolicyTarget("");
+                                setNewPolicyWait(0);
+                              }}
+                              disabled={createPolicyMutation.isPending}
                             >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="EMAIL">Email</SelectItem>
-                                <SelectItem value="SLACK">Slack</SelectItem>
-                                <SelectItem value="WEBHOOK">Webhook</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Target</Label>
-                            <Input
-                              placeholder="email/channel/url"
-                              value={newPolicyTarget}
-                              onChange={(e) =>
-                                setNewPolicyTarget(e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Wait (min)</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              value={newPolicyWait}
-                              onChange={(e) =>
-                                setNewPolicyWait(parseInt(e.target.value) || 0)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          onClick={async () => {
-                            if (!newPolicyName || !newPolicyTarget) return;
-                            const res = await createPolicyMutation.mutateAsync({
-                              name: newPolicyName,
-                              levels: [
-                                {
-                                  method: newPolicyMethod,
-                                  target: newPolicyTarget,
-                                  waitTimeMinutes: newPolicyWait,
-                                },
-                              ],
-                            });
-                            setSelectedPolicyId(res.escalationPolicy.id);
-                            setIsCreatePolicyOpen(false);
-                            setNewPolicyName("");
-                            setNewPolicyTarget("");
-                            setNewPolicyWait(0);
-                          }}
-                          disabled={createPolicyMutation.isPending}
-                        >
-                          {createPolicyMutation.isPending
-                            ? "Creating..."
-                            : "Create policy"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  This policy will be linked to the monitor.
-                </p>
+                              {createPolicyMutation.isPending
+                                ? "Creating..."
+                                : "Create policy"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      This policy will be linked to the monitor.
+                    </p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
