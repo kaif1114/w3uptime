@@ -1,3 +1,4 @@
+import "server-only";
 import pgClient, { initializeConnection } from "./pg";
 
 // Global registry for active SSE streams with user authorization

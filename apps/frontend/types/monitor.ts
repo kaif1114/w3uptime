@@ -8,6 +8,7 @@ export interface Monitor {
   timeout: number;
   checkInterval: number;
   expectedStatusCodes: number[];
+  escalationPolicyId?: string | null;
   createdAt: string;
   updatedAt: string;
   lastCheckedAt?: string | null;
@@ -20,6 +21,16 @@ export interface CreateMonitorData {
   checkInterval?: number;
   expectedStatusCodes?: number[];
   status?: MonitorStatus;
+  escalationPolicyId?: string | null;
+  // Optional: allow inline creation of policy when creating monitor
+  escalationPolicy?: {
+    name: string;
+    levels: Array<{
+      method: "EMAIL" | "SLACK" | "WEBHOOK";
+      target: string;
+      waitTimeMinutes: number;
+    }>;
+  };
 }
 
 export interface UpdateMonitorData {
@@ -116,14 +127,14 @@ export interface DowntimeData {
 }
 
 export interface BestRegion {
-  region_type: 'Country' | 'Continent' | 'City';
+  region_type: "Country" | "Continent" | "City";
   region_name: string;
   avg_latency: number;
   sample_count: number;
 }
 
 export interface WorstRegion {
-  region_type: 'Country' | 'Continent' | 'City';
+  region_type: "Country" | "Continent" | "City";
   region_name: string;
   avg_latency: number;
   sample_count: number;
@@ -174,5 +185,3 @@ export interface MonitorTimeSeriesResponse {
   data: TimeSeriesDataPoint[];
   generatedAt: string;
 }
-
- 

@@ -2,20 +2,33 @@
 
 import { useState } from "react";
 import { useCreateMonitor } from "@/hooks/useMonitors";
+import {
+  useEscalationPolicies,
+  useCreateEscalationPolicy,
+} from "@/hooks/useEscalationPolicies";
 import { CreateMonitorData, MonitorStatus } from "@/types/monitor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 export interface AddMonitorFormProps {
   onSuccess?: () => void;
@@ -23,6 +36,8 @@ export interface AddMonitorFormProps {
 
 export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
   const createMutation = useCreateMonitor();
+  const { data: policiesData } = useEscalationPolicies({ limit: 100 });
+  const createPolicyMutation = useCreateEscalationPolicy();
 
   const [formData, setFormData] = useState<CreateMonitorData>({
     name: "",
@@ -35,6 +50,18 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [statusCodeInput, setStatusCodeInput] = useState("");
+
+  // Escalation policy selection / inline create
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | undefined>(
+    undefined
+  );
+  const [isCreatePolicyOpen, setIsCreatePolicyOpen] = useState(false);
+  const [newPolicyName, setNewPolicyName] = useState("");
+  const [newPolicyTarget, setNewPolicyTarget] = useState("");
+  const [newPolicyMethod, setNewPolicyMethod] = useState<
+    "EMAIL" | "SLACK" | "WEBHOOK"
+  >("EMAIL");
+  const [newPolicyWait, setNewPolicyWait] = useState<number>(0);
 
   // UI-only options (not yet persisted)
   const [alertWhen] = useState<string>("unavailable");
@@ -64,7 +91,10 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     if (!formData.checkInterval || formData.checkInterval <= 0)
       newErrors.checkInterval = "Check interval must be greater than 0";
 
-    if (!formData.expectedStatusCodes || formData.expectedStatusCodes.length === 0)
+    if (
+      !formData.expectedStatusCodes ||
+      formData.expectedStatusCodes.length === 0
+    )
       newErrors.expectedStatusCodes = "At least one status code is required";
 
     setErrors(newErrors);
@@ -76,8 +106,12 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     if (!validateForm()) return;
 
     try {
-      const derivedName = formData.name?.trim() || new URL(formData.url).hostname;
+      const derivedName =
+        formData.name?.trim() || new URL(formData.url).hostname;
       const payload: CreateMonitorData = { ...formData, name: derivedName };
+      if (selectedPolicyId) {
+        payload.escalationPolicyId = selectedPolicyId;
+      }
       await createMutation.mutateAsync(payload);
       onSuccess?.();
     } catch (error) {
@@ -87,7 +121,12 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
 
   const addStatusCode = () => {
     const code = parseInt(statusCodeInput);
-    if (code && code >= 100 && code <= 599 && !formData.expectedStatusCodes?.includes(code)) {
+    if (
+      code &&
+      code >= 100 &&
+      code <= 599 &&
+      !formData.expectedStatusCodes?.includes(code)
+    ) {
       setFormData((prev) => ({
         ...prev,
         expectedStatusCodes: [...(prev.expectedStatusCodes || []), code],
@@ -99,7 +138,8 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
   const removeStatusCode = (code: number) => {
     setFormData((prev) => ({
       ...prev,
-      expectedStatusCodes: prev.expectedStatusCodes?.filter((c) => c !== code) || [],
+      expectedStatusCodes:
+        prev.expectedStatusCodes?.filter((c) => c !== code) || [],
     }));
   };
 
@@ -115,7 +155,8 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       {createMutation.error && (
         <Alert variant="destructive">
           <AlertDescription>
-            {createMutation.error.message || "Failed to create monitor. Please try again."}
+            {createMutation.error.message ||
+              "Failed to create monitor. Please try again."}
           </AlertDescription>
         </Alert>
       )}
@@ -126,8 +167,8 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
           <div className="md:col-span-1 space-y-2">
             <h3 className="text-lg font-semibold">What to monitor</h3>
             <p className="text-sm text-muted-foreground">
-              Configure the target website you want to monitor.
-              You can find additional configuration in Advanced settings.
+              Configure the target website you want to monitor. You can find
+              additional configuration in Advanced settings.
             </p>
           </div>
           <Card className="md:col-span-2">
@@ -146,7 +187,8 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Keyword matching is recommended. Upgrade to enable more options.
+                  Keyword matching is recommended. Upgrade to enable more
+                  options.
                 </p>
               </div>
 
@@ -157,44 +199,150 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   type="url"
                   placeholder="https://"
                   value={formData.url}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, url: e.target.value }))
+                  }
                   aria-invalid={!!errors.url}
                 />
-                {errors.url && <p className="text-sm text-destructive">{errors.url}</p>}
-                <p className="text-xs text-muted-foreground">You can import multiple monitors later.</p>
+                {errors.url && (
+                  <p className="text-sm text-destructive">{errors.url}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  You can import multiple monitors later.
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* On-call escalation */}
+        {/* Escalation Policies */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 space-y-2">
-            <h3 className="text-lg font-semibold">On-call escalation</h3>
+            <h3 className="text-lg font-semibold">Escalation Policies</h3>
             <p className="text-sm text-muted-foreground">
-              Set up who will be notified and how when an incident occurs.
+              Select an existing policy or create one.
             </p>
           </div>
           <Card className="md:col-span-2">
             <CardContent className="pt-6 space-y-4">
-              <div className="text-sm font-medium">When there's a new incident</div>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={notifySms} onChange={(e) => setNotifySms(e.target.checked)} /> SMS
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} /> E-mail
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.checked)} /> Push notification
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={notifyCritical} onChange={(e) => setNotifyCritical(e.target.checked)} /> Critical alert
-                </label>
+              <div className="grid gap-2">
+                <Label htmlFor="escalationPolicy">Escalation policy</Label>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={selectedPolicyId}
+                    onValueChange={(v) => setSelectedPolicyId(v)}
+                  >
+                    <SelectTrigger id="escalationPolicy" className="w-full">
+                      <SelectValue placeholder="Select an escalation policy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {policiesData?.escalationPolicies?.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Dialog
+                    open={isCreatePolicyOpen}
+                    onOpenChange={setIsCreatePolicyOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline">
+                        Create
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create escalation policy</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="newPolicyName">Name</Label>
+                          <Input
+                            id="newPolicyName"
+                            value={newPolicyName}
+                            onChange={(e) => setNewPolicyName(e.target.value)}
+                          />
+                        </div>
+                        <Separator />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                          <div className="space-y-2">
+                            <Label>Method</Label>
+                            <Select
+                              value={newPolicyMethod}
+                              onValueChange={(v) =>
+                                setNewPolicyMethod(v as any)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="EMAIL">Email</SelectItem>
+                                <SelectItem value="SLACK">Slack</SelectItem>
+                                <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Target</Label>
+                            <Input
+                              placeholder="email/channel/url"
+                              value={newPolicyTarget}
+                              onChange={(e) =>
+                                setNewPolicyTarget(e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Wait (min)</Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={newPolicyWait}
+                              onChange={(e) =>
+                                setNewPolicyWait(parseInt(e.target.value) || 0)
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          onClick={async () => {
+                            if (!newPolicyName || !newPolicyTarget) return;
+                            const res = await createPolicyMutation.mutateAsync({
+                              name: newPolicyName,
+                              levels: [
+                                {
+                                  method: newPolicyMethod,
+                                  target: newPolicyTarget,
+                                  waitTimeMinutes: newPolicyWait,
+                                },
+                              ],
+                            });
+                            setSelectedPolicyId(res.escalationPolicy.id);
+                            setIsCreatePolicyOpen(false);
+                            setNewPolicyName("");
+                            setNewPolicyTarget("");
+                            setNewPolicyWait(0);
+                          }}
+                          disabled={createPolicyMutation.isPending}
+                        >
+                          {createPolicyMutation.isPending
+                            ? "Creating..."
+                            : "Create policy"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This policy will be linked to the monitor.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                These preferences are UI-only for now and do not affect alert routing.
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -211,7 +359,9 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value: MonitorStatus) => setFormData((prev) => ({ ...prev, status: value }))}
+                  onValueChange={(value: MonitorStatus) =>
+                    setFormData((prev) => ({ ...prev, status: value }))
+                  }
                 >
                   <SelectTrigger id="status">
                     <SelectValue />
@@ -232,12 +382,17 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   min={60}
                   value={formData.checkInterval}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, checkInterval: parseInt(e.target.value) || 300 }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      checkInterval: parseInt(e.target.value) || 300,
+                    }))
                   }
                   aria-invalid={!!errors.checkInterval}
                 />
                 {errors.checkInterval && (
-                  <p className="text-sm text-destructive">{errors.checkInterval}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.checkInterval}
+                  </p>
                 )}
               </div>
 
@@ -249,10 +404,17 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   min={1}
                   max={120}
                   value={formData.timeout}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, timeout: parseInt(e.target.value) || 30 }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      timeout: parseInt(e.target.value) || 30,
+                    }))
+                  }
                   aria-invalid={!!errors.timeout}
                 />
-                {errors.timeout && <p className="text-sm text-destructive">{errors.timeout}</p>}
+                {errors.timeout && (
+                  <p className="text-sm text-destructive">{errors.timeout}</p>
+                )}
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -267,12 +429,18 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                     onChange={(e) => setStatusCodeInput(e.target.value)}
                     onKeyPress={handleStatusCodeKeyPress}
                   />
-                  <Button type="button" variant="outline" onClick={addStatusCode}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addStatusCode}
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 {errors.expectedStatusCodes && (
-                  <p className="text-sm text-destructive">{errors.expectedStatusCodes}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.expectedStatusCodes}
+                  </p>
                 )}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {formData.expectedStatusCodes?.map((code) => (
@@ -300,7 +468,9 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
 
         {/* Metadata */}
         <details className="group rounded-lg border">
-          <summary className="cursor-pointer list-none px-4 py-3 font-medium">Metadata</summary>
+          <summary className="cursor-pointer list-none px-4 py-3 font-medium">
+            Metadata
+          </summary>
           <div className="px-4 pb-4 text-sm text-muted-foreground">
             Add custom metadata to enhance your monitor context (coming soon).
           </div>
@@ -317,4 +487,4 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
   );
 }
 
-export default AddMonitorForm; 
+export default AddMonitorForm;
