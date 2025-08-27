@@ -273,6 +273,7 @@ enum TimelineEventType {
   USER_COMMENT
   POSTMORTEM
   ESCALATION
+  RESOLUTION
 }
 
 enum EscalationChannel {

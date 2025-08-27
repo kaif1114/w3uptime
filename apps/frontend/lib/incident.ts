@@ -26,7 +26,7 @@ export async function createIncident(monitorId: string, title: string, time: Dat
 
     await prisma.timelineEvent.create({
       data: {
-        description: `Incident created: ${title}`,
+        description: `Incident reported: ${title}`,
         incidentId: incident.id,
         type: "INCIDENT",
         createdAt: time,
@@ -58,7 +58,7 @@ export async function resolveIncident(monitorId: string, time: Date) {
                 data: {
                     description: `Incident resolved: ${incident.title}`,
                     incidentId: incident.id,
-                    type: "INCIDENT",
+                    type: "RESOLUTION",
                     createdAt: time,
                 },
             });

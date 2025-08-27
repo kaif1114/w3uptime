@@ -9,6 +9,7 @@ import { useIncidentTimeline } from "@/hooks/useIncidentTimeline";
 import { format } from "date-fns";
 import {
   AlertTriangle,
+  CheckCircle,
   Clock,
   Loader2,
   Mail,
@@ -50,6 +51,8 @@ export default function IncidentTimeline({
     switch (type) {
       case "INCIDENT":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case "RESOLUTION":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case "USER_COMMENT":
         return <MessageSquare className="h-4 w-4 text-blue-500" />;
       case "ESCALATION":
@@ -62,6 +65,8 @@ export default function IncidentTimeline({
   const getTimelineTitle = (event: any) => {
     switch (event.type) {
       case "INCIDENT":
+        return event.description;
+      case "RESOLUTION":
         return event.description;
       case "USER_COMMENT":
         return "Comment";
