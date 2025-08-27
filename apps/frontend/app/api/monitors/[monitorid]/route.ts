@@ -170,10 +170,20 @@ export const DELETE = withAuth(async (
       );
     }
 
-    await prisma.monitor.delete({
-      where: {
-        id: monitorid,
-      },
+    await prisma.$transaction(async (tx) => {
+      // Delete all associated MonitorTicks first
+      await tx.monitorTick.deleteMany({
+        where: {
+          monitorId: monitorid,
+        },
+      });
+
+      // Then delete the monitor
+      await tx.monitor.delete({
+        where: {
+          id: monitorid,
+        },
+      });
     });
 
     return NextResponse.json(
