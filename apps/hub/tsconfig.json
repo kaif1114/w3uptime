@@ -12,7 +12,7 @@
       "strict": true,
       "noImplicitAny": true,
       "strictNullChecks": true,
-      "noEmit": true
+      "noEmit": false
     },
     "include": [
       "src/**/*.ts",
