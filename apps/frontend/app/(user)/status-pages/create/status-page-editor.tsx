@@ -21,10 +21,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
     setName,
     logoUrl,
     setLogoUrl,
-    logoHrefUrl,
-    setLogoHrefUrl,
-    contactUrl,
-    setContactUrl,
+    logoLinkUrl,
+    setLogoLinkUrl,
+    supportUrl,
+    setSupportUrl,
     historyRange,
     setHistoryRange,
     sections,
@@ -138,10 +138,10 @@ export default function StatusPageEditor({ mode, id }: Props) {
             setName={setName}
             logoUrl={logoUrl}
             setLogoUrl={setLogoUrl}
-            logoHrefUrl={logoHrefUrl}
-            setLogoHrefUrl={setLogoHrefUrl}
-            contactUrl={contactUrl}
-            setContactUrl={setContactUrl}
+            logoLinkUrl={logoLinkUrl}
+            setLogoLinkUrl={setLogoLinkUrl}
+            supportUrl={supportUrl}
+            setSupportUrl={setSupportUrl}
             historyRange={historyRange}
             setHistoryRange={setHistoryRange}
             onSave={handleSave}

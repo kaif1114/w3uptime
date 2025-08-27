@@ -20,10 +20,10 @@ interface OverviewTabProps {
   setName: (value: string) => void;
   logoUrl: string;
   setLogoUrl: (value: string) => void;
-  logoHrefUrl: string;
-  setLogoHrefUrl: (value: string) => void;
-  contactUrl: string;
-  setContactUrl: (value: string) => void;
+  logoLinkUrl: string;
+  setLogoLinkUrl: (value: string) => void;
+  supportUrl: string;
+  setSupportUrl: (value: string) => void;
   historyRange: string;
   setHistoryRange: (value: string) => void;
   onSave: () => void;
@@ -39,10 +39,10 @@ export function OverviewTab({
   setName,
   logoUrl,
   setLogoUrl,
-  logoHrefUrl,
-  setLogoHrefUrl,
-  contactUrl,
-  setContactUrl,
+  logoLinkUrl,
+  setLogoLinkUrl,
+  supportUrl,
+  setSupportUrl,
   historyRange,
   setHistoryRange,
   onSave,
@@ -165,31 +165,15 @@ export function OverviewTab({
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label
-                    htmlFor="logoHref"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    What URL should your logo point to?
-                  </Label>
-                  <Input
-                    id="logoHref"
-                    value={logoHrefUrl}
-                    onChange={(e) => setLogoHrefUrl(e.target.value)}
-                    placeholder="https://stripe.com"
-                    className="h-11 border-border bg-background"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label
-                    htmlFor="contact"
+                    htmlFor="support"
                     className="text-sm font-medium text-foreground"
                   >
                     Get in touch URL
                   </Label>
                   <Input
-                    id="contact"
-                    value={contactUrl}
-                    onChange={(e) => setContactUrl(e.target.value)}
+                    id="support"
+                    value={supportUrl}
+                    onChange={(e) => setSupportUrl(e.target.value)}
                     placeholder="https://stripe.com/support"
                     className="h-11 border-border bg-background"
                   />
@@ -197,6 +181,22 @@ export function OverviewTab({
                     You can use mailto:support@stripe.com. Leave blank for
                     no 'Get in touch' button.
                   </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label
+                    htmlFor="logoLinkUrl"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Logo URL (click-through)
+                  </Label>
+                  <Input
+                    id="logoLinkUrl"
+                    value={logoLinkUrl}
+                    onChange={(e) => setLogoLinkUrl(e.target.value)}
+                    placeholder="https://yourdomain.com"
+                    className="h-11 border-border bg-background"
+                  />
                 </div>
 
                 <div className="space-y-3">

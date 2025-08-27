@@ -8,8 +8,8 @@ const createSchema = z.object({
   isPublished: z.boolean().optional().default(false),
   // Accept any string for logo so we can support uploads/data URLs during prototyping
   logoUrl: z.string().optional().nullable(),
-  logoHrefUrl: z.string().optional().nullable(),
-  contactUrl: z.string().optional().nullable(),
+  logoLinkUrl: z.string().optional().nullable(),
+  supportUrl: z.string().optional().nullable(),
   historyRange: z.enum(["7d", "30d", "90d"]).optional().default("7d"),
   sections: z
     .array(
@@ -109,6 +109,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
         name: parsed.data.name,
         isPublished: parsed.data.isPublished ?? false,
         logoUrl: parsed.data.logoUrl,
+        logo: parsed.data.logoLinkUrl ?? null,
         userId: user.id,
       },
     });
@@ -145,8 +146,8 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       name: statusPage.name,
       isPublished: statusPage.isPublished,
       logoUrl: statusPage.logoUrl,
-      logoHrefUrl: null, // Not in DB schema yet
-      contactUrl: null, // Not in DB schema yet  
+      logoLinkUrl: statusPage.logo,
+      supportUrl: null, // 
       historyRange: "7d", // Default value
       sections: completeStatusPage?.statusPageSections.map(section => ({
         id: section.id,

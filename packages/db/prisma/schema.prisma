@@ -224,6 +224,7 @@ model StatusPageSection {
   monitor          Monitor               @relation(fields: [monitorId], references: [id])
   statusPage       StatusPage            @relation(fields: [statusPageId], references: [id])
 }
+//status page section doesnt contain a maintenance id for now, it fetches the data on the behalf of the status pageid and monitorid
 
 model Update {
   id               String             @id @default(uuid())
