@@ -1,4 +1,5 @@
-import pgClient, { initializeConnection } from "./pg";
+"use server";
+import pgClient from "./pg";
 import { createIncident, resolveIncident } from "./incident";
 // Global registry for active SSE streams with user authorization
 const activeStreams = new Map<string, {

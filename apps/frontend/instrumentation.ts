@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { initializeConnection } from '@/lib/pg';
 
 export async function register() {
