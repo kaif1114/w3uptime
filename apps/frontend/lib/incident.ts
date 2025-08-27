@@ -15,12 +15,21 @@ export async function createIncident(monitorId: string, title: string, time: Dat
       return;
     }
     console.log('Creating incident...');
-    await prisma.incident.create({
+    const incident = await prisma.incident.create({
       data: {
         title,
         monitorId,
         createdAt: time,
         cause: "URL_UNAVAILABLE",
+      },
+    });
+
+    await prisma.timelineEvent.create({
+      data: {
+        description: `Incident created: ${title}`,
+        incidentId: incident.id,
+        type: "INCIDENT",
+        createdAt: time,
       },
     });
   } catch (error) {
@@ -44,6 +53,15 @@ export async function resolveIncident(monitorId: string, time: Date) {
                 where: { id: incident.id },
                 data: { status: "RESOLVED", resolvedAt: time }
             })
+
+            await prisma.timelineEvent.create({
+                data: {
+                    description: `Incident resolved: ${incident.title}`,
+                    incidentId: incident.id,
+                    type: "INCIDENT",
+                    createdAt: time,
+                },
+            });
         }
     } catch (error) {
         console.error("Error resolving incident:", error);
