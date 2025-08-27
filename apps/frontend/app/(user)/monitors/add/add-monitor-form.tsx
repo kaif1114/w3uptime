@@ -322,7 +322,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
             <span className="text-muted-foreground text-sm">(optional)</span>
           </summary>
           <div className="px-4 pb-4">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select
@@ -385,7 +385,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                 )}
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <Label>Expected Status Codes</Label>
                 <div className="flex gap-2">
                   <Input
@@ -541,7 +541,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                     </div>
 
                     {newPolicyExpandedIndex === index && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <Label>Method *</Label>
                           <Select
