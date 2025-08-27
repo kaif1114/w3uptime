@@ -65,8 +65,9 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       waitTimeMinutes: 60,
     },
   ]);
-  const [newPolicyExpandedIndex, setNewPolicyExpandedIndex] =
-    useState<number>(0);
+  const [newPolicyExpandedLevels, setNewPolicyExpandedLevels] = useState<
+    Set<number>
+  >(new Set([0]));
   const [newPolicyErrors, setNewPolicyErrors] = useState<
     Record<string, string>
   >({});
@@ -490,7 +491,9 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                       waitTimeMinutes: 60,
                     };
                     setNewPolicyLevels([...newPolicyLevels, newLevel]);
-                    setNewPolicyExpandedIndex(newPolicyLevels.length);
+                    setNewPolicyExpandedLevels(
+                      (prev) => new Set([...prev, newPolicyLevels.length])
+                    );
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -504,17 +507,36 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                     <div className="flex items-center justify-between mb-3">
                       <button
                         type="button"
-                        onClick={() => setNewPolicyExpandedIndex(index)}
-                        className="font-medium text-left"
+                        onClick={() => {
+                          setNewPolicyExpandedLevels((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(index)) {
+                              newSet.delete(index);
+                            } else {
+                              newSet.add(index);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className="font-medium text-left flex items-center gap-2"
                       >
-                        Level {index + 1}
-                        {newPolicyExpandedIndex !== index &&
-                          level.method &&
-                          level.target && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              - {level.method} → {level.target}
-                            </span>
-                          )}
+                        <span>Level {index + 1}</span>
+                        {!newPolicyExpandedLevels.has(index) && (
+                          <>
+                            {level.method && level.target ? (
+                              <span className="text-xs text-muted-foreground">
+                                - {level.method} → {level.target}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-orange-500">
+                                ⚠ Incomplete
+                              </span>
+                            )}
+                          </>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {newPolicyExpandedLevels.has(index) ? "▼" : "▶"}
+                        </span>
                       </button>
                       {newPolicyLevels.length > 1 && (
                         <Button
@@ -526,13 +548,20 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                               (_, i) => i !== index
                             );
                             setNewPolicyLevels(updated);
-                            if (newPolicyExpandedIndex === index) {
-                              setNewPolicyExpandedIndex(Math.max(0, index - 1));
-                            } else if (newPolicyExpandedIndex > index) {
-                              setNewPolicyExpandedIndex(
-                                newPolicyExpandedIndex - 1
-                              );
-                            }
+                            setNewPolicyExpandedLevels((prev) => {
+                              const newSet = new Set(prev);
+                              newSet.delete(index);
+                              // Adjust indices for levels after the deleted one
+                              const adjustedSet = new Set<number>();
+                              newSet.forEach((i) => {
+                                if (i > index) {
+                                  adjustedSet.add(i - 1);
+                                } else {
+                                  adjustedSet.add(i);
+                                }
+                              });
+                              return adjustedSet;
+                            });
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -540,7 +569,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                       )}
                     </div>
 
-                    {newPolicyExpandedIndex === index && (
+                    {newPolicyExpandedLevels.has(index) && (
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label>Method *</Label>
@@ -645,6 +674,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                     waitTimeMinutes: 60,
                   },
                 ]);
+                setNewPolicyExpandedLevels(new Set([0]));
                 setNewPolicyErrors({});
               }}
             >
@@ -717,6 +747,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                       waitTimeMinutes: 60,
                     },
                   ]);
+                  setNewPolicyExpandedLevels(new Set([0]));
                   setNewPolicyErrors({});
                 } catch (error) {
                   console.error("Failed to create escalation policy:", error);
