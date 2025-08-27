@@ -36,6 +36,8 @@ interface EscalationLevelItemProps {
   onDrop: (event: React.DragEvent) => void;
   isDragging: boolean;
   isLast: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }
 
 const methodOptions = [
@@ -58,6 +60,8 @@ export function EscalationLevelItem({
   onDrop,
   isDragging,
   isLast,
+  isExpanded,
+  onToggleExpand,
 }: EscalationLevelItemProps) {
   const [errors, setErrors] = useState<{ target?: string; waitTime?: string }>(
     {}
@@ -150,7 +154,18 @@ export function EscalationLevelItem({
               <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-medium flex items-center justify-center">
                 {level}
               </div>
-              <h3 className="font-medium">Escalation Level {level}</h3>
+              <button
+                type="button"
+                onClick={onToggleExpand}
+                className="font-medium text-left"
+              >
+                Escalation Level {level}
+                {!isExpanded && method && target && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    - {method} → {target}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
           <Button
@@ -165,80 +180,82 @@ export function EscalationLevelItem({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor={`method-${level}`}>Escalation Method</Label>
-            <Select value={method} onValueChange={onMethodChange}>
-              <SelectTrigger id={`method-${level}`}>
-                <SelectValue placeholder="Select escalation method" />
-              </SelectTrigger>
-              <SelectContent>
-                {methodOptions.map((option) => {
-                  const Icon = option.icon;
-                  return (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        {option.label}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor={`target-${level}`}>{getTargetLabel()}</Label>
-            <Input
-              id={`target-${level}`}
-              value={target}
-              onChange={(e) => handleTargetChange(e.target.value)}
-              placeholder={getTargetPlaceholder()}
-              disabled={!method}
-              className={errors.target ? "border-destructive" : ""}
-            />
-            {errors.target && (
-              <p className="text-sm text-destructive">{errors.target}</p>
-            )}
-          </div>
-        </div>
-
-        {!isLast && (
-          <div className="space-y-2">
-            <Label htmlFor={`wait-time-${level}`}>Wait Time (minutes)</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id={`wait-time-${level}`}
-                type="number"
-                min="1"
-                max="1440"
-                value={waitTimeMinutes || ""}
-                onChange={(e) =>
-                  handleWaitTimeChange(parseInt(e.target.value) || 0)
-                }
-                placeholder="60"
-                className={`max-w-32 ${errors.waitTime ? "border-destructive" : ""}`}
-              />
-              <span className="text-sm text-muted-foreground">
-                before escalating to next level
-              </span>
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor={`method-${level}`}>Escalation Method</Label>
+              <Select value={method} onValueChange={onMethodChange}>
+                <SelectTrigger id={`method-${level}`}>
+                  <SelectValue placeholder="Select escalation method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {methodOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
-            {errors.waitTime && (
-              <p className="text-sm text-destructive">{errors.waitTime}</p>
-            )}
-          </div>
-        )}
 
-        {isLast && (
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              This is the final escalation level. No wait time needed.
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor={`target-${level}`}>{getTargetLabel()}</Label>
+              <Input
+                id={`target-${level}`}
+                value={target}
+                onChange={(e) => handleTargetChange(e.target.value)}
+                placeholder={getTargetPlaceholder()}
+                disabled={!method}
+                className={errors.target ? "border-destructive" : ""}
+              />
+              {errors.target && (
+                <p className="text-sm text-destructive">{errors.target}</p>
+              )}
+            </div>
           </div>
-        )}
-      </CardContent>
+
+          {!isLast && (
+            <div className="space-y-2">
+              <Label htmlFor={`wait-time-${level}`}>Wait Time (minutes)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`wait-time-${level}`}
+                  type="number"
+                  min="1"
+                  max="1440"
+                  value={waitTimeMinutes || ""}
+                  onChange={(e) =>
+                    handleWaitTimeChange(parseInt(e.target.value) || 0)
+                  }
+                  placeholder="60"
+                  className={`max-w-32 ${errors.waitTime ? "border-destructive" : ""}`}
+                />
+                <span className="text-sm text-muted-foreground">
+                  before escalating to next level
+                </span>
+              </div>
+              {errors.waitTime && (
+                <p className="text-sm text-destructive">{errors.waitTime}</p>
+              )}
+            </div>
+          )}
+
+          {isLast && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                This is the final escalation level. No wait time needed.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }

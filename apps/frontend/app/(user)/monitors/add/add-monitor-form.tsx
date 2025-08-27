@@ -65,6 +65,8 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       waitTimeMinutes: 60,
     },
   ]);
+  const [newPolicyExpandedIndex, setNewPolicyExpandedIndex] =
+    useState<number>(0);
   const [newPolicyErrors, setNewPolicyErrors] = useState<
     Record<string, string>
   >({});
@@ -480,17 +482,15 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (newPolicyLevels.length < 10) {
-                      setNewPolicyLevels([
-                        ...newPolicyLevels,
-                        {
-                          id: Date.now().toString(),
-                          method: "EMAIL" as "EMAIL" | "SLACK" | "WEBHOOK",
-                          target: "",
-                          waitTimeMinutes: 60,
-                        },
-                      ]);
-                    }
+                    if (newPolicyLevels.length >= 10) return;
+                    const newLevel = {
+                      id: Date.now().toString(),
+                      method: "EMAIL" as "EMAIL" | "SLACK" | "WEBHOOK",
+                      target: "",
+                      waitTimeMinutes: 60,
+                    };
+                    setNewPolicyLevels([...newPolicyLevels, newLevel]);
+                    setNewPolicyExpandedIndex(newPolicyLevels.length);
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -502,16 +502,37 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                 {newPolicyLevels.map((level, index) => (
                   <Card key={level.id} className="p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium">Level {index + 1}</h4>
+                      <button
+                        type="button"
+                        onClick={() => setNewPolicyExpandedIndex(index)}
+                        className="font-medium text-left"
+                      >
+                        Level {index + 1}
+                        {newPolicyExpandedIndex !== index &&
+                          level.method &&
+                          level.target && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              - {level.method} → {level.target}
+                            </span>
+                          )}
+                      </button>
                       {newPolicyLevels.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setNewPolicyLevels(
-                              newPolicyLevels.filter((_, i) => i !== index)
+                            const updated = newPolicyLevels.filter(
+                              (_, i) => i !== index
                             );
+                            setNewPolicyLevels(updated);
+                            if (newPolicyExpandedIndex === index) {
+                              setNewPolicyExpandedIndex(Math.max(0, index - 1));
+                            } else if (newPolicyExpandedIndex > index) {
+                              setNewPolicyExpandedIndex(
+                                newPolicyExpandedIndex - 1
+                              );
+                            }
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -519,88 +540,90 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="space-y-2">
-                        <Label>Method *</Label>
-                        <Select
-                          value={level.method}
-                          onValueChange={(value) => {
-                            const updatedLevels = [...newPolicyLevels];
-                            updatedLevels[index].method = value as
-                              | "EMAIL"
-                              | "SLACK"
-                              | "WEBHOOK";
-                            updatedLevels[index].target = "";
-                            setNewPolicyLevels(updatedLevels);
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EMAIL">Email</SelectItem>
-                            <SelectItem value="SLACK">Slack</SelectItem>
-                            <SelectItem value="WEBHOOK">Webhook</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {newPolicyExpandedIndex === index && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label>Method *</Label>
+                          <Select
+                            value={level.method}
+                            onValueChange={(value) => {
+                              const updatedLevels = [...newPolicyLevels];
+                              updatedLevels[index].method = value as
+                                | "EMAIL"
+                                | "SLACK"
+                                | "WEBHOOK";
+                              updatedLevels[index].target = "";
+                              setNewPolicyLevels(updatedLevels);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="EMAIL">Email</SelectItem>
+                              <SelectItem value="SLACK">Slack</SelectItem>
+                              <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label>Target *</Label>
-                        <Input
-                          placeholder={
-                            level.method === "EMAIL"
-                              ? "email@example.com"
-                              : level.method === "SLACK"
-                                ? "#channel-name"
-                                : "https://webhook-url.com"
-                          }
-                          value={level.target}
-                          onChange={(e) => {
-                            const updatedLevels = [...newPolicyLevels];
-                            updatedLevels[index].target = e.target.value;
-                            setNewPolicyLevels(updatedLevels);
-                          }}
-                          className={
-                            newPolicyErrors[`level-${index}-target`]
-                              ? "border-destructive"
-                              : ""
-                          }
-                        />
-                        {newPolicyErrors[`level-${index}-target`] && (
-                          <p className="text-sm text-destructive">
-                            {newPolicyErrors[`level-${index}-target`]}
-                          </p>
-                        )}
-                      </div>
+                        <div className="space-y-2">
+                          <Label>Target *</Label>
+                          <Input
+                            placeholder={
+                              level.method === "EMAIL"
+                                ? "email@example.com"
+                                : level.method === "SLACK"
+                                  ? "#channel-name"
+                                  : "https://webhook-url.com"
+                            }
+                            value={level.target}
+                            onChange={(e) => {
+                              const updatedLevels = [...newPolicyLevels];
+                              updatedLevels[index].target = e.target.value;
+                              setNewPolicyLevels(updatedLevels);
+                            }}
+                            className={
+                              newPolicyErrors[`level-${index}-target`]
+                                ? "border-destructive"
+                                : ""
+                            }
+                          />
+                          {newPolicyErrors[`level-${index}-target`] && (
+                            <p className="text-sm text-destructive">
+                              {newPolicyErrors[`level-${index}-target`]}
+                            </p>
+                          )}
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label>Wait Time (minutes) *</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={1440}
-                          placeholder="60"
-                          value={level.waitTimeMinutes}
-                          onChange={(e) => {
-                            const updatedLevels = [...newPolicyLevels];
-                            updatedLevels[index].waitTimeMinutes =
-                              parseInt(e.target.value) || 0;
-                            setNewPolicyLevels(updatedLevels);
-                          }}
-                          className={
-                            newPolicyErrors[`level-${index}-waitTime`]
-                              ? "border-destructive"
-                              : ""
-                          }
-                        />
-                        {newPolicyErrors[`level-${index}-waitTime`] && (
-                          <p className="text-sm text-destructive">
-                            {newPolicyErrors[`level-${index}-waitTime`]}
-                          </p>
-                        )}
+                        <div className="space-y-2">
+                          <Label>Wait Time (minutes) *</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={1440}
+                            placeholder="60"
+                            value={level.waitTimeMinutes}
+                            onChange={(e) => {
+                              const updatedLevels = [...newPolicyLevels];
+                              updatedLevels[index].waitTimeMinutes =
+                                parseInt(e.target.value) || 0;
+                              setNewPolicyLevels(updatedLevels);
+                            }}
+                            className={
+                              newPolicyErrors[`level-${index}-waitTime`]
+                                ? "border-destructive"
+                                : ""
+                            }
+                          />
+                          {newPolicyErrors[`level-${index}-waitTime`] && (
+                            <p className="text-sm text-destructive">
+                              {newPolicyErrors[`level-${index}-waitTime`]}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </Card>
                 ))}
               </div>
