@@ -6,20 +6,15 @@ import {
   Line, 
   AreaChart, 
   Area, 
-  BarChart, 
-  Bar,
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Legend
 } from 'recharts';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, TrendingUp, Activity, CheckCircle } from 'lucide-react';
+import {  CheckCircle } from 'lucide-react';
 
 interface ChartDataPoint {
   timestamp: string;
