@@ -75,8 +75,10 @@ export default function IncidentTimeline({
         return event.description;
       case "USER_COMMENT":
         return "Comment";
+      case "POSTMORTEM":
+        return "Postmortem";
       case "ESCALATION":
-        return "Escalation triggered";
+        return event?.escalationLog?.Alert?.title || "Escalation triggered";
       default:
         return "Timeline event";
     }
@@ -157,10 +159,13 @@ export default function IncidentTimeline({
         <div className="space-y-6">
           {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
             data?.timelineEvents.map((event, index) => (
-              <div key={event.id} className="flex gap-4 relative">
+              <div key={event.id} className="flex items-center gap-4 relative">
                 {/* Timeline Node */}
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border-2 border-background relative z-10">
-                  {getTimelineIcon(event.type)}
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border-2 border-background relative z-10 shrink-0">
+                  {/* Ensure consistent icon sizing */}
+                  <div className="flex items-center justify-center h-4 w-4">
+                    {getTimelineIcon(event.type)}
+                  </div>
                 </div>
 
                 {/* Event Content */}
@@ -174,22 +179,25 @@ export default function IncidentTimeline({
                     </span>
                   </div>
 
-                  {event.type === "USER_COMMENT" && (
+                  {(event.type === "USER_COMMENT" ||
+                    event.type === "POSTMORTEM") && (
                     <div className="text-sm text-muted-foreground">
                       {event.description}
                     </div>
                   )}
 
-                  {event.user && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">
-                          <User className="h-3 w-3" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>User {event.user.id}</span>
-                    </div>
-                  )}
+                  {event.user &&
+                    (event.type === "USER_COMMENT" ||
+                      event.type === "POSTMORTEM") && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-xs">
+                            <User className="h-3 w-3" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>User {event.user.id}</span>
+                      </div>
+                    )}
 
                   {/* Escalation details */}
                   {event.escalationLog && (
