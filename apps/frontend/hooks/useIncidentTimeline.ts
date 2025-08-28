@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 interface TimelineEvent {
   id: string;
   description: string;
-  type: "INCIDENT" | "USER_COMMENT" | "ESCALATION";
+  type:
+    | "INCIDENT"
+    | "USER_COMMENT"
+    | "POSTMORTEM"
+    | "ESCALATION"
+    | "RESOLUTION";
   createdAt: string;
   incidentId: string;
   userId: string;
@@ -50,7 +55,6 @@ const fetchIncidentTimeline = async (incidentId: string) => {
   }
 
   return response.json();
-
 };
 
 export function useIncidentTimeline(incidentId: string) {
