@@ -152,8 +152,19 @@ export function useDeleteMonitor() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, deletedMonitorId) => {
+      // Invalidate monitors list to refetch
       queryClient.invalidateQueries({ queryKey: ["monitors"] });
+      
+      // Remove the specific monitor from cache
+      queryClient.removeQueries({ queryKey: ["monitor", deletedMonitorId] });
+      queryClient.removeQueries({ queryKey: ["monitor-analytics", deletedMonitorId] });
+      queryClient.removeQueries({ queryKey: ["monitor-timeseries", deletedMonitorId] });
+      queryClient.removeQueries({ queryKey: ["monitor-stats", deletedMonitorId] });
+      queryClient.removeQueries({ queryKey: ["monitor-incidents", deletedMonitorId] });
+    },
+    onError: (error) => {
+      console.error("Error deleting monitor:", error);
     },
   });
 }

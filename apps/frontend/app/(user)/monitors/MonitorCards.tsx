@@ -25,6 +25,7 @@ import { useState } from "react";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useDeleteMonitor, usePauseMonitor } from "@/hooks/useMonitors";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface MonitorCardProps {
   monitor: Monitor;
@@ -35,6 +36,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
   const pauseMutation = usePauseMonitor();
   const deleteMutation = useDeleteMonitor();
   const router = useRouter();
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -61,14 +63,37 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
     }
   };
 
-  const handlePauseToggle = () => {
+  const handlePauseToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const newStatus = monitor.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
-    pauseMutation.mutate({ id: monitor.id, status: newStatus });
+    pauseMutation.mutate(
+      { id: monitor.id, status: newStatus },
+      {
+        onSuccess: () => {
+          toast.success(`Monitor ${newStatus === "PAUSED" ? "paused" : "resumed"} successfully`);
+        },
+        onError: (error) => {
+          toast.error(`Failed to ${newStatus === "PAUSED" ? "pause" : "resume"} monitor: ${error.message}`);
+        }
+      }
+    );
   };
 
   const handleDelete = () => {
-    deleteMutation.mutate(monitor.id);
-    setShowDeleteDialog(false);
+    deleteMutation.mutate(monitor.id, {
+      onSuccess: () => {
+        toast.success("Monitor deleted successfully");
+        setShowDeleteDialog(false);
+      },
+      onError: (error) => {
+        toast.error(`Failed to delete monitor: ${error.message}`);
+      }
+    });
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
   };
 
   const formatInterval = (seconds: number) => {
@@ -95,6 +120,7 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="hover:underline"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {monitor.url}
                   </a>
@@ -108,7 +134,11 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
               </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
+                  <Button 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -127,13 +157,13 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
                     )}
                   </DropdownMenuItem>
                   <Link href={`/monitors/${monitor.id}/edit`}>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuItem 
-                    onClick={() => setShowDeleteDialog(true)}
+                    onClick={handleDeleteClick}
                     className="text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
