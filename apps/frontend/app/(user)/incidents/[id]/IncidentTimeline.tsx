@@ -164,7 +164,7 @@ export default function IncidentTimeline({
                 className={
                   "flex gap-4 relative " +
                   (event.type === "USER_COMMENT" || event.type === "POSTMORTEM"
-                    ? "items-start mb-2"
+                    ? "items-start mb-4"
                     : "items-center")
                 }
               >
@@ -182,7 +182,7 @@ export default function IncidentTimeline({
                     "flex-1 " +
                     (event.type === "USER_COMMENT" ||
                     event.type === "POSTMORTEM"
-                      ? "space-y-3"
+                      ? "space-y-4"
                       : "space-y-2")
                   }
                 >
