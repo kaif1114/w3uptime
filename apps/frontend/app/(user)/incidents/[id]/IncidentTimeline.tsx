@@ -159,7 +159,15 @@ export default function IncidentTimeline({
         <div className="space-y-6">
           {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
             data?.timelineEvents.map((event, index) => (
-              <div key={event.id} className="flex items-center gap-4 relative">
+              <div
+                key={event.id}
+                className={
+                  "flex gap-4 relative " +
+                  (event.type === "USER_COMMENT" || event.type === "POSTMORTEM"
+                    ? "items-start mb-2"
+                    : "items-center")
+                }
+              >
                 {/* Timeline Node */}
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border-2 border-background relative z-10 shrink-0">
                   {/* Ensure consistent icon sizing */}
@@ -169,7 +177,15 @@ export default function IncidentTimeline({
                 </div>
 
                 {/* Event Content */}
-                <div className="flex-1 space-y-2">
+                <div
+                  className={
+                    "flex-1 " +
+                    (event.type === "USER_COMMENT" ||
+                    event.type === "POSTMORTEM"
+                      ? "space-y-3"
+                      : "space-y-2")
+                  }
+                >
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-sm">
                       {getTimelineTitle(event)}
