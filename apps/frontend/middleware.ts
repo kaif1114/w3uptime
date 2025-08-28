@@ -11,6 +11,8 @@ const publicRoutes: string[] = [
   '/api/auth/verify',
   '/api/auth/session',
   '/api/auth/logout',
+  '/api/public/status-pages',
+  '/status',
   '/_next', // Next.js internal assets
 ]
 

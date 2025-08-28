@@ -1,13 +1,15 @@
 import React from 'react'
+import PublicPage from '../PublicPage'
 
-const ServiceStatus = () => {
+const ServicePage = async ({params}: {params: Promise<{service: string}>}) => {
+  const resolvedParams = await params;
+  const service = resolvedParams.service;
+  
   return (
     <div>
-      this will sever for everypage that will be shown to the user for example if a user wants to check the status 
-      of digital alternative gcc for the last three days he can come visit 
-      www.w3uptime.com/statusPage/digitalalternativegcc
+      <PublicPage params={params} />
     </div>
   )
 }
 
-export default ServiceStatus
+export default ServicePage
