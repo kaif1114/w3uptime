@@ -8,8 +8,8 @@ const updateSchema = z.object({
   isPublished: z.boolean().optional(),
   // Relax URL validation while prototyping uploads / non-http values
   logoUrl: z.string().nullable().optional(),
-  logoHrefUrl: z.string().nullable().optional(),
-  contactUrl: z.string().nullable().optional(),
+  logoLinkUrl: z.string().nullable().optional(),
+  supportUrl: z.string().nullable().optional(),
   historyRange: z.enum(["7d", "30d", "90d"]).optional(),
   sections: z
     .array(
@@ -22,6 +22,7 @@ const updateSchema = z.object({
       })
     )
     .optional(),
+  removedSectionIds: z.array(z.string()).optional(),
   maintenances: z
     .array(
       z.object({
@@ -75,8 +76,8 @@ export const GET = withAuth(
         name: statusPage.name,
         isPublished: statusPage.isPublished,
         logoUrl: statusPage.logoUrl,
-        logoHrefUrl: null, // Not in DB schema yet
-        contactUrl: statusPage.supportUrl, // Map supportUrl to contactUrl
+        logoLinkUrl: statusPage.logo,
+        supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
         sections: statusPage.statusPageSections.map((section: any) => ({
           id: section.id,
@@ -142,10 +143,12 @@ export const PATCH = withAuth(
       const updatedStatusPage = await prisma.statusPage.update({
         where: { id },
         data: {
-          name: parsed.data.name || existingPage.name,
+          name: parsed.data.name ?? existingPage.name,
           isPublished: parsed.data.isPublished ?? existingPage.isPublished,
-          logoUrl: parsed.data.logoUrl || existingPage.logoUrl,
-          supportUrl: parsed.data.contactUrl || existingPage.supportUrl,
+          logoUrl: parsed.data.logoUrl ?? existingPage.logoUrl,
+          logo: parsed.data.logoLinkUrl ?? existingPage.logo,
+          // Support URL maps 1:1 to DB; allow explicit null to clear
+          supportUrl: parsed.data.supportUrl ?? existingPage.supportUrl,
         },
         include: {
           statusPageSections: {
@@ -158,24 +161,49 @@ export const PATCH = withAuth(
 
       // Update sections if provided
       if (parsed.data.sections) {
-        // Delete existing sections
-        await prisma.statusPageSection.deleteMany({
-          where: { statusPageId: id },
-        });
+        // Update existing sections and create new ones if needed; do not delete others
+        for (let index = 0; index < parsed.data.sections.length; index++) {
+          const section = parsed.data.sections[index];
+          const monitorId = section.resources?.[0]?.monitorId;
 
-        // Create new sections
-        if (parsed.data.sections.length > 0) {
-          await prisma.statusPageSection.createMany({
-            data: parsed.data.sections.map((section, index) => ({
-              name: section.name,
-              description: null,
-              order: index + 1,
-              type: "BOTH",
-              monitorId: section.resources[0]?.monitorId || "",
-              statusPageId: id,
-            })),
-          });
+          try {
+            await prisma.statusPageSection.update({
+              where: { id: section.id },
+              data: {
+                name: section.name,
+                order: index + 1,
+                ...(typeof monitorId === "string" && monitorId.trim().length > 0
+                  ? { monitorId }
+                  : {}),
+              },
+            });
+          } catch (_err) {
+            // If not found, create only when we have a valid monitorId
+            if (typeof monitorId === "string" && monitorId.trim().length > 0) {
+              await prisma.statusPageSection.create({
+                data: {
+                  id: section.id,
+                  name: section.name,
+                  description: null,
+                  order: index + 1,
+                  type: "BOTH",
+                  monitorId,
+                  statusPageId: id,
+                },
+              });
+            }
+          }
         }
+      }
+
+      // Explicitly remove sections if requested via removedSectionIds
+      if (parsed.data.removedSectionIds && parsed.data.removedSectionIds.length > 0) {
+        await prisma.statusPageSection.deleteMany({
+          where: {
+            id: { in: parsed.data.removedSectionIds },
+            statusPageId: id,
+          },
+        });
       }
 
       // Fetch updated data
@@ -200,8 +228,8 @@ export const PATCH = withAuth(
         name: finalStatusPage.name,
         isPublished: finalStatusPage.isPublished,
         logoUrl: finalStatusPage.logoUrl,
-        logoHrefUrl: null,
-        contactUrl: finalStatusPage.supportUrl,
+        logoLinkUrl: finalStatusPage.logo,
+        supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
         sections: finalStatusPage.statusPageSections.map((section: any) => ({
           id: section.id,

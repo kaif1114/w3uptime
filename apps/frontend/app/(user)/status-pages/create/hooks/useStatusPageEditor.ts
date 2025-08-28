@@ -79,7 +79,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       return response.json();
     },
     onSuccess: (response, variables) => {
-      console.log("Status report created successfully:", response.update);
       
       // Invalidate status page data to refresh updates
       queryClient.invalidateQueries({ 
@@ -109,7 +108,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       toast.success("Status report created successfully");
     },
     onError: (error: any) => {
-      console.error("Error creating status report:", error);
       toast.error(error.message || "Failed to create status report");
     },
   });
@@ -118,11 +116,12 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const [isPublished, setIsPublished] = useState(false);
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [logoHrefUrl, setLogoHrefUrl] = useState("");
-  const [contactUrl, setContactUrl] = useState("");
+  const [logoLinkUrl, setLogoLinkUrl] = useState("");
+  const [supportUrl, setSupportUrl] = useState("");
   const [historyRange, setHistoryRange] = useState("7d");
   const [sections, setSections] = useState<StatusPageSection[]>([]);
   const [updates, setUpdates] = useState<StatusUpdate[]>([]);
+  const [removedSectionIds, setRemovedSectionIds] = useState<string[]>([]);
 
   // Data fetching with TanStack Query
   const { 
@@ -145,8 +144,8 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       setIsPublished(statusPageData.isPublished || false);
       setName(statusPageData.name || "");
       setLogoUrl(statusPageData.logoUrl || "");
-      setLogoHrefUrl(statusPageData.logoHrefUrl || "");
-      setContactUrl(statusPageData.contactUrl || "");
+      setSupportUrl(statusPageData.supportUrl || "");
+      setLogoLinkUrl(statusPageData.logoLinkUrl || "");
       setHistoryRange(statusPageData.historyRange || "7d");
       
       // Normalize sections data
@@ -179,8 +178,8 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       isPublished !== (statusPageData.isPublished || false) ||
       name !== (statusPageData.name || "") ||
       logoUrl !== (statusPageData.logoUrl || "") ||
-      logoHrefUrl !== (statusPageData.logoHrefUrl || "") ||
-      contactUrl !== (statusPageData.contactUrl || "") ||
+      supportUrl !== (statusPageData.supportUrl || "") ||
+      logoLinkUrl !== (statusPageData.logoLinkUrl || "") ||
       historyRange !== (statusPageData.historyRange || "7d") ||
       JSON.stringify(sections) !== JSON.stringify(statusPageData.sections || []) ||
       JSON.stringify(updates) !== JSON.stringify(statusPageData.updates || [])
@@ -194,44 +193,37 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       return;
     }
 
-    const saveData = {
+    const saveData: any = {
       isPublished,
       name,
       logoUrl: logoUrl || null,
-      logoHrefUrl: logoHrefUrl || null,
-      contactUrl: contactUrl || null,
+      logoLinkUrl: logoLinkUrl || null,
+      supportUrl: supportUrl || null,
       historyRange: historyRange as "7d" | "30d" | "90d",
       sections,
       maintenances: [],
       updates,
     };
 
-    console.log("🔍 Attempting to save with data:", saveData);
-    console.log("🔍 Mode:", mode);
+    if (removedSectionIds.length > 0) {
+      saveData.removedSectionIds = removedSectionIds;
+    }
 
     try {
       if (mode === "create") {
-        console.log("🔍 Creating new status page...");
         const result = await createMutation.mutateAsync(saveData);
-        console.log("✅ Create result:", result);
         
         // Redirect to edit mode with the new ID
         if (result?.statusPage?.id) {
-          console.log("🔍 Redirecting to:", `/status-pages/${result.statusPage.id}`);
           router.push(`/status-pages/${result.statusPage.id}`);
         }
       } else {
-        console.log("🔍 Updating existing status page...", id);
         const result = await updateMutation.mutateAsync({
           id: id || "",
           data: saveData,
         });
-        console.log("✅ Update result:", result);
       }
     } catch (error: any) {
-      console.error("❌ Save error:", error);
-      console.error("❌ Error message:", error?.message);
-      console.error("❌ Error response:", error?.response?.data);
       
       // Show more specific error messages
       if (error?.message?.includes("authentication") || error?.message?.includes("unauthorized")) {
@@ -242,6 +234,11 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
         toast.error(`Failed to save status page: ${error?.message || "Unknown error"}`);
       }
     }
+  };
+  // Section removal helper for UI three-dot menu
+  const removeSection = (sectionId: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    setRemovedSectionIds((prev) => (prev.includes(sectionId) ? prev : [...prev, sectionId]));
   };
 
   // Maintenance handlers with TanStack Query
@@ -255,7 +252,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       });
       // Success toast is handled in the mutation's onSuccess
     } catch (error) {
-      console.error("Error deleting maintenance:", error);
       // Error toast is handled in the mutation's onError
     }
   };
@@ -293,10 +289,10 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     setName,
     logoUrl,
     setLogoUrl,
-    logoHrefUrl,
-    setLogoHrefUrl,
-    contactUrl,
-    setContactUrl,
+    logoLinkUrl,
+    setLogoLinkUrl,
+    supportUrl,
+    setSupportUrl,
     historyRange,
     setHistoryRange,
     sections,
@@ -304,6 +300,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     updates,
     setUpdates,
     maintenances,
+    removedSectionIds,
     
     // Loading states
     isLoading,
@@ -324,5 +321,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     removeMaintenance,
     createMaintenance,
     createReport,
+    removeSection,
   };
 }

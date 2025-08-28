@@ -42,8 +42,8 @@ export interface StatusPage {
   name: string;
   isPublished: boolean;
   logoUrl?: string | null;
-  logoHrefUrl?: string | null;
-  contactUrl?: string | null;
+  logoLinkUrl?: string | null;
+  supportUrl?: string | null;
   historyRange: StatusHistoryRange;
   sections: StatusPageSection[];
   maintenances: StatusPageMaintenance[];
@@ -56,8 +56,8 @@ export interface CreateStatusPageData {
   name: string;
   isPublished?: boolean;
   logoUrl?: string | null;
-  logoHrefUrl?: string | null;
-  contactUrl?: string | null;
+  logoLinkUrl?: string | null;
+  supportUrl?: string | null;
   historyRange?: StatusHistoryRange;
   sections?: StatusPageSection[];
 }
@@ -66,8 +66,8 @@ export interface UpdateStatusPageData {
   name?: string;
   isPublished?: boolean;
   logoUrl?: string | null;
-  logoHrefUrl?: string | null;
-  contactUrl?: string | null;
+  logoLinkUrl?: string | null;
+  supportUrl?: string | null;
   historyRange?: StatusHistoryRange;
   sections?: StatusPageSection[];
   maintenances?: StatusPageMaintenance[];
