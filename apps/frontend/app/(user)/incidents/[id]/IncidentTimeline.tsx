@@ -164,7 +164,7 @@ export default function IncidentTimeline({
                 className={
                   "flex gap-4 relative " +
                   (event.type === "USER_COMMENT" || event.type === "POSTMORTEM"
-                    ? "items-start mb-4"
+                    ? "items-start"
                     : "items-center")
                 }
               >
@@ -182,11 +182,11 @@ export default function IncidentTimeline({
                     "flex-1 " +
                     (event.type === "USER_COMMENT" ||
                     event.type === "POSTMORTEM"
-                      ? "space-y-4"
+                      ? "space-y-3 pt-0.5"
                       : "space-y-2")
                   }
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-2">
                     <h3 className="font-medium text-sm">
                       {getTimelineTitle(event)}
                     </h3>
@@ -197,7 +197,7 @@ export default function IncidentTimeline({
 
                   {(event.type === "USER_COMMENT" ||
                     event.type === "POSTMORTEM") && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground ml-6">
                       {event.description}
                     </div>
                   )}
@@ -205,7 +205,7 @@ export default function IncidentTimeline({
                   {event.user &&
                     (event.type === "USER_COMMENT" ||
                       event.type === "POSTMORTEM") && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground ml-6">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs">
                             <User className="h-3 w-3" />
@@ -217,7 +217,7 @@ export default function IncidentTimeline({
 
                   {/* Escalation details */}
                   {event.escalationLog && (
-                    <div className="bg-muted p-3 rounded-md text-sm space-y-2">
+                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 ml-2">
                       {event.escalationLog.Alert && (
                         <div>
                           <p className="font-medium">
