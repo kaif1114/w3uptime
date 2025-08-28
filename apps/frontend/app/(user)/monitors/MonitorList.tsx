@@ -3,17 +3,15 @@
 import { MonitorCard } from "./MonitorCards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Plus } from "lucide-react";
-import { MonitorApiResponse } from "@/types/monitor";
+import { Monitor } from "@/types/monitor";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 interface MonitorsListProps {
-  initialData: MonitorApiResponse;
+  monitors: Monitor[];
 }
 
-export function MonitorsList({ initialData }: MonitorsListProps) {
-  const monitors = initialData.monitors;
-
+export function MonitorsList({ monitors }: MonitorsListProps) {
   if (monitors.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useMonitorDetails, useMonitorIncidents, usePauseMonitor } from "@/hooks/useMonitors";
+import { useMonitorDetails, useMonitorIncidents, usePauseMonitor, useDeleteMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
   AlertTriangle,
@@ -9,13 +9,18 @@ import {
   Edit3,
   Pause,
   Play,
-  Send
+  Send,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { MetricsCards } from "./MetricsCards";
+import { DeleteConfirmDialog } from "../DeleteConfirmDialog";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 interface MonitorDetailsProps {
   monitorId: string;
 }
@@ -25,13 +30,11 @@ function getStatusColor(status: MonitorStatus): string {
     case "ACTIVE":
       return "bg-green-500";
     case "PAUSED":
+      return "bg-yellow-500";
+    case "DISABLED":
       return "bg-gray-500";
-    case "DOWN":
-      return "bg-red-500";
-    case "RECOVERING":
-      return "bg-blue-500";
     default:
-      return "bg-green-500";
+      return "bg-gray-500";
   }
 }
 
@@ -41,12 +44,10 @@ function getStatusText(status: MonitorStatus): string {
       return "Active";
     case "PAUSED":
       return "Paused";
-    case "DOWN":
-      return "Down";
-    case "RECOVERING":
-      return "Recovering";
+    case "DISABLED":
+      return "Disabled";
     default:
-      return "Active";
+      return "Unknown";
   }
 }
 
@@ -54,14 +55,41 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const { data: monitor, isLoading, error, refetch: refetchMonitor } = useMonitorDetails(monitorId);
   const { data: incidentsData } = useMonitorIncidents(monitorId);
   const pauseMonitor = usePauseMonitor();
+  const deleteMonitor = useDeleteMonitor();
+  const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {
       const newStatus = monitor?.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
-      pauseMonitor.mutate({ id: monitorId, status: newStatus });
+      pauseMonitor.mutate(
+        { id: monitorId, status: newStatus },
+        {
+          onSuccess: () => {
+            toast.success(`Monitor ${newStatus === "PAUSED" ? "paused" : "resumed"} successfully`);
+          },
+          onError: (error) => {
+            toast.error(`Failed to ${newStatus === "PAUSED" ? "pause" : "resume"} monitor: ${error.message}`);
+          }
+        }
+      );
     }
+  };
+
+  const handleDelete = () => {
+    deleteMonitor.mutate(monitorId, {
+      onSuccess: () => {
+        toast.success("Monitor deleted successfully");
+        setShowDeleteDialog(false);
+        // Redirect to monitors list
+        router.push("/monitors");
+      },
+      onError: (error) => {
+        toast.error(`Failed to delete monitor: ${error.message}`);
+      }
+    });
   };
 
   if (isLoading) {
@@ -95,109 +123,128 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   if (!monitor) return null;
 
   return (
-    <div className="space-y-6">
-      {/* Monitor Header */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`}
-          />
-          <div>
-            <h1 className="text-2xl font-bold">
-              {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-            </h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
-              <span className="text-lg font-medium">
-                {getStatusText(monitor?.status)}
-              </span>
-              <span>•</span>
-              <span>Checked every {monitor?.checkInterval / 60} minutes</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Send className="mr-2 h-4 w-4" />
-            Send test alert
-          </Button>
-          <Link href={`/incidents?monitor=${monitorId}`}>
-            <Button variant="outline" size="sm">
-              <Calendar className="mr-2 h-4 w-4" />
-              Incidents
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePauseToggle}
-            disabled={pauseMonitor.isPending}
-          >
-            {monitor.status === "ACTIVE" ? (
-              <>
-                <Pause className="mr-2 h-4 w-4" />
-                Pause
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                Resume
-              </>
-            )}
-          </Button>
-          <Link href={`/monitors/${monitorId}/edit`}>
-            <Button variant="outline" size="sm">
-              <Edit3 className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Metrics Cards */}
-      <MetricsCards
-        monitorId={monitorId}
-        createdAt={monitor?.createdAt}
-        lastCheckedAt={monitor?.lastCheckedAt}
-        incidentCount={incidentsData?.incidentCount || 0}
-        refetchMonitor={refetchMonitor}
-        currentStatus={monitor?.status}
-      />
-
-      {/* Tab Navigation */}
-      <div>
-        <div className="p-0">
-          <div className="p-6">
-            {/* Performance Content */}
-            <div className="space-y-6">
-              {/* Performance Tab Time Period Buttons */}
-              <div className="flex flex-wrap gap-2">
-                {(["hour", "day", "week", "month"] as const).map((period) => (
-                  <Button
-                    key={period}
-                    variant={timePeriod === period ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTimePeriod(period)}
-                  >
-                    {period.charAt(0).toUpperCase() + period.slice(1)}
-                  </Button>
-                ))}
+    <>
+      <div className="space-y-6">
+        {/* Monitor Header */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`}
+            />
+            <div>
+              <h1 className="text-2xl font-bold">
+                {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              </h1>
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <span className="text-lg font-medium">
+                  {getStatusText(monitor?.status)}
+                </span>
+                <span>•</span>
+                <span>Checked every {monitor?.checkInterval / 60} minutes</span>
               </div>
+            </div>
+          </div>
 
-              <TimeSeriesChart
-                monitorId={monitorId}
-                period={timePeriod}
-                type="latency"
-              />
-              <TimeSeriesChart
-                monitorId={monitorId}
-                period={timePeriod}
-                type="uptime"
-              />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="sm">
+              <Send className="mr-2 h-4 w-4" />
+              Send test alert
+            </Button>
+            <Link href={`/incidents?monitor=${monitorId}`}>
+              <Button variant="outline" size="sm">
+                <Calendar className="mr-2 h-4 w-4" />
+                Incidents
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePauseToggle}
+              disabled={pauseMonitor.isPending}
+            >
+              {monitor.status === "ACTIVE" ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+                  Resume
+                </>
+              )}
+            </Button>
+            <Link href={`/monitors/${monitorId}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit3 className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleteMonitor.isPending}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        {/* Metrics Cards */}
+        <MetricsCards
+          monitorId={monitorId}
+          createdAt={monitor?.createdAt}
+          lastCheckedAt={monitor?.lastCheckedAt}
+          incidentCount={incidentsData?.incidentCount || 0}
+          refetchMonitor={refetchMonitor}
+          currentStatus={monitor?.status}
+        />
+
+        {/* Tab Navigation */}
+        <div>
+          <div className="p-0">
+            <div className="p-6">
+              {/* Performance Content */}
+              <div className="space-y-6">
+                {/* Performance Tab Time Period Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {(["hour", "day", "week", "month"] as const).map((period) => (
+                    <Button
+                      key={period}
+                      variant={timePeriod === period ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTimePeriod(period)}
+                    >
+                      {period.charAt(0).toUpperCase() + period.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+
+                <TimeSeriesChart
+                  monitorId={monitorId}
+                  period={timePeriod}
+                  type="latency"
+                />
+                <TimeSeriesChart
+                  monitorId={monitorId}
+                  period={timePeriod}
+                  type="uptime"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <DeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        monitorName={monitor.name}
+        isLoading={deleteMonitor.isPending}
+      />
+    </>
   );
 }

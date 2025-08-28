@@ -33,5 +33,5 @@ export function MonitorsClient() {
     );
   }
 
-  return data ? <MonitorsList initialData={data} /> : null;
+  return data ? <MonitorsList monitors={data.monitors} /> : null;
 }
