@@ -1,3 +1,6 @@
+//this contains all the components for the public page main /status/id
+//this is the main page for the public page
+
 'use client'
 import React, { useState } from 'react'
 import Navbar from './Navbar'
@@ -8,8 +11,9 @@ import { Button } from '@/components/ui/button'
 
 import { StatusOverview } from './StatusOverview'
 import { ServicesSection } from './ServicesSection'
-import ResponseTimeCharts from './Chart'  
-
+import ResponseTimeCharts from './Chart'
+import DailyStatusBarChart from './Barchart'
+import { useDailyStatus } from '@/hooks/useDailyStatus'  
 // Sample data for demonstration
 const sampleStatusPageData = {
   id: '1',
@@ -73,6 +77,17 @@ const PublicPage = ({params}: {params: {service: string}}) => {
   // For demo purposes, use sample data
   const statusPageData = sampleStatusPageData;
   const chartData = generateSampleChartData();
+  
+  // Get the monitor ID from the first monitor in the first section
+  const monitorId = statusPageData.sections[0]?.monitors[0]?.id || '';
+  
+  // Fetch daily status data for the chart
+  const { data: dailyStatusData, isLoading: isDailyStatusLoading } = useDailyStatus({
+    monitorId,
+    period: '30d',
+    isPublic: true,
+    enabled: !!monitorId
+  });
 
   if (!statusPageData) {
     notFound();
@@ -114,6 +129,20 @@ const PublicPage = ({params}: {params: {service: string}}) => {
               </div>
             </div>
           </CardHeader>
+          <CardContent>
+            {isDailyStatusLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 "></div>
+              </div>
+            ) : (
+              <DailyStatusBarChart 
+                data={dailyStatusData?.data || []} 
+                period={30}
+                title="30-Day Status History"
+                showLegend={true}
+              />
+            )}
+          </CardContent>
           <CardContent>
             <ResponseTimeCharts />
           </CardContent>

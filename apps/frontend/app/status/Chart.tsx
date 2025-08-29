@@ -130,11 +130,9 @@ const ResponseTimeCharts = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">Response times</CardTitle>
         </CardHeader>
-        <CardContent>
           <StatusBar data={statusData} />
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -167,9 +165,8 @@ const ResponseTimeCharts = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+        </div>
   );
 };
 

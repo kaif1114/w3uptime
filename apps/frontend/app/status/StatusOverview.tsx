@@ -55,7 +55,7 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
   ) ? 'up' : 'down';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-4">
       {/* Last Updated */}
       <div className="text-sm text-muted-foreground">
         Last updated on {format(new Date(), 'MMM dd \'at\' h:mm a')} PKT
