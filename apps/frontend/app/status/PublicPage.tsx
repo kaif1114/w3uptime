@@ -5,9 +5,10 @@ import { notFound } from 'next/navigation'
 import { TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MonitorCharts } from './Chart'
+
 import { StatusOverview } from './StatusOverview'
 import { ServicesSection } from './ServicesSection'
+import ResponseTimeCharts from './Chart'  
 
 // Sample data for demonstration
 const sampleStatusPageData = {
@@ -114,11 +115,7 @@ const PublicPage = ({params}: {params: {service: string}}) => {
             </div>
           </CardHeader>
           <CardContent>
-            <MonitorCharts 
-              data={chartData} 
-              monitorName={statusPageData.sections[0]?.monitors[0]?.name || 'Monitor'}
-              period={selectedPeriod}
-            />
+            <ResponseTimeCharts />
           </CardContent>
         </Card>
 

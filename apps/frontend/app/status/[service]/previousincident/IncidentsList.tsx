@@ -51,7 +51,7 @@ const IncidentsList: React.FC<IncidentsListProps> = ({ statusPageId }) => {
       
       const isPastMonth = i < 0;
       const isCurrentMonth = i === 0;
-      const isFutureMonth = i > 0;
+      
       
       result.push({
         month: months[monthIndex],

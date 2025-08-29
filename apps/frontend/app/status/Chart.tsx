@@ -1,253 +1,176 @@
-'use client';
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { useState } from 'react';
-import { 
-  LineChart, 
-  Line, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-} from 'recharts';
-import { format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {  CheckCircle } from 'lucide-react';
+// Generate sample data for response times
 
-interface ChartDataPoint {
-  timestamp: string;
+interface ProcessedDataPoint {
+  time: string;
   responseTime: number;
-  uptime: number;
-  status: 'up' | 'down' | 'maintenance';
+  timestamp: number;
+  fullDateTime: string;
+  date: string;
 }
 
-interface ChartProps {
-  data: ChartDataPoint[];
-  monitorName: string;
-  period?: '24h' | '7d' | '30d';
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    payload: ProcessedDataPoint;
+  }>;
+  label?: string;
 }
+const generateResponseTimeData = (): ProcessedDataPoint[] => {
+  const data = [];
+  const startTime = new Date();
+  startTime.setHours(12, 0, 0, 0); 
+  
+  for (let i = 0; i < 480; i++) { // 480 points for 20 hours (every 2.5 minutes)
+    const time = new Date(startTime.getTime() + i * 2.5 * 60 * 1000);
+    const hours = time.getHours();
+    const minutes = time.getMinutes();
+    
+    // Create realistic response time pattern with some spikes
+    let baseTime = 0.6;
+    if (hours >= 2 && hours <= 6) baseTime = 0.4; // Lower at night
+    if (hours >= 18 && hours <= 22) baseTime = 0.8; // Higher in evening
+    
+    const responseTime = baseTime + Math.random() * 0.4 + (Math.random() > 0.95 ? 1.5 : 0);
+    
+    data.push({
+      time: time.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: false 
+      }),
+      responseTime: Math.max(0, responseTime),
+      timestamp: time.getTime(),
+      fullDateTime: time.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        
+        timeZoneName: 'short'
+      }),
+      date: time.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    });
+  }
+  
+  return data;
+};
 
-export function ResponseTimeChart({ data, monitorName, period = '24h' }: ChartProps) {
-  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>(period);
+// Generate status bar data (green = good, yellow = warning, red = error)
+const generateStatusData = () => {
+  const statuses = [];
+  for (let i = 0; i < 100; i++) {
+    const rand = Math.random();
+    let status = 'good';
+    if (rand > 0.95) status = 'error';
+    else if (rand > 0.85) status = 'warning';
+    
+    statuses.push(status);
+  }
+  return statuses;
+};
 
-  // Transform data for chart
-  const chartData = data.map(point => ({
-    time: format(new Date(point.timestamp), timeRange === '24h' ? 'HH:mm' : 'MMM dd'),
-    responseTime: point.responseTime,
-    timestamp: point.timestamp
-  }));
-
-  const formatTooltip = (value: any, name: string) => {
-    if (name === 'responseTime') {
-      return [`${value.toFixed(2)}ms`, 'Response Time'];
+// Status bar component
+const StatusBar = ({ data }: { data: string[] }) => {
+  const getColor = (status: string) => {
+    switch (status) {
+      case 'good': return 'hsl(var(--chart-1))';
+      case 'warning': return 'hsl(var(--chart-2))';
+      case 'error': return 'hsl(var(--destructive))';
+      default: return 'hsl(var(--muted))';
     }
-    return [value, name];
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Response times</h3>
-        <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d') => setTimeRange(value)}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h">24h</SelectItem>
-            <SelectItem value="7d">7d</SelectItem>
-            <SelectItem value="30d">30d</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
-            <XAxis 
-              dataKey="time" 
-              tick={{ fontSize: 12 }}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }}
-              label={{ value: 'Response Time (ms)', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-              formatter={formatTooltip}
-              labelFormatter={(label) => `Time: ${label}`}
-              contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="responseTime" 
-              stroke="#3b82f6" 
-              strokeWidth={2}
-              dot={false}
-              name="Response Time"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="flex h-6 w-full rounded overflow-hidden mb-4">
+      {data.map((status, index) => (
+        <div
+          key={index}
+          className="flex-1 h-full"
+          style={{ backgroundColor: getColor(status) }}
+        />
+      ))}
     </div>
   );
-}
+};
 
-export function UptimeBarChart({ data, monitorName, period = '24h' }: ChartProps) {
-  // Generate sample uptime data for the bar chart
-  const generateUptimeBars = () => {
-    const bars = [];
-    const hours = period === '24h' ? 24 : period === '7d' ? 7 : 30;
-    
-    for (let i = 0; i < hours; i++) {
-      const isUp = Math.random() > 0.1; // 90% uptime
-      const isMaintenance = Math.random() > 0.95; // 5% maintenance
-      
-      let status = 'up';
-      if (isMaintenance) status = 'maintenance';
-      else if (!isUp) status = 'down';
-      
-      bars.push({
-        hour: i,
-        status,
-        color: status === 'up' ? '#10b981' : status === 'down' ? '#ef4444' : '#f59e0b'
-      });
-    }
-    
-    return bars;
-  };
-
-  const uptimeBars = generateUptimeBars();
-  const uptimePercentage = (uptimeBars.filter(bar => bar.status === 'up').length / uptimeBars.length) * 100;
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <CheckCircle className="h-5 w-5 text-green-500" />
-          <span className="font-medium text-gray-900">{monitorName}</span>
+// Custom tooltip component
+const CustomTooltip = ({ active, payload}: TooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-sm">
+        <div className="font-medium text-card-foreground mb-1">
+          {data.fullDateTime} GMT+5 · {data.date}
         </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-green-600 font-semibold">{uptimePercentage.toFixed(3)}% uptime</span>
-          <div className="flex items-center space-x-1">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span className="text-sm text-gray-600">Operational</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></div>
+          <span className="text-muted-foreground">Response time</span>
+          <span className="font-medium text-card-foreground ml-auto"> 
+            {payload[0].value.toFixed(2)} s
+          </span>
         </div>
       </div>
-      
-      <div className="flex space-x-1 h-8">
-        {uptimeBars.map((bar, index) => (
-          <div
-            key={index}
-            className={`flex-1 rounded-sm ${
-              bar.status === 'up' ? 'bg-green-500' : 
-              bar.status === 'down' ? 'bg-red-500' : 'bg-yellow-500'
-            }`}
-            title={`Hour ${bar.hour}: ${bar.status}`}
-          />
-        ))}
-      </div>
-      
-      <div className="flex justify-between text-xs text-gray-500 mt-2">
-        <span>{period === '24h' ? '12:00am' : period === '7d' ? '7 days ago' : '30 days ago'}</span>
-        <span>{period === '24h' ? '11:59pm' : 'Today'}</span>
-      </div>
-    </div>
-  );
-}
+    );
+  }
+  return null;
+};
 
-export function UptimeChart({ data, monitorName, period = '24h' }: ChartProps) {
-  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>(period);
+const ResponseTimeCharts = () => {
+  const responseTimeData = generateResponseTimeData();
+  const statusData = generateStatusData();
 
-  // Transform data for chart
-  const chartData = data.map(point => ({
-    time: format(new Date(point.timestamp), timeRange === '24h' ? 'HH:mm' : 'MMM dd'),
-    uptime: point.uptime,
-    timestamp: point.timestamp
-  }));
-
-  const formatTooltip = (value: any, name: string) => {
-    if (name === 'uptime') {
-      return [`${value.toFixed(2)}%`, 'Uptime'];
-    }
-    return [value, name];
-  };
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Uptime Percentage</h3>
-        <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d') => setTimeRange(value)}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h">24h</SelectItem>
-            <SelectItem value="7d">7d</SelectItem>
-            <SelectItem value="30d">30d</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
-            <XAxis 
-              dataKey="time" 
-              tick={{ fontSize: 12 }}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }}
-              domain={[0, 100]}
-              label={{ value: 'Uptime (%)', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-              formatter={formatTooltip}
-              labelFormatter={(label) => `Time: ${label}`}
-              contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              }}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="uptime" 
-              stroke="#10b981"
-              fill="#10b981"
-              fillOpacity={0.2}
-              strokeWidth={2}
-              name="Uptime"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-// Combined chart component that shows all charts
-export function MonitorCharts({ data, monitorName, period = '24h' }: ChartProps) {
   return (
     <div className="space-y-6">
-      <UptimeBarChart data={data} monitorName={monitorName} period={period} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ResponseTimeChart data={data} monitorName={monitorName} period={period} />
-        <UptimeChart data={data} monitorName={monitorName} period={period} />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Response times</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StatusBar data={statusData} />
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={responseTimeData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="time"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  interval={47} // Show every 48th tick
+                />
+                <YAxis 
+                  domain={[0, 3]}
+                  ticks={[0, 1.0, 2.0, 3.0]}
+                  tickFormatter={(value) => `${value.toFixed(1)} s`}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                />
+                <Tooltip content={<CustomTooltip active={true} payload={[]} label={''} />} />
+                <Line 
+                  type="monotone" 
+                  dataKey="responseTime" 
+                  stroke="#3b82f6" 
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default ResponseTimeCharts;
