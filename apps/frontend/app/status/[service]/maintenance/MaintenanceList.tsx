@@ -15,7 +15,7 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
 
   if (isLoading) {
     return (
-      <div className="w-2/3">
+      <div className="w-full max-w-2xl mx-auto">
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border border-border/50 bg-card shadow-sm">
@@ -35,7 +35,7 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
 
   if (error) {
     return (
-      <div className="w-2/3">
+      <div className="w-full max-w-2xl mx-auto">
         <Card className="border border-red-200 bg-red-50">
           <CardContent className="p-6">
             <p className="text-red-600">Failed to load maintenance schedules</p>
@@ -47,7 +47,7 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
 
   if (maintenances.length === 0) {
     return (
-      <div className="w-2/3">
+      <div className="w-full max-w-2xl mx-auto">
         <Card className="border border-border/50 bg-card shadow-sm">
           <CardContent className="p-6">
             <p className="text-muted-foreground text-center">No maintenance schedules found</p>
@@ -58,7 +58,7 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
   }
 
   return (
-    <div className="w-2/3">
+    <div className="w-full max-w-2xl mx-auto">
       <div className="space-y-4">
         {maintenances.map((maintenance: MaintenanceType) => (
           <Card key={maintenance.id} className="border border-border/50 bg-card shadow-sm">
