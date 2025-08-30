@@ -185,3 +185,24 @@ export interface MonitorTimeSeriesResponse {
   data: TimeSeriesDataPoint[];
   generatedAt: string;
 }
+
+// Daily status tracking types
+export type DailyStatus = 'up' | 'down' | 'partial' | 'maintenance' | 'unknown';
+
+export interface DailyStatusData {
+  date: string; // ISO date string
+  status: DailyStatus;
+  uptime: number; // percentage (0-100)
+  totalChecks: number;
+  successfulChecks: number;
+  averageResponseTime?: number; // in milliseconds
+  incidents?: number;
+  downtimeMinutes?: number;
+}
+
+export interface DailyStatusHistoryResponse {
+  monitorId: string;
+  period: string; // e.g., "90d", "30d", "7d"
+  data: DailyStatusData[];
+  generatedAt: string;
+}
