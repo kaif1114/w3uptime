@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 
 export default function OverviewPage() {
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Column - Descriptions */}
         <div className="lg:w-1/3 space-y-8">

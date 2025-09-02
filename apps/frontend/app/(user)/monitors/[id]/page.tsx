@@ -13,7 +13,7 @@ export default async function MonitorDetailsPage({ params }: MonitorDetailsPageP
 
   if (!monitorId) {
     return (
-      <div className="container mx-auto px-4 py-6">
+      <div className="">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold mb-2">Monitor not found</h3>
           <p className="text-muted-foreground mb-4">The monitor ID is missing or invalid.</p>
@@ -29,7 +29,7 @@ export default async function MonitorDetailsPage({ params }: MonitorDetailsPageP
   }
 
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="">
       <MonitorDetails monitorId={monitorId} />
     </div>
   );

@@ -9,7 +9,7 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="">
       <EscalationPolicyDetailPage policyId={id} />
     </div>
   );

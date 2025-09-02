@@ -2,7 +2,7 @@ import StatusPagesList from "./StatusPagesList";
 
 function page() {
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="">
       <StatusPagesList />
     </div>
   );

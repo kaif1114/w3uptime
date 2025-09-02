@@ -22,7 +22,7 @@ export default function MonitorsPage() {
   );
 
   return (
-    <div className="container mx-auto max-w-6xl py-6">
+    <div className=" px-6 py-6">
       {header}
       <MonitorsClient />
     </div>

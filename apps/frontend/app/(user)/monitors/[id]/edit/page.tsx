@@ -14,7 +14,7 @@ export default async function EditMonitorPage({ params }: EditMonitorPageProps) 
 
   if (!monitorId) {
     return (
-      <div className="container mx-auto px-4 py-6">
+      <div className="">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold mb-2">Monitor not found</h3>
           <p className="text-muted-foreground mb-4">The monitor ID is missing or invalid.</p>
@@ -30,7 +30,7 @@ export default async function EditMonitorPage({ params }: EditMonitorPageProps) 
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="">
       <div className="mb-6">
         <Link href={`/monitors/${monitorId}`}>
           <Button variant="ghost" size="sm">

@@ -29,7 +29,9 @@ export default async function UserLayout({
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+              <div className="max-w-6xl mx-auto p-6 container">
               {children}
+              </div>
               <Toaster richColors closeButton />
             </div>
           </div>

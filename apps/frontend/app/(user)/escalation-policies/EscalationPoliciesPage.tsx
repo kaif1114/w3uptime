@@ -411,10 +411,10 @@ export function EscalationPoliciesPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
+    
+        <div>
           <div className="flex items-center justify-between">
-            <CardTitle>{pagination?.totalCount} escalation policies</CardTitle>
+            <div>{pagination?.totalCount} escalation policies</div>
             {selectedPolicies.length > 0 && (
               <Button
                 variant="destructive"
@@ -458,9 +458,9 @@ export function EscalationPoliciesPage() {
               </select>
             </div>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent>
+        <div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -682,8 +682,8 @@ export function EscalationPoliciesPage() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

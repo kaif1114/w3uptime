@@ -10,7 +10,7 @@ export default async function IncidentDetailPageServer({
   const { id } = await params;
 
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="">
       <IncidentDetailPage incidentId={id} />
     </div>
   );
