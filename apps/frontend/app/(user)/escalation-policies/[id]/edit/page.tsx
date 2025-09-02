@@ -7,5 +7,9 @@ interface PageProps {
 }
 
 export default function Page({ params }: PageProps) {
-  return <EditEscalationPolicyPage policyId={params.id} />;
+  return (
+    <div className="container mx-auto max-w-6xl">
+      <EditEscalationPolicyPage policyId={params.id} />
+    </div>
+  );
 }

@@ -128,7 +128,7 @@ export default function IncidentsClient() {
 
   if (loading) {
     return (
-      <div className="mx-auto container space-y-3">
+      <div className="">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
         </div>
@@ -144,7 +144,7 @@ export default function IncidentsClient() {
 
   if (error) {
     return (
-      <div className="mx-auto container space-y-3">
+      <div className="">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
         </div>
@@ -166,7 +166,7 @@ export default function IncidentsClient() {
   }
 
   return (
-    <div className="mx-auto container space-y-3">
+    <div className="">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>

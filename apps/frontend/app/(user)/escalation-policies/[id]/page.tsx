@@ -8,5 +8,9 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
-  return <EscalationPolicyDetailPage policyId={id} />;
+  return (
+    <div className="container mx-auto max-w-6xl">
+      <EscalationPolicyDetailPage policyId={id} />
+    </div>
+  );
 }

@@ -9,5 +9,9 @@ export default async function IncidentDetailPageServer({
 }: IncidentDetailPageProps) {
   const { id } = await params;
 
-  return <IncidentDetailPage incidentId={id} />;
+  return (
+    <div className="container mx-auto max-w-6xl">
+      <IncidentDetailPage incidentId={id} />
+    </div>
+  );
 }

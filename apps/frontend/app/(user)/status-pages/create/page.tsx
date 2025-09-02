@@ -1,5 +1,9 @@
 import StatusPageLoader from "./StatusPageLoader";
 
 export default function CreateStatusPagePage() {
-  return <StatusPageLoader />;
+  return (
+    <div className="container mx-auto max-w-6xl">
+      <StatusPageLoader />
+    </div>
+  );
 }

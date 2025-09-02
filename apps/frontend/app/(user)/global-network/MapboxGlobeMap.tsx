@@ -442,10 +442,9 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
             <Globe className="h-5 w-5" />
             Global Validator Network
           </span>
-          <div className="flex gap-2">
+        
             <Badge variant="outline">{stats.online} Online</Badge>
-            <Badge variant="secondary">Real-time</Badge>
-          </div>
+      
         </div>
       </div>
         <div className="space-y-6">

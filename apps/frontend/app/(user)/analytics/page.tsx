@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
 
   if (monitorsLoading) {
     return (
-      <div className="container mx-auto px-4 space-y-6">
+      <div className="container mx-auto max-w-6xl space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Analytics Overview</h1>
           <p className="text-muted-foreground">Loading monitors...</p>
@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
 
   if (monitorsError) {
     return (
-      <div className="container mx-auto px-4 space-y-6">
+      <div className="container mx-auto max-w-6xl space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Analytics Overview</h1>
           <div className="text-center py-12">
@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
 
   if (!monitors || monitors.monitors.length === 0) {
     return (
-      <div className="container mx-auto px-4 space-y-6">
+      <div className="container mx-auto max-w-6xl space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Analytics Overview</h1>
           <div className="text-center py-12">
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
   const currentMonitorId = selectedMonitorId || monitors.monitors[0]?.id;
 
   return (
-    <div className="container mx-auto px-4 space-y-6">
+    <div className="container mx-auto max-w-6xl space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Analytics Overview</h1>
         <p className="text-muted-foreground">

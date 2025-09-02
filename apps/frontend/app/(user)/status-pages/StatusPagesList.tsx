@@ -50,7 +50,7 @@ export default function StatusPagesList() {
   }, [query, data]);
 
   return (
-    <div className="container mx-auto px-4 pt-4 pb-6">
+    <div className=" pt-4 pb-6">
       <div className="flex items-center justify-between mb-6 gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Status pages</h1>
         <div className="flex items-center gap-3 w-full max-w-xl">

@@ -84,7 +84,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className=" py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {mode === "create" ? "Create status page" : "Status page"}
