@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus, Users, Lightbulb, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { CommunityGovernanceClient } from "./CommunityGovernanceClient";
 
@@ -22,36 +22,6 @@ export default function CommunityGovernancePage() {
             Submit Proposal
           </Button>
         </Link>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="flex items-center space-x-3 p-4 rounded-lg border bg-card">
-          <Lightbulb className="h-5 w-5 text-blue-500" />
-          <div>
-            <p className="text-sm font-medium">Feature Requests</p>
-            <p className="text-xs text-muted-foreground">
-              New functionality ideas
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3 p-4 rounded-lg border bg-card">
-          <Settings className="h-5 w-5 text-green-500" />
-          <div>
-            <p className="text-sm font-medium">Change Requests</p>
-            <p className="text-xs text-muted-foreground">
-              Improvements to existing features
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3 p-4 rounded-lg border bg-card">
-          <Users className="h-5 w-5 text-purple-500" />
-          <div>
-            <p className="text-sm font-medium">Community Driven</p>
-            <p className="text-xs text-muted-foreground">
-              Vote and discuss proposals
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
