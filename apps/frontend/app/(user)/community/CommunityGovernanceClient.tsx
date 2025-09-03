@@ -27,6 +27,8 @@ import {
   User,
   X,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -191,7 +193,100 @@ const mockProposals = [
     ],
     tags: ["Internationalization", "Accessibility", "Global"],
   },
+  // Add more mock proposals to demonstrate pagination
+  {
+    id: "4",
+    title: "Implement Advanced Analytics Dashboard",
+    description:
+      "Create a comprehensive analytics dashboard with real-time metrics, customizable charts, and export functionality for better data insights.",
+    type: "FEATURE_REQUEST" as const,
+    status: "SUBMITTED" as const,
+    userId: "user4",
+    createdAt: new Date("2024-01-20"),
+    updatedAt: new Date("2024-01-20"),
+    user: {
+      id: "user4",
+      walletAddress: "0x5432...8765",
+    },
+    votes: [],
+    comments: [],
+    tags: ["Analytics", "Dashboard", "Data"],
+  },
+  {
+    id: "5",
+    title: "Add API Rate Limiting",
+    description:
+      "Implement rate limiting for the public API to prevent abuse and ensure fair usage across all users.",
+    type: "CHANGE_REQUEST" as const,
+    status: "UNDER_REVIEW" as const,
+    userId: "user5",
+    createdAt: new Date("2024-01-18"),
+    updatedAt: new Date("2024-01-19"),
+    user: {
+      id: "user5",
+      walletAddress: "0x6789...1234",
+    },
+    votes: [],
+    comments: [],
+    tags: ["API", "Security", "Performance"],
+  },
+  {
+    id: "6",
+    title: "Mobile App Development",
+    description:
+      "Develop native mobile applications for iOS and Android to provide on-the-go monitoring capabilities.",
+    type: "FEATURE_REQUEST" as const,
+    status: "SUBMITTED" as const,
+    userId: "user6",
+    createdAt: new Date("2024-01-22"),
+    updatedAt: new Date("2024-01-22"),
+    user: {
+      id: "user6",
+      walletAddress: "0x1357...2468",
+    },
+    votes: [],
+    comments: [],
+    tags: ["Mobile", "iOS", "Android"],
+  },
+  {
+    id: "7",
+    title: "Enhanced Email Notifications",
+    description:
+      "Improve email notification templates with better formatting, customizable content, and delivery tracking.",
+    type: "CHANGE_REQUEST" as const,
+    status: "SUBMITTED" as const,
+    userId: "user7",
+    createdAt: new Date("2024-01-25"),
+    updatedAt: new Date("2024-01-25"),
+    user: {
+      id: "user7",
+      walletAddress: "0x2468...1357",
+    },
+    votes: [],
+    comments: [],
+    tags: ["Email", "Notifications", "Templates"],
+  },
+  {
+    id: "8",
+    title: "Integration with Slack",
+    description:
+      "Add Slack integration for real-time incident notifications and team collaboration.",
+    type: "FEATURE_REQUEST" as const,
+    status: "SUBMITTED" as const,
+    userId: "user8",
+    createdAt: new Date("2024-01-28"),
+    updatedAt: new Date("2024-01-28"),
+    user: {
+      id: "user8",
+      walletAddress: "0x3698...1472",
+    },
+    votes: [],
+    comments: [],
+    tags: ["Slack", "Integration", "Collaboration"],
+  },
 ];
+
+const ITEMS_PER_PAGE = 5;
 
 export function CommunityGovernanceClient() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,6 +294,7 @@ export function CommunityGovernanceClient() {
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
   const [localVotes, setLocalVotes] = useState<{ [key: string]: any[] }>({});
   const [isVoting, setIsVoting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter proposals based on search and filter
   const filteredProposals = mockProposals.filter((proposal) => {
@@ -221,8 +317,22 @@ export function CommunityGovernanceClient() {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(sortedProposals.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProposals = sortedProposals.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  // Reset to first page when search or filter changes
   const handleSearch = () => {
-    // Search is handled in the filter logic above
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setSelectedFilter(value);
+    setCurrentPage(1);
   };
 
   const handleProposalClick = (proposal: any) => {
@@ -491,7 +601,7 @@ export function CommunityGovernanceClient() {
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
           />
         </div>
-        <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+        <Select value={selectedFilter} onValueChange={handleFilterChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter proposals" />
           </SelectTrigger>
@@ -504,9 +614,16 @@ export function CommunityGovernanceClient() {
         </Select>
       </div>
 
+      {/* Results count */}
+      <div className="text-sm text-muted-foreground">
+        Showing {startIndex + 1}-
+        {Math.min(startIndex + ITEMS_PER_PAGE, sortedProposals.length)} of{" "}
+        {sortedProposals.length} proposals
+      </div>
+
       {/* Proposals List */}
       <ProposalsList
-        proposals={sortedProposals}
+        proposals={paginatedProposals}
         getProposalTypeIcon={getProposalTypeIcon}
         getProposalTypeColor={getProposalTypeColor}
         getStatusColor={getStatusColor}
@@ -517,6 +634,49 @@ export function CommunityGovernanceClient() {
         isVoting={isVoting}
         getUserVote={getUserVote}
       />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className="w-8 h-8 p-0"
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
