@@ -591,6 +591,9 @@ export function CommunityGovernanceClient() {
 
   return (
     <div className="space-y-4">
+      {/* Separator */}
+      <div className="border-t border-border/50 my-6" />
+
       {/* Search and Filter Row */}
       <div className="flex items-center space-x-4">
         <div className="flex-1">
