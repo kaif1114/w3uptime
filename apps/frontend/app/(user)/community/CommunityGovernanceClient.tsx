@@ -198,6 +198,8 @@ export function CommunityGovernanceClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [localVotes, setLocalVotes] = useState<{ [key: string]: any[] }>({});
+  const [isVoting, setIsVoting] = useState(false);
 
   // Filter proposals based on search and filter
   const filteredProposals = mockProposals.filter((proposal) => {
@@ -232,6 +234,62 @@ export function CommunityGovernanceClient() {
     setSelectedProposal(null);
   };
 
+  const handleVote = async (
+    proposalId: string,
+    vote: "UPVOTE" | "DOWNVOTE"
+  ) => {
+    setIsVoting(true);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      // Initialize local votes for this proposal if not exists
+      if (!localVotes[proposalId]) {
+        localVotes[proposalId] = [];
+      }
+
+      // Simulate vote logic
+      const existingVoteIndex = localVotes[proposalId].findIndex(
+        (v) => v.userId === "currentUser"
+      );
+
+      if (existingVoteIndex >= 0) {
+        if (localVotes[proposalId][existingVoteIndex].vote === vote) {
+          // Remove vote if same type
+          setLocalVotes((prev) => ({
+            ...prev,
+            [proposalId]: prev[proposalId].filter(
+              (_, index) => index !== existingVoteIndex
+            ),
+          }));
+        } else {
+          // Change vote
+          setLocalVotes((prev) => ({
+            ...prev,
+            [proposalId]: prev[proposalId].map((v, index) =>
+              index === existingVoteIndex ? { ...v, vote } : v
+            ),
+          }));
+        }
+      } else {
+        // Add new vote
+        setLocalVotes((prev) => ({
+          ...prev,
+          [proposalId]: [
+            ...(prev[proposalId] || []),
+            {
+              id: `v${Date.now()}`,
+              proposalId,
+              userId: "currentUser",
+              vote,
+              createdAt: new Date(),
+            },
+          ],
+        }));
+      }
+      setIsVoting(false);
+    }, 500);
+  };
+
   const getProposalTypeIcon = (type: string) => {
     return type === "FEATURE_REQUEST" ? (
       <Lightbulb className="h-4 w-4" />
@@ -259,20 +317,33 @@ export function CommunityGovernanceClient() {
   };
 
   const getUpvotes = (proposal: any) => {
-    return (
-      proposal.votes?.filter((vote: any) => vote.vote === "UPVOTE").length || 0
-    );
+    const originalVotes =
+      proposal.votes?.filter((vote: any) => vote.vote === "UPVOTE").length || 0;
+    const localUpvotes =
+      localVotes[proposal.id]?.filter((vote: any) => vote.vote === "UPVOTE")
+        .length || 0;
+    return originalVotes + localUpvotes;
   };
 
   const getDownvotes = (proposal: any) => {
-    return (
+    const originalVotes =
       proposal.votes?.filter((vote: any) => vote.vote === "DOWNVOTE").length ||
-      0
-    );
+      0;
+    const localDownvotes =
+      localVotes[proposal.id]?.filter((vote: any) => vote.vote === "DOWNVOTE")
+        .length || 0;
+    return originalVotes + localDownvotes;
   };
 
   const getCommentsCount = (proposal: any) => {
     return proposal.comments?.length || 0;
+  };
+
+  const getUserVote = (proposalId: string) => {
+    const userVote = localVotes[proposalId]?.find(
+      (v) => v.userId === "currentUser"
+    );
+    return userVote ? userVote.vote : null;
   };
 
   // If a proposal is selected, show the detail view
@@ -365,6 +436,49 @@ export function CommunityGovernanceClient() {
               </div>
             </div>
 
+            {/* Voting Section */}
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <h3 className="text-lg font-semibold mb-4">
+                Vote on this proposal
+              </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex space-x-4">
+                  <Button
+                    variant={
+                      getUserVote(selectedProposal.id) === "UPVOTE"
+                        ? "default"
+                        : "outline"
+                    }
+                    size="lg"
+                    onClick={() => handleVote(selectedProposal.id, "UPVOTE")}
+                    disabled={isVoting}
+                    className="flex items-center space-x-2"
+                  >
+                    <ThumbsUp className="h-5 w-5" />
+                    <span>Upvote</span>
+                  </Button>
+                  <Button
+                    variant={
+                      getUserVote(selectedProposal.id) === "DOWNVOTE"
+                        ? "default"
+                        : "outline"
+                    }
+                    size="lg"
+                    onClick={() => handleVote(selectedProposal.id, "DOWNVOTE")}
+                    className="flex items-center space-x-2"
+                  >
+                    <ThumbsDown className="h-5 w-5" />
+                    <span>Downvote</span>
+                  </Button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Total votes:{" "}
+                  {getUpvotes(selectedProposal) +
+                    getDownvotes(selectedProposal)}
+                </div>
+              </div>
+            </div>
+
             {selectedProposal.comments &&
               selectedProposal.comments.length > 0 && (
                 <div className="space-y-4">
@@ -433,6 +547,9 @@ export function CommunityGovernanceClient() {
         getDownvotes={getDownvotes}
         getCommentsCount={getCommentsCount}
         onProposalClick={handleProposalClick}
+        onVote={handleVote}
+        isVoting={isVoting}
+        getUserVote={getUserVote}
       />
     </div>
   );
@@ -447,6 +564,9 @@ function ProposalsList({
   getDownvotes,
   getCommentsCount,
   onProposalClick,
+  onVote,
+  isVoting,
+  getUserVote,
 }: any) {
   if (proposals.length === 0) {
     return (
@@ -532,6 +652,49 @@ function ProposalsList({
                   <MessageSquare className="h-4 w-4" />
                   <span>{getCommentsCount(proposal)}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Voting Buttons */}
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex space-x-3">
+                <Button
+                  variant={
+                    getUserVote(proposal.id) === "UPVOTE"
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVote(proposal.id, "UPVOTE");
+                  }}
+                  disabled={isVoting}
+                  className="flex items-center space-x-2"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  <span>Upvote</span>
+                </Button>
+                <Button
+                  variant={
+                    getUserVote(proposal.id) === "DOWNVOTE"
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVote(proposal.id, "DOWNVOTE");
+                  }}
+                  disabled={isVoting}
+                  className="flex items-center space-x-2"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                  <span>Downvote</span>
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Total: {getUpvotes(proposal) + getDownvotes(proposal)}
               </div>
             </div>
           </CardContent>
