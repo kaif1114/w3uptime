@@ -5,7 +5,7 @@ import { CommunityGovernanceClient } from "./CommunityGovernanceClient";
 
 export default function CommunityGovernancePage() {
   const header = (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">
@@ -57,7 +57,7 @@ export default function CommunityGovernancePage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {header}
       <CommunityGovernanceClient />
     </div>

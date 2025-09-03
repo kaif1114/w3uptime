@@ -11,7 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Lightbulb,
   Settings,
@@ -20,6 +26,8 @@ import {
   ThumbsDown,
   Calendar,
   User,
+  X,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -188,15 +196,23 @@ const mockProposals = [
 
 export function CommunityGovernanceClient() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
 
-  // Filter proposals based on search only
+  // Filter proposals based on search and filter
   const filteredProposals = mockProposals.filter((proposal) => {
     const matchesSearch =
       !searchQuery ||
       proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       proposal.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch;
+    const matchesFilter =
+      selectedFilter === "all" ||
+      (selectedFilter === "feature" && proposal.type === "FEATURE_REQUEST") ||
+      (selectedFilter === "change" && proposal.type === "CHANGE_REQUEST") ||
+      (selectedFilter === "recent" && proposal.type === "FEATURE_REQUEST");
+
+    return matchesSearch && matchesFilter;
   });
 
   // Sort proposals by creation date (newest first)
@@ -206,6 +222,14 @@ export function CommunityGovernanceClient() {
 
   const handleSearch = () => {
     // Search is handled in the filter logic above
+  };
+
+  const handleProposalClick = (proposal: any) => {
+    setSelectedProposal(proposal);
+  };
+
+  const handleBackToList = () => {
+    setSelectedProposal(null);
   };
 
   const getProposalTypeIcon = (type: string) => {
@@ -251,10 +275,133 @@ export function CommunityGovernanceClient() {
     return proposal.comments?.length || 0;
   };
 
+  // If a proposal is selected, show the detail view
+  if (selectedProposal) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToList}
+            className="p-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Proposals
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center space-x-2">
+                  {getProposalTypeIcon(selectedProposal.type)}
+                  <Badge
+                    variant="secondary"
+                    className={getProposalTypeColor(selectedProposal.type)}
+                  >
+                    {selectedProposal.type === "FEATURE_REQUEST"
+                      ? "Feature Request"
+                      : "Change Request"}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(selectedProposal.status)}
+                  >
+                    {selectedProposal.status.replace("_", " ")}
+                  </Badge>
+                </div>
+                <CardTitle className="text-2xl">
+                  {selectedProposal.title}
+                </CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  {selectedProposal.description}
+                </CardDescription>
+
+                {selectedProposal.tags && selectedProposal.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {selectedProposal.tags.map((tag: string, index: number) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between text-sm text-muted-foreground border-b pb-4">
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>
+                    {selectedProposal.user?.walletAddress?.slice(0, 8)}...
+                    {selectedProposal.user?.walletAddress?.slice(-6)}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {new Date(selectedProposal.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <ThumbsUp className="h-4 w-4" />
+                  <span>{getUpvotes(selectedProposal)}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <ThumbsDown className="h-4 w-4" />
+                  <span>{getDownvotes(selectedProposal)}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>{getCommentsCount(selectedProposal)}</span>
+                </div>
+              </div>
+            </div>
+
+            {selectedProposal.comments &&
+              selectedProposal.comments.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Comments</h3>
+                  <div className="space-y-3">
+                    {selectedProposal.comments.map((comment: any) => (
+                      <div key={comment.id} className="p-3 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">
+                            {comment.userId === "user1"
+                              ? "0x1234...5678"
+                              : comment.userId === "user2"
+                                ? "0x8765...4321"
+                                : comment.userId === "user3"
+                                  ? "0x9876...5432"
+                                  : "Anonymous"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Search */}
-      <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Search and Filter Row */}
+      <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Input
             placeholder="Search proposals..."
@@ -263,73 +410,30 @@ export function CommunityGovernanceClient() {
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
           />
         </div>
+        <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter proposals" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Proposals</SelectItem>
+            <SelectItem value="feature">Feature Requests</SelectItem>
+            <SelectItem value="change">Change Requests</SelectItem>
+            <SelectItem value="recent">Recent</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Proposals Tabs */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All Proposals</TabsTrigger>
-          <TabsTrigger value="feature">Feature Requests</TabsTrigger>
-          <TabsTrigger value="change">Change Requests</TabsTrigger>
-          <TabsTrigger value="recent">Recent</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <ProposalsList
-            proposals={sortedProposals}
-            getProposalTypeIcon={getProposalTypeIcon}
-            getProposalTypeColor={getProposalTypeColor}
-            getStatusColor={getStatusColor}
-            getUpvotes={getUpvotes}
-            getDownvotes={getDownvotes}
-            getCommentsCount={getCommentsCount}
-          />
-        </TabsContent>
-
-        <TabsContent value="feature" className="space-y-4">
-          <ProposalsList
-            proposals={sortedProposals.filter(
-              (p) => p.type === "FEATURE_REQUEST"
-            )}
-            getProposalTypeIcon={getProposalTypeIcon}
-            getProposalTypeColor={getProposalTypeColor}
-            getStatusColor={getStatusColor}
-            getUpvotes={getUpvotes}
-            getDownvotes={getDownvotes}
-            getCommentsCount={getCommentsCount}
-          />
-        </TabsContent>
-
-        <TabsContent value="change" className="space-y-4">
-          <ProposalsList
-            proposals={sortedProposals.filter(
-              (p) => p.type === "CHANGE_REQUEST"
-            )}
-            getProposalTypeIcon={getProposalTypeIcon}
-            getProposalTypeColor={getProposalTypeColor}
-            getStatusColor={getStatusColor}
-            getUpvotes={getUpvotes}
-            getDownvotes={getDownvotes}
-            getCommentsCount={getCommentsCount}
-          />
-        </TabsContent>
-
-        <TabsContent value="recent" className="space-y-4">
-          <ProposalsList
-            proposals={[...sortedProposals].sort(
-              (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
-            )}
-            getProposalTypeIcon={getProposalTypeIcon}
-            getProposalTypeColor={getProposalTypeColor}
-            getStatusColor={getStatusColor}
-            getUpvotes={getUpvotes}
-            getDownvotes={getDownvotes}
-            getCommentsCount={getCommentsCount}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Proposals List */}
+      <ProposalsList
+        proposals={sortedProposals}
+        getProposalTypeIcon={getProposalTypeIcon}
+        getProposalTypeColor={getProposalTypeColor}
+        getStatusColor={getStatusColor}
+        getUpvotes={getUpvotes}
+        getDownvotes={getDownvotes}
+        getCommentsCount={getCommentsCount}
+        onProposalClick={handleProposalClick}
+      />
     </div>
   );
 }
@@ -342,6 +446,7 @@ function ProposalsList({
   getUpvotes,
   getDownvotes,
   getCommentsCount,
+  onProposalClick,
 }: any) {
   if (proposals.length === 0) {
     return (
@@ -363,7 +468,11 @@ function ProposalsList({
   return (
     <div className="space-y-4">
       {proposals.map((proposal: any) => (
-        <Card key={proposal.id} className="hover:shadow-md transition-shadow">
+        <Card
+          key={proposal.id}
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => onProposalClick(proposal)}
+        >
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 space-y-2">
@@ -384,11 +493,9 @@ function ProposalsList({
                     {proposal.status.replace("_", " ")}
                   </Badge>
                 </div>
-                <Link href={`/community/${proposal.id}`}>
-                  <CardTitle className="hover:text-primary cursor-pointer">
-                    {proposal.title}
-                  </CardTitle>
-                </Link>
+                <CardTitle className="hover:text-primary">
+                  {proposal.title}
+                </CardTitle>
                 <CardDescription className="line-clamp-2">
                   {proposal.description}
                 </CardDescription>
