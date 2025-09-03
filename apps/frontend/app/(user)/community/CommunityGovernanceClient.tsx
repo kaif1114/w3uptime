@@ -21,7 +21,6 @@ import {
 import {
   Lightbulb,
   Settings,
-  MessageSquare,
   ArrowUp,
   ArrowDown,
   Calendar,
@@ -335,9 +334,7 @@ export function CommunityGovernanceClient() {
     return originalVotes + localDownvotes;
   };
 
-  const getCommentsCount = (proposal: any) => {
-    return proposal.comments?.length || 0;
-  };
+  // Comments temporarily disabled
 
   const getUserVote = (proposalId: string) => {
     const userVote = localVotes[proposalId]?.find(
@@ -429,10 +426,6 @@ export function CommunityGovernanceClient() {
                   <ArrowDown className="h-4 w-4" />
                   <span>{getDownvotes(selectedProposal)}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{getCommentsCount(selectedProposal)}</span>
-                </div>
               </div>
             </div>
 
@@ -479,33 +472,7 @@ export function CommunityGovernanceClient() {
               </div>
             </div>
 
-            {selectedProposal.comments &&
-              selectedProposal.comments.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Comments</h3>
-                  <div className="space-y-3">
-                    {selectedProposal.comments.map((comment: any) => (
-                      <div key={comment.id} className="p-3 bg-muted rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">
-                            {comment.userId === "user1"
-                              ? "0x1234...5678"
-                              : comment.userId === "user2"
-                                ? "0x8765...4321"
-                                : comment.userId === "user3"
-                                  ? "0x9876...5432"
-                                  : "Anonymous"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm">{comment.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Comments temporarily removed */}
           </CardContent>
         </Card>
       </div>
@@ -545,7 +512,6 @@ export function CommunityGovernanceClient() {
         getStatusColor={getStatusColor}
         getUpvotes={getUpvotes}
         getDownvotes={getDownvotes}
-        getCommentsCount={getCommentsCount}
         onProposalClick={handleProposalClick}
         onVote={handleVote}
         isVoting={isVoting}
@@ -562,7 +528,6 @@ function ProposalsList({
   getStatusColor,
   getUpvotes,
   getDownvotes,
-  getCommentsCount,
   onProposalClick,
   onVote,
   isVoting,
@@ -647,10 +612,6 @@ function ProposalsList({
                 <div className="flex items-center space-x-1">
                   <ArrowDown className="h-4 w-4" />
                   <span>{getDownvotes(proposal)}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{getCommentsCount(proposal)}</span>
                 </div>
               </div>
             </div>

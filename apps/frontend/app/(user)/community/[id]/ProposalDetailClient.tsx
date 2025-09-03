@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+// Comments temporarily disabled: remove unused input imports
 import {
   Card,
   CardContent,
@@ -20,7 +18,7 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowDown,
-  MessageSquare,
+  // MessageSquare,
   Calendar,
   User,
   Tag,
@@ -104,12 +102,9 @@ const mockProposal = {
 export function ProposalDetailClient({
   proposalId,
 }: ProposalDetailClientProps) {
-  const [commentContent, setCommentContent] = useState("");
-  const [showCommentForm, setShowCommentForm] = useState(false);
+  // Comments temporarily disabled
   const [localVotes, setLocalVotes] = useState(mockProposal.votes);
-  const [localComments, setLocalComments] = useState(mockProposal.comments);
   const [isVoting, setIsVoting] = useState(false);
-  const [isCommenting, setIsCommenting] = useState(false);
 
   const handleVote = async (vote: "UPVOTE" | "DOWNVOTE") => {
     setIsVoting(true);
@@ -152,30 +147,7 @@ export function ProposalDetailClient({
     }, 500);
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentContent.trim()) return;
-
-    setIsCommenting(true);
-
-    // Simulate API call delay
-    setTimeout(() => {
-      const newComment = {
-        id: `c${Date.now()}`,
-        proposalId: "1",
-        userId: "currentUser",
-        content: commentContent.trim(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        user: { id: "currentUser", walletAddress: "0x1111...2222" },
-      };
-
-      setLocalComments((prev) => [...prev, newComment]);
-      setCommentContent("");
-      setShowCommentForm(false);
-      setIsCommenting(false);
-    }, 500);
-  };
+  // Comments temporarily disabled
 
   const getProposalTypeIcon = (type: "FEATURE_REQUEST" | "CHANGE_REQUEST") => {
     return type === "FEATURE_REQUEST" ? (
@@ -211,9 +183,7 @@ export function ProposalDetailClient({
     return localVotes.filter((vote) => vote.vote === "DOWNVOTE").length;
   };
 
-  const getCommentsCount = () => {
-    return localComments.length;
-  };
+  // Comments temporarily disabled
 
   return (
     <div className="space-y-6">
@@ -356,89 +326,7 @@ export function ProposalDetailClient({
         </CardContent>
       </Card>
 
-      {/* Comments Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Comments ({getCommentsCount()})</CardTitle>
-              <CardDescription>
-                Discuss this proposal with the community
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowCommentForm(!showCommentForm)}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Add Comment
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Comment Form */}
-          {showCommentForm && (
-            <div className="border rounded-lg p-4">
-              <form onSubmit={handleAddComment} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="comment">Your Comment</Label>
-                  <Textarea
-                    id="comment"
-                    placeholder="Share your thoughts on this proposal..."
-                    value={commentContent}
-                    onChange={(e) => setCommentContent(e.target.value)}
-                    rows={4}
-                    required
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCommentForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isCommenting || !commentContent.trim()}
-                  >
-                    {isCommenting ? "Posting..." : "Post Comment"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Comments List */}
-          <div className="space-y-4">
-            {localComments && localComments.length > 0 ? (
-              localComments.map((comment: any) => (
-                <div key={comment.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">
-                        {comment.user?.walletAddress?.slice(0, 8)}...
-                        {comment.user?.walletAddress?.slice(-6)}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-sm">{comment.content}</p>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No comments yet. Be the first to share your thoughts!</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Comments Section temporarily removed */}
     </div>
   );
 }
