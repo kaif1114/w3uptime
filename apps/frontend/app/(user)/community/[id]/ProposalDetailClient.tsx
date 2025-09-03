@@ -18,8 +18,8 @@ import {
   Lightbulb,
   Settings,
   ArrowLeft,
-  ThumbsUp,
-  ThumbsDown,
+  ArrowUp,
+  ArrowDown,
   MessageSquare,
   Calendar,
   User,
@@ -335,7 +335,7 @@ export function ProposalDetailClient({
                 disabled={isVoting}
                 className="flex items-center space-x-2"
               >
-                <ThumbsUp className="h-5 w-5" />
+                <ArrowUp className="h-5 w-5" />
                 <span>Upvote ({getUpvotes()})</span>
               </Button>
               <Button
@@ -345,7 +345,7 @@ export function ProposalDetailClient({
                 disabled={isVoting}
                 className="flex items-center space-x-2"
               >
-                <ThumbsDown className="h-5 w-5" />
+                <ArrowDown className="h-5 w-5" />
                 <span>Downvote ({getDownvotes()})</span>
               </Button>
             </div>

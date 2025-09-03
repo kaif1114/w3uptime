@@ -22,8 +22,8 @@ import {
   Lightbulb,
   Settings,
   MessageSquare,
-  ThumbsUp,
-  ThumbsDown,
+  ArrowUp,
+  ArrowDown,
   Calendar,
   User,
   X,
@@ -422,11 +422,11 @@ export function CommunityGovernanceClient() {
               </div>
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
-                  <ThumbsUp className="h-4 w-4" />
+                  <ArrowUp className="h-4 w-4" />
                   <span>{getUpvotes(selectedProposal)}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <ThumbsDown className="h-4 w-4" />
+                  <ArrowDown className="h-4 w-4" />
                   <span>{getDownvotes(selectedProposal)}</span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -454,7 +454,7 @@ export function CommunityGovernanceClient() {
                     disabled={isVoting}
                     className="flex items-center space-x-2"
                   >
-                    <ThumbsUp className="h-5 w-5" />
+                    <ArrowUp className="h-5 w-5" />
                     <span>Upvote</span>
                   </Button>
                   <Button
@@ -467,7 +467,7 @@ export function CommunityGovernanceClient() {
                     onClick={() => handleVote(selectedProposal.id, "DOWNVOTE")}
                     className="flex items-center space-x-2"
                   >
-                    <ThumbsDown className="h-5 w-5" />
+                    <ArrowDown className="h-5 w-5" />
                     <span>Downvote</span>
                   </Button>
                 </div>
@@ -641,11 +641,11 @@ function ProposalsList({
               </div>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-1">
-                  <ThumbsUp className="h-4 w-4" />
+                  <ArrowUp className="h-4 w-4" />
                   <span>{getUpvotes(proposal)}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <ThumbsDown className="h-4 w-4" />
+                  <ArrowDown className="h-4 w-4" />
                   <span>{getDownvotes(proposal)}</span>
                 </div>
                 <div className="flex items-center space-x-1">
@@ -672,7 +672,7 @@ function ProposalsList({
                   disabled={isVoting}
                   className="flex items-center space-x-2"
                 >
-                  <ThumbsUp className="h-4 w-4" />
+                  <ArrowUp className="h-4 w-4" />
                   <span>Upvote</span>
                 </Button>
                 <Button
@@ -689,7 +689,7 @@ function ProposalsList({
                   disabled={isVoting}
                   className="flex items-center space-x-2"
                 >
-                  <ThumbsDown className="h-4 w-4" />
+                  <ArrowDown className="h-4 w-4" />
                   <span>Downvote</span>
                 </Button>
               </div>
