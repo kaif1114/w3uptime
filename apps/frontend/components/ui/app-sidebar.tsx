@@ -1,9 +1,6 @@
 "use client";
-import {
-  IconSatellite
-} from "@tabler/icons-react";
+import { IconSatellite } from "@tabler/icons-react";
 import * as React from "react";
-
 
 import { NavUser } from "@/components/ui/nav-user";
 import {
@@ -21,7 +18,15 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { AlertTriangleIcon, ChartBar, Shield, Users, Globe, BarChart3 } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ChartBar,
+  Shield,
+  Users,
+  Globe,
+  BarChart3,
+  Lightbulb,
+} from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
 // Menu items.
@@ -44,7 +49,7 @@ const items = [
   {
     title: "Incidents",
     url: "/incidents",
-    icon: AlertTriangleIcon
+    icon: AlertTriangleIcon,
   },
   {
     title: "Status Pages",
@@ -56,13 +61,18 @@ const items = [
     url: "/escalation-policies",
     icon: Users,
   },
+  {
+    title: "Community",
+    url: "/community",
+    icon: Lightbulb,
+  },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname =usePathname()
+  const pathname = usePathname();
   useEffect(() => {
-    console.log(pathname)
-  }, [pathname])
+    console.log(pathname);
+  }, [pathname]);
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -84,11 +94,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* main */}
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
-           
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton tooltip={item.title} className={cn(pathname === item.url && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground")}>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    className={cn(
+                      pathname === item.url &&
+                        "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                    )}
+                  >
                     {item.icon && <item.icon />}
                     <Link href={item.url}>{item.title}</Link>
                   </SidebarMenuButton>
@@ -97,7 +112,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-       
       </SidebarContent>
       <SidebarFooter>
         <div className="flex flex-col gap-2">
