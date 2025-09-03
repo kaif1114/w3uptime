@@ -4,13 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -194,40 +187,22 @@ const mockProposals = [
 ];
 
 export function CommunityGovernanceClient() {
-  const [filters, setFilters] = useState({
-    type: "all" as string,
-    status: "all" as string,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter proposals based on search and filters
+  // Filter proposals based on search only
   const filteredProposals = mockProposals.filter((proposal) => {
-    const matchesType =
-      filters.type === "all" || proposal.type === filters.type;
-    const matchesStatus =
-      filters.status === "all" || proposal.status === filters.status;
     const matchesSearch =
       !searchQuery ||
       proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       proposal.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesType && matchesStatus && matchesSearch;
+    return matchesSearch;
   });
 
-  // Sort proposals
+  // Sort proposals by creation date (newest first)
   const sortedProposals = [...filteredProposals].sort((a, b) => {
-    if (filters.sortOrder === "desc") {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
 
   const handleSearch = () => {
     // Search is handled in the filter logic above
@@ -278,59 +253,17 @@ export function CommunityGovernanceClient() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Find the proposals you're looking for
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search proposals..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              />
-            </div>
-            <Select
-              value={filters.type}
-              onValueChange={(value) => handleFilterChange("type", value)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="FEATURE_REQUEST">Feature Request</SelectItem>
-                <SelectItem value="CHANGE_REQUEST">Change Request</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => handleFilterChange("status", value)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="IMPLEMENTED">Implemented</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleSearch} className="w-full sm:w-auto">
-              Search
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Search */}
+      <div className="space-y-2">
+        <div className="flex-1">
+          <Input
+            placeholder="Search proposals..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+          />
+        </div>
+      </div>
 
       {/* Proposals Tabs */}
       <Tabs defaultValue="all" className="space-y-4">
