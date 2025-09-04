@@ -1,0 +1,121 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "db/client";
+import { z } from "zod";
+import { withAuth } from "@/lib/auth";
+
+const updateProposalSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().min(1).optional(),
+  type: z.enum(["FEATURE_REQUEST", "CHANGE_REQUEST"]).optional(),
+  status: z
+    .enum([
+      "DRAFT",
+      "SUBMITTED",
+      "UNDER_REVIEW",
+      "APPROVED",
+      "REJECTED",
+      "IMPLEMENTED",
+    ])
+    .optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+// GET /api/proposals/[id] - Get a proposal by ID
+export const GET = withAuth(
+  async (_req: NextRequest, _user, _session, { params }: any) => {
+    try {
+      const { id } = params;
+      const proposal = await prisma.proposal.findUnique({
+        where: { id },
+        include: {
+          user: { select: { id: true, walletAddress: true } },
+          votes: true,
+          comments: {
+            orderBy: { createdAt: "desc" },
+            include: { user: { select: { id: true, walletAddress: true } } },
+          },
+        },
+      });
+
+      if (!proposal)
+        return NextResponse.json(
+          { error: "Proposal not found" },
+          { status: 404 }
+        );
+      return NextResponse.json({ proposal });
+    } catch (error) {
+      console.error("Failed to fetch proposal:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch proposal" },
+        { status: 500 }
+      );
+    }
+  }
+);
+
+// PATCH /api/proposals/[id] - Update a proposal
+export const PATCH = withAuth(
+  async (req: NextRequest, user, _session, { params }: any) => {
+    try {
+      const { id } = params;
+      const body = await req.json();
+      const validation = updateProposalSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: validation.error.message },
+          { status: 400 }
+        );
+      }
+
+      // Ensure ownership
+      const existing = await prisma.proposal.findUnique({ where: { id } });
+      if (!existing)
+        return NextResponse.json(
+          { error: "Proposal not found" },
+          { status: 404 }
+        );
+      if (existing.userId !== user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const proposal = await prisma.proposal.update({
+        where: { id },
+        data: validation.data,
+      });
+      return NextResponse.json({ proposal });
+    } catch (error) {
+      console.error("Failed to update proposal:", error);
+      return NextResponse.json(
+        { error: "Failed to update proposal" },
+        { status: 500 }
+      );
+    }
+  }
+);
+
+// DELETE /api/proposals/[id] - Delete a proposal
+export const DELETE = withAuth(
+  async (_req: NextRequest, user, _session, { params }: any) => {
+    try {
+      const { id } = params;
+      const existing = await prisma.proposal.findUnique({ where: { id } });
+      if (!existing)
+        return NextResponse.json(
+          { error: "Proposal not found" },
+          { status: 404 }
+        );
+      if (existing.userId !== user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      await prisma.proposal.delete({ where: { id } });
+      return NextResponse.json({ message: "Deleted" });
+    } catch (error) {
+      console.error("Failed to delete proposal:", error);
+      return NextResponse.json(
+        { error: "Failed to delete proposal" },
+        { status: 500 }
+      );
+    }
+  }
+);
