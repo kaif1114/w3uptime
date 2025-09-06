@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-// Comments temporarily disabled: remove unused input imports
 import {
   Card,
   CardContent,
@@ -11,154 +10,68 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Lightbulb,
   Settings,
   ArrowLeft,
   ArrowUp,
   ArrowDown,
-  // MessageSquare,
   Calendar,
   User,
   Tag,
   Edit,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useProposal, useVoteProposal } from "@/hooks/useProposals";
+import { useSession } from "@/hooks/useSession";
+import {
+  Proposal,
+  ProposalType,
+  VoteType,
+  ProposalResponse,
+} from "@/types/proposal";
+import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
+import { ProposalComments } from "@/components/ui/proposal-comments";
 
 interface ProposalDetailClientProps {
   proposalId: string;
 }
 
-// Mock data for the proposal
-const mockProposal = {
-  id: "1",
-  title: "Add Dark Mode Support",
-  description:
-    "Implement a dark theme option for better user experience in low-light environments. This would include dark backgrounds, light text, and appropriate contrast ratios. The implementation should consider accessibility standards and provide a seamless toggle between light and dark modes.",
-  type: "FEATURE_REQUEST" as "FEATURE_REQUEST" | "CHANGE_REQUEST",
-  status: "SUBMITTED" as
-    | "SUBMITTED"
-    | "UNDER_REVIEW"
-    | "APPROVED"
-    | "REJECTED"
-    | "IMPLEMENTED",
-  userId: "user1",
-  createdAt: new Date("2024-01-15"),
-  updatedAt: new Date("2024-01-15"),
-  user: {
-    id: "user1",
-    walletAddress: "0x1234...5678",
-  },
-  votes: [
-    {
-      id: "v1",
-      proposalId: "1",
-      userId: "user2",
-      vote: "UPVOTE" as "UPVOTE" | "DOWNVOTE",
-      createdAt: new Date("2024-01-16"),
-    },
-    {
-      id: "v2",
-      proposalId: "1",
-      userId: "user3",
-      vote: "UPVOTE" as "UPVOTE" | "DOWNVOTE",
-      createdAt: new Date("2024-01-17"),
-    },
-    {
-      id: "v3",
-      proposalId: "1",
-      userId: "user4",
-      vote: "DOWNVOTE" as "UPVOTE" | "DOWNVOTE",
-      createdAt: new Date("2024-01-18"),
-    },
-  ],
-  comments: [
-    {
-      id: "c1",
-      proposalId: "1",
-      userId: "user2",
-      content:
-        "This is a great idea! Dark mode would definitely improve the user experience, especially for users working late at night.",
-      createdAt: new Date("2024-01-16"),
-      updatedAt: new Date("2024-01-16"),
-      user: { id: "user2", walletAddress: "0x8765...4321" },
-    },
-    {
-      id: "c2",
-      proposalId: "1",
-      userId: "user3",
-      content:
-        "I agree, especially for users working in low-light environments. It would also help reduce eye strain.",
-      createdAt: new Date("2024-01-17"),
-      updatedAt: new Date("2024-01-17"),
-      user: { id: "user3", walletAddress: "0x9876...5432" },
-    },
-  ],
-  tags: ["UI/UX", "Accessibility", "Theme", "User Experience"],
-};
-
 export function ProposalDetailClient({
   proposalId,
 }: ProposalDetailClientProps) {
-  // Comments temporarily disabled
-  const [localVotes, setLocalVotes] = useState(mockProposal.votes);
-  const [isVoting, setIsVoting] = useState(false);
+  const { data: proposalData, isLoading, error } = useProposal(proposalId);
+  const voteProposal = useVoteProposal();
+  const { data: session } = useSession();
 
-  const handleVote = async (vote: "UPVOTE" | "DOWNVOTE") => {
-    setIsVoting(true);
+  const proposal = proposalData?.proposal;
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // Simulate vote logic
-      const existingVoteIndex = localVotes.findIndex(
-        (v) => v.userId === "currentUser"
-      );
-
-      if (existingVoteIndex >= 0) {
-        if (localVotes[existingVoteIndex].vote === vote) {
-          // Remove vote if same type
-          setLocalVotes((prev) =>
-            prev.filter((_, index) => index !== existingVoteIndex)
-          );
-        } else {
-          // Change vote
-          setLocalVotes((prev) =>
-            prev.map((v, index) =>
-              index === existingVoteIndex ? { ...v, vote } : v
-            )
-          );
-        }
-      } else {
-        // Add new vote
-        setLocalVotes((prev) => [
-          ...prev,
-          {
-            id: `v${Date.now()}`,
-            proposalId: "1",
-            userId: "currentUser",
-            vote,
-            createdAt: new Date(),
-          },
-        ]);
-      }
-      setIsVoting(false);
-    }, 500);
+  const handleVote = async (vote: VoteType) => {
+    try {
+      await voteProposal.mutateAsync({
+        proposalId,
+        vote: { vote },
+      });
+    } catch (error) {
+      console.error("Failed to vote:", error);
+    }
   };
 
   // Comments temporarily disabled
 
-  const getProposalTypeIcon = (type: "FEATURE_REQUEST" | "CHANGE_REQUEST") => {
-    return type === "FEATURE_REQUEST" ? (
+  const getProposalTypeIcon = (type: ProposalType) => {
+    return type === ProposalType.FEATURE_REQUEST ? (
       <Lightbulb className="h-5 w-5 text-blue-500" />
     ) : (
       <Settings className="h-5 w-5 text-green-500" />
     );
   };
 
-  const getProposalTypeColor = (type: "FEATURE_REQUEST" | "CHANGE_REQUEST") => {
-    return type === "FEATURE_REQUEST"
+  const getProposalTypeColor = (type: ProposalType) => {
+    return type === ProposalType.FEATURE_REQUEST
       ? "bg-blue-100 text-blue-800"
       : "bg-green-100 text-green-800";
   };
@@ -176,14 +89,78 @@ export function ProposalDetailClient({
   };
 
   const getUpvotes = () => {
-    return localVotes.filter((vote) => vote.vote === "UPVOTE").length;
+    return (
+      proposal.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
+      0
+    );
   };
 
   const getDownvotes = () => {
-    return localVotes.filter((vote) => vote.vote === "DOWNVOTE").length;
+    return (
+      proposal.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
+        .length || 0
+    );
   };
 
-  // Comments temporarily disabled
+  const getUserVote = () => {
+    if (!session?.user?.id || !proposal?.votes) {
+      return null;
+    }
+
+    const userVote = proposal.votes.find(
+      (vote) => vote.userId === session.user.id
+    );
+    return userVote ? userVote.vote : null;
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return <ProposalDetailSkeleton />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Link href="/community">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Proposals
+            </Button>
+          </Link>
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load proposal. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Show not found state if no proposal data
+  if (!proposal) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Link href="/community">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Proposals
+            </Button>
+          </Link>
+        </div>
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-2">Proposal Not Found</h1>
+          <p className="text-muted-foreground">
+            The proposal you're looking for doesn't exist or has been removed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -203,20 +180,20 @@ export function ProposalDetailClient({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                {getProposalTypeIcon(mockProposal.type)}
+                {getProposalTypeIcon(proposal.type)}
                 <Badge
                   variant="secondary"
-                  className={getProposalTypeColor(mockProposal.type)}
+                  className={getProposalTypeColor(proposal.type)}
                 >
-                  {mockProposal.type === "FEATURE_REQUEST"
+                  {proposal.type === ProposalType.FEATURE_REQUEST
                     ? "Feature Request"
                     : "Change Request"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className={getStatusColor(mockProposal.status)}
+                  className={getStatusColor(proposal.status)}
                 >
-                  {mockProposal.status.replace("_", " ")}
+                  {proposal.status.replace("_", " ")}
                 </Badge>
               </div>
               <div className="flex space-x-2">
@@ -235,18 +212,18 @@ export function ProposalDetailClient({
               </div>
             </div>
             <div>
-              <CardTitle className="text-2xl">{mockProposal.title}</CardTitle>
+              <CardTitle className="text-2xl">{proposal.title}</CardTitle>
               <CardDescription className="text-base mt-2">
-                {mockProposal.description}
+                {proposal.description}
               </CardDescription>
             </div>
 
             {/* Tags */}
-            {mockProposal.tags && mockProposal.tags.length > 0 && (
+            {proposal.tags && proposal.tags.length > 0 && (
               <div className="flex items-center space-x-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 <div className="flex flex-wrap gap-2">
-                  {mockProposal.tags.map((tag, index) => (
+                  {proposal.tags.map((tag, index) => (
                     <Badge key={index} variant="outline">
                       {tag}
                     </Badge>
@@ -261,23 +238,22 @@ export function ProposalDetailClient({
                 <div className="flex items-center space-x-1">
                   <User className="h-4 w-4" />
                   <span>
-                    {mockProposal.user?.walletAddress?.slice(0, 8)}...
-                    {mockProposal.user?.walletAddress?.slice(-6)}
+                    {proposal.user?.walletAddress?.slice(0, 8)}...
+                    {proposal.user?.walletAddress?.slice(-6)}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    Created{" "}
-                    {new Date(mockProposal.createdAt).toLocaleDateString()}
+                    Created {new Date(proposal.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                {mockProposal.updatedAt !== mockProposal.createdAt && (
+                {proposal.updatedAt !== proposal.createdAt && (
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-4 w-4" />
                     <span>
                       Updated{" "}
-                      {new Date(mockProposal.updatedAt).toLocaleDateString()}
+                      {new Date(proposal.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -299,20 +275,24 @@ export function ProposalDetailClient({
           <div className="flex items-center justify-between">
             <div className="flex space-x-4">
               <Button
-                variant="outline"
+                variant={
+                  getUserVote() === VoteType.UPVOTE ? "default" : "outline"
+                }
                 size="lg"
-                onClick={() => handleVote("UPVOTE")}
-                disabled={isVoting}
+                onClick={() => handleVote(VoteType.UPVOTE)}
+                disabled={voteProposal.isPending}
                 className="flex items-center space-x-2"
               >
                 <ArrowUp className="h-5 w-5" />
                 <span>Upvote ({getUpvotes()})</span>
               </Button>
               <Button
-                variant="outline"
+                variant={
+                  getUserVote() === VoteType.DOWNVOTE ? "default" : "outline"
+                }
                 size="lg"
-                onClick={() => handleVote("DOWNVOTE")}
-                disabled={isVoting}
+                onClick={() => handleVote(VoteType.DOWNVOTE)}
+                disabled={voteProposal.isPending}
                 className="flex items-center space-x-2"
               >
                 <ArrowDown className="h-5 w-5" />
@@ -326,7 +306,8 @@ export function ProposalDetailClient({
         </CardContent>
       </Card>
 
-      {/* Comments Section temporarily removed */}
+      {/* Comments Section */}
+      <ProposalComments proposalId={proposalId} />
     </div>
   );
 }

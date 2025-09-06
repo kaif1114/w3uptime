@@ -29,301 +29,70 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data for proposals
-const mockProposals = [
-  {
-    id: "1",
-    title: "Add Dark Mode Support",
-    description:
-      "Implement a dark theme option for better user experience in low-light environments. This would include dark backgrounds, light text, and appropriate contrast ratios.",
-    type: "FEATURE_REQUEST" as const,
-    status: "SUBMITTED" as const,
-    userId: "user1",
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-    user: {
-      id: "user1",
-      walletAddress: "0x1234...5678",
-    },
-    votes: [
-      {
-        id: "v1",
-        proposalId: "1",
-        userId: "user2",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-16"),
-      },
-      {
-        id: "v2",
-        proposalId: "1",
-        userId: "user3",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-17"),
-      },
-      {
-        id: "v3",
-        proposalId: "1",
-        userId: "user4",
-        vote: "DOWNVOTE" as const,
-        createdAt: new Date("2024-01-18"),
-      },
-    ],
-    comments: [
-      {
-        id: "c1",
-        proposalId: "1",
-        userId: "user2",
-        content:
-          "This is a great idea! Dark mode would definitely improve the user experience.",
-        createdAt: new Date("2024-01-16"),
-        updatedAt: new Date("2024-01-16"),
-      },
-      {
-        id: "c2",
-        proposalId: "1",
-        userId: "user3",
-        content:
-          "I agree, especially for users working in low-light environments.",
-        createdAt: new Date("2024-01-17"),
-        updatedAt: new Date("2024-01-17"),
-      },
-    ],
-    tags: ["UI/UX", "Accessibility", "Theme"],
-  },
-  {
-    id: "2",
-    title: "Improve Notification System",
-    description:
-      "Enhance the current notification system with better filtering options, customizable alert sounds, and the ability to snooze notifications for specific time periods.",
-    type: "CHANGE_REQUEST" as const,
-    status: "UNDER_REVIEW" as const,
-    userId: "user2",
-    createdAt: new Date("2024-01-10"),
-    updatedAt: new Date("2024-01-12"),
-    user: {
-      id: "user2",
-      walletAddress: "0x8765...4321",
-    },
-    votes: [
-      {
-        id: "v4",
-        proposalId: "2",
-        userId: "user1",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-11"),
-      },
-      {
-        id: "v5",
-        proposalId: "2",
-        userId: "user3",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-13"),
-      },
-    ],
-    comments: [
-      {
-        id: "c3",
-        proposalId: "2",
-        userId: "user1",
-        content:
-          "The current notification system could definitely use some improvements. Good suggestion!",
-        createdAt: new Date("2024-01-11"),
-        updatedAt: new Date("2024-01-11"),
-      },
-    ],
-    tags: ["Notifications", "User Experience", "Customization"],
-  },
-  {
-    id: "3",
-    title: "Add Multi-Language Support",
-    description:
-      "Implement internationalization (i18n) to support multiple languages including Spanish, French, German, and Chinese. This would make W3Uptime accessible to a global audience.",
-    type: "FEATURE_REQUEST" as const,
-    status: "APPROVED" as const,
-    userId: "user3",
-    createdAt: new Date("2024-01-05"),
-    updatedAt: new Date("2024-01-08"),
-    user: {
-      id: "user3",
-      walletAddress: "0x9876...5432",
-    },
-    votes: [
-      {
-        id: "v6",
-        proposalId: "3",
-        userId: "user1",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-06"),
-      },
-      {
-        id: "v7",
-        proposalId: "3",
-        userId: "user2",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-07"),
-      },
-      {
-        id: "v8",
-        proposalId: "3",
-        userId: "user4",
-        vote: "UPVOTE" as const,
-        createdAt: new Date("2024-01-09"),
-      },
-    ],
-    comments: [
-      {
-        id: "c4",
-        proposalId: "3",
-        userId: "user1",
-        content: "This would be amazing for international users!",
-        createdAt: new Date("2024-01-06"),
-        updatedAt: new Date("2024-01-06"),
-      },
-      {
-        id: "c5",
-        proposalId: "3",
-        userId: "user2",
-        content: "As a non-English speaker, this would be very helpful.",
-        createdAt: new Date("2024-01-07"),
-        updatedAt: new Date("2024-01-07"),
-      },
-    ],
-    tags: ["Internationalization", "Accessibility", "Global"],
-  },
-  // Add more mock proposals to demonstrate pagination
-  {
-    id: "4",
-    title: "Implement Advanced Analytics Dashboard",
-    description:
-      "Create a comprehensive analytics dashboard with real-time metrics, customizable charts, and export functionality for better data insights.",
-    type: "FEATURE_REQUEST" as const,
-    status: "SUBMITTED" as const,
-    userId: "user4",
-    createdAt: new Date("2024-01-20"),
-    updatedAt: new Date("2024-01-20"),
-    user: {
-      id: "user4",
-      walletAddress: "0x5432...8765",
-    },
-    votes: [],
-    comments: [],
-    tags: ["Analytics", "Dashboard", "Data"],
-  },
-  {
-    id: "5",
-    title: "Add API Rate Limiting",
-    description:
-      "Implement rate limiting for the public API to prevent abuse and ensure fair usage across all users.",
-    type: "CHANGE_REQUEST" as const,
-    status: "UNDER_REVIEW" as const,
-    userId: "user5",
-    createdAt: new Date("2024-01-18"),
-    updatedAt: new Date("2024-01-19"),
-    user: {
-      id: "user5",
-      walletAddress: "0x6789...1234",
-    },
-    votes: [],
-    comments: [],
-    tags: ["API", "Security", "Performance"],
-  },
-  {
-    id: "6",
-    title: "Mobile App Development",
-    description:
-      "Develop native mobile applications for iOS and Android to provide on-the-go monitoring capabilities.",
-    type: "FEATURE_REQUEST" as const,
-    status: "SUBMITTED" as const,
-    userId: "user6",
-    createdAt: new Date("2024-01-22"),
-    updatedAt: new Date("2024-01-22"),
-    user: {
-      id: "user6",
-      walletAddress: "0x1357...2468",
-    },
-    votes: [],
-    comments: [],
-    tags: ["Mobile", "iOS", "Android"],
-  },
-  {
-    id: "7",
-    title: "Enhanced Email Notifications",
-    description:
-      "Improve email notification templates with better formatting, customizable content, and delivery tracking.",
-    type: "CHANGE_REQUEST" as const,
-    status: "SUBMITTED" as const,
-    userId: "user7",
-    createdAt: new Date("2024-01-25"),
-    updatedAt: new Date("2024-01-25"),
-    user: {
-      id: "user7",
-      walletAddress: "0x2468...1357",
-    },
-    votes: [],
-    comments: [],
-    tags: ["Email", "Notifications", "Templates"],
-  },
-  {
-    id: "8",
-    title: "Integration with Slack",
-    description:
-      "Add Slack integration for real-time incident notifications and team collaboration.",
-    type: "FEATURE_REQUEST" as const,
-    status: "SUBMITTED" as const,
-    userId: "user8",
-    createdAt: new Date("2024-01-28"),
-    updatedAt: new Date("2024-01-28"),
-    user: {
-      id: "user8",
-      walletAddress: "0x3698...1472",
-    },
-    votes: [],
-    comments: [],
-    tags: ["Slack", "Integration", "Collaboration"],
-  },
-];
+import { useProposals, useVoteProposal } from "@/hooks/useProposals";
+import { useSession } from "@/hooks/useSession";
+import {
+  Proposal,
+  ProposalType,
+  ProposalStatus,
+  VoteType,
+  ProposalsResponse,
+} from "@/types/proposal";
+import {
+  ProposalCardSkeleton,
+  ProposalDetailSkeleton,
+} from "@/components/ui/proposal-skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ProposalComments } from "@/components/ui/proposal-comments";
 
 const ITEMS_PER_PAGE = 5;
 
-export function CommunityGovernanceClient() {
+interface CommunityGovernanceClientProps {}
+
+export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [selectedProposal, setSelectedProposal] = useState<any>(null);
-  const [localVotes, setLocalVotes] = useState<{ [key: string]: any[] }>({});
-  const [isVoting, setIsVoting] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
+    null
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter proposals based on search and filter
-  const filteredProposals = mockProposals.filter((proposal) => {
-    const matchesSearch =
-      !searchQuery ||
-      proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      proposal.description.toLowerCase().includes(searchQuery.toLowerCase());
+  // Convert filter to API parameters
+  const getApiFilters = () => {
+    const filters: any = {
+      page: currentPage,
+      pageSize: ITEMS_PER_PAGE,
+    };
 
-    const matchesFilter =
-      selectedFilter === "all" ||
-      (selectedFilter === "feature" && proposal.type === "FEATURE_REQUEST") ||
-      (selectedFilter === "change" && proposal.type === "CHANGE_REQUEST") ||
-      (selectedFilter === "recent" && proposal.type === "FEATURE_REQUEST");
+    if (searchQuery) {
+      filters.q = searchQuery;
+    }
 
-    return matchesSearch && matchesFilter;
-  });
+    if (selectedFilter === "feature") {
+      filters.type = ProposalType.FEATURE_REQUEST;
+    } else if (selectedFilter === "change") {
+      filters.type = ProposalType.CHANGE_REQUEST;
+    }
 
-  // Sort proposals by creation date (newest first)
-  const sortedProposals = [...filteredProposals].sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+    return filters;
+  };
 
-  // Pagination logic
-  const totalPages = Math.ceil(sortedProposals.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedProposals = sortedProposals.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+  // Fetch proposals using the hook
+  const {
+    data: proposalsData,
+    isLoading,
+    error,
+  } = useProposals(getApiFilters());
+  const voteProposal = useVoteProposal();
+  const { data: session } = useSession();
+
+  // Use fetched data
+  const proposals = proposalsData?.data || [];
+  const total = proposalsData?.total || 0;
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   // Reset to first page when search or filter changes
   const handleSearch = () => {
@@ -343,60 +112,15 @@ export function CommunityGovernanceClient() {
     setSelectedProposal(null);
   };
 
-  const handleVote = async (
-    proposalId: string,
-    vote: "UPVOTE" | "DOWNVOTE"
-  ) => {
-    setIsVoting(true);
-
-    // Simulate API call delay
-    setTimeout(() => {
-      // Initialize local votes for this proposal if not exists
-      if (!localVotes[proposalId]) {
-        localVotes[proposalId] = [];
-      }
-
-      // Simulate vote logic
-      const existingVoteIndex = localVotes[proposalId].findIndex(
-        (v) => v.userId === "currentUser"
-      );
-
-      if (existingVoteIndex >= 0) {
-        if (localVotes[proposalId][existingVoteIndex].vote === vote) {
-          // Remove vote if same type
-          setLocalVotes((prev) => ({
-            ...prev,
-            [proposalId]: prev[proposalId].filter(
-              (_, index) => index !== existingVoteIndex
-            ),
-          }));
-        } else {
-          // Change vote
-          setLocalVotes((prev) => ({
-            ...prev,
-            [proposalId]: prev[proposalId].map((v, index) =>
-              index === existingVoteIndex ? { ...v, vote } : v
-            ),
-          }));
-        }
-      } else {
-        // Add new vote
-        setLocalVotes((prev) => ({
-          ...prev,
-          [proposalId]: [
-            ...(prev[proposalId] || []),
-            {
-              id: `v${Date.now()}`,
-              proposalId,
-              userId: "currentUser",
-              vote,
-              createdAt: new Date(),
-            },
-          ],
-        }));
-      }
-      setIsVoting(false);
-    }, 500);
+  const handleVote = async (proposalId: string, vote: VoteType) => {
+    try {
+      await voteProposal.mutateAsync({
+        proposalId,
+        vote: { vote },
+      });
+    } catch (error) {
+      console.error("Failed to vote:", error);
+    }
   };
 
   const getProposalTypeIcon = (type: string) => {
@@ -425,30 +149,27 @@ export function CommunityGovernanceClient() {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  const getUpvotes = (proposal: any) => {
-    const originalVotes =
-      proposal.votes?.filter((vote: any) => vote.vote === "UPVOTE").length || 0;
-    const localUpvotes =
-      localVotes[proposal.id]?.filter((vote: any) => vote.vote === "UPVOTE")
-        .length || 0;
-    return originalVotes + localUpvotes;
+  const getUpvotes = (proposal: Proposal) => {
+    return (
+      proposal.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
+      0
+    );
   };
 
-  const getDownvotes = (proposal: any) => {
-    const originalVotes =
-      proposal.votes?.filter((vote: any) => vote.vote === "DOWNVOTE").length ||
-      0;
-    const localDownvotes =
-      localVotes[proposal.id]?.filter((vote: any) => vote.vote === "DOWNVOTE")
-        .length || 0;
-    return originalVotes + localDownvotes;
+  const getDownvotes = (proposal: Proposal) => {
+    return (
+      proposal.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
+        .length || 0
+    );
   };
 
-  // Comments temporarily disabled
+  const getUserVote = (proposal: Proposal) => {
+    if (!session?.user?.id || !proposal?.votes) {
+      return null;
+    }
 
-  const getUserVote = (proposalId: string) => {
-    const userVote = localVotes[proposalId]?.find(
-      (v) => v.userId === "currentUser"
+    const userVote = proposal.votes.find(
+      (vote) => vote.userId === session.user.id
     );
     return userVote ? userVote.vote : null;
   };
@@ -469,122 +190,156 @@ export function CommunityGovernanceClient() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-3">
-                <div className="flex items-center space-x-2">
-                  {getProposalTypeIcon(selectedProposal.type)}
-                  <Badge
-                    variant="secondary"
-                    className={getProposalTypeColor(selectedProposal.type)}
-                  >
-                    {selectedProposal.type === "FEATURE_REQUEST"
-                      ? "Feature Request"
-                      : "Change Request"}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={getStatusColor(selectedProposal.status)}
-                  >
-                    {selectedProposal.status.replace("_", " ")}
-                  </Badge>
-                </div>
-                <CardTitle className="text-2xl">
-                  {selectedProposal.title}
-                </CardTitle>
-                <CardDescription className="text-base leading-relaxed">
-                  {selectedProposal.description}
-                </CardDescription>
-
-                {selectedProposal.tags && selectedProposal.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {selectedProposal.tags.map((tag: string, index: number) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+        {isLoading ? (
+          <ProposalDetailSkeleton />
+        ) : (
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center space-x-2">
+                    {getProposalTypeIcon(selectedProposal.type)}
+                    <Badge
+                      variant="secondary"
+                      className={getProposalTypeColor(selectedProposal.type)}
+                    >
+                      {selectedProposal.type === "FEATURE_REQUEST"
+                        ? "Feature Request"
+                        : "Change Request"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={getStatusColor(selectedProposal.status)}
+                    >
+                      {selectedProposal.status.replace("_", " ")}
+                    </Badge>
                   </div>
-                )}
-              </div>
-            </div>
-          </CardHeader>
+                  <CardTitle className="text-2xl">
+                    {selectedProposal.title}
+                  </CardTitle>
+                  <CardDescription className="text-base leading-relaxed">
+                    {selectedProposal.description}
+                  </CardDescription>
 
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between text-sm text-muted-foreground border-b pb-4">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4" />
-                  <span>
-                    {selectedProposal.user?.walletAddress?.slice(0, 8)}...
-                    {selectedProposal.user?.walletAddress?.slice(-6)}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {new Date(selectedProposal.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <ArrowUp className="h-4 w-4" />
-                  <span>{getUpvotes(selectedProposal)}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <ArrowDown className="h-4 w-4" />
-                  <span>{getDownvotes(selectedProposal)}</span>
+                  {selectedProposal.tags &&
+                    selectedProposal.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {selectedProposal.tags.map(
+                          (tag: string, index: number) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
-            </div>
+            </CardHeader>
 
-            {/* Voting Section */}
-            <div className="border rounded-lg p-4 bg-muted/30">
-              <h3 className="text-lg font-semibold mb-4">
-                Vote on this proposal
-              </h3>
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-4">
-                  <Button
-                    variant={
-                      getUserVote(selectedProposal.id) === "UPVOTE"
-                        ? "default"
-                        : "outline"
-                    }
-                    size="lg"
-                    onClick={() => handleVote(selectedProposal.id, "UPVOTE")}
-                    disabled={isVoting}
-                    className="flex items-center space-x-2"
-                  >
-                    <ArrowUp className="h-5 w-5" />
-                    <span>Upvote</span>
-                  </Button>
-                  <Button
-                    variant={
-                      getUserVote(selectedProposal.id) === "DOWNVOTE"
-                        ? "default"
-                        : "outline"
-                    }
-                    size="lg"
-                    onClick={() => handleVote(selectedProposal.id, "DOWNVOTE")}
-                    className="flex items-center space-x-2"
-                  >
-                    <ArrowDown className="h-5 w-5" />
-                    <span>Downvote</span>
-                  </Button>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between text-sm text-muted-foreground border-b pb-4">
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>
+                      {selectedProposal.user?.walletAddress?.slice(0, 8)}...
+                      {selectedProposal.user?.walletAddress?.slice(-6)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {new Date(
+                        selectedProposal.createdAt
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Total votes:{" "}
-                  {getUpvotes(selectedProposal) +
-                    getDownvotes(selectedProposal)}
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <ArrowUp className="h-4 w-4" />
+                    <span>{getUpvotes(selectedProposal)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <ArrowDown className="h-4 w-4" />
+                    <span>{getDownvotes(selectedProposal)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Comments temporarily removed */}
-          </CardContent>
-        </Card>
+              {/* Voting Section */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <h3 className="text-lg font-semibold mb-4">
+                  Vote on this proposal
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-4">
+                    <Button
+                      variant={
+                        getUserVote(selectedProposal) === VoteType.UPVOTE
+                          ? "default"
+                          : "outline"
+                      }
+                      size="lg"
+                      onClick={() =>
+                        handleVote(selectedProposal.id, VoteType.UPVOTE)
+                      }
+                      disabled={voteProposal.isPending}
+                      className="flex items-center space-x-2"
+                    >
+                      <ArrowUp className="h-5 w-5" />
+                      <span>Upvote</span>
+                    </Button>
+                    <Button
+                      variant={
+                        getUserVote(selectedProposal) === VoteType.DOWNVOTE
+                          ? "default"
+                          : "outline"
+                      }
+                      size="lg"
+                      onClick={() =>
+                        handleVote(selectedProposal.id, VoteType.DOWNVOTE)
+                      }
+                      disabled={voteProposal.isPending}
+                      className="flex items-center space-x-2"
+                    >
+                      <ArrowDown className="h-5 w-5" />
+                      <span>Downvote</span>
+                    </Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Total votes:{" "}
+                    {getUpvotes(selectedProposal) +
+                      getDownvotes(selectedProposal)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments Section */}
+              <ProposalComments proposalId={selectedProposal.id} />
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="border-t border-border/50 my-6" />
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load proposals. Please try again later.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -612,31 +367,37 @@ export function CommunityGovernanceClient() {
             <SelectItem value="all">All Proposals</SelectItem>
             <SelectItem value="feature">Feature Requests</SelectItem>
             <SelectItem value="change">Change Requests</SelectItem>
-            <SelectItem value="recent">Recent</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
-        Showing {startIndex + 1}-
-        {Math.min(startIndex + ITEMS_PER_PAGE, sortedProposals.length)} of{" "}
-        {sortedProposals.length} proposals
+        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+        {Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} proposals
       </div>
 
       {/* Proposals List */}
-      <ProposalsList
-        proposals={paginatedProposals}
-        getProposalTypeIcon={getProposalTypeIcon}
-        getProposalTypeColor={getProposalTypeColor}
-        getStatusColor={getStatusColor}
-        getUpvotes={getUpvotes}
-        getDownvotes={getDownvotes}
-        onProposalClick={handleProposalClick}
-        onVote={handleVote}
-        isVoting={isVoting}
-        getUserVote={getUserVote}
-      />
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+            <ProposalCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : (
+        <ProposalsList
+          proposals={proposals}
+          getProposalTypeIcon={getProposalTypeIcon}
+          getProposalTypeColor={getProposalTypeColor}
+          getStatusColor={getStatusColor}
+          getUpvotes={getUpvotes}
+          getDownvotes={getDownvotes}
+          onProposalClick={handleProposalClick}
+          onVote={handleVote}
+          isVoting={voteProposal.isPending}
+          getUserVote={getUserVote}
+        />
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -684,6 +445,19 @@ export function CommunityGovernanceClient() {
   );
 }
 
+interface ProposalsListProps {
+  proposals: Proposal[];
+  getProposalTypeIcon: (type: string) => React.ReactNode;
+  getProposalTypeColor: (type: string) => string;
+  getStatusColor: (status: string) => string;
+  getUpvotes: (proposal: Proposal) => number;
+  getDownvotes: (proposal: Proposal) => number;
+  onProposalClick: (proposal: Proposal) => void;
+  onVote: (proposalId: string, vote: VoteType) => void;
+  isVoting: boolean;
+  getUserVote: (proposal: Proposal) => VoteType | null;
+}
+
 function ProposalsList({
   proposals,
   getProposalTypeIcon,
@@ -695,7 +469,7 @@ function ProposalsList({
   onVote,
   isVoting,
   getUserVote,
-}: any) {
+}: ProposalsListProps) {
   if (proposals.length === 0) {
     return (
       <Card>
@@ -715,7 +489,7 @@ function ProposalsList({
 
   return (
     <div className="space-y-4">
-      {proposals.map((proposal: any) => (
+      {proposals.map((proposal) => (
         <Card
           key={proposal.id}
           className="hover:shadow-md transition-shadow cursor-pointer"
@@ -784,14 +558,14 @@ function ProposalsList({
               <div className="flex space-x-3">
                 <Button
                   variant={
-                    getUserVote(proposal.id) === "UPVOTE"
+                    getUserVote(proposal) === VoteType.UPVOTE
                       ? "default"
                       : "outline"
                   }
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onVote(proposal.id, "UPVOTE");
+                    onVote(proposal.id, VoteType.UPVOTE);
                   }}
                   disabled={isVoting}
                   className="flex items-center space-x-2"
@@ -801,14 +575,14 @@ function ProposalsList({
                 </Button>
                 <Button
                   variant={
-                    getUserVote(proposal.id) === "DOWNVOTE"
+                    getUserVote(proposal) === VoteType.DOWNVOTE
                       ? "default"
                       : "outline"
                   }
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onVote(proposal.id, "DOWNVOTE");
+                    onVote(proposal.id, VoteType.DOWNVOTE);
                   }}
                   disabled={isVoting}
                   className="flex items-center space-x-2"

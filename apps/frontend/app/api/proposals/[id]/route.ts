@@ -17,13 +17,10 @@ interface RouteParams {
 }
 
 // GET /api/proposals/[id] - Get a proposal by ID
-export const GET = withAuth(
-  async (
-    _req: NextRequest,
-    _user,
-    _session,
-    { params }: RouteParams
-  ): Promise<NextResponse> => {
+export const GET = async (
+  _req: NextRequest,
+  { params }: RouteParams
+): Promise<NextResponse> => {
     try {
       const { id } = await params;
       const proposal = await prisma.proposal.findUnique({

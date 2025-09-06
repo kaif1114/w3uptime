@@ -21,21 +21,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Settings, ArrowLeft, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Lightbulb,
+  Settings,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
+import { useCreateProposal } from "@/hooks/useProposals";
+import { ProposalType, CreateProposalData } from "@/types/proposal";
 
 export function CreateProposalForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    type: "FEATURE_REQUEST" as "FEATURE_REQUEST" | "CHANGE_REQUEST",
+    type: ProposalType.FEATURE_REQUEST,
     tags: [] as string[],
   });
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createProposal = useCreateProposal();
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -93,17 +103,24 @@ export function CreateProposalForm() {
       return;
     }
 
-    setIsSubmitting(true);
+    try {
+      const proposalData: CreateProposalData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        type: formData.type,
+        tags: formData.tags,
+      };
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsSubmitting(false);
+      await createProposal.mutateAsync(proposalData);
       setIsSuccess(true);
-    }, 1000);
+    } catch (error) {
+      console.error("Failed to create proposal:", error);
+      setErrors({ submit: "Failed to create proposal. Please try again." });
+    }
   };
 
-  const getProposalTypeInfo = (type: "FEATURE_REQUEST" | "CHANGE_REQUEST") => {
-    if (type === "FEATURE_REQUEST") {
+  const getProposalTypeInfo = (type: ProposalType) => {
+    if (type === ProposalType.FEATURE_REQUEST) {
       return {
         icon: <Lightbulb className="h-5 w-5 text-blue-500" />,
         title: "Feature Request",
@@ -171,7 +188,7 @@ export function CreateProposalForm() {
         <CardContent>
           <Select
             value={formData.type}
-            onValueChange={(value: "FEATURE_REQUEST" | "CHANGE_REQUEST") =>
+            onValueChange={(value: ProposalType) =>
               handleInputChange("type", value)
             }
           >
@@ -179,8 +196,12 @@ export function CreateProposalForm() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="FEATURE_REQUEST">Feature Request</SelectItem>
-              <SelectItem value="CHANGE_REQUEST">Change Request</SelectItem>
+              <SelectItem value={ProposalType.FEATURE_REQUEST}>
+                Feature Request
+              </SelectItem>
+              <SelectItem value={ProposalType.CHANGE_REQUEST}>
+                Change Request
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -302,6 +323,14 @@ export function CreateProposalForm() {
               </p>
             </div>
 
+            {/* Error Message */}
+            {errors.submit && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errors.submit}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Submit Button */}
             <div className="flex justify-between">
               <Link href="/community">
@@ -312,10 +341,10 @@ export function CreateProposalForm() {
               </Link>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={createProposal.isPending}
                 className="min-w-[120px]"
               >
-                {isSubmitting ? "Submitting..." : "Submit Proposal"}
+                {createProposal.isPending ? "Submitting..." : "Submit Proposal"}
               </Button>
             </div>
           </form>
