@@ -25,6 +25,10 @@ model User {
   sessions           Session[]
   customPage         StatusPage[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
+  // Community governance relations
+  proposals          Proposal[]
+  proposalComments   ProposalComment[]
+  proposalVotes      ProposalVote[]
 }
 
 model GeoLocation {
@@ -256,6 +260,51 @@ model Maintenance {
   statusPageSections StatusPageSection[]
 }
 
+/// Community governance models
+model Proposal {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  type        ProposalType
+  status      ProposalStatus   @default(SUBMITTED)
+  tags        String[]
+  userId      String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id])
+  comments    ProposalComment[]
+  votes       ProposalVote[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ProposalComment {
+  id         String   @id @default(uuid())
+  proposalId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([proposalId, createdAt])
+}
+
+model ProposalVote {
+  id         String      @id @default(uuid())
+  proposalId String
+  userId     String
+  vote       VoteType
+  createdAt  DateTime    @default(now())
+  proposal   Proposal    @relation(fields: [proposalId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+}
+
 enum MonitorStatus {
   ACTIVE
   PAUSED
@@ -309,4 +358,23 @@ enum AffectedStatus {
 enum IncidentType {
   TEST
   URL_UNAVAILABLE
+}
+
+enum ProposalType {
+  FEATURE_REQUEST
+  CHANGE_REQUEST
+}
+
+enum ProposalStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
 }
