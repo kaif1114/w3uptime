@@ -2,8 +2,42 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { CommunityGovernanceClient } from "./CommunityGovernanceClient";
+import { ProposalsResponse } from "@/types/proposal";
 
-export default function CommunityGovernancePage() {
+async function fetchProposals(): Promise<ProposalsResponse> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8000";
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/proposals?page=1&pageSize=10`,
+      {
+        cache: "no-store", // Ensure fresh data for governance
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch proposals");
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Error fetching proposals:", error);
+    // Return empty data structure on error
+    return {
+      data: [],
+      page: 1,
+      pageSize: 10,
+      total: 0,
+    };
+  }
+}
+
+export default async function CommunityGovernancePage() {
+  const initialData = await fetchProposals();
+
   const header = (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -29,7 +63,7 @@ export default function CommunityGovernancePage() {
   return (
     <div className="space-y-4">
       {header}
-      <CommunityGovernanceClient />
+      <CommunityGovernanceClient initialData={initialData} />
     </div>
   );
 }
