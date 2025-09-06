@@ -10,6 +10,7 @@ import {
   VoteData,
   VoteResponse,
   ProposalFilters,
+  ProposalComment,
 } from "@/types/proposal";
 
 const API_BASE = "/api/proposals";
@@ -161,13 +162,17 @@ export function useAddComment() {
       queryClient.invalidateQueries({
         queryKey: ["proposal", variables.proposalId],
       });
+      // Invalidate comments query to refetch comments list
+      queryClient.invalidateQueries({
+        queryKey: ["proposal-comments", variables.proposalId],
+      });
     },
   });
 }
 
 // Fetch comments for a proposal
 export function useProposalComments(proposalId: string) {
-  return useQuery<CommentResponse[]>({
+  return useQuery<ProposalComment[]>({
     queryKey: ["proposal-comments", proposalId],
     queryFn: async () => {
       const response = await fetch(`${API_BASE}/${proposalId}/comment`, {
@@ -181,7 +186,8 @@ export function useProposalComments(proposalId: string) {
         throw new Error("Failed to fetch comments");
       }
 
-      return response.json();
+      const data = await response.json();
+      return data.comments; // API returns { comments: ProposalComment[] }
     },
     enabled: !!proposalId,
   });
