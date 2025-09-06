@@ -53,3 +53,45 @@ export interface ContinentValidatorData {
   count: number;
   countries: CountryValidatorData[];
 }
+
+// Validator Dashboard Types
+export interface ValidatorBalance {
+  totalEarnings: number;
+  availableBalance: number;
+  pendingWithdrawals: number;
+  currency: string;
+}
+
+export interface ValidationSummary {
+  totalValidations: number;
+  successfulValidations: number;
+  failedValidations: number;
+  successRate: number;
+  lastValidationDate: string;
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  amount: number;
+  status: "pending" | "approved" | "rejected" | "completed";
+  requestedAt: string;
+  processedAt?: string;
+  transactionHash?: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: "earnings" | "withdrawal" | "payment";
+  amount: number;
+  status: "completed" | "pending" | "failed";
+  date: string;
+  description: string;
+  transactionHash?: string;
+}
+
+export interface ValidatorDashboardData {
+  balance: ValidatorBalance;
+  validationSummary: ValidationSummary;
+  recentWithdrawals: WithdrawalRequest[];
+  recentTransactions: Transaction[];
+}

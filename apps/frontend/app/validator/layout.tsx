@@ -10,11 +10,5 @@ export default async function ValidatorLayout({
   if (!session?.authenticated) {
     redirect("/login");
   }
-  return (
-      <div
-      >
-        {children}
-      </div>
-
-  );
+  return <div>{children}</div>;
 }
