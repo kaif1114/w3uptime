@@ -55,99 +55,71 @@ export const GET = async (req: NextRequest) => {
     const status = searchParams.get("status");
     const query = searchParams.get("q");
 
-    // For now, return mock data to test the frontend integration
-    // TODO: Replace with actual database queries once DB is properly configured
-    const mockProposals = [
-      {
-        id: "1",
-        title: "Add Dark Mode Support",
-        description:
-          "Implement a dark theme option for better user experience in low-light environments.",
-        type: "FEATURE_REQUEST",
-        status: "SUBMITTED",
-        tags: ["UI/UX", "Accessibility", "Theme"],
-        userId: "user1",
-        createdAt: new Date("2024-01-15"),
-        updatedAt: new Date("2024-01-15"),
-        user: {
-          id: "user1",
-          walletAddress: "0x1234...5678",
-        },
-        votes: [
-          {
-            id: "v1",
-            proposalId: "1",
-            userId: "user2",
-            vote: "UPVOTE",
-            createdAt: new Date("2024-01-16"),
-          },
-          {
-            id: "v2",
-            proposalId: "1",
-            userId: "user3",
-            vote: "UPVOTE",
-            createdAt: new Date("2024-01-17"),
-          },
-        ],
-        comments: [],
-      },
-      {
-        id: "2",
-        title: "Improve Notification System",
-        description:
-          "Enhance the current notification system with better filtering options and customizable alerts.",
-        type: "CHANGE_REQUEST",
-        status: "UNDER_REVIEW",
-        tags: ["Notifications", "User Experience"],
-        userId: "user2",
-        createdAt: new Date("2024-01-10"),
-        updatedAt: new Date("2024-01-12"),
-        user: {
-          id: "user2",
-          walletAddress: "0x8765...4321",
-        },
-        votes: [
-          {
-            id: "v3",
-            proposalId: "2",
-            userId: "user1",
-            vote: "UPVOTE",
-            createdAt: new Date("2024-01-11"),
-          },
-        ],
-        comments: [],
-      },
-    ];
-
-    // Apply filters to mock data
-    let filteredProposals = mockProposals;
+    // Build where clause for filtering
+    const where: any = {};
 
     if (type && type !== "all") {
-      filteredProposals = filteredProposals.filter((p) => p.type === type);
+      where.type = type;
     }
 
     if (status && status !== "all") {
-      filteredProposals = filteredProposals.filter((p) => p.status === status);
+      where.status = status;
     }
 
     if (query) {
-      filteredProposals = filteredProposals.filter(
-        (p) =>
-          p.title.toLowerCase().includes(query.toLowerCase()) ||
-          p.description.toLowerCase().includes(query.toLowerCase())
-      );
+      where.OR = [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+      ];
     }
 
-    // Apply pagination
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedProposals = filteredProposals.slice(startIndex, endIndex);
+    // Calculate pagination
+    const skip = (page - 1) * pageSize;
+
+    // Fetch proposals from database with relations
+    const [proposals, total] = await Promise.all([
+      prisma.proposal.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              walletAddress: true,
+            },
+          },
+          votes: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  walletAddress: true,
+                },
+              },
+            },
+          },
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  walletAddress: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      prisma.proposal.count({ where }),
+    ]);
 
     return NextResponse.json({
-      data: paginatedProposals,
+      data: proposals,
       page,
       pageSize,
-      total: filteredProposals.length,
+      total,
     });
   } catch (error) {
     console.error("Failed to fetch proposals:", error);
