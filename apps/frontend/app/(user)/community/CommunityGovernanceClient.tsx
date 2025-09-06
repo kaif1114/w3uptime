@@ -50,13 +50,9 @@ import { ProposalComments } from "@/components/ui/proposal-comments";
 
 const ITEMS_PER_PAGE = 5;
 
-interface CommunityGovernanceClientProps {
-  initialData: ProposalsResponse;
-}
+interface CommunityGovernanceClientProps {}
 
-export function CommunityGovernanceClient({
-  initialData,
-}: CommunityGovernanceClientProps) {
+export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
@@ -93,9 +89,9 @@ export function CommunityGovernanceClient({
   const voteProposal = useVoteProposal();
   const { data: session } = useSession();
 
-  // Use initial data if available, otherwise use fetched data
-  const proposals = proposalsData?.data || initialData.data || [];
-  const total = proposalsData?.total || initialData.total || 0;
+  // Use fetched data
+  const proposals = proposalsData?.data || [];
+  const total = proposalsData?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   // Reset to first page when search or filter changes

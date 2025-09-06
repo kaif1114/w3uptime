@@ -38,19 +38,16 @@ import { ProposalComments } from "@/components/ui/proposal-comments";
 
 interface ProposalDetailClientProps {
   proposalId: string;
-  initialData: ProposalResponse | null;
 }
 
 export function ProposalDetailClient({
   proposalId,
-  initialData,
 }: ProposalDetailClientProps) {
   const { data: proposalData, isLoading, error } = useProposal(proposalId);
   const voteProposal = useVoteProposal();
   const { data: session } = useSession();
 
-  // Use initial data if available, otherwise use fetched data
-  const proposal = proposalData?.proposal || initialData?.proposal;
+  const proposal = proposalData?.proposal;
 
   const handleVote = async (vote: VoteType) => {
     try {

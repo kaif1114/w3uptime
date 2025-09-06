@@ -16,16 +16,14 @@ interface ProposalCommentsProps {
 
 export function ProposalComments({ proposalId }: ProposalCommentsProps) {
   const [newComment, setNewComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: comments, isLoading, error } = useProposalComments(proposalId);
   const addComment = useAddComment();
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || isSubmitting) return;
+    if (!newComment.trim() || addComment.isPending) return;
 
-    setIsSubmitting(true);
     try {
       await addComment.mutateAsync({
         proposalId,
@@ -34,8 +32,6 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
       setNewComment("");
     } catch (error) {
       console.error("Failed to add comment:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -87,16 +83,16 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-[100px] resize-none"
-            disabled={isSubmitting}
+            disabled={addComment.isPending}
           />
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={!newComment.trim() || isSubmitting}
+              disabled={!newComment.trim() || addComment.isPending}
               className="flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
-              {isSubmitting ? "Posting..." : "Post Comment"}
+              {addComment.isPending ? "Posting..." : "Post Comment"}
             </Button>
           </div>
         </form>
