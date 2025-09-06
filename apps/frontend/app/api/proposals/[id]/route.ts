@@ -2,29 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { ProposalType, ProposalStatus } from "@prisma/client";
 
 const updateProposalSchema = z.object({
-  title: z.string().min(1).optional(),
-  description: z.string().min(1).optional(),
-  type: z.enum(["FEATURE_REQUEST", "CHANGE_REQUEST"]).optional(),
-  status: z
-    .enum([
-      "DRAFT",
-      "SUBMITTED",
-      "UNDER_REVIEW",
-      "APPROVED",
-      "REJECTED",
-      "IMPLEMENTED",
-    ])
-    .optional(),
+  title: z.string().min(1, "Title is required").optional(),
+  description: z.string().min(1, "Description is required").optional(),
+  type: z.nativeEnum(ProposalType).optional(),
+  status: z.nativeEnum(ProposalStatus).optional(),
   tags: z.array(z.string()).optional(),
 });
 
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
 // GET /api/proposals/[id] - Get a proposal by ID
 export const GET = withAuth(
-  async (_req: NextRequest, _user, _session, { params }: any) => {
+  async (
+    _req: NextRequest,
+    _user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id } = params;
+      const { id } = await params;
       const proposal = await prisma.proposal.findUnique({
         where: { id },
         include: {
@@ -55,9 +56,14 @@ export const GET = withAuth(
 
 // PATCH /api/proposals/[id] - Update a proposal
 export const PATCH = withAuth(
-  async (req: NextRequest, user, _session, { params }: any) => {
+  async (
+    req: NextRequest,
+    user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id } = params;
+      const { id } = await params;
       const body = await req.json();
       const validation = updateProposalSchema.safeParse(body);
       if (!validation.success) {
@@ -95,9 +101,14 @@ export const PATCH = withAuth(
 
 // DELETE /api/proposals/[id] - Delete a proposal
 export const DELETE = withAuth(
-  async (_req: NextRequest, user, _session, { params }: any) => {
+  async (
+    _req: NextRequest,
+    user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id } = params;
+      const { id } = await params;
       const existing = await prisma.proposal.findUnique({ where: { id } });
       if (!existing)
         return NextResponse.json(

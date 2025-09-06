@@ -4,14 +4,23 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const createCommentSchema = z.object({
-  content: z.string().min(1),
+  content: z.string().min(1, "Comment content is required"),
 });
+
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
 
 // GET /api/proposals/[id]/comment - List comments for a proposal
 export const GET = withAuth(
-  async (_req: NextRequest, _user, _session, { params }: any) => {
+  async (
+    _req: NextRequest,
+    _user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id: proposalId } = params;
+      const { id: proposalId } = await params;
       const comments = await prisma.proposalComment.findMany({
         where: { proposalId },
         orderBy: { createdAt: "desc" },
@@ -30,9 +39,14 @@ export const GET = withAuth(
 
 // POST /api/proposals/[id]/comment - Add a new comment
 export const POST = withAuth(
-  async (req: NextRequest, user, _session, { params }: any) => {
+  async (
+    req: NextRequest,
+    user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id: proposalId } = params;
+      const { id: proposalId } = await params;
       const body = await req.json();
       const validation = createCommentSchema.safeParse(body);
       if (!validation.success) {

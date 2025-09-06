@@ -2,16 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { VoteType } from "@prisma/client";
 
 const voteSchema = z.object({
-  vote: z.enum(["UPVOTE", "DOWNVOTE"]),
+  vote: z.nativeEnum(VoteType),
 });
+
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
 
 // POST /api/proposals/[id]/vote - Cast or toggle a vote
 export const POST = withAuth(
-  async (req: NextRequest, user, _session, { params }: any) => {
+  async (
+    req: NextRequest,
+    user,
+    _session,
+    { params }: RouteParams
+  ): Promise<NextResponse> => {
     try {
-      const { id: proposalId } = params;
+      const { id: proposalId } = await params;
       const body = await req.json();
       const validation = voteSchema.safeParse(body);
       if (!validation.success) {
@@ -41,7 +51,7 @@ export const POST = withAuth(
           const found = await prisma.proposalVote.findFirst({
             where: { proposalId, userId: user.id },
           });
-          return found as any;
+          return found;
         });
 
       if (!existing) {
