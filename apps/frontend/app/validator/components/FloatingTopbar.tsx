@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Home,
-  Activity,
-  MapPin,
-  Network,
-  BarChart3,
-  Settings,
-  CheckSquare,
-  Menu,
-  X,
-} from "lucide-react";
+import { Home, Wallet, Menu, X, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { ModeToggle } from "@/components/mode-toggle";
+import { logout } from "@/lib/auth";
 
 const navigationItems = [
   {
@@ -23,35 +15,25 @@ const navigationItems = [
     icon: Home,
   },
   {
-    name: "Performance",
-    href: "/validator/performance",
-    icon: BarChart3,
-  },
-  {
-    name: "Location",
-    href: "/validator/location",
-    icon: MapPin,
-  },
-  {
-    name: "Network",
-    href: "/validator/network",
-    icon: Network,
-  },
-  {
-    name: "Tasks",
-    href: "/validator/tasks",
-    icon: CheckSquare,
-  },
-  {
-    name: "Settings",
-    href: "/validator/settings",
-    icon: Settings,
+    name: "Withdrawal",
+    href: "/validator/withdrawal",
+    icon: Wallet,
   },
 ];
 
 export default function FloatingTopbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
@@ -88,6 +70,20 @@ export default function FloatingTopbar() {
               </Link>
             );
           })}
+
+          {/* Right side controls */}
+          <div className="flex items-center space-x-1 ml-4 pl-4 border-l">
+            <ModeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
         </div>
 
         {/* Mobile navigation */}
@@ -115,6 +111,20 @@ export default function FloatingTopbar() {
                   </Link>
                 );
               })}
+
+              {/* Mobile controls */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                <ModeToggle />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}
