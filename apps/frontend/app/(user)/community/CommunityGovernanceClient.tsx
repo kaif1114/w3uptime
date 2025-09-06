@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useProposals, useVoteProposal } from "@/hooks/useProposals";
+import { useSession } from "@/hooks/useSession";
 import {
   Proposal,
   ProposalType,
@@ -90,6 +91,7 @@ export function CommunityGovernanceClient({
     error,
   } = useProposals(getApiFilters());
   const voteProposal = useVoteProposal();
+  const { data: session } = useSession();
 
   // Use initial data if available, otherwise use fetched data
   const proposals = proposalsData?.data || initialData.data || [];
@@ -166,9 +168,14 @@ export function CommunityGovernanceClient({
   };
 
   const getUserVote = (proposal: Proposal) => {
-    // This would need to be implemented based on the current user's ID
-    // For now, return null as we don't have user context
-    return null;
+    if (!session?.user?.id || !proposal?.votes) {
+      return null;
+    }
+
+    const userVote = proposal.votes.find(
+      (vote) => vote.userId === session.user.id
+    );
+    return userVote ? userVote.vote : null;
   };
 
   // If a proposal is selected, show the detail view

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useProposal, useVoteProposal } from "@/hooks/useProposals";
+import { useSession } from "@/hooks/useSession";
 import {
   Proposal,
   ProposalType,
@@ -46,6 +47,7 @@ export function ProposalDetailClient({
 }: ProposalDetailClientProps) {
   const { data: proposalData, isLoading, error } = useProposal(proposalId);
   const voteProposal = useVoteProposal();
+  const { data: session } = useSession();
 
   // Use initial data if available, otherwise use fetched data
   const proposal = proposalData?.proposal || initialData?.proposal;
@@ -104,9 +106,14 @@ export function ProposalDetailClient({
   };
 
   const getUserVote = () => {
-    // This would need to be implemented based on the current user's ID
-    // For now, return null as we don't have user context
-    return null;
+    if (!session?.user?.id || !proposal?.votes) {
+      return null;
+    }
+
+    const userVote = proposal.votes.find(
+      (vote) => vote.userId === session.user.id
+    );
+    return userVote ? userVote.vote : null;
   };
 
   // Show loading state
