@@ -1,5 +1,6 @@
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 import { redirect } from "next/navigation";
+import FloatingTopbar from "./components/FloatingTopbar";
 
 export default async function ValidatorLayout({
   children,
@@ -10,5 +11,10 @@ export default async function ValidatorLayout({
   if (!session?.authenticated) {
     redirect("/login");
   }
-  return <div>{children}</div>;
+  return (
+    <div className="relative">
+      <FloatingTopbar />
+      <div className="pt-20">{children}</div>
+    </div>
+  );
 }

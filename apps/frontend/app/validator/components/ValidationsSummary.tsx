@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { CheckCircle, XCircle, Activity, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
@@ -41,7 +40,7 @@ export default function ValidationsSummary({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Success Rate Progress */}
+        {/* Success Rate */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Success Rate</span>
@@ -49,7 +48,6 @@ export default function ValidationsSummary({
               {successRate.toFixed(1)}%
             </Badge>
           </div>
-          <Progress value={successRate} className="h-2" />
         </div>
 
         {/* Validation Stats Grid */}

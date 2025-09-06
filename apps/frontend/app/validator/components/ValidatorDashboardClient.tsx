@@ -7,7 +7,6 @@ import BalanceOverview from "./BalanceOverview";
 import ValidationsSummary from "./ValidationsSummary";
 import WithdrawalsSection from "./WithdrawalsSection";
 import TransactionsList from "./TransactionsList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ValidatorDashboardClientProps {
   initialData: ValidatorDashboardData;
@@ -47,25 +46,15 @@ export default function ValidatorDashboardClient({
       {/* Validations Summary */}
       <ValidationsSummary validationSummary={dashboardData.validationSummary} />
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="withdrawals" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="withdrawals">Withdrawals & Payments</TabsTrigger>
-          <TabsTrigger value="transactions">Transaction History</TabsTrigger>
-        </TabsList>
+      {/* Withdrawals & Payments Section */}
+      <WithdrawalsSection
+        withdrawals={dashboardData.recentWithdrawals}
+        onWithdrawalRequest={handleWithdrawalRequest}
+        isLoading={withdrawalRequestMutation.isPending}
+      />
 
-        <TabsContent value="withdrawals" className="space-y-4">
-          <WithdrawalsSection
-            withdrawals={dashboardData.recentWithdrawals}
-            onWithdrawalRequest={handleWithdrawalRequest}
-            isLoading={withdrawalRequestMutation.isPending}
-          />
-        </TabsContent>
-
-        <TabsContent value="transactions" className="space-y-4">
-          <TransactionsList transactions={dashboardData.recentTransactions} />
-        </TabsContent>
-      </Tabs>
+      {/* Transaction History Section */}
+      <TransactionsList transactions={dashboardData.recentTransactions} />
     </div>
   );
 }
