@@ -167,7 +167,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
               levelOrder: index + 1, // 1-based ordering
               waitMinutes: level.waitTimeMinutes,
               contacts: [level.target], // Store as array
-              channel: level.method.toUpperCase(),
+              channel: level.method.toUpperCase() as "EMAIL" | "SLACK" | "WEBHOOK",
               name: `Level ${index + 1}`,
               message: `Escalation level ${index + 1} for ${name}`,
             },
