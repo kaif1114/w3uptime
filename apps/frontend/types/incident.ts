@@ -60,6 +60,11 @@ export interface TimelineEvent {
     id: string;
     walletAddress: string;
   };
+  escalationLog?: {
+    Alert?: {
+      title: string;
+    };
+  };
 }
 
 export interface CreateIncidentRequest {
