@@ -48,7 +48,7 @@ export interface Postmortem {
   createdAt: Date;
 }
 
-export type TimelineEventType = "INCIDENT" | "RESOLUTION" | "UPDATE" | "ESCALATION" | "MAINTENANCE";
+export type TimelineEventType = "INCIDENT" | "RESOLUTION" | "UPDATE" | "ESCALATION" | "MAINTENANCE" | "USER_COMMENT" | "POSTMORTEM";
 
 export interface TimelineEvent {
   id: string;
