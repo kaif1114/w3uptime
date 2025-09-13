@@ -90,7 +90,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       name: policy.name,
       userId: policy.userId,
       enabled: policy.enabled,
-      levels: policy.levels.map((level: DbEscalationLevel) => ({
+      levels: policy.levels.map((level) => ({
         id: level.id,
         order: level.levelOrder,
         method: level.channel.toLowerCase(),
