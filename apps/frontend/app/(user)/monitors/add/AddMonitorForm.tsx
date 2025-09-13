@@ -73,10 +73,6 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
 
   // UI-only options (not yet persisted)
   const [alertWhen] = useState<string>("unavailable");
-  const [notifyEmail, setNotifyEmail] = useState<boolean>(true);
-  const [notifySms, setNotifySms] = useState<boolean>(false);
-  const [notifyPush, setNotifyPush] = useState<boolean>(false);
-  const [notifyCritical, setNotifyCritical] = useState<boolean>(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

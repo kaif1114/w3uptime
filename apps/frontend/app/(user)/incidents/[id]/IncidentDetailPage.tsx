@@ -85,6 +85,7 @@ export default function IncidentDetailPage({
       toast.success("Incident acknowledged");
       refetchIncident();
     } catch (error) {
+      console.error(error);
       toast.error("Failed to acknowledge incident");
     }
   };
@@ -100,6 +101,7 @@ export default function IncidentDetailPage({
       toast.success("Incident resolved");
       refetchIncident();
     } catch (error) {
+      console.error(error);
       toast.error("Failed to resolve incident");
     }
   };
