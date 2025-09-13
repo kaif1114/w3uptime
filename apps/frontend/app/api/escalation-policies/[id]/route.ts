@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 import { z } from "zod";
-import { PrismaTransaction, DbEscalationLevel, DbEscalationPolicyWithLevels } from "@/types/database-operations";
+import { PrismaTransaction } from "@/types/database-operations";
 import { EscalationMethod } from "@/types/escalation-policy";
 
 // Validation schema for updating escalation policy
@@ -31,9 +31,9 @@ const updateEscalationPolicySchema = z.object({
 // GET /api/escalation-policies/[id] - Get single escalation policy
 export const GET = withAuth(
   async (
-    req: NextRequest,
+    _req: NextRequest,
     user,
-    session,
+    _session,
     { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
@@ -99,7 +99,7 @@ export const PUT = withAuth(
   async (
     req: NextRequest,
     user,
-    session,
+    _session,
     { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
@@ -178,7 +178,7 @@ export const PUT = withAuth(
 
         // Create new levels
         const createdLevels = await Promise.all(
-          levels.map((level: { method: EscalationMethod; target: string; waitTimeMinutes: number }, index: number) =>
+          levels.map((level: { order: number; method: EscalationMethod; target: string; waitTimeMinutes: number }) =>
             tx.escalationLevel.create({
               data: {
                 escalationId: id,
@@ -204,7 +204,7 @@ export const PUT = withAuth(
         id: updatedPolicy.id,
         name: updatedPolicy.name,
         userId: updatedPolicy.userId,
-        levels: updatedPolicy.levels.map((level: DbEscalationLevel) => ({
+        levels: updatedPolicy.levels.map((level) => ({
           id: level.id,
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
@@ -243,9 +243,9 @@ export const PUT = withAuth(
 // DELETE /api/escalation-policies/[id] - Delete escalation policy
 export const DELETE = withAuth(
   async (
-    req: NextRequest,
+    _req: NextRequest,
     user,
-    session,
+    _session,
     { params }: { params: Promise<{ id: string }> }
   ) => {
     try {
