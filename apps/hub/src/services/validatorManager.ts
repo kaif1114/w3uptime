@@ -114,13 +114,13 @@ export async function handleSignup(message: SignupIncomingMessage, socket: WebSo
       const newGeoLocation = await prisma.geoLocation.create({
         data: {
           ip: message.ip,
-          country: geoLocation.country.toLowerCase(),
+          country: geoLocation.country?.toLowerCase() || null,
           countryCode: geoLocation.country_code,
           region: geoLocation.region,
           regionCode: geoLocation.region_code,
-          city: geoLocation.city.toLowerCase(),
+          city: geoLocation.city?.toLowerCase() || null,
           postalCode: geoLocation.postal_code,
-          continent: geoLocation.continent.toLowerCase(),
+          continent: geoLocation.continent?.toLowerCase() || null,
           continentCode: geoLocation.continent_code,
           latitude: geoLocation.latitude,
           longitude: geoLocation.longitude,
@@ -137,11 +137,13 @@ export async function handleSignup(message: SignupIncomingMessage, socket: WebSo
           geoLocationId: newGeoLocation.id,
         },
       });
-      await prisma.geoLocation.delete({
-        where: {
-          id: oldGeoLocationId,
-        },
-      });
+      if(oldGeoLocationId) {
+        await prisma.geoLocation.delete({
+          where: {
+            id: oldGeoLocationId,
+          },
+        });
+      }
     }
 
     socket.send(
