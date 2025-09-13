@@ -1,15 +1,16 @@
 import { EditEscalationPolicyPage } from "./EditEscalationPolicyPage";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function Page({ params }: PageProps) {
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
   return (
     <div className="">
-      <EditEscalationPolicyPage policyId={params.id} />
+      <EditEscalationPolicyPage policyId={id} />
     </div>
   );
 }
