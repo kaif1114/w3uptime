@@ -201,10 +201,9 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       updates,
     };
 
-    let finalSaveData = saveData;
-    if (removedSectionIds.length > 0) {
-      finalSaveData = { ...saveData, removedSectionIds };
-    }
+    const finalSaveData = removedSectionIds.length > 0 
+      ? { ...saveData, removedSectionIds } 
+      : saveData;
 
     try {
       if (mode === "create") {
@@ -220,7 +219,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
           data: finalSaveData,
         });
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
       // Show more specific error messages
