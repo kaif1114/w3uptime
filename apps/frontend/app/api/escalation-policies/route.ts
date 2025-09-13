@@ -85,7 +85,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     });
 
     // Transform the data to match frontend types
-    const transformedPolicies = escalationPolicies.map((policy: DbEscalationPolicyWithLevels) => ({
+    const transformedPolicies = escalationPolicies.map((policy) => ({
       id: policy.id,
       name: policy.name,
       userId: policy.userId,
