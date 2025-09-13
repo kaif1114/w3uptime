@@ -108,22 +108,16 @@ export default function IncidentDetailPage({
     }
   };
 
-
   return (
-    <div className="space-y-6 p-6">
-      {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>Incidents</span>
-        <ChevronRight className="h-4 w-4" />
-        <span>{data?.incident?.Monitor?.name || "No Monitor Name"}</span>
-      </div>
-
+    <div className="space-y-6 px-6">
       {/* Header - Aligned like reference UI */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-500" />
-            <h1 className="text-xl font-semibold">{data?.incident?.Monitor?.name || "No Monitor Name"}</h1>
+            <h1 className="text-xl font-semibold">
+              {data?.incident?.Monitor?.name || "No Monitor Name"}
+            </h1>
           </div>
           <Badge
             variant="outline"
@@ -173,7 +167,10 @@ export default function IncidentDetailPage({
       {/* Date/Time and acknowledgment status */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-            {format(new Date(data?.incident?.createdAt || ""), "MMM d, yyyy 'at' h:mm a")}
+          {format(
+            new Date(data?.incident?.createdAt || ""),
+            "MMM d, yyyy 'at' h:mm a"
+          )}
         </div>
         <div className="text-sm text-muted-foreground">
           {data?.incident?.status === "ONGOING" && "Not acknowledged yet"}
@@ -194,7 +191,9 @@ export default function IncidentDetailPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl">
-              {data?.incident?.cause === "TEST" ? "Test incident" : "URL unavailable"}
+              {data?.incident?.cause === "TEST"
+                ? "Test incident"
+                : "URL unavailable"}
             </p>
           </CardContent>
         </Card>
@@ -207,7 +206,10 @@ export default function IncidentDetailPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl">
-              {format(new Date(data?.incident?.createdAt || ""), "MMM d 'at' h:mm a")}
+              {format(
+                new Date(data?.incident?.createdAt || ""),
+                "MMM d 'at' h:mm a"
+              )}
             </p>
           </CardContent>
         </Card>
@@ -233,12 +235,16 @@ export default function IncidentDetailPage({
       <div className="space-y-2">
         <h3 className="text-md font-medium">Checked URL</h3>
         <div className="bg-muted p-3 rounded-md flex items-center justify-between">
-          <code className="text-sm">GET {data?.incident?.Monitor?.url || "No URL"}</code>
+          <code className="text-sm">
+            GET {data?.incident?.Monitor?.url || "No URL"}
+          </code>
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
-            onClick={() => copyToClipboard(`GET ${data?.incident?.Monitor?.url || "No URL"}`)}
+            onClick={() =>
+              copyToClipboard(`GET ${data?.incident?.Monitor?.url || "No URL"}`)
+            }
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -253,9 +259,6 @@ export default function IncidentDetailPage({
             "No escalation policy assigned"}
         </p>
       </div>
-
-     
-    
 
       <Separator />
 

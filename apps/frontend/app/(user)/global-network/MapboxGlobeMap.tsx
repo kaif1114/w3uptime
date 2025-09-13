@@ -262,7 +262,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
           // Store additional data in a custom property
           ...{
             validatorCount: countryInData.onlineCount,
-            cities: countryInData.validators.map(v => v.city)
+            cities: countryInData.validators.map(v => v.city || 'Unknown City')
           }
         } as ExtendedValidatorData);
         setTooltipPosition({ x: event.point.x, y: event.point.y });
@@ -548,7 +548,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                       >
                         <img
                           src={getValidatorAvatar(validator.id)}
-                          alt={`Validator in ${validator.city}, ${validator.country}`}
+                          alt={`Validator in ${validator.city || 'Unknown City'}, ${validator.country}`}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             // Fallback to a default avatar if image fails to load
@@ -633,7 +633,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                         <span className="font-medium">{selectedValidator.country}</span>
                       </div>
                       <div className="text-gray-300 text-sm">
-                        📍 {selectedValidator.city}
+                        📍 {selectedValidator.city || 'Unknown City'}
                       </div>
                       <div className="text-gray-400 text-xs mt-1">
                         🌍 {selectedValidator.continent}
@@ -701,7 +701,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                       {(() => {
                         const cityMap = new (globalThis.Map)<string, number>();
                         selectedCountryData.validators.forEach(v => {
-                          const cityName = v.city;
+                          const cityName = v.city || 'Unknown City';
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
                         });
                         return Array.from(cityMap.entries())
@@ -783,7 +783,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                           )}
                           <span className="font-medium">{hoveredValidator.country}</span>
                         </div>
-                        <div className="text-gray-300">📍 {hoveredValidator.city}</div>
+                        <div className="text-gray-300">📍 {hoveredValidator.city || 'Unknown City'}</div>
                         <div className="text-gray-400 font-mono">{hoveredValidator.id.slice(0, 8)}...</div>
                       </div>
                     </>
