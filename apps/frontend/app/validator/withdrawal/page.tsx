@@ -15,7 +15,7 @@ export default async function WithdrawalPage() {
       amount: 50.0,
       status: "pending" as const,
       requestedAt: "2024-01-15T10:30:00Z",
-      processedAt: null,
+      processedAt: undefined,
     },
     {
       id: "2",
