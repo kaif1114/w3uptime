@@ -154,7 +154,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
           <StructureTab
             sections={sections}
             setSections={setSections}
-            monitorsData={monitorsData}
+            monitorsData={monitorsData || { monitors: [] }}
             onSave={handleSave}
             isSaving={isSaving}
             hasChanges={hasChanges}
@@ -164,7 +164,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
         <TabsContent value="maintenance">
           <MaintenanceTab
             sections={sections}
-            monitorsData={monitorsData}
+            monitorsData={monitorsData?.monitors || []}
             maintenances={maintenances}
             onRemoveMaintenance={removeMaintenance}
             onCreateMaintenance={createMaintenance}
@@ -178,7 +178,7 @@ export default function StatusPageEditor({ mode, id }: Props) {
         <TabsContent value="updates">
           <UpdatesTab
             sections={sections}
-            monitorsData={monitorsData}
+            monitorsData={monitorsData || { monitors: [] }}
             updates={updates}
             onCreateReport={createReport}
             isSaving={isSaving}

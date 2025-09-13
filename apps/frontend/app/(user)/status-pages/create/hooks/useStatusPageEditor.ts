@@ -30,6 +30,8 @@ interface CreateReportData {
   title: string;
   description: string;
   publishedAt: string;
+  notifySubscribers: boolean;
+  affected: Record<string, string>;
   affectedSections: Array<{
     sectionId: string;
     status: "DOWNTIME" | "DEGRADED" | "RESOLVED";
