@@ -51,7 +51,7 @@ const updateSchema = z.object({
 export const GET = withAuth(
   async (_req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       const statusPage = await prisma.statusPage.findFirst({
         where: {
@@ -117,7 +117,7 @@ export const GET = withAuth(
 export const PATCH = withAuth(
   async (req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       // Check if status page exists and belongs to user
       const existingPage = await prisma.statusPage.findFirst({
@@ -272,7 +272,7 @@ export const PATCH = withAuth(
 export const DELETE = withAuth(
   async (_req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       // Check if status page exists and belongs to user
       const statusPage = await prisma.statusPage.findFirst({
