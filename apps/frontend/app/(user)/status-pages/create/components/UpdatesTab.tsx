@@ -95,6 +95,8 @@ export function UpdatesTab({
       title: reportDraft.title,
       description: reportDraft.description,
       publishedAt: new Date(reportDraft.publishedAt).toISOString(),
+      notifySubscribers: reportDraft.notifySubscribers,
+      affected: reportDraft.affected,
       affectedSections
     };
 
