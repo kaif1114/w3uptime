@@ -31,8 +31,6 @@ function getStatusColor(status: MonitorStatus): string {
       return "bg-green-500";
     case "PAUSED":
       return "bg-yellow-500";
-    case "DISABLED":
-      return "bg-gray-500";
     default:
       return "bg-gray-500";
   }
@@ -44,8 +42,6 @@ function getStatusText(status: MonitorStatus): string {
       return "Active";
     case "PAUSED":
       return "Paused";
-    case "DISABLED":
-      return "Disabled";
     default:
       return "Unknown";
   }
