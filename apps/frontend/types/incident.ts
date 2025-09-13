@@ -58,7 +58,7 @@ export interface TimelineEvent {
   userId?: string;
   user?: {
     id: string;
-    walletAddress: string;
+    walletAddress?: string;
   };
   escalationLog?: {
     Alert?: {
