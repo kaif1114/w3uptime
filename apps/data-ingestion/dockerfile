@@ -1,0 +1,68 @@
+# This Dockerfile is optimized for building ONLY the data-ingestion service in a turborepo environment
+# It uses turbo prune to include only necessary dependencies
+
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Enable corepack for package manager management
+RUN corepack enable
+
+# Prune the monorepo to only include data-ingestion and its dependencies
+FROM base AS pruner
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune data-ingestion --docker
+
+# Install dependencies for building
+FROM base AS deps
+# Copy pruned package files (only data-ingestion + its workspace deps)
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/package-lock.json ./package-lock.json
+
+# Install all dependencies needed for building
+RUN npm ci
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code (only what's needed for data-ingestion)
+COPY --from=pruner /app/out/full/ .
+
+# Generate Prisma client (needed by db package)
+RUN npx prisma generate --schema=./packages/db/prisma/schema.prisma
+
+# Build the data-ingestion app using turbo
+RUN npx turbo run build --filter=data-ingestion
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nodeapp
+
+# Copy the built application
+COPY --from=builder --chown=nodeapp:nodejs /app/apps/data-ingestion/build ./apps/data-ingestion/build
+COPY --from=builder --chown=nodeapp:nodejs /app/apps/data-ingestion/package.json ./apps/data-ingestion/
+
+# Copy workspace packages that are needed at runtime (only what turbo prune included)
+COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages/
+
+# Install only production dependencies for runtime (from pruned dependencies)
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/package-lock.json ./package-lock.json
+RUN npm ci --only=production --omit=dev
+
+USER nodeapp
+
+EXPOSE 9000
+ENV PORT=9000
+
+# Run the application
+CMD ["node", "apps/data-ingestion/build/src/main.js"]
