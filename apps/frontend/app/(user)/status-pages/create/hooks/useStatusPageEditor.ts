@@ -2,7 +2,6 @@ import {
   useCreateMaintenance,
   useDeleteMaintenance,
   useMaintenances,
-  useUpdateMaintenance,
   type CreateMaintenanceData
 } from "@/hooks/useMaintenances";
 import {
@@ -148,9 +147,9 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       // Normalize sections data
       const normalizedSections = (statusPageData.sections || []).map((s: StatusPageSection) => ({
         ...s,
-        resources: (s.resources || []).map((r: { type: string; monitorId: string; publicName?: string; widgetType?: string }) => ({
+        resources: (s.resources || []).map((r: { id?: string; type?: string; monitorId: string; publicName?: string; widgetType?: string; explanation?: string }) => ({
           id: r.id || crypto.randomUUID(),
-          type: r.type || "monitor",
+          type: "monitor" as const,
           monitorId: r.monitorId || "",
           publicName: r.publicName || "",
           explanation: r.explanation || "",
@@ -190,7 +189,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       return;
     }
 
-    const saveData: Record<string, unknown> = {
+    const saveData = {
       isPublished,
       name,
       logoUrl: logoUrl || null,
@@ -215,20 +214,21 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
           router.push(`/status-pages/${result.statusPage.id}`);
         }
       } else {
-        const result = await updateMutation.mutateAsync({
+        await updateMutation.mutateAsync({
           id: id || "",
           data: saveData,
         });
       }
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       
       // Show more specific error messages
-      if (error?.message?.includes("authentication") || error?.message?.includes("unauthorized")) {
+      if (errorMessage?.includes("authentication") || errorMessage?.includes("unauthorized")) {
         toast.error("Authentication failed. Please log in again.");
-      } else if (error?.message?.includes("validation") || error?.message?.includes("invalid")) {
+      } else if (errorMessage?.includes("validation") || errorMessage?.includes("invalid")) {
         toast.error("Invalid data. Please check your inputs.");
       } else {
-        toast.error(`Failed to save status page: ${error?.message || "Unknown error"}`);
+        toast.error(`Failed to save status page: ${errorMessage || "Unknown error"}`);
       }
     }
   };
