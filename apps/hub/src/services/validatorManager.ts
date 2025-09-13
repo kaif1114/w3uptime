@@ -138,7 +138,6 @@ export async function handleSignup(message: SignupIncomingMessage, socket: WebSo
         },
       });
       if(oldGeoLocationId) {
-        console.log("oldGeoLocationId", oldGeoLocationId);
         await prisma.geoLocation.delete({
           where: {
             id: oldGeoLocationId,
