@@ -62,7 +62,7 @@ export const GET = withAuth(async (
       if (typeof obj === 'object') {
         const converted: Record<string, unknown> = {};
         for (const key in obj) {
-          converted[key] = convertBigIntToNumber(obj[key]);
+          converted[key] = convertBigIntToNumber((obj as Record<string, unknown>)[key]);
         }
         return converted;
       }
