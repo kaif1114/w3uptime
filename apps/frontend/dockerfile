@@ -1,5 +1,5 @@
 # This Dockerfile is optimized for building ONLY the Next.js frontend app in a turborepo environment
-# It uses multi-stage builds and selective copying to minimize image size
+# It leverages Next.js standalone mode for automatic dependency optimization
 
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
@@ -8,40 +8,33 @@ WORKDIR /app
 # Enable corepack for package manager management
 RUN corepack enable
 
-# Prune the monorepo to only include frontend and its dependencies
-FROM base AS pruner
-RUN npm install -g turbo
-COPY . .
-RUN turbo prune frontend --docker
+# Install dependencies for building
+FROM base AS deps
+# Copy package files for workspace dependencies
+COPY package.json package-lock.json* ./
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/db/package.json ./packages/db/
+COPY packages/common/package.json ./packages/common/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/ui/package.json ./packages/ui/
 
-# Install dependencies only when needed
-FROM base AS installer
-# Copy root package.json and lockfile
-COPY --from=pruner /app/out/json/ .
-COPY --from=pruner /app/out/package-lock.json ./package-lock.json
-
-# Install dependencies for frontend and its workspace dependencies only
-RUN npm ci --only=production --omit=dev
-
-# Install all dependencies (including dev dependencies) for building
-FROM base AS build-deps
-COPY --from=pruner /app/out/json/ .
-COPY --from=pruner /app/out/package-lock.json ./package-lock.json
+# Install all dependencies needed for building
 RUN npm ci
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
-COPY --from=build-deps /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
 
-# Copy source code (only what's needed for frontend)
-COPY --from=pruner /app/out/full/ .
+# Copy all source code
+COPY . .
 
 # Generate Prisma client
 RUN npx prisma generate --schema=./packages/db/prisma/schema.prisma
 
-# Build only the frontend app using turbo
-RUN npx turbo run build --filter=frontend
+# Build the frontend app - this creates the optimized standalone build
+RUN npm run build --workspace=frontend
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -62,12 +55,10 @@ COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 RUN mkdir -p ./apps/frontend/.next
 RUN chown nextjs:nodejs ./apps/frontend/.next
 
-# Copy the standalone Next.js application
+# Copy the standalone Next.js application (includes optimized node_modules automatically)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone/ ./
 # Copy the static files to the correct location  
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
-# Copy node_modules from the build-deps stage (which has all dependencies)
-COPY --from=build-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
@@ -76,5 +67,5 @@ ENV PORT=8000
 ENV HOSTNAME="0.0.0.0"
 
 # Run the application
-# server.js is directly in /app after copying standalone output
-CMD ["node", "server.js"]
+# server.js is located at /app/apps/frontend/server.js
+CMD ["node", "apps/frontend/server.js"]
