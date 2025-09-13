@@ -213,7 +213,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
           <Label htmlFor="status">Status</Label>
           <Select
             value={watch("status")}
-            onValueChange={(value) => setValue("status", value as "ACTIVE" | "PAUSED" | "DISABLED")}
+            onValueChange={(value) => setValue("status", value as "ACTIVE" | "PAUSED")}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -229,12 +229,6 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                 <div className="flex items-center gap-2">
                   <Badge variant={getStatusBadgeVariant("PAUSED")}>Paused</Badge>
                   <span>Monitor is paused</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="DISABLED">
-                <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant("DISABLED")}>Disabled</Badge>
-                  <span>Monitor is disabled</span>
                 </div>
               </SelectItem>
             </SelectContent>
