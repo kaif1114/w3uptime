@@ -80,7 +80,7 @@ export const GET = withAuth(
         logoLinkUrl: statusPage.logo,
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
-        sections: statusPage.statusPageSections.map((section: DbStatusPageSection) => ({
+        sections: statusPage.statusPageSections.map((section) => ({
           id: section.id,
           name: section.name,
           resources: [{ type: "monitor", monitorId: section.monitorId }],
