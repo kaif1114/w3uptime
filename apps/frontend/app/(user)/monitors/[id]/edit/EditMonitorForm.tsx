@@ -32,7 +32,7 @@ const editMonitorSchema = z.object({
   url: z.string().url("Please enter a valid URL"),
   timeout: z.number().int().min(1).max(300),
   checkInterval: z.number().int().min(60).max(3600),
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]),
+  status: z.enum(["ACTIVE", "PAUSED"]),
   expectedStatusCodes: z.array(z.number().int().min(100).max(599)).min(1, "At least one status code is required"),
 });
 
@@ -103,7 +103,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       url: monitor.url,
       timeout: monitor.timeout,
       checkInterval: monitor.checkInterval,
-      status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : monitor.status,
+      status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : (monitor.status === "ACTIVE" ? "ACTIVE" : "PAUSED"),
       expectedStatusCodes: monitor.expectedStatusCodes,
     },
   });
