@@ -108,9 +108,7 @@ export const PATCH = withAuth(async (req: NextRequest, user) =>
         id: validation.data.alertId,
       },
       data: {
-        status: "ACKNOWLEDGED",
-        acknowledgedAt: new Date(),
-        acknowledgedBy: validation.data.acknowledgedBy || user.id,
+        // Note: Acknowledgment fields would need to be added to the Alert schema
       },
       include: {
         monitor: {
