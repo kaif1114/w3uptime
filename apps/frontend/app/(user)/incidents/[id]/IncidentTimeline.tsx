@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddComment } from "@/hooks/useAddComment";
 import { useIncidentTimeline } from "@/hooks/useIncidentTimeline";
+import type { TimelineEvent } from "@/types/incident";
 import { format } from "date-fns";
 import {
   AlertTriangle,
@@ -48,6 +49,7 @@ export default function IncidentTimeline({
       toast.success("Comment posted successfully");
       refetchTimeline();
     } catch (error) {
+      console.error(error);
       toast.error("Failed to post comment");
     }
   };
@@ -67,7 +69,7 @@ export default function IncidentTimeline({
     }
   };
 
-  const getTimelineTitle = (event: any) => {
+  const getTimelineTitle = (event: TimelineEvent) => {
     switch (event.type) {
       case "INCIDENT":
         return event.description;
@@ -158,7 +160,7 @@ export default function IncidentTimeline({
 
         <div className="space-y-6">
           {data?.timelineEvents && data?.timelineEvents.length > 0 ? (
-            data?.timelineEvents.map((event, index) => (
+            data?.timelineEvents.map((event) => (
               <div
                 key={event.id}
                 className={

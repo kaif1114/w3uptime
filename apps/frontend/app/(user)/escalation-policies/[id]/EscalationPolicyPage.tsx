@@ -1,11 +1,11 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Mail, MessageSquare, Webhook, AlertTriangle } from "lucide-react";
-import Link from "next/link";
 import { useEscalationPolicy } from "@/hooks/useEscalationPolicies";
+import { AlertTriangle, ArrowLeft, Edit, Mail, MessageSquare, Webhook } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface EscalationPolicyPageProps {
@@ -31,7 +31,6 @@ const methodColors = {
 };
 
 export function EscalationPolicyPage({ policyId }: EscalationPolicyPageProps) {
-  const router = useRouter();
   const { data: policy, isLoading, error } = useEscalationPolicy(policyId);
 
   if (isLoading) {
@@ -116,7 +115,7 @@ export function EscalationPolicyPage({ policyId }: EscalationPolicyPageProps) {
               <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Policy Not Found</h3>
               <p className="text-muted-foreground mb-4">
-                The escalation policy you're looking for doesn't exist.
+                The escalation policy you&apos;re looking for doesn&apos;t exist.
               </p>
               <Button asChild>
                 <Link href="/escalation-policies">Back to Policies</Link>
@@ -187,7 +186,7 @@ export function EscalationPolicyPage({ policyId }: EscalationPolicyPageProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {policy.levels.map((level, index) => {
+              {policy.levels.map((level) => {
                 const Icon = methodIcons[level.method as keyof typeof methodIcons];
                 return (
                   <div

@@ -10,16 +10,15 @@ import {
 } from "@/components/ui/card";
 import { useEscalationPolicies } from "@/hooks/useEscalationPolicies";
 import {
-  Plus,
   AlertTriangle,
   Clock,
-  Users,
   Mail,
   MessageSquare,
+  Plus,
+  Users,
   Webhook,
 } from "lucide-react";
 import Link from "next/link";
-import { EscalationMethod } from "@/types/escalation-policy";
 
 const methodIcons = {
   email: Mail,

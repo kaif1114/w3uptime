@@ -1,23 +1,21 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import {
+  useCreateMaintenance,
+  useDeleteMaintenance,
+  useMaintenances,
+  useUpdateMaintenance,
+  type CreateMaintenanceData
+} from "@/hooks/useMaintenances";
 import {
   useCreateStatusPage,
-  useUpdateStatusPage,
   useStatusPage,
+  useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
-import {
-  useMaintenances,
-  useCreateMaintenance,
-  useUpdateMaintenance,
-  useDeleteMaintenance,
-  type Maintenance as MaintenanceType,
-  type CreateMaintenanceData,
-} from "@/hooks/useMaintenances";
-import type { StatusPageSection } from "@/types/status-page";
+import type { StatusPage, StatusPageSection, WidgetType } from "@/types/status-page";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-type Maintenance = MaintenanceType;
 
 interface StatusUpdate {
   id: string;
@@ -53,7 +51,6 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const createMutation = useCreateStatusPage();
   const updateMutation = useUpdateStatusPage();
   const createMaintenanceMutation = useCreateMaintenance();
-  const updateMaintenanceMutation = useUpdateMaintenance();
   const deleteMaintenanceMutation = useDeleteMaintenance();
 
   // Custom mutation for creating status reports
@@ -88,7 +85,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       // Optimistically update the status page cache with the new update
       queryClient.setQueryData(
         ["status-page", variables.statusPageId],
-        (oldData: any) => {
+        (oldData: StatusPage | undefined) => {
           if (!oldData) return oldData;
           
           const newUpdate: StatusUpdate = {
@@ -107,7 +104,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       
       toast.success("Status report created successfully");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to create status report");
     },
   });
@@ -149,15 +146,15 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       setHistoryRange(statusPageData.historyRange || "7d");
       
       // Normalize sections data
-      const normalizedSections = (statusPageData.sections || []).map((s: any) => ({
+      const normalizedSections = (statusPageData.sections || []).map((s: StatusPageSection) => ({
         ...s,
-        resources: (s.resources || []).map((r: any) => ({
+        resources: (s.resources || []).map((r: { type: string; monitorId: string; publicName?: string; widgetType?: string }) => ({
           id: r.id || crypto.randomUUID(),
           type: r.type || "monitor",
           monitorId: r.monitorId || "",
           publicName: r.publicName || "",
           explanation: r.explanation || "",
-          widgetType: r.widgetType || "with_history" as any,
+          widgetType: (r.widgetType || "with_history") as WidgetType,
         })),
       }));
       
@@ -193,7 +190,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       return;
     }
 
-    const saveData: any = {
+    const saveData: Record<string, unknown> = {
       isPublished,
       name,
       logoUrl: logoUrl || null,
@@ -223,7 +220,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
           data: saveData,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       
       // Show more specific error messages
       if (error?.message?.includes("authentication") || error?.message?.includes("unauthorized")) {

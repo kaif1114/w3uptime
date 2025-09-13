@@ -343,7 +343,7 @@ export function EscalationPoliciesPage() {
                 <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No policies found</h3>
                 <p className="text-muted-foreground mb-4">
-                  No escalation policies match your search for "{searchQuery}"
+                  No escalation policies match your search for &quot;{searchQuery}&quot;
                 </p>
                 <Button onClick={() => handleSearch("")} variant="outline">
                   Clear search
@@ -693,7 +693,7 @@ export function EscalationPoliciesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Escalation Policy</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{policyToDelete?.name}"? This
+              Are you sure you want to delete &quot;{policyToDelete?.name}&quot;? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

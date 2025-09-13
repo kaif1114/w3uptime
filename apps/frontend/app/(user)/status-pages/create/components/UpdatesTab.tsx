@@ -153,7 +153,7 @@ export function UpdatesTab({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    What's going on?
+                    What&apos;s going on?
                   </Label>
                   <Input
                     value={reportDraft.title}
@@ -263,7 +263,7 @@ export function UpdatesTab({
                           {s.resources.map((r: StatusPageResource) => {
                             const monitorName =
                               monitorsData?.monitors.find(
-                                (m:any) => m.id === r.monitorId
+                                (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
                               r.publicName || monitorName || "Resource";

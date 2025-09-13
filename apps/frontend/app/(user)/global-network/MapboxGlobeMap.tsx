@@ -3,12 +3,12 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useValidators } from '@/hooks/useValidators';
-import { ContinentData, MapboxEvent, MapboxFeature, CountryFeatureProperties } from '@/types/mapbox';
+import { ContinentData, MapboxEvent } from '@/types/mapbox';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapRef, ViewState } from 'react-map-gl/mapbox';
-import Map, { Layer, Source, Marker } from 'react-map-gl/mapbox';
+import Map, { Layer, Marker, Source } from 'react-map-gl/mapbox';
 
 interface MapboxValidatorData {
   id: string;
@@ -706,7 +706,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
                         });
                         return Array.from(cityMap.entries())
-                          .sort((a: any, b: any) => b[1] - a[1])
+                          .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
                           .slice(0, 8)
                           .map(([city, count]: [string, number]) => (
                             <div key={city} className="flex justify-between text-xs">
@@ -799,16 +799,16 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
               <div className="md:col-span-2 lg:col-span-3">
                 <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
               </div>
-              {continentData.map((continent: any) => (
+              {continentData.map((continent: ContinentData) => (
                 <div 
-                  key={continent.name} 
+                  key={continent.continent} 
                   className={`bg-background p-3 rounded-md cursor-pointer transition-all hover:shadow-md border-2 ${
-                    selectedContinent === continent.name ? 'border-primary' : 'border-transparent'
+                    selectedContinent === continent.continent ? 'border-primary' : 'border-transparent'
                   }`}
-                  onClick={() => focusOnContinent(continent.name)}
+                  onClick={() => focusOnContinent(continent.continent)}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{continent.name}</span>
+                    <span className="font-medium">{continent.continent}</span>
                     <Badge variant="secondary">{continent.count}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground mb-2">

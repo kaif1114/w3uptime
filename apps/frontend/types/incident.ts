@@ -48,6 +48,20 @@ export interface Postmortem {
   createdAt: Date;
 }
 
+export type TimelineEventType = "INCIDENT" | "RESOLUTION" | "UPDATE" | "ESCALATION" | "MAINTENANCE";
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType;
+  description: string;
+  timestamp: Date;
+  userId?: string;
+  user?: {
+    id: string;
+    walletAddress: string;
+  };
+}
+
 export interface CreateIncidentRequest {
   title: string;
   description?: string;

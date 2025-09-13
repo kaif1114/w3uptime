@@ -121,7 +121,7 @@ export function StructureTab({
             Pick the monitors and heartbeats you want to display on your
             status page. You can re-order the monitors by dragging the
             cards, as well as give each monitor a public name and a short
-            explanation of the service it's monitoring.
+            explanation of the service it is monitoring.
           </p>
         </div>
         <div className="w-2/3">
@@ -209,7 +209,7 @@ export function StructureTab({
                                   </Label>
                                   <Select
                                     value={
-                                      (res as any).widgetType ||
+                                      res.widgetType ||
                                       "with_history"
                                     }
                                     onValueChange={(v) =>

@@ -87,14 +87,14 @@ export function ProposalDetailClient({
 
   const getUpvotes = () => {
     return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
+      proposal?.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
       0
     );
   };
 
   const getDownvotes = () => {
     return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
+      proposal?.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
         .length || 0
     );
   };
@@ -152,7 +152,7 @@ export function ProposalDetailClient({
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold mb-2">Proposal Not Found</h1>
           <p className="text-muted-foreground">
-            The proposal you're looking for doesn't exist or has been removed.
+            The proposal you&apos;re looking for doesn&apos;t exist or has been removed.
           </p>
         </div>
       </div>
