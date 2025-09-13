@@ -1,13 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -15,12 +8,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { EscalationLevelItem } from "./EscalationlevelItem";
 import { useCreateEscalationPolicy } from "@/hooks/useEscalationPolicies";
 import { EscalationMethod } from "@/types/escalation-policy";
-import { Plus, Save, AlertCircle } from "lucide-react";
+import { isApiError } from "@/types/error";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, Plus, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import { EscalationLevelItem } from "./EscalationlevelItem";
 
 const escalationPolicySchema = z.object({
   name: z
@@ -195,11 +196,11 @@ export function CreateEscalationPolicyForm() {
       setTimeout(() => {
         router.push("/escalation-policies");
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create escalation policy:", error);
 
       // Show more detailed error information
-      if (error.details) {
+      if (isApiError(error) && error.details) {
         console.error("Validation errors:", error.details);
       }
     }

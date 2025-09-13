@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,27 +13,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
-  Edit,
-  Save,
-  X,
-  Mail,
-  MessageSquare,
-  Webhook,
-  AlertTriangle,
-  GripVertical,
-} from "lucide-react";
-import Link from "next/link";
-import {
   useEscalationPolicy,
   useUpdateEscalationPolicy,
 } from "@/hooks/useEscalationPolicies";
-import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { DragDropContext, Draggable, Droppable, DropResult } from "@hello-pangea/dnd";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Edit,
+  GripVertical,
+  Mail,
+  MessageSquare,
+  Save,
+  Webhook,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import React from "react";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -171,7 +170,7 @@ export function EscalationPolicyDetailPage({
     }
   };
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(fields);

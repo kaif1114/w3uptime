@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { MonitorStatsData } from "@/types/analytics";
 
 const statsQuerySchema = z.object({
   period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
@@ -54,12 +55,12 @@ export const GET = withAuth(async (
     );
 
     // Helper function to convert BigInt to Number
-    const convertBigIntToNumber = (obj: any): any => {
+    const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);
       if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
       if (typeof obj === 'object') {
-        const converted: any = {};
+        const converted: Record<string, unknown> = {};
         for (const key in obj) {
           converted[key] = convertBigIntToNumber(obj[key]);
         }
@@ -68,7 +69,7 @@ export const GET = withAuth(async (
       return obj;
     };
 
-    const stats = (statsData as any[])[0];
+    const stats = (statsData as MonitorStatsData[])[0];
 
     return NextResponse.json({
       monitorId: monitorid,

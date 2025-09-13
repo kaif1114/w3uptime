@@ -30,10 +30,8 @@ const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 
 export function MonitoringControls({
   timePeriod,
-  updateFrequency: _updateFrequency,
   autoRefresh,
   onTimePeriodChange,
-  onUpdateFrequencyChange: _onUpdateFrequencyChange,
   onAutoRefreshToggle,
   onManualRefresh,
   lastUpdated,

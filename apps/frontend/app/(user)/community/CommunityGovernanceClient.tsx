@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -10,7 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ProposalComments } from "@/components/ui/proposal-comments";
+import {
+  ProposalCardSkeleton,
+  ProposalDetailSkeleton,
+} from "@/components/ui/proposal-skeleton";
 import {
   Select,
   SelectContent,
@@ -18,39 +23,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Lightbulb,
-  Settings,
-  ArrowUp,
-  ArrowDown,
-  Calendar,
-  User,
-  X,
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-} from "lucide-react";
-import Link from "next/link";
 import { useProposals, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
 import {
   Proposal,
   ProposalType,
-  ProposalStatus,
   VoteType,
-  ProposalsResponse,
+  ProposalFilters
 } from "@/types/proposal";
 import {
-  ProposalCardSkeleton,
-  ProposalDetailSkeleton,
-} from "@/components/ui/proposal-skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ProposalComments } from "@/components/ui/proposal-comments";
+  AlertCircle,
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Lightbulb,
+  Settings,
+  User
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 
-interface CommunityGovernanceClientProps {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface CommunityGovernanceClientProps {
+  // Props can be added here as needed
+}
 
 export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,8 +62,8 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Convert filter to API parameters
-  const getApiFilters = () => {
-    const filters: any = {
+  const getApiFilters = (): ProposalFilters => {
+    const filters: ProposalFilters = {
       page: currentPage,
       pageSize: ITEMS_PER_PAGE,
     };
@@ -104,7 +105,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     setCurrentPage(1);
   };
 
-  const handleProposalClick = (proposal: any) => {
+  const handleProposalClick = (proposal: Proposal) => {
     setSelectedProposal(proposal);
   };
 

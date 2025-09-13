@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { RawTimeSeriesPoint, TransformedTimeSeriesPoint } from "@/types/analytics";
 
 const timeseriesQuerySchema = z.object({
   period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
@@ -54,7 +55,7 @@ export const GET = withAuth(async (
     );
 
     // Transform TimescaleDB data to match frontend types
-    const transformTimeSeriesData = (rawData: any[]): any[] => {
+    const transformTimeSeriesData = (rawData: RawTimeSeriesPoint[]): TransformedTimeSeriesPoint[] => {
       return rawData.map(point => ({
         time_bucket: point.timestamp_bucket instanceof Date ? point.timestamp_bucket.toISOString() : point.timestamp_bucket,
         avg_latency: Number(point.avg_latency) || 0,
@@ -66,7 +67,7 @@ export const GET = withAuth(async (
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      data: transformTimeSeriesData(timeseriesData as any[]) || [],
+      data: transformTimeSeriesData(timeseriesData as RawTimeSeriesPoint[]) || [],
       generatedAt: new Date().toISOString(),
     }, { status: 200 });
 

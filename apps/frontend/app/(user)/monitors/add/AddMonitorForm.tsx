@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useCreateMonitor } from "@/hooks/useMonitors";
-import {
-  useEscalationPolicies,
-  useCreateEscalationPolicy,
-} from "@/hooks/useEscalationPolicies";
-import { CreateMonitorData, MonitorStatus } from "@/types/monitor";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -19,16 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, AlertTriangle, Users } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import {
+  useCreateEscalationPolicy,
+  useEscalationPolicies,
+} from "@/hooks/useEscalationPolicies";
+import { useCreateMonitor } from "@/hooks/useMonitors";
+import { CreateMonitorData, MonitorStatus } from "@/types/monitor";
+import { Plus, Trash2, Users } from "lucide-react";
+import { useState } from "react";
 
 export interface AddMonitorFormProps {
   onSuccess?: () => void;

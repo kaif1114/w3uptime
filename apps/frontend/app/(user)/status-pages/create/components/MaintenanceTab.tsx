@@ -8,17 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, Trash2 } from "lucide-react";
-import type { StatusPageSection } from "@/types/status-page";
-import type { Maintenance as MaintenanceType } from "@/hooks/useMaintenances";
+import type { StatusPageSection, StatusPageResource } from "@/types/status-page";
+import type { Maintenance as MaintenanceType, CreateMaintenanceData } from "@/hooks/useMaintenances";
+import type { Monitor } from "@/types/monitor";
 
 type Maintenance = MaintenanceType;
 
 interface MaintenanceTabProps {
   sections: StatusPageSection[];
-  monitorsData: any;
+  monitorsData: Monitor[];
   maintenances: Maintenance[];
   onRemoveMaintenance: (maintenanceId: string) => void;
-  onCreateMaintenance: (maintenanceData: any) => Promise<void>;
+  onCreateMaintenance: (maintenanceData: CreateMaintenanceData) => Promise<void>;
   isSaving: boolean;
   isCreatingMaintenance: boolean;
   isDeletingMaintenance: boolean;
@@ -212,7 +213,7 @@ export function MaintenanceTab({
             <CardContent className="p-6 space-y-4">
               {sections.map((s) => {
                 const sectionResourceIds = s.resources.map(
-                  (r: any) => r.id
+                  (r: StatusPageResource) => r.id
                 );
                 const selectedIds = new Set(
                   maintenanceDraft.affectedResourceIds || []
@@ -250,7 +251,7 @@ export function MaintenanceTab({
                     {isExpanded && (
                       <div className="px-6 pb-3">
                         <div className="space-y-3 py-2">
-                          {s.resources.map((r: any) => {
+                          {s.resources.map((r: StatusPageResource) => {
                             const checked = (
                               maintenanceDraft.affectedResourceIds || []
                             ).includes(r.id);

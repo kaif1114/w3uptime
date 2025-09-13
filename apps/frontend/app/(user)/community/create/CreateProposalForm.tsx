@@ -34,7 +34,6 @@ import { useCreateProposal } from "@/hooks/useProposals";
 import { ProposalType, CreateProposalData } from "@/types/proposal";
 
 export function CreateProposalForm() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
     description: "",

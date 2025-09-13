@@ -1,11 +1,10 @@
 "use client";
 
-import { MonitorCard } from "./MonitorCards";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Plus } from "lucide-react";
-import { Monitor } from "@/types/monitor";
 import { Button } from "@/components/ui/button";
+import { Monitor } from "@/types/monitor";
+import { Plus } from "lucide-react";
 import Link from "next/link";
+import { MonitorCard } from "./MonitorCards";
 
 interface MonitorsListProps {
   monitors: Monitor[];

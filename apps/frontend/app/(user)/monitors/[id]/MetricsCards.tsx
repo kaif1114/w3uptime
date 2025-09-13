@@ -1,9 +1,9 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { Clock, Shield, AlertTriangle } from "lucide-react";
 import { MonitorStatus } from "@/types/monitor";
+import { AlertTriangle, Clock, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface MetricsCardsProps {
   monitorId: string;

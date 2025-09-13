@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/select";
 import { GripVertical, Plus, X } from "lucide-react";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
+import type { Monitor } from "@/types/monitor";
 
 interface StructureTabProps {
   sections: StatusPageSection[];
   setSections: (sections: StatusPageSection[]) => void;
-  monitorsData: any;
+  monitorsData: { monitors: Monitor[] };
   onSave: () => void;
   isSaving: boolean;
   hasChanges: boolean;
@@ -249,7 +250,7 @@ export function StructureTab({
                                       <SelectValue placeholder="Select monitor" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {monitorsData?.monitors.map((m: any) => (
+                                      {monitorsData?.monitors.map((m: Monitor) => (
                                         <SelectItem key={m.id} value={m.id}>
                                           {m.name}
                                         </SelectItem>

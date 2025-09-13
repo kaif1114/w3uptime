@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,32 +10,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Lightbulb,
-  Settings,
-  ArrowLeft,
-  ArrowUp,
-  ArrowDown,
-  Calendar,
-  User,
-  Tag,
-  Edit,
-  Trash2,
-  AlertCircle,
-} from "lucide-react";
-import Link from "next/link";
+import { ProposalComments } from "@/components/ui/proposal-comments";
+import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
 import { useProposal, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
 import {
-  Proposal,
   ProposalType,
-  VoteType,
-  ProposalResponse,
+  VoteType
 } from "@/types/proposal";
-import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
-import { ProposalComments } from "@/components/ui/proposal-comments";
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Calendar,
+  Edit,
+  Lightbulb,
+  Settings,
+  Tag,
+  Trash2,
+  User,
+} from "lucide-react";
+import Link from "next/link";
 
 interface ProposalDetailClientProps {
   proposalId: string;

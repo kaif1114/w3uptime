@@ -8,13 +8,9 @@ import { useIncident } from "@/hooks/useIncident";
 import { useUpdateIncident } from "@/hooks/useIncidents";
 import { format } from "date-fns";
 import {
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle,
-  ChevronRight,
   Copy,
   Loader2,
-  Shield,
+  Shield
 } from "lucide-react";
 import { toast } from "sonner";
 import IncidentTimeline from "./IncidentTimeline";

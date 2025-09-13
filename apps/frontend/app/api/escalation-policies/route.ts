@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { WhereClause, OrderByClause, DbEscalationPolicyWithLevels, DbEscalationLevel, PrismaTransaction } from "@/types/database-operations";
+import { EscalationMethod } from "@/types/escalation-policy";
 
 
 // Validation schema for creating escalation policy
@@ -38,7 +40,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     const offset = (page - 1) * limit;
 
     // Build where clause with search
-    const whereClause: any = {
+    const whereClause: WhereClause = {
       userId: user.id,
     };
 
@@ -50,7 +52,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     }
 
     // Build order by clause
-    const orderByClause: any = {};
+    const orderByClause: OrderByClause = {};
     if (sortBy === "name") {
       orderByClause.name = sortOrder;
     } else if (sortBy === "createdAt") {
@@ -82,12 +84,12 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     });
 
     // Transform the data to match frontend types
-    const transformedPolicies = escalationPolicies.map((policy: any) => ({
+    const transformedPolicies = escalationPolicies.map((policy: DbEscalationPolicyWithLevels) => ({
       id: policy.id,
       name: policy.name,
       userId: policy.userId,
       enabled: policy.enabled,
-      levels: policy.levels.map((level: any) => ({
+      levels: policy.levels.map((level: DbEscalationLevel) => ({
         id: level.id,
         order: level.levelOrder,
         method: level.channel.toLowerCase(),
@@ -145,7 +147,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     const { name, levels } = validation.data;
 
     // Create escalation policy with levels in a transaction
-    const escalationPolicy = await prisma.$transaction(async (tx: any) => {
+    const escalationPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {
       // Create the escalation policy
       const policy = await tx.escalationPolicy.create({
         data: {
@@ -157,7 +159,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 
       // Create escalation levels
       const createdLevels = await Promise.all(
-        levels.map((level: any, index: number) =>
+        levels.map((level: { method: EscalationMethod; target: string; waitTimeMinutes: number }, index: number) =>
           tx.escalationLevel.create({
             data: {
               escalationId: policy.id,
@@ -183,7 +185,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       id: escalationPolicy.id,
       name: escalationPolicy.name,
       userId: user.id,
-      levels: escalationPolicy.levels.map((level: any) => ({
+      levels: escalationPolicy.levels.map((level: DbEscalationLevel) => ({
         id: level.id,
         order: level.levelOrder,
         method: level.channel.toUpperCase(),
@@ -268,7 +270,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
     }
 
     // Delete policies and their levels in a transaction
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: PrismaTransaction) => {
       // Delete escalation levels first (due to foreign key constraints)
       await tx.escalationLevel.deleteMany({
         where: {

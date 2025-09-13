@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useUpdateMonitor, useMonitor } from "@/hooks/useMonitors";
-import { Monitor } from "@/types/monitor";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, Save, TestTube, AlertTriangle } from "lucide-react";
+import { useMonitor, useUpdateMonitor } from "@/hooks/useMonitors";
+import { Monitor } from "@/types/monitor";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertTriangle, Loader2, Plus, Save, TestTube, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {

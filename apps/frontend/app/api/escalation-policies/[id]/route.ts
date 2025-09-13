@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 import { z } from "zod";
+import { PrismaTransaction, DbEscalationLevel, DbEscalationPolicyWithLevels } from "@/types/database-operations";
+import { EscalationMethod } from "@/types/escalation-policy";
 
 // Validation schema for updating escalation policy
 const updateEscalationPolicySchema = z.object({
@@ -159,7 +161,7 @@ export const PUT = withAuth(
       }
 
       // Update policy and levels in a transaction
-      const updatedPolicy = await prisma.$transaction(async (tx: any) => {
+      const updatedPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {
         // Update the escalation policy
         const policy = await tx.escalationPolicy.update({
           where: { id },
@@ -176,7 +178,7 @@ export const PUT = withAuth(
 
         // Create new levels
         const createdLevels = await Promise.all(
-          levels.map((level: any, index: number) =>
+          levels.map((level: { method: EscalationMethod; target: string; waitTimeMinutes: number }, index: number) =>
             tx.escalationLevel.create({
               data: {
                 escalationId: id,
@@ -202,7 +204,7 @@ export const PUT = withAuth(
         id: updatedPolicy.id,
         name: updatedPolicy.name,
         userId: updatedPolicy.userId,
-        levels: updatedPolicy.levels.map((level: any) => ({
+        levels: updatedPolicy.levels.map((level: DbEscalationLevel) => ({
           id: level.id,
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
@@ -289,7 +291,7 @@ export const DELETE = withAuth(
       }
 
       // Delete policy and its levels in a transaction
-      await prisma.$transaction(async (tx: any) => {
+      await prisma.$transaction(async (tx: PrismaTransaction) => {
         // Delete levels first
         await tx.escalationLevel.deleteMany({
           where: {

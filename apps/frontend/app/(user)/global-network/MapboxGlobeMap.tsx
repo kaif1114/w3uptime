@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useValidators } from '@/hooks/useValidators';
+import { ContinentData, MapboxEvent, MapboxFeature, CountryFeatureProperties } from '@/types/mapbox';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -167,7 +168,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
       }
     });
     
-    return Array.from(continentMap.values()).sort((a: any, b: any) => b.count - a.count);
+    return Array.from(continentMap.values()).sort((a: ContinentData, b: ContinentData) => b.count - a.count);
   }, [validators]);
 
   // Simple list of countries with validators for highlighting
@@ -180,7 +181,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
   }, [countryData]);
 
   // Handle map click events
-  const onMapClick = useCallback((event: any) => {
+  const onMapClick = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
@@ -213,7 +214,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
   }, [countryData, selectedCountry, mapLoaded]);
 
   // Handle map hover events
-  const onMapMouseMove = useCallback((event: any) => {
+  const onMapMouseMove = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
