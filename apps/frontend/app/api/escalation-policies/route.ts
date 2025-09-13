@@ -53,12 +53,13 @@ export const GET = withAuth(async (req: NextRequest, user) => {
 
     // Build order by clause
     const orderByClause: OrderByClause = {};
+    const order = (sortOrder === "asc" || sortOrder === "desc") ? sortOrder : "desc";
     if (sortBy === "name") {
-      orderByClause.name = sortOrder;
+      orderByClause.name = order;
     } else if (sortBy === "createdAt") {
-      orderByClause.createdAt = sortOrder;
+      orderByClause.createdAt = order;
     } else if (sortBy === "updatedAt") {
-      orderByClause.updatedAt = sortOrder;
+      orderByClause.updatedAt = order;
     } else {
       orderByClause.createdAt = "desc"; // Default
     }
