@@ -186,7 +186,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       id: escalationPolicy.id,
       name: escalationPolicy.name,
       userId: user.id,
-      levels: escalationPolicy.levels.map((level: DbEscalationLevel) => ({
+      levels: escalationPolicy.levels.map((level) => ({
         id: level.id,
         order: level.levelOrder,
         method: level.channel.toUpperCase(),
