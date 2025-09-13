@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Image from "next/image";
 
 interface OverviewTabProps {
   isPublished: boolean;
@@ -179,7 +180,7 @@ export function OverviewTab({
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     You can use mailto:support@stripe.com. Leave blank for
-                    no 'Get in touch' button.
+                    no Get in touch button.
                   </p>
                 </div>
 
@@ -272,10 +273,12 @@ export function OverviewTab({
                   </div>
                   {logoUrl && (
                     <div className="mt-4 flex items-center gap-4">
-                      <img
+                      <Image
                         src={logoUrl}
                         alt="Logo preview"
                         className="h-12 w-12 object-contain border rounded"
+                        width={48}
+                        height={48}
                       />
                       <Button
                         variant="outline"

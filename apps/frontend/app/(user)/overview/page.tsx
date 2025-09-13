@@ -93,8 +93,8 @@ export default function OverviewPage() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  You can use mailto:support@stripe.com. Leave blank for no 'Get
-                  in touch' button.
+                  You can use mailto:support@stripe.com. Leave blank for no Get
+                  in touch button.
                 </p>
               </div>
             </CardContent>

@@ -76,7 +76,6 @@ const PublicPage = ({params}: {params: {service: string}}) => {
   
   // For demo purposes, use sample data
   const statusPageData = sampleStatusPageData;
-  const chartData = generateSampleChartData();
   
   // Get the monitor ID from the first monitor in the first section
   const monitorId = statusPageData.sections[0]?.monitors[0]?.id || '';

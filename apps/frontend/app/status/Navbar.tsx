@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ModeToggle } from '@/components/mode-toggle'
+import Image from 'next/image'
 
 interface NavbarProps {
   logoUrl?: string;
@@ -27,17 +28,21 @@ const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, currentPage = "status"
               <div className="flex items-center">
                 {logoLinkUrl ? (
                   <Link href={logoLinkUrl} target="_blank" rel="noopener noreferrer">
-                    <img 
+                    <Image 
                       src={logoUrl} 
                       alt={companyName} 
                       className="h-8 w-auto object-contain"
+                      width={32}
+                      height={32}
                     />
                   </Link>
                 ) : (
-                  <img 
+                  <Image
                     src={logoUrl} 
                     alt={companyName} 
                     className="h-8 w-auto object-contain"
+                    width={32}
+                    height={32}
                   />
                 )}
               </div>

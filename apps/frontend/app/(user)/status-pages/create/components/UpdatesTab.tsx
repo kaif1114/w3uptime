@@ -15,7 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronDown, Circle, Minus, AlertTriangle, Check } from "lucide-react";
-import type { StatusPageSection } from "@/types/status-page";
+import type { StatusPageSection, StatusPageResource } from "@/types/status-page";
+import type { Monitor } from "@/types/monitor";
 
 interface StatusUpdate {
   id: string;
@@ -24,11 +25,25 @@ interface StatusUpdate {
   createdAt: string;
 }
 
+type AffectedStatus = "not_affected" | "downtime" | "degraded" | "resolved";
+
+interface CreateReportData {
+  title: string;
+  description: string;
+  publishedAt: string;
+  notifySubscribers: boolean;
+  affected: Record<string, AffectedStatus>;
+  affectedSections: Array<{
+    sectionId: string;
+    status: "DOWNTIME" | "DEGRADED" | "RESOLVED";
+  }>;
+}
+
 interface UpdatesTabProps {
   sections: StatusPageSection[];
-  monitorsData: any;
+  monitorsData: { monitors: Monitor[] };
   updates: StatusUpdate[];
-  onCreateReport: (reportData: any) => Promise<void>;
+  onCreateReport: (reportData: CreateReportData) => Promise<void>;
   isSaving: boolean;
   isCreatingReport: boolean;
   mode: "create" | "edit";
@@ -47,7 +62,6 @@ export function UpdatesTab({
   const [reportExpandedSections, setReportExpandedSections] = useState<Record<string, boolean>>({});
 
   // Report draft state
-  type AffectedStatus = "not_affected" | "downtime" | "degraded" | "resolved";
   const [reportDraft, setReportDraft] = useState({
     title: "",
     description: "",
@@ -85,6 +99,8 @@ export function UpdatesTab({
       title: reportDraft.title,
       description: reportDraft.description,
       publishedAt: new Date(reportDraft.publishedAt).toISOString(),
+      notifySubscribers: reportDraft.notifySubscribers,
+      affected: reportDraft.affected,
       affectedSections
     };
 
@@ -143,7 +159,7 @@ export function UpdatesTab({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    What's going on?
+                    What&apos;s going on?
                   </Label>
                   <Input
                     value={reportDraft.title}
@@ -250,10 +266,10 @@ export function UpdatesTab({
                     {isExpanded && (
                       <div className="px-6 pb-4">
                         <div className="space-y-3 py-2">
-                          {s.resources.map((r: any) => {
+                          {s.resources.map((r: StatusPageResource) => {
                             const monitorName =
                               monitorsData?.monitors.find(
-                                (m:any) => m.id === r.monitorId
+                                (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
                               r.publicName || monitorName || "Resource";
@@ -335,12 +351,12 @@ export function UpdatesTab({
                   >
                     <span className="inline-flex items-center gap-2 text-sm font-medium">
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${((reportExpandedSections as any).placeholder ?? true) ? "rotate-0" : "-rotate-90"}`}
+                        className={`h-4 w-4 transition-transform ${(reportExpandedSections.placeholder ?? true) ? "rotate-0" : "-rotate-90"}`}
                       />
                       {"New section"}
                     </span>
                   </button>
-                  {((reportExpandedSections as any).placeholder ??
+                  {(reportExpandedSections.placeholder ??
                     true) && (
                     <div className="px-6 pb-4">
                       <div className="space-y-3 py-2">

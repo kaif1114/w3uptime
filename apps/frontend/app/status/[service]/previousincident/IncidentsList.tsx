@@ -15,11 +15,8 @@ interface MonthData {
   isCurrent: boolean;
 }
 
-interface IncidentsListProps {
-  statusPageId?: string;
-}
 
-const IncidentsList: React.FC<IncidentsListProps> = ({ statusPageId }) => {
+function IncidentsList() {
   const [rangeStartIndex, setRangeStartIndex] = useState<number>(0);
   
   // Constants

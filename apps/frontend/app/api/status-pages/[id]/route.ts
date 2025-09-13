@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { DbStatusPageSection, DbMaintenance, DbUpdate } from "@/types/database";
 import { prisma } from "db/client";
 
 const updateSchema = z.object({
@@ -50,7 +51,7 @@ const updateSchema = z.object({
 export const GET = withAuth(
   async (_req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       const statusPage = await prisma.statusPage.findFirst({
         where: {
@@ -79,12 +80,12 @@ export const GET = withAuth(
         logoLinkUrl: statusPage.logo,
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
-        sections: statusPage.statusPageSections.map((section: any) => ({
+        sections: statusPage.statusPageSections.map((section) => ({
           id: section.id,
           name: section.name,
           resources: [{ type: "monitor", monitorId: section.monitorId }],
         })),
-        maintenances: statusPage.maintenances.map((maintenance: any) => ({
+        maintenances: statusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,
           description: maintenance.description,
@@ -92,7 +93,7 @@ export const GET = withAuth(
           end: maintenance.to.toISOString(),
           status: "scheduled", // Default status
         })),
-        updates: statusPage.updates.map((update: any) => ({
+        updates: statusPage.updates.map((update: DbUpdate) => ({
           id: update.id,
           title: update.title,
           body: update.description,
@@ -116,7 +117,7 @@ export const GET = withAuth(
 export const PATCH = withAuth(
   async (req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       // Check if status page exists and belongs to user
       const existingPage = await prisma.statusPage.findFirst({
@@ -231,12 +232,12 @@ export const PATCH = withAuth(
         logoLinkUrl: finalStatusPage.logo,
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
-        sections: finalStatusPage.statusPageSections.map((section: any) => ({
+        sections: finalStatusPage.statusPageSections.map((section) => ({
           id: section.id,
           name: section.name,
           resources: [{ type: "monitor", monitorId: section.monitorId }],
         })),
-        maintenances: finalStatusPage.maintenances.map((maintenance: any) => ({
+        maintenances: finalStatusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,
           description: maintenance.description,
@@ -244,7 +245,7 @@ export const PATCH = withAuth(
           end: maintenance.to.toISOString(),
           status: "scheduled",
         })),
-        updates: finalStatusPage.updates.map((update: any) => ({
+        updates: finalStatusPage.updates.map((update: DbUpdate) => ({
           id: update.id,
           title: update.title,
           body: update.description,
@@ -271,7 +272,7 @@ export const PATCH = withAuth(
 export const DELETE = withAuth(
   async (_req: NextRequest, user, _session, context) => {
     try {
-      const { id } = (await context.params) as { id: string };
+      const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
       // Check if status page exists and belongs to user
       const statusPage = await prisma.statusPage.findFirst({

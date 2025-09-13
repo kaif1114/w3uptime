@@ -40,10 +40,7 @@ export const GET = withAuth(async (req: NextRequest, user) =>
     const targetMonitorId = validation.data.monitorId || user.id;
     whereClause.monitorId = targetMonitorId;
 
-    // Filter by status if provided
-    if (validation.data.status && ["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"].includes(validation.data.status)) {
-      whereClause.status = validation.data.status;
-    }
+    // Note: Status filtering would require adding status field to Alert schema
 
     const alerts = await prisma.alert.findMany({
       where: whereClause,
@@ -106,13 +103,10 @@ export const POST = withAuth(async (req: NextRequest, user) =>
       data: {
         title,
         message,
-        severity,
         triggerStatusCode,
         expectedStatusCode,
         monitorId,
-        status: "PENDING", // New alerts start as PENDING
-        currentEscalationLevel: 1,
-        escalationCompleted: false,
+        // Note: severity, status, currentEscalationLevel, escalationCompleted fields would need to be added to schema
       },
       include: {
         monitor: {

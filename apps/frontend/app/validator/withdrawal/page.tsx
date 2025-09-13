@@ -14,15 +14,15 @@ export default async function WithdrawalPage() {
       id: "1",
       amount: 50.0,
       status: "pending" as const,
-      requestedAt: new Date("2024-01-15T10:30:00Z"),
-      processedAt: null,
+      requestedAt: "2024-01-15T10:30:00Z",
+      processedAt: undefined,
     },
     {
       id: "2",
       amount: 25.5,
       status: "completed" as const,
-      requestedAt: new Date("2024-01-10T14:20:00Z"),
-      processedAt: new Date("2024-01-11T09:15:00Z"),
+      requestedAt: "2024-01-10T14:20:00Z",
+      processedAt: "2024-01-11T09:15:00Z",
     },
   ];
 

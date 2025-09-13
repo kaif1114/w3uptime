@@ -116,7 +116,7 @@ export function createUnauthorizedResponse(error: string = "Unauthorized") {
  * Wrapper function for protected API routes
  * Use this to wrap your API handlers that require authentication
  */
-export function withAuth<T extends any[]>(
+export function withAuth<T extends readonly unknown[]>(
   handler: (
     request: NextRequest,
     user: AuthenticatedUser,

@@ -3,6 +3,7 @@ import { CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MaintenanceItem, UpdateItem } from '@/types/generic'
 
 interface Monitor {
   id: string;
@@ -22,8 +23,8 @@ interface Section {
 
 interface ServicesSectionProps {
   sections: Section[];
-  maintenances?: any[];
-  updates?: any[];
+  maintenances?: MaintenanceItem[];
+  updates?: UpdateItem[];
 }
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ 

@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useUpdateMonitor, useMonitor } from "@/hooks/useMonitors";
-import { Monitor } from "@/types/monitor";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, Save, TestTube, AlertTriangle } from "lucide-react";
+import { useMonitor, useUpdateMonitor } from "@/hooks/useMonitors";
+import { Monitor } from "@/types/monitor";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertTriangle, Loader2, Plus, Save, TestTube, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {
@@ -32,7 +32,7 @@ const editMonitorSchema = z.object({
   url: z.string().url("Please enter a valid URL"),
   timeout: z.number().int().min(1).max(300),
   checkInterval: z.number().int().min(60).max(3600),
-  status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]),
+  status: z.enum(["ACTIVE", "PAUSED"]),
   expectedStatusCodes: z.array(z.number().int().min(100).max(599)).min(1, "At least one status code is required"),
 });
 
@@ -103,7 +103,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       url: monitor.url,
       timeout: monitor.timeout,
       checkInterval: monitor.checkInterval,
-      status: monitor.status,
+      status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : (monitor.status === "ACTIVE" ? "ACTIVE" : "PAUSED"),
       expectedStatusCodes: monitor.expectedStatusCodes,
     },
   });
@@ -213,7 +213,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
           <Label htmlFor="status">Status</Label>
           <Select
             value={watch("status")}
-            onValueChange={(value) => setValue("status", value as "ACTIVE" | "PAUSED" | "DISABLED")}
+            onValueChange={(value) => setValue("status", value as "ACTIVE" | "PAUSED")}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -229,12 +229,6 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                 <div className="flex items-center gap-2">
                   <Badge variant={getStatusBadgeVariant("PAUSED")}>Paused</Badge>
                   <span>Monitor is paused</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="DISABLED">
-                <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant("DISABLED")}>Disabled</Badge>
-                  <span>Monitor is disabled</span>
                 </div>
               </SelectItem>
             </SelectContent>

@@ -8,17 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, Trash2 } from "lucide-react";
-import type { StatusPageSection } from "@/types/status-page";
-import type { Maintenance as MaintenanceType } from "@/hooks/useMaintenances";
+import type { StatusPageSection, StatusPageResource } from "@/types/status-page";
+import type { Maintenance as MaintenanceType, CreateMaintenanceData } from "@/hooks/useMaintenances";
+import type { Monitor } from "@/types/monitor";
 
 type Maintenance = MaintenanceType;
 
 interface MaintenanceTabProps {
   sections: StatusPageSection[];
-  monitorsData: any;
+  monitorsData: Monitor[];
   maintenances: Maintenance[];
   onRemoveMaintenance: (maintenanceId: string) => void;
-  onCreateMaintenance: (maintenanceData: any) => Promise<void>;
+  onCreateMaintenance: (maintenanceData: CreateMaintenanceData) => Promise<void>;
   isSaving: boolean;
   isCreatingMaintenance: boolean;
   isDeletingMaintenance: boolean;
@@ -140,7 +141,7 @@ export function MaintenanceTab({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    What's going on?
+                    What&apos;s going on?
                   </Label>
                   <Input
                     value={maintenanceDraft.title}
@@ -212,7 +213,7 @@ export function MaintenanceTab({
             <CardContent className="p-6 space-y-4">
               {sections.map((s) => {
                 const sectionResourceIds = s.resources.map(
-                  (r: any) => r.id
+                  (r: StatusPageResource) => r.id
                 );
                 const selectedIds = new Set(
                   maintenanceDraft.affectedResourceIds || []
@@ -250,13 +251,13 @@ export function MaintenanceTab({
                     {isExpanded && (
                       <div className="px-6 pb-3">
                         <div className="space-y-3 py-2">
-                          {s.resources.map((r: any) => {
+                          {s.resources.map((r: StatusPageResource) => {
                             const checked = (
                               maintenanceDraft.affectedResourceIds || []
                             ).includes(r.id);
                             const monitorName =
-                              monitorsData?.monitors.find(
-                                (m:any) => m.id === r.monitorId
+                              monitorsData?.find(
+                                (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
                               r.publicName || monitorName || "Resource";
@@ -340,7 +341,7 @@ export function MaintenanceTab({
                     <span className="inline-flex items-center gap-2 text-sm font-medium">
                       <ChevronDown
                         className={`h-4 w-4 transition-transform ${
-                          ((expandedSections as any).placeholder ??
+                          (expandedSections.placeholder ??
                           true)
                             ? "rotate-0"
                             : "-rotate-90"
@@ -350,7 +351,7 @@ export function MaintenanceTab({
                     </span>
                   </button>
 
-                  {((expandedSections as any).placeholder ?? true) ? (
+                  {(expandedSections.placeholder ?? true) ? (
                     <div className="px-6 pb-3">
                       <div className="space-y-3 py-2">
                         <label className="flex items-center gap-3 text-sm">

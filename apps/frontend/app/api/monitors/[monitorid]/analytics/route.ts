@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { MonitorAnalyticsData } from "@/types/analytics";
 
 const analyticsQuerySchema = z.object({
   period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
@@ -83,14 +84,14 @@ export const GET = withAuth(async (
     ]);
 
     // Helper function to convert BigInt to Number
-    const convertBigIntToNumber = (obj: any): any => {
+    const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);
       if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
       if (typeof obj === 'object') {
-        const converted: any = {};
+        const converted: Record<string, unknown> = {};
         for (const key in obj) {
-          converted[key] = convertBigIntToNumber(obj[key]);
+          converted[key] = convertBigIntToNumber((obj as Record<string, unknown>)[key]);
         }
         return converted;
       }
@@ -100,17 +101,17 @@ export const GET = withAuth(async (
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      uptime: convertBigIntToNumber((uptimeData as any[])[0]) || null,
-      latency: convertBigIntToNumber((totalLatencyData as any[])[0]) || null,
-      bestRegion: convertBigIntToNumber((bestRegion as any[])[0]) || null,
-      worstRegion: convertBigIntToNumber((worstRegion as any[])[0]) || null,
+      uptime: convertBigIntToNumber((uptimeData as MonitorAnalyticsData[])[0]) || null,
+      latency: convertBigIntToNumber((totalLatencyData as MonitorAnalyticsData[])[0]) || null,
+      bestRegion: convertBigIntToNumber((bestRegion as MonitorAnalyticsData[])[0]) || null,
+      worstRegion: convertBigIntToNumber((worstRegion as MonitorAnalyticsData[])[0]) || null,
       regional: {
-        byCountry: convertBigIntToNumber(latencyByCountry as any[]) || [],
-        byContinent: convertBigIntToNumber(latencyByContinent as any[]) || [],
-        byCity: convertBigIntToNumber(latencyByCity as any[]) || [],
+        byCountry: convertBigIntToNumber(latencyByCountry as MonitorAnalyticsData[]) || [],
+        byContinent: convertBigIntToNumber(latencyByContinent as MonitorAnalyticsData[]) || [],
+        byCity: convertBigIntToNumber(latencyByCity as MonitorAnalyticsData[]) || [],
       },
       worldMap: {
-        byCountry: convertBigIntToNumber(sampleCountByCountry as any[]) || [],
+        byCountry: convertBigIntToNumber(sampleCountByCountry as MonitorAnalyticsData[]) || [],
       },
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

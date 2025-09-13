@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,27 +13,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
-  Edit,
-  Save,
-  X,
-  Mail,
-  MessageSquare,
-  Webhook,
-  AlertTriangle,
-  GripVertical,
-} from "lucide-react";
-import Link from "next/link";
-import {
   useEscalationPolicy,
   useUpdateEscalationPolicy,
 } from "@/hooks/useEscalationPolicies";
-import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { DragDropContext, Draggable, Droppable, DropResult } from "@hello-pangea/dnd";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Edit,
+  GripVertical,
+  Mail,
+  MessageSquare,
+  Save,
+  Webhook,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import React, { useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import React from "react";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -90,12 +88,10 @@ type EscalationPolicyFormData = z.infer<typeof escalationPolicySchema>;
 export function EscalationPolicyDetailPage({
   policyId,
 }: EscalationPolicyDetailPageProps) {
-  const router = useRouter();
   const {
     data: policy,
     isLoading,
     error,
-    refetch,
   } = useEscalationPolicy(policyId);
   const updateMutation = useUpdateEscalationPolicy();
   const [isEditing, setIsEditing] = useState(false);
@@ -108,7 +104,7 @@ export function EscalationPolicyDetailPage({
     },
   });
 
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "levels",
   });
@@ -171,7 +167,7 @@ export function EscalationPolicyDetailPage({
     }
   };
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(fields);
@@ -294,7 +290,7 @@ export function EscalationPolicyDetailPage({
               <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Policy Not Found</h3>
               <p className="text-muted-foreground mb-4">
-                The escalation policy you're looking for doesn't exist.
+                The escalation policy you&apos;re looking for doesn&apos;t exist.
               </p>
               <Button asChild>
                 <Link href="/escalation-policies">Back to Policies</Link>
@@ -427,11 +423,6 @@ export function EscalationPolicyDetailPage({
                     >
                       {fields.map((field, index) => {
                         const currentLevel = watchedLevels[index];
-                        const Icon =
-                          methodIcons[
-                            currentLevel?.method as keyof typeof methodIcons
-                          ] ||
-                          methodIcons[field.method as keyof typeof methodIcons];
                         return (
                           <Draggable
                             key={field.id}
@@ -555,7 +546,7 @@ export function EscalationPolicyDetailPage({
               </DragDropContext>
             ) : (
               <div className="space-y-4">
-                {policy.levels.map((level, index) => {
+                {policy.levels.map((level) => {
                   const Icon =
                     methodIcons[level.method as keyof typeof methodIcons];
                   return (

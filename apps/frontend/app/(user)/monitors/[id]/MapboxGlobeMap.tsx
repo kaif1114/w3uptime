@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useValidators } from '@/hooks/useValidators';
+import { ContinentData, MapboxEvent, MapboxFeature, CountryFeatureProperties } from '@/types/mapbox';
 import { Globe, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -144,16 +145,14 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
 
   // Aggregate data by continent
   const continentData = useMemo(() => {
-    const continentMap = new (globalThis.Map)<string, { name: string; code: string; count: number; countries: string[] }>();
+    const continentMap = new (globalThis.Map)<string, ContinentData>();
     
     validators.forEach(validator => {
       const continent = validator.continent;
-      const continentCode = validator.continentCode;
       
       if (!continentMap.has(continent)) {
         continentMap.set(continent, {
-          name: continent,
-          code: continentCode,
+          continent: continent,
           count: 0,
           countries: []
         });
@@ -167,7 +166,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       }
     });
     
-    return Array.from(continentMap.values()).sort((a: any, b: any) => b.count - a.count);
+    return Array.from(continentMap.values()).sort((a: ContinentData, b: ContinentData) => b.count - a.count);
   }, [validators]);
 
   // Simple list of countries with validators for highlighting
@@ -180,7 +179,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
   }, [countryData]);
 
   // Handle map click events
-  const onMapClick = useCallback((event: any) => {
+  const onMapClick = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
@@ -213,7 +212,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
   }, [countryData, selectedCountry, mapLoaded]);
 
   // Handle map hover events
-  const onMapMouseMove = useCallback((event: any) => {
+  const onMapMouseMove = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
@@ -706,7 +705,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                           cityMap.set(cityName, (cityMap.get(cityName) || 0) + 1);
                         });
                         return Array.from(cityMap.entries())
-                          .sort((a: any, b: any) => b[1] - a[1])
+                          .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
                           .slice(0, 8)
                           .map(([city, count]: [string, number]) => (
                             <div key={city} className="flex justify-between text-xs">
@@ -799,16 +798,16 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
               <div className="md:col-span-2 lg:col-span-3">
                 <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
               </div>
-              {continentData.map((continent: any) => (
+              {continentData.map((continent: ContinentData) => (
                 <div 
-                  key={continent.name} 
+                  key={continent.continent} 
                   className={`bg-background p-3 rounded-md cursor-pointer transition-all hover:shadow-md border-2 ${
-                    selectedContinent === continent.name ? 'border-primary' : 'border-transparent'
+                    selectedContinent === continent.continent ? 'border-primary' : 'border-transparent'
                   }`}
-                  onClick={() => focusOnContinent(continent.name)}
+                  onClick={() => focusOnContinent(continent.continent)}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{continent.name}</span>
+                    <span className="font-medium">{continent.continent}</span>
                     <Badge variant="secondary">{continent.count}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground mb-2">

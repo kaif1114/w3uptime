@@ -1,8 +1,7 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DailyStatus, DailyStatusData } from '@/types/monitor';
+import React from 'react';
 
 interface DailyStatusBarChartProps {
   data: DailyStatusData[];
@@ -111,11 +110,6 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const getUptimeDisplay = (uptime: number): { text: string; color: string } => {
-  if (uptime >= 99.5) return { text: `${uptime.toFixed(2)}%`, color: 'text-green-600' };
-  if (uptime >= 95) return { text: `${uptime.toFixed(2)}%`, color: 'text-yellow-600' };
-  return { text: `${uptime.toFixed(2)}%`, color: 'text-red-600' };
-};
 
 const StatusLegend = () => (
   <div className="flex flex-wrap gap-1 text-sm">
@@ -147,14 +141,9 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
 }) => {
   // Use sample data if no data provided
   const statusData = data.length > 0 ? data : generateSampleDailyData(period);
-  
   // Calculate overall statistics
   const totalDays = statusData.length;
-
-
-  const operationalDays = statusData.filter(d => d.status === 'up').length;
   const overallUptime = statusData.reduce((sum, day) => sum + day.uptime, 0) / totalDays;
-  const totalIncidents = statusData.reduce((sum, day) => sum + (day.incidents || 0), 0);
 
   return (
     <TooltipProvider>

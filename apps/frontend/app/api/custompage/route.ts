@@ -1,17 +1,8 @@
 // ROUTE FOR CREATING A CUSTOM PAGE
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
-import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-
-export const createStatusPageSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    logoUrl: z.string().url().optional(),
-    logo: z.string().optional(),
-    supportUrl: z.string().url().optional(),
-    announcement: z.string().optional(),
-    isPublished: z.boolean().default(false),
-  });
+import { createStatusPageSchema } from "@/lib/schemas/status-page";
 
   
   export const POST = withAuth(async (req: NextRequest, user) => {

@@ -29,7 +29,7 @@ function getDailyStatus(uptimePercentage: number, totalChecks: number): DailySta
 export const GET = withAuth(
   async (req: NextRequest, user, _session, context) => {
     try {
-      const { monitorid } = (await context.params) as { monitorid: string };
+      const { monitorid } = (await (context as { params: Promise<{ monitorid: string }> }).params);
       const url = new URL(req.url);
       const { period, timezone } = querySchema.parse({
         period: url.searchParams.get("period"),

@@ -49,7 +49,7 @@ export const GET = async (
       );
     }
   }
-);
+
 
 // PATCH /api/proposals/[id] - Update a proposal
 export const PATCH = withAuth(

@@ -6,9 +6,6 @@ import { useValidators } from "@/hooks/useValidators";
 import { AlertTriangle, MapPin, CheckCircle, XCircle } from "lucide-react";
 import { useMemo } from "react";
 
-interface ValidatorMapProps {
-  monitorId?: string;
-}
 
 interface ValidatorLocation {
   city: string;
@@ -22,7 +19,7 @@ interface ValidatorLocation {
   status: 'good' | 'bad' | 'mixed';
 }
 
-export function ValidatorMap({ monitorId }: ValidatorMapProps) {
+export function ValidatorMap() {
   const { data: validatorsData, isLoading, error } = useValidators();
 
   const validatorLocations = useMemo((): ValidatorLocation[] => {

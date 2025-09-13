@@ -56,7 +56,7 @@ export const GET = async (req: NextRequest) => {
     const query = searchParams.get("q");
 
     // Build where clause for filtering
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (type && type !== "all") {
       where.type = type;

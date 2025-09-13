@@ -1,31 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,32 +11,58 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  useEscalationPolicies,
-  useBulkDeleteEscalationPolicies,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   FetchEscalationPoliciesParams,
+  useBulkDeleteEscalationPolicies,
+  useEscalationPolicies,
 } from "@/hooks/useEscalationPolicies";
+import { EscalationPolicy } from "@/types/escalation-policy";
+import { isEscalationPolicyError } from "@/types/error";
 import {
-  Plus,
-  Search,
-  MoreHorizontal,
-  Edit,
-  Trash2,
   AlertTriangle,
-  Mail,
-  MessageSquare,
-  Webhook,
+  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUpDown,
-  Users,
+  Edit,
   Loader2,
+  Mail,
+  MessageSquare,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+  Webhook,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { EscalationMethod, EscalationPolicy } from "@/types/escalation-policy";
+import { useState } from "react";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {
@@ -183,8 +183,9 @@ export function EscalationPoliciesPage() {
       toast.success("Escalation policy deleted successfully");
       setDeleteDialogOpen(false);
       setPolicyToDelete(null);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete escalation policy");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete escalation policy";
+      toast.error(errorMessage);
     }
   };
 
@@ -201,15 +202,16 @@ export function EscalationPoliciesPage() {
       );
       setSelectedPolicies([]);
       setBulkDeleteDialogOpen(false);
-    } catch (error: any) {
-      if (error.policiesInUse) {
+    } catch (error: unknown) {
+      if (isEscalationPolicyError(error) && error.policiesInUse) {
         toast.error(
           `Cannot delete policies in use by monitors: ${error.policiesInUse
-            .map((p: any) => p.name)
+            .map((p) => p.name)
             .join(", ")}`
         );
       } else {
-        toast.error(error.message || "Failed to delete escalation policies");
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete escalation policies";
+        toast.error(errorMessage);
       }
     }
   };
@@ -341,7 +343,7 @@ export function EscalationPoliciesPage() {
                 <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No policies found</h3>
                 <p className="text-muted-foreground mb-4">
-                  No escalation policies match your search for "{searchQuery}"
+                  No escalation policies match your search for &quot;{searchQuery}&quot;
                 </p>
                 <Button onClick={() => handleSearch("")} variant="outline">
                   Clear search
@@ -691,7 +693,7 @@ export function EscalationPoliciesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Escalation Policy</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{policyToDelete?.name}"? This
+              Are you sure you want to delete &quot;{policyToDelete?.name}&quot;? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

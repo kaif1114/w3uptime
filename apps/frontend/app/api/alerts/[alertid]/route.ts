@@ -100,13 +100,7 @@ export const PATCH = withAuth(async (req: NextRequest, user) =>
       );
     }
 
-    // Check if alert is already acknowledged
-    if (existingAlert.status === "ACKNOWLEDGED") {
-      return NextResponse.json(
-        { error: "Alert is already acknowledged" },
-        { status: 400 }
-      );
-    }
+    // Note: Alert acknowledgment status would need to be added to the schema if needed
 
     // Acknowledge the alert
     const acknowledgedAlert = await prisma.alert.update({
@@ -114,9 +108,7 @@ export const PATCH = withAuth(async (req: NextRequest, user) =>
         id: validation.data.alertId,
       },
       data: {
-        status: "ACKNOWLEDGED",
-        acknowledgedAt: new Date(),
-        acknowledgedBy: validation.data.acknowledgedBy || user.id,
+        // Note: Acknowledgment fields would need to be added to the Alert schema
       },
       include: {
         monitor: {

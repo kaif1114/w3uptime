@@ -127,7 +127,7 @@ export const PATCH = withAuth(async (
 			);
 		}
 
-		const updateData: any = {};
+		const updateData: Record<string, unknown> = {};
 		if (validation.data.title !== undefined) updateData.title = validation.data.title;
 		if (validation.data.description !== undefined) updateData.description = validation.data.description;
 		if (validation.data.from !== undefined) updateData.from = new Date(validation.data.from);

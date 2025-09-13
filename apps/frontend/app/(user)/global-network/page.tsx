@@ -13,7 +13,7 @@ export default function GlobalNetworkPage() {
       
       <div className="space-y-6">
         <MapboxGlobeMap monitorId="" />
-        <ValidatorMap monitorId="" />
+        <ValidatorMap />
       </div>
     </div>
   );

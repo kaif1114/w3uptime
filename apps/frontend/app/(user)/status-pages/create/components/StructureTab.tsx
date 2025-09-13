@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/select";
 import { GripVertical, Plus, X } from "lucide-react";
 import type { StatusPageSection, WidgetType } from "@/types/status-page";
+import type { Monitor } from "@/types/monitor";
 
 interface StructureTabProps {
   sections: StatusPageSection[];
   setSections: (sections: StatusPageSection[]) => void;
-  monitorsData: any;
+  monitorsData: { monitors: Monitor[] };
   onSave: () => void;
   isSaving: boolean;
   hasChanges: boolean;
@@ -120,7 +121,7 @@ export function StructureTab({
             Pick the monitors and heartbeats you want to display on your
             status page. You can re-order the monitors by dragging the
             cards, as well as give each monitor a public name and a short
-            explanation of the service it's monitoring.
+            explanation of the service it is monitoring.
           </p>
         </div>
         <div className="w-2/3">
@@ -208,7 +209,7 @@ export function StructureTab({
                                   </Label>
                                   <Select
                                     value={
-                                      (res as any).widgetType ||
+                                      res.widgetType ||
                                       "with_history"
                                     }
                                     onValueChange={(v) =>
@@ -249,7 +250,7 @@ export function StructureTab({
                                       <SelectValue placeholder="Select monitor" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {monitorsData?.monitors.map((m: any) => (
+                                      {monitorsData?.monitors.map((m: Monitor) => (
                                         <SelectItem key={m.id} value={m.id}>
                                           {m.name}
                                         </SelectItem>
