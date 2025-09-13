@@ -11,7 +11,7 @@ const PreviousIncidents: React.FC<PreviousIncidentsProps> = ({ statusPageId }) =
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-6">Previous incidents</h1>
       </div>
-      <IncidentsList statusPageId={statusPageId} />
+      <IncidentsList />
     </div>
   );
 };
