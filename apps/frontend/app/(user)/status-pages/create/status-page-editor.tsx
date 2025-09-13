@@ -30,7 +30,6 @@ export default function StatusPageEditor({ mode, id }: Props) {
     sections,
     setSections,
     updates,
-    setUpdates,
     maintenances,
     
     // Loading states

@@ -2,19 +2,22 @@ import {
   useCreateMaintenance,
   useDeleteMaintenance,
   useMaintenances,
-  type CreateMaintenanceData
+  type CreateMaintenanceData,
 } from "@/hooks/useMaintenances";
 import {
   useCreateStatusPage,
   useStatusPage,
   useUpdateStatusPage,
 } from "@/hooks/useStatusPages";
-import type { StatusPage, StatusPageSection, WidgetType } from "@/types/status-page";
+import type {
+  StatusPage,
+  StatusPageSection,
+  WidgetType,
+} from "@/types/status-page";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 
 interface StatusUpdate {
   id: string;
@@ -45,7 +48,7 @@ interface CreateReportResponse {
 export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   // TanStack Query mutations
   const createMutation = useCreateStatusPage();
   const updateMutation = useUpdateStatusPage();
@@ -75,32 +78,31 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       return response.json();
     },
     onSuccess: (response, variables) => {
-      
       // Invalidate status page data to refresh updates
-      queryClient.invalidateQueries({ 
-        queryKey: ["status-page", variables.statusPageId] 
+      queryClient.invalidateQueries({
+        queryKey: ["status-page", variables.statusPageId],
       });
-      
+
       // Optimistically update the status page cache with the new update
       queryClient.setQueryData(
         ["status-page", variables.statusPageId],
         (oldData: StatusPage | undefined) => {
           if (!oldData) return oldData;
-          
+
           const newUpdate: StatusUpdate = {
             id: response.update.id,
             title: response.update.title,
             body: response.update.description,
             createdAt: response.update.publishedAt,
           };
-          
+
           return {
             ...oldData,
             updates: [newUpdate, ...(oldData.updates || [])],
           };
         }
       );
-      
+
       toast.success("Status report created successfully");
     },
     onError: (error: Error) => {
@@ -120,16 +122,15 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   const [removedSectionIds, setRemovedSectionIds] = useState<string[]>([]);
 
   // Data fetching with TanStack Query
-  const { 
-    data: statusPageData, 
+  const {
+    data: statusPageData,
     isLoading,
-    error: statusPageError 
+    error: statusPageError,
   } = useStatusPage(id || "");
-  
-  const { 
-    data: maintenancesData,
-    error: maintenancesError 
-  } = useMaintenances(id || "");
+
+  const { data: maintenancesData, error: maintenancesError } = useMaintenances(
+    id || ""
+  );
 
   // Use maintenances from API instead of local state
   const maintenances = maintenancesData?.maintenances || [];
@@ -143,20 +144,31 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       setSupportUrl(statusPageData.supportUrl || "");
       setLogoLinkUrl(statusPageData.logoLinkUrl || "");
       setHistoryRange(statusPageData.historyRange || "7d");
-      
+
       // Normalize sections data
-      const normalizedSections = (statusPageData.sections || []).map((s: StatusPageSection) => ({
-        ...s,
-        resources: (s.resources || []).map((r: { id?: string; type?: string; monitorId: string; publicName?: string; widgetType?: string; explanation?: string }) => ({
-          id: r.id || crypto.randomUUID(),
-          type: "monitor" as const,
-          monitorId: r.monitorId || "",
-          publicName: r.publicName || "",
-          explanation: r.explanation || "",
-          widgetType: (r.widgetType || "with_history") as WidgetType,
-        })),
-      }));
-      
+      const normalizedSections = (statusPageData.sections || []).map(
+        (s: StatusPageSection) => ({
+          ...s,
+          resources: (s.resources || []).map(
+            (r: {
+              id?: string;
+              type?: string;
+              monitorId: string;
+              publicName?: string;
+              widgetType?: string;
+              explanation?: string;
+            }) => ({
+              id: r.id || crypto.randomUUID(),
+              type: "monitor" as const,
+              monitorId: r.monitorId || "",
+              publicName: r.publicName || "",
+              explanation: r.explanation || "",
+              widgetType: (r.widgetType || "with_history") as WidgetType,
+            })
+          ),
+        })
+      );
+
       setSections(normalizedSections);
       setUpdates(statusPageData.updates || []);
     }
@@ -165,11 +177,11 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
   // Check if there are unsaved changes
   const hasChanges = () => {
     // In create mode, always return true if name is provided (form is ready to save)
-    if (mode === "create") return name.trim() !== ""; 
-    
+    if (mode === "create") return name.trim() !== "";
+
     // In edit mode, compare with loaded data
     if (!statusPageData) return false;
-    
+
     return (
       isPublished !== (statusPageData.isPublished || false) ||
       name !== (statusPageData.name || "") ||
@@ -177,7 +189,8 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       supportUrl !== (statusPageData.supportUrl || "") ||
       logoLinkUrl !== (statusPageData.logoLinkUrl || "") ||
       historyRange !== (statusPageData.historyRange || "7d") ||
-      JSON.stringify(sections) !== JSON.stringify(statusPageData.sections || []) ||
+      JSON.stringify(sections) !==
+        JSON.stringify(statusPageData.sections || []) ||
       JSON.stringify(updates) !== JSON.stringify(statusPageData.updates || [])
     );
   };
@@ -201,14 +214,15 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       updates,
     };
 
-    const finalSaveData = removedSectionIds.length > 0 
-      ? { ...saveData, removedSectionIds } 
-      : saveData;
+    const finalSaveData =
+      removedSectionIds.length > 0
+        ? { ...saveData, removedSectionIds }
+        : saveData;
 
     try {
       if (mode === "create") {
         const result = await createMutation.mutateAsync(finalSaveData);
-        
+
         // Redirect to edit mode with the new ID
         if (result?.statusPage?.id) {
           router.push(`/status-pages/${result.statusPage.id}`);
@@ -220,37 +234,44 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
         });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
       // Show more specific error messages
-      if (errorMessage?.includes("authentication") || errorMessage?.includes("unauthorized")) {
+      if (
+        errorMessage?.includes("authentication") ||
+        errorMessage?.includes("unauthorized")
+      ) {
         toast.error("Authentication failed. Please log in again.");
-      } else if (errorMessage?.includes("validation") || errorMessage?.includes("invalid")) {
+      } else if (
+        errorMessage?.includes("validation") ||
+        errorMessage?.includes("invalid")
+      ) {
         toast.error("Invalid data. Please check your inputs.");
       } else {
-        toast.error(`Failed to save status page: ${errorMessage || "Unknown error"}`);
+        toast.error(
+          `Failed to save status page: ${errorMessage || "Unknown error"}`
+        );
       }
     }
   };
   // Section removal helper for UI three-dot menu
   const removeSection = (sectionId: string) => {
     setSections((prev) => prev.filter((s) => s.id !== sectionId));
-    setRemovedSectionIds((prev) => (prev.includes(sectionId) ? prev : [...prev, sectionId]));
+    setRemovedSectionIds((prev) =>
+      prev.includes(sectionId) ? prev : [...prev, sectionId]
+    );
   };
 
   // Maintenance handlers with TanStack Query
   const removeMaintenance = async (maintenanceId: string) => {
     if (!id) return; // Need status page ID
-    
-    try {
-      await deleteMaintenanceMutation.mutateAsync({
-        statusPageId: id,
-        maintenanceId,
-      });
-      // Success toast is handled in the mutation's onSuccess
-    } catch (error) {
-      // Error toast is handled in the mutation's onError
-    }
+
+    await deleteMaintenanceMutation.mutateAsync({
+      statusPageId: id,
+      maintenanceId,
+    });
+    // Success toast is handled in the mutation's onSuccess
   };
 
   const createMaintenance = async (maintenanceData: CreateMaintenanceData) => {
@@ -298,21 +319,21 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
     setUpdates,
     maintenances,
     removedSectionIds,
-    
+
     // Loading states
     isLoading,
     isSaving: createMutation.isPending || updateMutation.isPending,
     isCreatingReport: createReportMutation.isPending,
     isCreatingMaintenance: createMaintenanceMutation.isPending,
     isDeletingMaintenance: deleteMaintenanceMutation.isPending,
-    
+
     // Error states
     statusPageError,
     maintenancesError,
-    
+
     // Computed values
     hasChanges: hasChanges(),
-    
+
     // Actions
     handleSave,
     removeMaintenance,
