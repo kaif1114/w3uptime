@@ -145,16 +145,14 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
 
   // Aggregate data by continent
   const continentData = useMemo(() => {
-    const continentMap = new (globalThis.Map)<string, { name: string; code: string; count: number; countries: string[] }>();
+    const continentMap = new Map<string, ContinentData>();
     
     validators.forEach(validator => {
       const continent = validator.continent;
-      const continentCode = validator.continentCode;
       
       if (!continentMap.has(continent)) {
         continentMap.set(continent, {
-          name: continent,
-          code: continentCode,
+          continent: continent,
           count: 0,
           countries: []
         });
