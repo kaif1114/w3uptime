@@ -54,7 +54,7 @@ export interface TimelineEvent {
   id: string;
   type: TimelineEventType;
   description: string;
-  timestamp: Date;
+  createdAt: Date;
   userId?: string;
   user?: {
     id: string;
