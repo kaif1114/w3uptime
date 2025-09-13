@@ -103,13 +103,10 @@ export const POST = withAuth(async (req: NextRequest, user) =>
       data: {
         title,
         message,
-        severity,
         triggerStatusCode,
         expectedStatusCode,
         monitorId,
-        status: "PENDING", // New alerts start as PENDING
-        currentEscalationLevel: 1,
-        escalationCompleted: false,
+        // Note: severity, status, currentEscalationLevel, escalationCompleted fields would need to be added to schema
       },
       include: {
         monitor: {
