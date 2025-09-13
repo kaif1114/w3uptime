@@ -103,7 +103,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       url: monitor.url,
       timeout: monitor.timeout,
       checkInterval: monitor.checkInterval,
-      status: monitor.status,
+      status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : monitor.status,
       expectedStatusCodes: monitor.expectedStatusCodes,
     },
   });
