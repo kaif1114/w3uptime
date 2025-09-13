@@ -256,7 +256,7 @@ export function MaintenanceTab({
                               maintenanceDraft.affectedResourceIds || []
                             ).includes(r.id);
                             const monitorName =
-                              monitorsData?.monitors.find(
+                              monitorsData?.find(
                                 (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
