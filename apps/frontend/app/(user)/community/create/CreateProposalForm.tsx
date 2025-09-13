@@ -1,18 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -20,18 +10,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Lightbulb,
-  Settings,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreateProposal } from "@/hooks/useProposals";
+import { CreateProposalData, ProposalType } from "@/types/proposal";
+import {
+  AlertCircle,
   ArrowLeft,
   CheckCircle,
-  AlertCircle,
+  Lightbulb,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useCreateProposal } from "@/hooks/useProposals";
-import { ProposalType, CreateProposalData } from "@/types/proposal";
+import { useState } from "react";
 
 export function CreateProposalForm() {
   const [formData, setFormData] = useState({

@@ -141,7 +141,7 @@ export function MaintenanceTab({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    What's going on?
+                    What&apos;s going on?
                   </Label>
                   <Input
                     value={maintenanceDraft.title}

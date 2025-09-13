@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEscalationPolicy } from "@/hooks/useEscalationPolicies";
 import { AlertTriangle, ArrowLeft, Edit, Mail, MessageSquare, Webhook } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface EscalationPolicyPageProps {
   policyId: string;

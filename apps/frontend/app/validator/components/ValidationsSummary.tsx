@@ -35,7 +35,7 @@ export default function ValidationsSummary({
           Validation Performance
         </CardTitle>
         <CardDescription>
-          Overview of your validator's validation history and performance
+          Overview of your validator&apos;s validation history and performance
           metrics
         </CardDescription>
       </CardHeader>
