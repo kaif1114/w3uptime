@@ -232,7 +232,7 @@ export const PATCH = withAuth(
         logoLinkUrl: finalStatusPage.logo,
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
-        sections: finalStatusPage.statusPageSections.map((section: DbStatusPageSection) => ({
+        sections: finalStatusPage.statusPageSections.map((section) => ({
           id: section.id,
           name: section.name,
           resources: [{ type: "monitor", monitorId: section.monitorId }],
