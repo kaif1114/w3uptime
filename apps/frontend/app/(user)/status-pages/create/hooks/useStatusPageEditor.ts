@@ -201,13 +201,14 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       updates,
     };
 
+    let finalSaveData = saveData;
     if (removedSectionIds.length > 0) {
-      saveData.removedSectionIds = removedSectionIds;
+      finalSaveData = { ...saveData, removedSectionIds };
     }
 
     try {
       if (mode === "create") {
-        const result = await createMutation.mutateAsync(saveData);
+        const result = await createMutation.mutateAsync(finalSaveData);
         
         // Redirect to edit mode with the new ID
         if (result?.statusPage?.id) {
@@ -216,7 +217,7 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       } else {
         await updateMutation.mutateAsync({
           id: id || "",
-          data: saveData,
+          data: finalSaveData,
         });
       }
     } catch (error: unknown) {
