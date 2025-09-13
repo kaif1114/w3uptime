@@ -33,6 +33,10 @@ interface CreateReportData {
   publishedAt: string;
   notifySubscribers: boolean;
   affected: Record<string, AffectedStatus>;
+  affectedSections: Array<{
+    sectionId: string;
+    status: "DOWNTIME" | "DEGRADED" | "RESOLVED";
+  }>;
 }
 
 interface UpdatesTabProps {

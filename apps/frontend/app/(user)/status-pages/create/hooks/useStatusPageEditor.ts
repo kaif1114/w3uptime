@@ -31,7 +31,7 @@ interface CreateReportData {
   description: string;
   publishedAt: string;
   notifySubscribers: boolean;
-  affected: Record<string, string>;
+  affected: Record<string, "not_affected" | "downtime" | "degraded" | "resolved">;
   affectedSections: Array<{
     sectionId: string;
     status: "DOWNTIME" | "DEGRADED" | "RESOLVED";
