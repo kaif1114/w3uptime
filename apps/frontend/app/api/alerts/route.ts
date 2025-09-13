@@ -40,10 +40,7 @@ export const GET = withAuth(async (req: NextRequest, user) =>
     const targetMonitorId = validation.data.monitorId || user.id;
     whereClause.monitorId = targetMonitorId;
 
-    // Filter by status if provided
-    if (validation.data.status && ["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"].includes(validation.data.status)) {
-      whereClause.status = validation.data.status;
-    }
+    // Note: Status filtering would require adding status field to Alert schema
 
     const alerts = await prisma.alert.findMany({
       where: whereClause,
