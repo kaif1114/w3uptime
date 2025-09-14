@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useCustomTimePeriod } from "@/hooks/useAnalytics";
 import { cn } from "@/lib/utils";
 import { CustomTimePeriod, EnhancedTimePeriod } from "@/types/analytics";
@@ -17,18 +21,18 @@ interface CustomPeriodSelectorProps {
 }
 
 const PRESET_PERIODS = [
-  { value: 'day', label: 'Last 24 Hours', icon: '📅' },
-  { value: 'week', label: 'Last 7 Days', icon: '📊' },
-  { value: 'month', label: 'Last 30 Days', icon: '📈' },
-  { value: 'custom', label: 'Custom Range', icon: '🎯' },
+  { value: "day", label: "Last 24 Hours" },
+  { value: "week", label: "Last 7 Days" },
+  { value: "month", label: "Last 30 Days" },
+  { value: "custom", label: "Custom Range" },
 ] as const;
 
 const QUICK_RANGES = [
-  { label: 'Last 3 days', days: 3 },
-  { label: 'Last week', days: 7 },
-  { label: 'Last 2 weeks', days: 14 },
-  { label: 'Last month', days: 30 },
-  { label: 'Last 3 months', days: 90 },
+  { label: "Last 3 days", days: 3 },
+  { label: "Last week", days: 7 },
+  { label: "Last 2 weeks", days: 14 },
+  { label: "Last month", days: 30 },
+  { label: "Last 3 months", days: 90 },
 ];
 
 export function CustomPeriodSelector({
@@ -44,16 +48,16 @@ export function CustomPeriodSelector({
 
   // Initialize dates if value is custom period
   useEffect(() => {
-    if (typeof value === 'object' && value.type === 'custom') {
+    if (typeof value === "object" && value.type === "custom") {
       setStartDate(new Date(value.startDate));
       setEndDate(new Date(value.endDate));
     }
   }, [value]);
 
-  const currentPeriod = typeof value === 'string' ? value : value.type;
+  const currentPeriod = typeof value === "string" ? value : value.type;
 
   const handlePresetChange = (period: string) => {
-    if (period === 'custom') {
+    if (period === "custom") {
       setIsCustomOpen(true);
     } else {
       onChange(period as EnhancedTimePeriod);
@@ -63,7 +67,7 @@ export function CustomPeriodSelector({
 
   const handleCustomRangeApply = () => {
     if (!startDate || !endDate) {
-      setTempError('Please select both start and end dates');
+      setTempError("Please select both start and end dates");
       return;
     }
 
@@ -82,7 +86,7 @@ export function CustomPeriodSelector({
         startDate.toISOString(),
         endDate.toISOString()
       );
-      
+
       if (customPeriod) {
         onChange(customPeriod);
         setIsCustomOpen(false);
@@ -102,12 +106,12 @@ export function CustomPeriodSelector({
   };
 
   const formatSelectedPeriod = (): string => {
-    if (typeof value === 'string') {
-      const preset = PRESET_PERIODS.find(p => p.value === value);
+    if (typeof value === "string") {
+      const preset = PRESET_PERIODS.find((p) => p.value === value);
       return preset ? preset.label : value;
     } else {
-      const start = format(new Date(value.startDate), 'MMM dd');
-      const end = format(new Date(value.endDate), 'MMM dd');
+      const start = format(new Date(value.startDate), "MMM dd");
+      const end = format(new Date(value.endDate), "MMM dd");
       return `${start} - ${end}`;
     }
   };
@@ -116,7 +120,7 @@ export function CustomPeriodSelector({
     <div className={cn("flex items-center gap-2", className)}>
       <Clock className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm font-medium">Period:</span>
-      
+
       {/* Standard Period Buttons */}
       <div className="flex gap-1">
         {PRESET_PERIODS.slice(0, -1).map((period) => (
@@ -126,7 +130,6 @@ export function CustomPeriodSelector({
             size="sm"
             onClick={() => handlePresetChange(period.value)}
           >
-            <span className="mr-1">{period.icon}</span>
             {period.label}
           </Button>
         ))}
@@ -136,12 +139,14 @@ export function CustomPeriodSelector({
       <Popover open={isCustomOpen} onOpenChange={setIsCustomOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={currentPeriod === 'custom' ? "default" : "outline"}
+            variant={currentPeriod === "custom" ? "default" : "outline"}
             size="sm"
-            onClick={() => handlePresetChange('custom')}
+            onClick={() => handlePresetChange("custom")}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {currentPeriod === 'custom' ? formatSelectedPeriod() : 'Custom Range'}
+            {currentPeriod === "custom"
+              ? formatSelectedPeriod()
+              : "Custom Range"}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -164,10 +169,12 @@ export function CustomPeriodSelector({
 
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Custom Date Range</h4>
-              
+
               <div className="flex gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Start Date</label>
+                  <label className="text-xs text-muted-foreground">
+                    Start Date
+                  </label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -186,8 +193,9 @@ export function CustomPeriodSelector({
                         mode="single"
                         selected={startDate}
                         onSelect={setStartDate}
-                        disabled={(date) => 
-                          date > new Date() || (endDate ? date >= endDate : false)
+                        disabled={(date) =>
+                          date > new Date() ||
+                          (endDate ? date >= endDate : false)
                         }
                         initialFocus
                       />
@@ -196,7 +204,9 @@ export function CustomPeriodSelector({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">End Date</label>
+                  <label className="text-xs text-muted-foreground">
+                    End Date
+                  </label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -215,8 +225,9 @@ export function CustomPeriodSelector({
                         mode="single"
                         selected={endDate}
                         onSelect={setEndDate}
-                        disabled={(date) => 
-                          date > new Date() || (startDate ? date <= startDate : false)
+                        disabled={(date) =>
+                          date > new Date() ||
+                          (startDate ? date <= startDate : false)
                         }
                         initialFocus
                       />
@@ -254,7 +265,7 @@ export function CustomPeriodSelector({
       </Popover>
 
       {/* Current Selection Display */}
-      {currentPeriod === 'custom' && typeof value === 'object' && (
+      {currentPeriod === "custom" && typeof value === "object" && (
         <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
           {formatSelectedPeriod()}
         </div>

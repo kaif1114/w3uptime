@@ -68,7 +68,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Monitor and Time Period Selection */}
-      <div className="flex flex-wrap gap-4 items-center">
+      <div className="flex justify-between gap-4 items-center">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Monitor:</span>
           <Select value={currentMonitorId} onValueChange={setSelectedMonitorId}>
