@@ -58,7 +58,7 @@ export const GET = withAuth(async (
           SELECT DISTINCT 
             "continentCode" as region_id,
             "continentCode" as region_name,
-            COUNT(*) as data_count
+            COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
           WHERE "continentCode" IS NOT NULL
           ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}
@@ -74,7 +74,7 @@ export const GET = withAuth(async (
             "countryCode" as region_id,
             "countryCode" as region_name,
             "continentCode",
-            COUNT(*) as data_count
+            COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
           WHERE "countryCode" IS NOT NULL
           ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}
@@ -91,7 +91,7 @@ export const GET = withAuth(async (
             city as region_name,
             "countryCode",
             "continentCode",
-            COUNT(*) as data_count
+            COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
           WHERE city IS NOT NULL AND "countryCode" IS NOT NULL
           ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}

@@ -71,10 +71,10 @@ export const GET = withAuth(async (
         "countryCode" as country_code,
         "countryCode" as country_name,
         "continentCode" as continent_code,
-        COUNT(*) as data_count,
-        AVG(latency) as avg_latency,
-        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_checks,
-        COUNT(*) as total_checks
+        COUNT(*)::BIGINT as data_count,
+        ROUND(AVG(latency)::NUMERIC, 2) as avg_latency,
+        COUNT(*) FILTER (WHERE status = 'GOOD')::BIGINT as successful_checks,
+        COUNT(*)::BIGINT as total_checks
       FROM "MonitorTick" 
       WHERE "countryCode" IS NOT NULL ${continent ? `AND "continentCode" = $1` : ''}
       ${monitorId ? `AND "monitorId" = $${continent ? 2 : 1}` : ''}

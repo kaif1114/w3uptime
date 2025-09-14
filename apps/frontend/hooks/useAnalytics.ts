@@ -167,60 +167,6 @@ export function useCountryAnalytics(
   });
 }
 
-// ===== MULTI-REGION COMPARISON HOOKS =====
-
-/**
- * Hook to fetch multiple regional timeseries for comparison
- */
-export function useMultiRegionalComparison(
-  regions: Array<{ region: string; regionType: 'continent' | 'country' | 'city'; label?: string }>,
-  period: EnhancedTimePeriod | string,
-  customPeriod?: CustomTimePeriod,
-  enabled: boolean = true
-) {
-  // Create queries for each region
-  const queries = regions.map(({ region, regionType, label }) => ({
-    queryKey: ["regional-comparison", region, regionType, period, customPeriod],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('region', region);
-      params.append('regionType', regionType);
-      
-      if (customPeriod && period === 'custom') {
-        params.append('period', 'day');
-        params.append('startTime', customPeriod.startDate);
-        params.append('endTime', customPeriod.endDate);
-      } else {
-        params.append('period', period as string);
-      }
-
-      const response = await fetch(`/api/analytics/regional-timeseries?${params.toString()}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch timeseries for ${region}`);
-      }
-      
-      const data = await response.json();
-      return {
-        ...data,
-        label: label || region,
-        region,
-        regionType,
-      };
-    },
-    enabled: enabled && !!region,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  }));
-
-  // Use useQuery for each region separately to handle them independently
-  return queries.map(query => useQuery(query));
-}
 
 // ===== UTILITY HOOKS =====
 
