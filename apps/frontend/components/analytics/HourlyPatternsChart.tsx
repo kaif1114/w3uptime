@@ -123,8 +123,8 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             </div>
             
             {/* Horizontal Chart Container */}
-            <div className="bg-muted/20 rounded-lg p-4 overflow-x-auto">
-              <div className="min-w-[800px]">
+            <div className="bg-muted/20 rounded-lg p-4">
+              <div className="w-full">
                 {(() => {
                   const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
                   
