@@ -220,10 +220,10 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         )}
 
         {/* Weekly Comparison and Hourly Patterns - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="">
           {/* Weekly Comparison */}
           {analytics.weeklyComparison && analytics.weeklyComparison.length > 0 && (
-            <div className="w-full">
+            <div className="w-full mb-6">
               <WeeklyComparisonTable comparisons={analytics.weeklyComparison} />
             </div>
           )}
