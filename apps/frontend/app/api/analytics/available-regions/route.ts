@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { RawRegionQueryResult } from "@/types/analytics";
 
 const availableRegionsQuerySchema = z.object({
   monitorId: z.string().optional(),
@@ -48,7 +49,7 @@ export const GET = withAuth(async (
       }
     }
 
-    let availableRegions: any[] = [];
+    let availableRegions: RawRegionQueryResult[] = [];
 
     // Get available regions based on type
     switch (regionType) {
