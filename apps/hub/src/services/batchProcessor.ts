@@ -47,7 +47,7 @@ async function sendBatch(batch: typeof monitorTickBuffer) {
       });
 
       if (response.ok) {
-        const result: MonitorTickBatchResponse = await response.json();
+        const result = await response.json();
         console.log(`Batch ${batchRequest.batchId} processed successfully:`, result);
         return;
       } else {

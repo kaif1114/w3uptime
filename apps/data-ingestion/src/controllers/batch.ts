@@ -2,14 +2,14 @@
 // This avoids TS1479 when importing an ESM package from a CJS module
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { prisma } = require("db/client");
-import { MonitorTickBatchResponse, MonitorTickStatus } from "common/types";
+import { MonitorTickBatchResponse } from "common/types";
 import { Request, Response } from "express";
 import z from "zod";
 
 const monitorTickItemSchema = z.object({
   monitorId: z.string().uuid(),
   validatorId: z.string().uuid(),
-  status: z.nativeEnum(MonitorTickStatus),
+  status: z.enum(["GOOD", "BAD"]),
   latency: z.number().min(0),
   longitude: z.number().min(-180).max(180),
   latitude: z.number().min(-90).max(90),
@@ -21,7 +21,7 @@ const monitorTickItemSchema = z.object({
 
 const batchRequestSchema = z.object({
   batch: z.array(monitorTickItemSchema).min(1).max(100),
-  batchId: z.string().uuid(),
+  batchId: z.uuid(),
   timestamp: z.string().datetime(),
 });
 
