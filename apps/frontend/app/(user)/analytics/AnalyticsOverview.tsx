@@ -1,17 +1,13 @@
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMonitorAnalytics } from "@/hooks/useMonitors";
-import { useAvailableCountries, useRegionalTimeseries, useMultiRegionalComparison } from "@/hooks/useAnalytics";
-import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, Globe, BarChart3, Map } from "lucide-react";
-import { RegionSelector } from "@/components/analytics/RegionSelector";
-import { CountrySelector } from "@/components/analytics/CountrySelector";
-import { RegionalPerformanceChart } from "@/components/analytics/RegionalPerformanceChart";
+import { useAvailableCountries } from "@/hooks/useAnalytics";
+import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, BarChart3 } from "lucide-react";
 import { CountryRankingTable } from "@/components/analytics/CountryRankingTable";
 import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
 
@@ -21,64 +17,11 @@ interface AnalyticsOverviewProps {
   customPeriod?: CustomTimePeriod;
 }
 
-
 export function AnalyticsOverview({ monitorId, period, customPeriod }: AnalyticsOverviewProps) {
   const { data: analytics, isLoading, error } = useMonitorAnalytics(monitorId, period);
   const { data: availableCountries } = useAvailableCountries(monitorId);
   
-  // State for regional analytics
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedContinent, setSelectedContinent] = useState<string>();
   const [activeTab, setActiveTab] = useState('overview');
-  
-  // Fetch regional data for selected regions
-  const regionalQueries = useMultiRegionalComparison(
-    selectedRegions.map(region => ({ 
-      region, 
-      regionType: 'continent' as const,
-      label: region 
-    })),
-    period,
-    customPeriod,
-    selectedRegions.length > 0
-  );
-  
-  // Fetch country data for selected countries
-  const countryQueries = useMultiRegionalComparison(
-    selectedCountries.map(country => ({ 
-      region: country, 
-      regionType: 'country' as const,
-      label: country 
-    })),
-    period,
-    customPeriod,
-    selectedCountries.length > 0
-  );
-  
-  // Process regional comparison data
-  const regionalData = useMemo(() => {
-    return regionalQueries
-      .filter(query => query.data && !query.isLoading && !query.error)
-      .map(query => ({
-        region: query.data!.region,
-        regionType: query.data!.regionType,
-        data: query.data!.data,
-        label: query.data!.label,
-      }));
-  }, [regionalQueries]);
-  
-  // Process country comparison data
-  const countryData = useMemo(() => {
-    return countryQueries
-      .filter(query => query.data && !query.isLoading && !query.error)
-      .map(query => ({
-        region: query.data!.region,
-        regionType: query.data!.regionType,
-        data: query.data!.data,
-        label: query.data!.label,
-      }));
-  }, [countryQueries]);
 
   if (isLoading) {
     return (
@@ -126,18 +69,10 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="overview" className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
           Overview
-        </TabsTrigger>
-        <TabsTrigger value="regions" className="flex items-center gap-2">
-          <Globe className="h-4 w-4" />
-          Regions
-        </TabsTrigger>
-        <TabsTrigger value="countries" className="flex items-center gap-2">
-          <Map className="h-4 w-4" />
-          Countries
         </TabsTrigger>
         <TabsTrigger value="rankings" className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
@@ -254,66 +189,6 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         </Card>
       </TabsContent>
 
-      {/* Regional Analysis Tab */}
-      <TabsContent value="regions" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Regional Comparison</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <RegionSelector
-              selectedRegions={selectedRegions}
-              onSelectionChange={setSelectedRegions}
-              monitorId={monitorId}
-            />
-            
-            {selectedRegions.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Globe className="h-12 w-12 mx-auto mb-4" />
-                <p>Select regions above to compare their performance</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {regionalData.length > 0 && (
-          <RegionalPerformanceChart
-            regions={regionalData}
-            title="Regional Performance Comparison"
-          />
-        )}
-      </TabsContent>
-
-      {/* Countries Analysis Tab */}
-      <TabsContent value="countries" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Country Comparison</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <CountrySelector
-              selectedCountries={selectedCountries}
-              onSelectionChange={setSelectedCountries}
-              selectedContinent={selectedContinent}
-              monitorId={monitorId}
-            />
-            
-            {selectedCountries.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Map className="h-12 w-12 mx-auto mb-4" />
-                <p>Select countries above to compare their performance</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {countryData.length > 0 && (
-          <RegionalPerformanceChart
-            regions={countryData}
-            title="Country Performance Comparison"
-          />
-        )}
-      </TabsContent>
 
       {/* Rankings Tab */}
       <TabsContent value="rankings" className="space-y-6">
