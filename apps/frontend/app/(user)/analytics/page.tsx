@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Period:</span>
           <div className="flex gap-2">
-            {(['hour', 'day', 'week', 'month'] as const).map((period) => (
+            {(['day', 'week', 'month'] as const).map((period) => (
               <Button
                 key={period}
                 variant={timePeriod === period ? "default" : "outline"}
