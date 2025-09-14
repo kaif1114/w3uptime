@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMonitorAnalytics } from "@/hooks/useMonitors";
 import { useAvailableCountries } from "@/hooks/useAnalytics";
-import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, BarChart3, Lightbulb, Download } from "lucide-react";
+import { AlertTriangle, CheckCircle, TrendingUp, MapPin, BarChart3, Lightbulb, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountryRankingTable } from "@/components/analytics/CountryRankingTable";
 import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
@@ -31,9 +31,9 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
   
   const exportToPDF = async () => {
     setIsExporting(true);
+    // Store current active tab to restore later
+    const originalActiveTab = activeTab;
     try {
-      // Store current active tab to restore later
-      const originalActiveTab = activeTab;
       
       // Dynamic import to avoid SSR issues
       const html2canvas = (await import('html2canvas-pro')).default;
@@ -91,8 +91,6 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         
         summaryY = summaryY + 8;
       }
-      
-      let yPosition = 55;
       
       // Add new page for Overview section
       pdf.addPage();
