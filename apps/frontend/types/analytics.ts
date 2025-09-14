@@ -296,3 +296,16 @@ export interface ProcessedRegionData {
   total_latency: number;
   total_samples: number;
 }
+
+/**
+ * Raw available countries query result from database
+ */
+export interface RawAvailableCountryResult {
+  country_code: string;
+  country_name: string;
+  continent_code: string;
+  data_count: bigint;
+  avg_latency: number;
+  successful_checks: bigint;
+  total_checks: bigint;
+}

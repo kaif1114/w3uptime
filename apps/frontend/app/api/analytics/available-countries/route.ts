@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import { RawAvailableCountryResult } from "@/types/analytics";
 
 const availableCountriesQuerySchema = z.object({
   monitorId: z.string().optional(),
@@ -98,7 +99,7 @@ export const GET = withAuth(async (
     };
 
     // Transform the data to include performance metrics
-    const transformedCountries = (availableCountries as any[]).map(country => ({
+    const transformedCountries = (availableCountries as RawAvailableCountryResult[]).map(country => ({
       country_code: country.country_code,
       country_name: country.country_name,
       continent_code: country.continent_code,
