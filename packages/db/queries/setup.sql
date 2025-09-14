@@ -1044,3 +1044,330 @@ BEGIN
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to get monitor hourly patterns 
+CREATE OR REPLACE FUNCTION get_monitor_hourly_patterns(
+    p_monitor_id UUID,
+    p_period TEXT DEFAULT 'week'
+) RETURNS TABLE (
+    hour_of_day INTEGER,
+    avg_latency NUMERIC,
+    total_checks BIGINT,
+    successful_checks BIGINT,
+    success_rate NUMERIC,
+    check_frequency NUMERIC
+) AS $$
+BEGIN
+    CASE p_period
+        WHEN 'day' THEN
+            RETURN QUERY
+            SELECT 
+                EXTRACT(HOUR FROM mt.time_bucket)::INTEGER AS hour_of_day,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mt.total_ticks)::BIGINT AS total_checks,
+                SUM(mt.successful_ticks)::BIGINT AS successful_checks,
+                CASE 
+                    WHEN SUM(mt.total_ticks) > 0 
+                    THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END AS success_rate,
+                ROUND((SUM(mt.total_ticks)::NUMERIC / NULLIF(COUNT(*)::NUMERIC, 0)), 2) AS check_frequency
+            FROM monitor_tick_5min mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '24 hours'
+            GROUP BY EXTRACT(HOUR FROM mt.time_bucket)
+            ORDER BY hour_of_day;
+            
+        WHEN 'week' THEN
+            RETURN QUERY
+            SELECT 
+                EXTRACT(HOUR FROM mt.time_bucket)::INTEGER AS hour_of_day,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mt.total_ticks)::BIGINT AS total_checks,
+                SUM(mt.successful_ticks)::BIGINT AS successful_checks,
+                CASE 
+                    WHEN SUM(mt.total_ticks) > 0 
+                    THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END AS success_rate,
+                ROUND((SUM(mt.total_ticks)::NUMERIC / NULLIF(COUNT(*)::NUMERIC, 0)), 2) AS check_frequency
+            FROM monitor_tick_30min mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '7 days'
+            GROUP BY EXTRACT(HOUR FROM mt.time_bucket)
+            ORDER BY hour_of_day;
+            
+        WHEN 'month' THEN
+            RETURN QUERY
+            SELECT 
+                EXTRACT(HOUR FROM mt.time_bucket)::INTEGER AS hour_of_day,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mt.total_ticks)::BIGINT AS total_checks,
+                SUM(mt.successful_ticks)::BIGINT AS successful_checks,
+                CASE 
+                    WHEN SUM(mt.total_ticks) > 0 
+                    THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                    ELSE 0
+                END AS success_rate,
+                ROUND((SUM(mt.total_ticks)::NUMERIC / NULLIF(COUNT(*)::NUMERIC, 0)), 2) AS check_frequency
+            FROM monitor_tick_2hour mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '30 days'
+            GROUP BY EXTRACT(HOUR FROM mt.time_bucket)
+            ORDER BY hour_of_day;
+        ELSE
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
+    END CASE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get monitor weekly comparison
+CREATE OR REPLACE FUNCTION get_monitor_weekly_comparison(
+    p_monitor_id UUID
+) RETURNS TABLE (
+    metric_name TEXT,
+    current_week NUMERIC,
+    previous_week NUMERIC,
+    change_percentage NUMERIC,
+    trend_direction TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH current_week_data AS (
+        SELECT 
+            COALESCE(SUM(mt.total_ticks), 0) as total_checks,
+            COALESCE(SUM(mt.successful_ticks), 0) as successful_checks,
+            ROUND(AVG(mt.avg_latency)::NUMERIC, 2) as avg_latency,
+            CASE 
+                WHEN SUM(mt.total_ticks) > 0 
+                THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                ELSE 0
+            END as uptime_percentage
+        FROM monitor_tick_30min mt
+        WHERE mt."monitorId" = p_monitor_id::text
+            AND mt.time_bucket >= NOW() - INTERVAL '7 days'
+    ),
+    previous_week_data AS (
+        SELECT 
+            COALESCE(SUM(mt.total_ticks), 0) as total_checks,
+            COALESCE(SUM(mt.successful_ticks), 0) as successful_checks,
+            ROUND(AVG(mt.avg_latency)::NUMERIC, 2) as avg_latency,
+            CASE 
+                WHEN SUM(mt.total_ticks) > 0 
+                THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                ELSE 0
+            END as uptime_percentage
+        FROM monitor_tick_30min mt
+        WHERE mt."monitorId" = p_monitor_id::text
+            AND mt.time_bucket >= NOW() - INTERVAL '14 days'
+            AND mt.time_bucket < NOW() - INTERVAL '7 days'
+    )
+    SELECT 'Uptime'::TEXT as metric_name,
+           c.uptime_percentage as current_week,
+           p.uptime_percentage as previous_week,
+           CASE 
+               WHEN p.uptime_percentage > 0 
+               THEN ROUND(((c.uptime_percentage - p.uptime_percentage) / p.uptime_percentage) * 100, 2)
+               ELSE 0
+           END as change_percentage,
+           CASE 
+               WHEN c.uptime_percentage > p.uptime_percentage THEN 'up'::TEXT
+               WHEN c.uptime_percentage < p.uptime_percentage THEN 'down'::TEXT
+               ELSE 'stable'::TEXT
+           END as trend_direction
+    FROM current_week_data c, previous_week_data p
+    
+    UNION ALL
+    
+    SELECT 'Average Latency'::TEXT as metric_name,
+           c.avg_latency as current_week,
+           p.avg_latency as previous_week,
+           CASE 
+               WHEN p.avg_latency > 0 
+               THEN ROUND(((c.avg_latency - p.avg_latency) / p.avg_latency) * 100, 2)
+               ELSE 0
+           END as change_percentage,
+           CASE 
+               WHEN c.avg_latency < p.avg_latency THEN 'up'::TEXT
+               WHEN c.avg_latency > p.avg_latency THEN 'down'::TEXT
+               ELSE 'stable'::TEXT
+           END as trend_direction
+    FROM current_week_data c, previous_week_data p
+    
+    UNION ALL
+    
+    SELECT 'Total Checks'::TEXT as metric_name,
+           c.total_checks::NUMERIC as current_week,
+           p.total_checks::NUMERIC as previous_week,
+           CASE 
+               WHEN p.total_checks > 0 
+               THEN ROUND(((c.total_checks - p.total_checks)::NUMERIC / p.total_checks::NUMERIC) * 100, 2)
+               ELSE 0
+           END as change_percentage,
+           CASE 
+               WHEN c.total_checks > p.total_checks THEN 'up'::TEXT
+               WHEN c.total_checks < p.total_checks THEN 'down'::TEXT
+               ELSE 'stable'::TEXT
+           END as trend_direction
+    FROM current_week_data c, previous_week_data p;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get monitor performance insights and recommendations
+CREATE OR REPLACE FUNCTION get_monitor_performance_insights(
+    p_monitor_id UUID,
+    p_period TEXT DEFAULT 'week'
+) RETURNS TABLE (
+    insight_type TEXT,
+    insight_title TEXT,
+    insight_message TEXT,
+    severity TEXT,
+    recommendation TEXT,
+    health_score TEXT
+) AS $$
+DECLARE
+    v_uptime_percentage NUMERIC;
+    v_avg_latency NUMERIC;
+    v_worst_hour INTEGER;
+    v_best_hour INTEGER;
+    v_health_grade TEXT;
+BEGIN
+    -- Get basic stats based on period
+    CASE p_period
+        WHEN 'day' THEN
+            SELECT 
+                CASE WHEN SUM(mt.total_ticks) > 0 THEN 
+                    ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                ELSE 0 END,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
+            INTO v_uptime_percentage, v_avg_latency
+            FROM monitor_tick_5min mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '24 hours';
+                
+        WHEN 'week' THEN
+            SELECT 
+                CASE WHEN SUM(mt.total_ticks) > 0 THEN 
+                    ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                ELSE 0 END,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
+            INTO v_uptime_percentage, v_avg_latency
+            FROM monitor_tick_30min mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '7 days';
+                
+        ELSE
+            SELECT 
+                CASE WHEN SUM(mt.total_ticks) > 0 THEN 
+                    ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
+                ELSE 0 END,
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
+            INTO v_uptime_percentage, v_avg_latency
+            FROM monitor_tick_2hour mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt.time_bucket >= NOW() - INTERVAL '30 days';
+    END CASE;
+    
+    -- Calculate health grade
+    v_health_grade := CASE 
+        WHEN v_uptime_percentage >= 99.9 AND v_avg_latency <= 200 THEN 'A+'
+        WHEN v_uptime_percentage >= 99.5 AND v_avg_latency <= 500 THEN 'A'
+        WHEN v_uptime_percentage >= 99.0 AND v_avg_latency <= 1000 THEN 'B'
+        WHEN v_uptime_percentage >= 98.0 AND v_avg_latency <= 2000 THEN 'C'
+        WHEN v_uptime_percentage >= 95.0 AND v_avg_latency <= 5000 THEN 'D'
+        ELSE 'F'
+    END;
+    
+    -- Find worst and best performing hours
+    SELECT hour_of_day INTO v_worst_hour
+    FROM get_monitor_hourly_patterns(p_monitor_id, p_period)
+    WHERE success_rate > 0
+    ORDER BY success_rate ASC, avg_latency DESC
+    LIMIT 1;
+    
+    SELECT hour_of_day INTO v_best_hour  
+    FROM get_monitor_hourly_patterns(p_monitor_id, p_period)
+    WHERE success_rate > 0
+    ORDER BY success_rate DESC, avg_latency ASC
+    LIMIT 1;
+    
+    -- Health Score Insight
+    RETURN QUERY SELECT
+        'health_score'::TEXT,
+        'Overall Health Grade'::TEXT,
+        format('Your monitor has a health grade of %s based on uptime (%s%%) and latency (%s ms)',
+               v_health_grade, COALESCE(v_uptime_percentage, 0), COALESCE(v_avg_latency, 0))::TEXT,
+        CASE 
+            WHEN v_health_grade IN ('A+', 'A') THEN 'success'::TEXT
+            WHEN v_health_grade IN ('B', 'C') THEN 'warning'::TEXT
+            ELSE 'error'::TEXT
+        END,
+        CASE 
+            WHEN v_health_grade IN ('A+', 'A') THEN 'Excellent performance! Continue monitoring.'::TEXT
+            WHEN v_health_grade IN ('B', 'C') THEN 'Consider optimizing response times or reducing downtime.'::TEXT
+            ELSE 'Immediate attention needed - check server configuration and network connectivity.'::TEXT
+        END,
+        v_health_grade::TEXT;
+    
+    -- Uptime Insights
+    IF v_uptime_percentage IS NOT NULL THEN
+        RETURN QUERY SELECT
+            'uptime'::TEXT,
+            'Uptime Performance'::TEXT,
+            CASE 
+                WHEN v_uptime_percentage >= 99.9 THEN format('Excellent uptime of %s%% - meeting enterprise SLA standards.', v_uptime_percentage)
+                WHEN v_uptime_percentage >= 99.0 THEN format('Good uptime of %s%% - minor improvements possible.', v_uptime_percentage)
+                WHEN v_uptime_percentage >= 95.0 THEN format('Moderate uptime of %s%% - needs attention.', v_uptime_percentage)
+                ELSE format('Poor uptime of %s%% - critical issues detected.', v_uptime_percentage)
+            END::TEXT,
+            CASE 
+                WHEN v_uptime_percentage >= 99.5 THEN 'success'::TEXT
+                WHEN v_uptime_percentage >= 99.0 THEN 'warning'::TEXT
+                ELSE 'error'::TEXT
+            END,
+            CASE 
+                WHEN v_uptime_percentage >= 99.9 THEN 'Monitor is highly reliable. Consider setting up proactive alerting.'::TEXT
+                WHEN v_uptime_percentage >= 99.0 THEN 'Review recent incidents and consider redundancy measures.'::TEXT
+                ELSE 'Investigate recurring downtime patterns and server health immediately.'::TEXT
+            END,
+            v_health_grade::TEXT;
+    END IF;
+    
+    -- Latency Insights
+    IF v_avg_latency IS NOT NULL THEN
+        RETURN QUERY SELECT
+            'latency'::TEXT,
+            'Response Time Analysis'::TEXT,
+            CASE 
+                WHEN v_avg_latency <= 200 THEN format('Excellent response time of %s ms - users will experience fast loading.', v_avg_latency)
+                WHEN v_avg_latency <= 1000 THEN format('Good response time of %s ms - acceptable for most users.', v_avg_latency)
+                WHEN v_avg_latency <= 3000 THEN format('Slow response time of %s ms - may impact user experience.', v_avg_latency)
+                ELSE format('Very slow response time of %s ms - optimization required.', v_avg_latency)
+            END::TEXT,
+            CASE 
+                WHEN v_avg_latency <= 500 THEN 'success'::TEXT
+                WHEN v_avg_latency <= 2000 THEN 'warning'::TEXT
+                ELSE 'error'::TEXT
+            END,
+            CASE 
+                WHEN v_avg_latency <= 200 THEN 'Performance is optimal. Monitor for any degradation trends.'::TEXT
+                WHEN v_avg_latency <= 1000 THEN 'Consider CDN implementation or server optimization.'::TEXT
+                ELSE 'Investigate server performance, database queries, and network latency.'::TEXT
+            END,
+            v_health_grade::TEXT;
+    END IF;
+    
+    -- Hourly Pattern Insights
+    IF v_worst_hour IS NOT NULL AND v_best_hour IS NOT NULL THEN
+        RETURN QUERY SELECT
+            'patterns'::TEXT,
+            'Traffic Pattern Analysis'::TEXT,
+            format('Performance varies by time of day. Best performance at %s:00, worst at %s:00.',
+                   v_best_hour, v_worst_hour)::TEXT,
+            'info'::TEXT,
+            format('Consider scaling resources during peak hours (%s:00) or investigate load balancing.',
+                   v_worst_hour)::TEXT,
+            v_health_grade::TEXT;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

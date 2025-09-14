@@ -4,7 +4,14 @@ import {
   MonitorContinentDataResult,
   MonitorCountryDataResult,
   ProcessedMonitorRegionalData,
-  RawMonitorStatsResult
+  RawMonitorStatsResult,
+  RawHourlyPatternResult,
+  RawWeeklyComparisonResult,
+  RawPerformanceInsightResult,
+  HourlyPattern,
+  WeeklyComparison,
+  PerformanceInsight,
+  HealthScore
 } from "@/types/analytics";
 import { prisma } from "db/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -60,6 +67,9 @@ export const GET = withAuth(async (
       worstRegions,
       continentData,
       countryData,
+      hourlyPatterns,
+      weeklyComparison,
+      performanceInsights,
     ] = await Promise.all([
       // Monitor uptime and latency statistics
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_stats($1::UUID, $2::TEXT)`, monitorid, period),
@@ -75,6 +85,15 @@ export const GET = withAuth(async (
       
       // Country data for the specific monitor
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_country_data($1::UUID, $2::TEXT)`, monitorid, period),
+      
+      // Hourly patterns data
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_hourly_patterns($1::UUID, $2::TEXT)`, monitorid, period),
+      
+      // Weekly comparison data
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_weekly_comparison($1::UUID)`, monitorid),
+      
+      // Performance insights and recommendations
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_performance_insights($1::UUID, $2::TEXT)`, monitorid, period),
     ]);
 
     // Helper function to convert BigInt to Number
@@ -110,6 +129,52 @@ export const GET = withAuth(async (
       sample_count: Number(item.total_ticks || 0),
     }));
 
+    // Process hourly patterns data
+    const processedHourlyPatterns: HourlyPattern[] = (hourlyPatterns as RawHourlyPatternResult[]).map(item => ({
+      hour_of_day: Number(item.hour_of_day),
+      avg_latency: Number(item.avg_latency || 0),
+      total_checks: Number(item.total_checks || 0),
+      successful_checks: Number(item.successful_checks || 0),
+      success_rate: Number(item.success_rate || 0),
+      check_frequency: Number(item.check_frequency || 0),
+    }));
+
+    // Process weekly comparison data
+    const processedWeeklyComparison: WeeklyComparison[] = (weeklyComparison as RawWeeklyComparisonResult[]).map(item => ({
+      metric_name: item.metric_name,
+      current_week: Number(item.current_week || 0),
+      previous_week: Number(item.previous_week || 0),
+      change_percentage: Number(item.change_percentage || 0),
+      trend_direction: item.trend_direction as 'up' | 'down' | 'stable',
+    }));
+
+    // Process performance insights data
+    const processedInsights: PerformanceInsight[] = (performanceInsights as RawPerformanceInsightResult[]).map(item => ({
+      insight_type: item.insight_type as 'health_score' | 'uptime' | 'latency' | 'patterns',
+      insight_title: item.insight_title,
+      insight_message: item.insight_message,
+      severity: item.severity as 'success' | 'warning' | 'error' | 'info',
+      recommendation: item.recommendation,
+      health_score: item.health_score,
+    }));
+
+    // Calculate health score
+    const uptimePercentage = Number(stats.uptime_percentage || 0);
+    const avgLatency = Number(stats.avg_latency || 0);
+    
+    const healthScore: HealthScore = {
+      grade: processedInsights.find(i => i.insight_type === 'health_score')?.health_score || 'N/A',
+      score: Math.round((uptimePercentage + (100 - Math.min(avgLatency / 50, 100))) / 2), // Simple scoring
+      color: (() => {
+        const grade = processedInsights.find(i => i.insight_type === 'health_score')?.health_score;
+        if (grade === 'A+' || grade === 'A') return 'green';
+        if (grade === 'B' || grade === 'C') return 'yellow';
+        if (grade === 'D') return 'orange';
+        return 'red';
+      })(),
+      description: processedInsights.find(i => i.insight_type === 'health_score')?.insight_message || 'No data available'
+    };
+
     return NextResponse.json({
       monitorId: monitorid,
       period,
@@ -140,6 +205,11 @@ export const GET = withAuth(async (
       worldMap: {
         byCountry: processedCountryData,
       },
+      // Enhanced analytics data
+      hourlyPatterns: processedHourlyPatterns,
+      weeklyComparison: processedWeeklyComparison,
+      performanceInsights: processedInsights,
+      healthScore: healthScore,
       generatedAt: new Date().toISOString(),
     }, { status: 200 });
 
