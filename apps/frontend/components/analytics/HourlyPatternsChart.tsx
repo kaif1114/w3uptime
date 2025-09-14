@@ -126,7 +126,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             <div className="bg-muted/20 rounded-lg p-4 overflow-x-auto">
               <div className="min-w-[800px]">
                 {/* Chart Area */}
-                <div className="relative h-80">
+                <div className="relative" style={{ height: '320px', paddingBottom: '40px' }}>
                   {/* Background Grid Lines */}
                   <div className="absolute inset-0 flex flex-col">
                     {[0, 25, 50, 75, 100].map((percent) => (
@@ -148,77 +148,86 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                   </div>
                   
                   {/* Bars */}
-                  <div className="ml-12 h-full flex items-end gap-1 pb-8">
-                    {sortedPatterns.map((pattern) => {
-                      const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
-                      const minLatency = Math.min(...patterns.map(p => p.avg_latency));
-                      
-                      // Enhanced height calculation with minimum height and better scaling
-                      const normalizedHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) : 0;
-                      const minBarHeightPx = 20; // Minimum bar height in pixels
-                      const maxBarHeightPx = 280; // Maximum bar height in pixels (container height - padding)
-                      const barHeightPx = Math.max(minBarHeightPx, normalizedHeight * maxBarHeightPx);
-                      
-                      const avgLatency = patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length;
-                      const isHighLatency = pattern.avg_latency > avgLatency;
-                      const isPeakHour = pattern.hour_of_day === peakLatencyHour.hour_of_day;
-                      const isBestHour = pattern.hour_of_day === bestLatencyHour.hour_of_day;
-                      const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
-                      
-                      return (
-                        <div key={pattern.hour_of_day} className="relative group" style={{ width: barWidth }}>
-                          {/* Bar */}
-                          <div 
-                            className={`w-full rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer shadow-sm ${
-                              isHighLatency ? 'bg-gradient-to-t from-red-600 to-red-400' : 'bg-gradient-to-t from-green-600 to-green-400'
-                            } ${isPeakHour ? 'ring-2 ring-red-400 ring-offset-1' : ''} ${isBestHour ? 'ring-2 ring-green-400 ring-offset-1' : ''}`}
-                            style={{ height: `${barHeightPx}px` }}
-                          >
-                            {/* Value label on top of bar */}
-                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground">
-                              {pattern.avg_latency.toFixed(0)}
+                  <div className="ml-12 relative" style={{ height: '280px' }}>
+                    {/* Bars container */}
+                    <div className="absolute bottom-0 left-0 right-0 flex items-end gap-1">
+                      {sortedPatterns.map((pattern) => {
+                        const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
+                        
+                        // Enhanced height calculation with proper alignment
+                        const normalizedHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) : 0;
+                        const minBarHeightPx = 8; // Minimum bar height in pixels
+                        const maxBarHeightPx = 280; // Maximum bar height in pixels
+                        const barHeightPx = Math.max(minBarHeightPx, normalizedHeight * maxBarHeightPx);
+                        
+                        const avgLatency = patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length;
+                        const isHighLatency = pattern.avg_latency > avgLatency;
+                        const isPeakHour = pattern.hour_of_day === peakLatencyHour.hour_of_day;
+                        const isBestHour = pattern.hour_of_day === bestLatencyHour.hour_of_day;
+                        const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
+                        
+                        return (
+                          <div key={pattern.hour_of_day} className="relative group" style={{ width: barWidth }}>
+                            {/* Bar */}
+                            <div 
+                              className={`w-full rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer shadow-sm ${
+                                isHighLatency ? 'bg-gradient-to-t from-red-600 to-red-400' : 'bg-gradient-to-t from-green-600 to-green-400'
+                              } ${isPeakHour ? 'ring-2 ring-red-400 ring-offset-1' : ''} ${isBestHour ? 'ring-2 ring-green-400 ring-offset-1' : ''}`}
+                              style={{ height: `${barHeightPx}px` }}
+                            >
+                              {/* Value label on top of bar */}
+                              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground whitespace-nowrap">
+                                {pattern.avg_latency.toFixed(0)}ms
+                              </div>
+                              
+                              {/* Special Hour Badges */}
+                              {isPeakHour && (
+                                <Badge variant="destructive" className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs h-4 px-1 whitespace-nowrap">
+                                  Peak
+                                </Badge>
+                              )}
+                              {isBestHour && (
+                                <Badge variant="default" className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs h-4 px-1 bg-green-600 whitespace-nowrap">
+                                  Best
+                                </Badge>
+                              )}
                             </div>
                             
-                            {/* Special Hour Badges */}
-                            {isPeakHour && (
-                              <Badge variant="destructive" className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs h-4 px-1">
-                                Peak
-                              </Badge>
-                            )}
-                            {isBestHour && (
-                              <Badge variant="default" className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs h-4 px-1 bg-green-600">
-                                Best
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {/* Hour Label */}
-                          <div className="mt-2 text-xs font-mono text-center text-muted-foreground font-medium">
-                            {pattern.hour_of_day.toString().padStart(2, '0')}
-                          </div>
-                          
-                          {/* Tooltip on Hover */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
-                              <div className="font-medium text-center mb-2">{formatHour(pattern.hour_of_day)}</div>
-                              <div className="space-y-1">
-                                <div className={`font-medium ${isHighLatency ? 'text-red-600' : 'text-green-600'}`}>
-                                  Latency: {pattern.avg_latency.toFixed(0)}ms
+                            {/* Tooltip on Hover */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                              <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
+                                <div className="font-medium text-center mb-2">{formatHour(pattern.hour_of_day)}</div>
+                                <div className="space-y-1">
+                                  <div className={`font-medium ${isHighLatency ? 'text-red-600' : 'text-green-600'}`}>
+                                    Latency: {pattern.avg_latency.toFixed(0)}ms
+                                  </div>
+                                  <div>Success: {pattern.success_rate.toFixed(1)}%</div>
+                                  <div>Checks: {pattern.total_checks.toLocaleString()}</div>
+                                  <div>Frequency: {pattern.check_frequency}</div>
                                 </div>
-                                <div>Success: {pattern.success_rate.toFixed(1)}%</div>
-                                <div>Checks: {pattern.total_checks.toLocaleString()}</div>
-                                <div>Frequency: {pattern.check_frequency}</div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Hour Labels - positioned outside the bars container */}
+                    <div className="absolute -bottom-8 left-0 right-0 flex gap-1">
+                      {sortedPatterns.map((pattern) => {
+                        const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
+                        return (
+                          <div key={`label-${pattern.hour_of_day}`} className="text-xs font-mono text-center text-muted-foreground font-medium" style={{ width: barWidth }}>
+                            {pattern.hour_of_day.toString().padStart(2, '0')}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 
                 {/* X-axis label */}
-                <div className="mt-2 text-xs text-muted-foreground text-center">
+                <div className="mt-4 text-xs text-muted-foreground text-center">
                   Hours (0-23)
                 </div>
               </div>
