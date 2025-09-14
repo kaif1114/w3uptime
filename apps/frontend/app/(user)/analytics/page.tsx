@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnalyticsOverview } from "./AnalyticsOverview";
+import { CustomPeriodSelector } from "@/components/analytics/CustomPeriodSelector";
 import { useMonitors } from "@/hooks/useMonitors";
 import { AlertTriangle } from "lucide-react";
-
-export type TimePeriod = 'day' | 'week' | 'month';
+import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
 
 export default function AnalyticsPage() {
   const [selectedMonitorId, setSelectedMonitorId] = useState<string>("");
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('day');
+  const [timePeriod, setTimePeriod] = useState<EnhancedTimePeriod | CustomTimePeriod>('day');
   
   const { data: monitors, isLoading: monitorsLoading, error: monitorsError } = useMonitors();
 
@@ -85,28 +85,18 @@ export default function AnalyticsPage() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Period:</span>
-          <div className="flex gap-2">
-            {(['day', 'week', 'month'] as const).map((period) => (
-              <Button
-                key={period}
-                variant={timePeriod === period ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTimePeriod(period)}
-              >
-                {period.charAt(0).toUpperCase() + period.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </div>
+        <CustomPeriodSelector
+          value={timePeriod}
+          onChange={setTimePeriod}
+        />
       </div>
 
       {/* Analytics Content */}
       {currentMonitorId && (
         <AnalyticsOverview 
           monitorId={currentMonitorId} 
-          period={timePeriod} 
+          period={typeof timePeriod === 'string' ? timePeriod : 'day'}
+          customPeriod={typeof timePeriod === 'object' ? timePeriod : undefined}
         />
       )}
     </div>
