@@ -210,8 +210,8 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                               )}
                             </div>
                             
-                            {/* Tooltip on Hover */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            {/* Tooltip on Hover - Positioned below the bar */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                               <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
                                 <div className="font-medium text-center mb-2">{formatHour(pattern.hour_of_day)}</div>
                                 <div className="space-y-1">
