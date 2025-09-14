@@ -317,28 +317,6 @@ CREATE OR REPLACE FUNCTION get_monitor_timeseries(
 ) AS $$
 BEGIN
     CASE p_period
-        WHEN 'hour' THEN
-            RETURN QUERY
-            SELECT 
-                monitor_tick_5min.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
-                ROUND(monitor_tick_5min.avg_latency::NUMERIC, 2) AS avg_latency,
-                ROUND(monitor_tick_5min.min_latency::NUMERIC, 2) AS min_latency,
-                ROUND(monitor_tick_5min.max_latency::NUMERIC, 2) AS max_latency,
-                ROUND(monitor_tick_5min.median_latency::NUMERIC, 2) AS median_latency,
-                ROUND(monitor_tick_5min.p95_latency::NUMERIC, 2) AS p95_latency,
-                monitor_tick_5min.total_ticks AS total_ticks,
-                monitor_tick_5min.successful_ticks AS successful_ticks,
-                CASE 
-                    WHEN monitor_tick_5min.total_ticks > 0 
-                    THEN ROUND((monitor_tick_5min.successful_ticks::NUMERIC / monitor_tick_5min.total_ticks::NUMERIC) * 100, 2)
-                    ELSE 0
-                END AS success_rate
-            FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
-                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour'
-                AND monitor_tick_5min.time_bucket <= NOW()
-            ORDER BY monitor_tick_5min.time_bucket ASC;
-            
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
@@ -405,7 +383,7 @@ BEGIN
                 AND monitor_tick_2hour.time_bucket <= NOW()
             ORDER BY monitor_tick_2hour.time_bucket ASC;
         ELSE
-            RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
@@ -426,25 +404,6 @@ CREATE OR REPLACE FUNCTION get_monitor_stats(
 ) AS $$
 BEGIN
     CASE p_period
-        WHEN 'hour' THEN
-            RETURN QUERY
-            SELECT 
-                COALESCE(SUM(monitor_tick_5min.total_ticks), 0) as total_checks,
-                COALESCE(SUM(monitor_tick_5min.successful_ticks), 0) as successful_checks,
-                COALESCE(SUM(monitor_tick_5min.total_ticks - monitor_tick_5min.successful_ticks), 0) as failed_checks,
-                CASE 
-                    WHEN SUM(monitor_tick_5min.total_ticks) > 0 
-                    THEN ROUND((SUM(monitor_tick_5min.successful_ticks)::NUMERIC / SUM(monitor_tick_5min.total_ticks)::NUMERIC) * 100, 2)
-                    ELSE 0
-                END as uptime_percentage,
-                ROUND(AVG(monitor_tick_5min.avg_latency)::NUMERIC, 2) as avg_response_time,
-                ROUND(MIN(monitor_tick_5min.min_latency)::NUMERIC, 2) as min_response_time,
-                ROUND(MAX(monitor_tick_5min.max_latency)::NUMERIC, 2) as max_response_time,
-                ROUND(AVG(monitor_tick_5min.p95_latency)::NUMERIC, 2) as p95_response_time
-            FROM monitor_tick_5min
-            WHERE monitor_tick_5min."monitorId" = p_monitor_id::text
-                AND monitor_tick_5min.time_bucket >= NOW() - INTERVAL '1 hour';
-                
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
@@ -502,7 +461,7 @@ BEGIN
             WHERE monitor_tick_2hour."monitorId" = p_monitor_id::text
                 AND monitor_tick_2hour.time_bucket >= NOW() - INTERVAL '30 days';
         ELSE
-            RAISE EXCEPTION 'Invalid period. Use: hour, day, week, or month';
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
@@ -533,9 +492,6 @@ DECLARE
 BEGIN
     -- Set default time ranges based on period
     CASE p_period
-        WHEN 'hour' THEN
-            start_time := COALESCE(p_start_time, NOW() - INTERVAL '1 hour');
-            end_time := COALESCE(p_end_time, NOW());
         WHEN 'day' THEN
             start_time := COALESCE(p_start_time, NOW() - INTERVAL '24 hours');
             end_time := COALESCE(p_end_time, NOW());
@@ -651,9 +607,6 @@ DECLARE
 BEGIN
     -- Set default time ranges based on period
     CASE p_period
-        WHEN 'hour' THEN
-            start_time := COALESCE(p_start_time, NOW() - INTERVAL '1 hour');
-            end_time := COALESCE(p_end_time, NOW());
         WHEN 'day' THEN
             start_time := COALESCE(p_start_time, NOW() - INTERVAL '24 hours');
             end_time := COALESCE(p_end_time, NOW());
@@ -767,9 +720,6 @@ DECLARE
 BEGIN
     -- Set default time ranges based on period
     CASE p_period
-        WHEN 'hour' THEN
-            start_time := COALESCE(p_start_time, NOW() - INTERVAL '1 hour');
-            end_time := COALESCE(p_end_time, NOW());
         WHEN 'day' THEN
             start_time := COALESCE(p_start_time, NOW() - INTERVAL '24 hours');
             end_time := COALESCE(p_end_time, NOW());
@@ -885,9 +835,6 @@ DECLARE
 BEGIN
     -- Set default time ranges based on period
     CASE p_period
-        WHEN 'hour' THEN
-            start_time := COALESCE(p_start_time, NOW() - INTERVAL '1 hour');
-            end_time := COALESCE(p_end_time, NOW());
         WHEN 'day' THEN
             start_time := COALESCE(p_start_time, NOW() - INTERVAL '24 hours');
             end_time := COALESCE(p_end_time, NOW());
@@ -1357,9 +1304,6 @@ DECLARE
 BEGIN
     -- Set default time ranges based on period
     CASE p_period
-        WHEN 'hour' THEN
-            start_time := COALESCE(p_start_time, NOW() - INTERVAL '1 hour');
-            end_time := COALESCE(p_end_time, NOW());
         WHEN 'day' THEN
             start_time := COALESCE(p_start_time, NOW() - INTERVAL '24 hours');
             end_time := COALESCE(p_end_time, NOW());
@@ -1682,29 +1626,29 @@ $$ LANGUAGE plpgsql;
 -- LET THESE DEBUG QUERIES BE THERE AT THE END OF FILE COMMENTED OUT
 
 -- Original monitor-specific queries
--- SELECT * FROM get_total_avg_latency('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')
--- SELECT * FROM get_monitor_timeseries('01a06e1f-df5b-41c8-a827-f2780df04e89', 'hour')
+-- SELECT * FROM get_total_avg_latency('01a06e1f-df5b-41c8-a827-f2780df04e89', 'day')
+-- SELECT * FROM get_monitor_timeseries('01a06e1f-df5b-41c8-a827-f2780df04e89', 'day')
 -- CALL refresh_continuous_aggregate('monitor_tick_5min', NULL, NULL);
 
 -- Regional Analytics Debug Queries
 
 -- Test Continental Analytics Functions
 -- SELECT * FROM get_continent_timeseries();                                    -- All continents, day view
--- SELECT * FROM get_continent_timeseries('NA', 'hour');                        -- North America, hour view
+-- SELECT * FROM get_continent_timeseries('NA', 'day');                         -- North America, day view
 -- SELECT * FROM get_continent_timeseries(NULL, 'week');                        -- All continents, week view
 -- SELECT * FROM get_continent_timeseries('EU', 'month');                       -- Europe, month view
 -- SELECT * FROM get_continent_timeseries('AS', 'day', '2025-01-01', '2025-01-02'); -- Asia, custom range
 
 -- Test Country Analytics Functions  
 -- SELECT * FROM get_country_timeseries();                                      -- All countries, day view
--- SELECT * FROM get_country_timeseries('US', 'hour');                          -- USA, hour view
+-- SELECT * FROM get_country_timeseries('US', 'day');                           -- USA, day view
 -- SELECT * FROM get_country_timeseries(NULL, 'week');                          -- All countries, week view
 -- SELECT * FROM get_country_timeseries('GB', 'month');                         -- UK, month view
 -- SELECT * FROM get_country_timeseries('DE', 'day', '2025-01-01', '2025-01-02'); -- Germany, custom range
 
 -- Test City Analytics Functions
 -- SELECT * FROM get_city_timeseries();                                         -- All cities, day view
--- SELECT * FROM get_city_timeseries('New York', 'US', 'hour');                 -- New York, hour view  
+-- SELECT * FROM get_city_timeseries('New York', 'US', 'day');                  -- New York, day view  
 -- SELECT * FROM get_city_timeseries(NULL, 'GB', 'week');                       -- All UK cities, week view
 -- SELECT * FROM get_city_timeseries('Tokyo', NULL, 'month');                   -- Tokyo (any country), month view
 -- SELECT * FROM get_city_timeseries('Paris', 'FR', 'day', '2025-01-01', '2025-01-02'); -- Paris, custom range
@@ -1713,7 +1657,7 @@ $$ LANGUAGE plpgsql;
 -- SELECT * FROM get_regional_performance_ranking('continent', 'day');          -- Best continents today
 -- SELECT * FROM get_regional_performance_ranking('country', 'week', NULL, NULL, 15); -- Best countries this week (top 15)
 -- SELECT * FROM get_regional_performance_ranking('city', 'month');             -- Best cities this month
--- SELECT * FROM get_regional_performance_ranking('continent', 'hour', '2025-01-01', '2025-01-02'); -- Continents for custom range
+-- SELECT * FROM get_regional_performance_ranking('continent', 'day', '2025-01-01', '2025-01-02'); -- Continents for custom range
 
 -- Test Best/Worst Performing Regions
 -- SELECT * FROM get_best_performing_regions('continent', 'day', 5);            -- Top 5 continents today
