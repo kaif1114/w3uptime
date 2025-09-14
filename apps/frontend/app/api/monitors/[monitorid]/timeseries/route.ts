@@ -5,7 +5,7 @@ import { withAuth } from "@/lib/auth";
 import { RawTimeSeriesPoint, TransformedTimeSeriesPoint } from "@/types/analytics";
 
 const timeseriesQuerySchema = z.object({
-  period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
+  period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
 // GET /api/monitors/[monitorid]/timeseries - Get time series data for charts

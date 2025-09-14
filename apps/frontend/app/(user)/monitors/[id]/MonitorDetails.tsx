@@ -206,7 +206,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
               <div className="space-y-6">
                 {/* Performance Tab Time Period Buttons */}
                 <div className="flex flex-wrap gap-2">
-                  {(["hour", "day", "week", "month"] as const).map((period) => (
+                  {(["day", "week", "month"] as const).map((period) => (
                     <Button
                       key={period}
                       variant={timePeriod === period ? "default" : "outline"}

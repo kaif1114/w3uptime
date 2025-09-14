@@ -1,11 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "db/client";
-import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import { MonitorAnalyticsData } from "@/types/analytics";
+import {
+  MonitorBestWorstRegionsResult,
+  MonitorContinentDataResult,
+  MonitorCountryDataResult,
+  ProcessedMonitorRegionalData,
+  RawMonitorStatsResult
+} from "@/types/analytics";
+import { prisma } from "db/client";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const analyticsQuerySchema = z.object({
-  period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
+  period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
 // GET /api/monitors/[monitorid]/analytics - Get comprehensive monitor analytics
@@ -49,38 +55,26 @@ export const GET = withAuth(async (
 
     // Execute all analytics queries in parallel
     const [
-      uptimeData,
-      totalLatencyData,
-      bestRegion,
-      worstRegion,
-      latencyByCountry,
-      latencyByContinent,
-      latencyByCity,
-      sampleCountByCountry,
+      monitorStats,
+      bestRegions,
+      worstRegions,
+      continentData,
+      countryData,
     ] = await Promise.all([
-      // Uptime data
-      prisma.$queryRawUnsafe(`SELECT * FROM get_uptime_data($1, $2)`, monitorid, period),
+      // Monitor uptime and latency statistics
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_stats($1::UUID, $2::TEXT)`, monitorid, period),
       
-      // Total latency statistics
-      prisma.$queryRawUnsafe(`SELECT * FROM get_total_avg_latency($1, $2)`, monitorid, period),
+      // Best performing regions (top 1)
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_best_worst_regions($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT) LIMIT 1`, monitorid, period, 'country', 'best'),
       
-      // Best performing region
-      prisma.$queryRawUnsafe(`SELECT * FROM get_best_performing_region($1, $2)`, monitorid, period),
+      // Worst performing regions (top 1)
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_best_worst_regions($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT) ORDER BY performance_score ASC LIMIT 1`, monitorid, period, 'country', 'worst'),
       
-      // Worst performing region
-      prisma.$queryRawUnsafe(`SELECT * FROM get_worst_performing_region($1, $2)`, monitorid, period),
+      // Continental data for the specific monitor
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_continent_data($1::UUID, $2::TEXT)`, monitorid, period),
       
-      // Latency by country
-      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_country($1, $2)`, monitorid, period),
-      
-      // Latency by continent
-      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_continent($1, $2)`, monitorid, period),
-      
-      // Latency by city
-      prisma.$queryRawUnsafe(`SELECT * FROM get_avg_latency_by_city($1, $2)`, monitorid, period),
-
-      // Sample count by country (for world map)
-      prisma.$queryRawUnsafe(`SELECT * FROM get_sample_count_by_country($1, $2)`, monitorid, period),
+      // Country data for the specific monitor
+      prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_country_data($1::UUID, $2::TEXT)`, monitorid, period),
     ]);
 
     // Helper function to convert BigInt to Number
@@ -98,20 +92,53 @@ export const GET = withAuth(async (
       return obj;
     };
 
+    // Transform the data to match expected frontend format
+    const stats = (monitorStats as RawMonitorStatsResult[])[0] || {};
+    const bestRegion = (bestRegions as MonitorBestWorstRegionsResult[])[0] || null;
+    const worstRegion = (worstRegions as MonitorBestWorstRegionsResult[])[0] || null;
+
+    // Process regional data - these are now already aggregated by the functions
+    const processedContinentData: ProcessedMonitorRegionalData[] = (continentData as MonitorContinentDataResult[]).map(item => ({
+      continent_code: item.continent_code,
+      avg_latency: Number(item.avg_latency || 0),
+      sample_count: Number(item.total_ticks || 0),
+    }));
+
+    const processedCountryData: ProcessedMonitorRegionalData[] = (countryData as MonitorCountryDataResult[]).map(item => ({
+      country_code: item.country_code,
+      avg_latency: Number(item.avg_latency || 0),
+      sample_count: Number(item.total_ticks || 0),
+    }));
+
     return NextResponse.json({
       monitorId: monitorid,
       period,
-      uptime: convertBigIntToNumber((uptimeData as MonitorAnalyticsData[])[0]) || null,
-      latency: convertBigIntToNumber((totalLatencyData as MonitorAnalyticsData[])[0]) || null,
-      bestRegion: convertBigIntToNumber((bestRegion as MonitorAnalyticsData[])[0]) || null,
-      worstRegion: convertBigIntToNumber((worstRegion as MonitorAnalyticsData[])[0]) || null,
+      uptime: {
+        total_checks: Number(stats.total_checks || 0),
+        successful_checks: Number(stats.successful_checks || 0),
+        failed_checks: Number(stats.failed_checks || 0),
+        uptime_percentage: Number(stats.uptime_percentage || 0),
+        availability_sla: Number(stats.uptime_percentage || 0), // Use uptime as SLA for now
+      },
+      bestRegion: bestRegion ? {
+        region_type: "Country", // Default to country for now
+        region_name: bestRegion.region_name || bestRegion.region_id || 'Unknown',
+        avg_latency: Number(bestRegion.avg_latency || 0),
+        sample_count: Number(bestRegion.total_checks || 0),
+      } : null,
+      worstRegion: worstRegion ? {
+        region_type: "Country", // Default to country for now  
+        region_name: worstRegion.region_name || worstRegion.region_id || 'Unknown',
+        avg_latency: Number(worstRegion.avg_latency || 0),
+        sample_count: Number(worstRegion.total_checks || 0),
+      } : null,
       regional: {
-        byCountry: convertBigIntToNumber(latencyByCountry as MonitorAnalyticsData[]) || [],
-        byContinent: convertBigIntToNumber(latencyByContinent as MonitorAnalyticsData[]) || [],
-        byCity: convertBigIntToNumber(latencyByCity as MonitorAnalyticsData[]) || [],
+        byCountry: processedCountryData.sort((a, b) => a.avg_latency - b.avg_latency), // Sort by best latency
+        byContinent: processedContinentData.sort((a, b) => a.avg_latency - b.avg_latency), // Sort by best latency
+        byCity: [], // Not needed for monitor-specific data
       },
       worldMap: {
-        byCountry: convertBigIntToNumber(sampleCountByCountry as MonitorAnalyticsData[]) || [],
+        byCountry: processedCountryData,
       },
       generatedAt: new Date().toISOString(),
     }, { status: 200 });

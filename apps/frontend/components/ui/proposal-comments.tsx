@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { useAddComment, useProposalComments } from "@/hooks/useProposals";
 import { MessageSquare, Send } from "lucide-react";
-import { useProposalComments, useAddComment } from "@/hooks/useProposals";
-import { ProposalComment } from "@/types/proposal";
+import { useState } from "react";
 
 interface ProposalCommentsProps {
   proposalId: string;
