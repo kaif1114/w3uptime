@@ -236,3 +236,63 @@ export interface AnalyticsFilters {
   regionType?: 'continent' | 'country' | 'city';
   compareRegions?: string[]; // For comparison charts
 }
+
+// ===== DATABASE QUERY RESULT TYPES =====
+
+/**
+ * Raw database result from region discovery queries (continent/country/city)
+ */
+export interface RawRegionQueryResult {
+  region_id: string;
+  region_name: string;
+  continent_code?: string;
+  country_code?: string;
+  data_count: bigint;
+}
+
+/**
+ * Raw monitor stats query result from database function
+ */
+export interface RawMonitorStatsResult {
+  total_checks: bigint;
+  successful_checks: bigint;
+  failed_checks: bigint;
+  uptime_percentage: number;
+  avg_latency: number;
+}
+
+/**
+ * Raw best/worst performing regions query result
+ */
+export interface RawPerformingRegionResult {
+  region_id: string;
+  region_name: string;
+  avg_latency: number;
+  total_checks: bigint;
+  uptime_percentage?: number;
+}
+
+/**
+ * Raw continental/country/city timeseries query result
+ */
+export interface RawTimeseriesQueryResult {
+  continent_code?: string;
+  country_code?: string;
+  city?: string;
+  avg_latency: number;
+  total_ticks: bigint;
+  success_rate: number;
+  time_bucket?: string;
+}
+
+/**
+ * Processed continent/country data for aggregation
+ */
+export interface ProcessedRegionData {
+  continent_code?: string;
+  country_code?: string;
+  avg_latency: number;
+  sample_count: number;
+  total_latency: number;
+  total_samples: number;
+}
