@@ -160,7 +160,7 @@ export const GET = withAuth(async (
 
     // Calculate health score
     const uptimePercentage = Number(stats.uptime_percentage || 0);
-    const avgLatency = Number(stats.avg_response_time || 0);
+    const avgLatency = Number(stats.avg_latency || 0);
     
     const healthScore: HealthScore = {
       grade: processedInsights.find(i => i.insight_type === 'health_score')?.health_score || 'N/A',

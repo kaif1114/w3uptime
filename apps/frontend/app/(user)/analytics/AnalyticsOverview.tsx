@@ -209,26 +209,35 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
 
       {/* Insights Tab */}
       <TabsContent value="insights" className="space-y-6">
-        {/* Performance Insights */}
+        {/* Performance Insights - Full Width */}
         {analytics.performanceInsights && analytics.healthScore && (
-          <PerformanceInsightsCard 
-            insights={analytics.performanceInsights}
-            healthScore={analytics.healthScore}
-          />
+          <div className="w-full">
+            <PerformanceInsightsCard 
+              insights={analytics.performanceInsights}
+              healthScore={analytics.healthScore}
+            />
+          </div>
         )}
 
-        {/* Weekly Comparison */}
-        {analytics.weeklyComparison && analytics.weeklyComparison.length > 0 && (
-          <WeeklyComparisonTable comparisons={analytics.weeklyComparison} />
-        )}
+        {/* Weekly Comparison and Hourly Patterns - Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Weekly Comparison */}
+          {analytics.weeklyComparison && analytics.weeklyComparison.length > 0 && (
+            <div className="w-full">
+              <WeeklyComparisonTable comparisons={analytics.weeklyComparison} />
+            </div>
+          )}
 
-        {/* Hourly Patterns */}
-        {analytics.hourlyPatterns && analytics.hourlyPatterns.length > 0 && (
-          <HourlyPatternsChart 
-            patterns={analytics.hourlyPatterns}
-            period={typeof period === 'string' ? period : 'day'}
-          />
-        )}
+          {/* Hourly Patterns */}
+          {analytics.hourlyPatterns && analytics.hourlyPatterns.length > 0 && (
+            <div className="w-full">
+              <HourlyPatternsChart 
+                patterns={analytics.hourlyPatterns}
+                period={typeof period === 'string' ? period : 'day'}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Fallback message if no enhanced data */}
         {(!analytics.performanceInsights || analytics.performanceInsights.length === 0) && 

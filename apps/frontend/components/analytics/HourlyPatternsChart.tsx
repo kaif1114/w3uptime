@@ -1,9 +1,10 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { HourlyPattern } from "@/types/analytics";
 import { Clock, Activity, TrendingUp } from "lucide-react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 interface HourlyPatternsChartProps {
   patterns: HourlyPattern[];
@@ -12,32 +13,6 @@ interface HourlyPatternsChartProps {
 
 const formatHour = (hour: number): string => {
   return `${hour.toString().padStart(2, '0')}:00`;
-};
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="bg-white p-3 border rounded-lg shadow-md">
-        <p className="font-medium">{formatHour(label)}</p>
-        <div className="space-y-1 text-sm">
-          <p className="text-blue-600">
-            Avg Latency: <span className="font-medium">{data.avg_latency}ms</span>
-          </p>
-          <p className="text-green-600">
-            Success Rate: <span className="font-medium">{data.success_rate.toFixed(1)}%</span>
-          </p>
-          <p className="text-gray-600">
-            Total Checks: <span className="font-medium">{data.total_checks.toLocaleString()}</span>
-          </p>
-          <p className="text-purple-600">
-            Check Frequency: <span className="font-medium">{data.check_frequency}</span>
-          </p>
-        </div>
-      </div>
-    );
-  }
-  return null;
 };
 
 export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartProps) {
@@ -131,26 +106,39 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             </div>
           </div>
 
-          {/* Chart */}
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sortedPatterns}>
-                <XAxis 
-                  dataKey="hour_of_day" 
-                  tickFormatter={formatHour}
-                  fontSize={12}
-                />
-                <YAxis fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar 
-                  dataKey="avg_latency" 
-                  name="Avg Latency (ms)"
-                  fill="#3b82f6" 
-                  radius={[2, 2, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Horizontal Bar Chart using Shadcn Components */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-muted-foreground mb-4">Hourly Latency Distribution</div>
+            {sortedPatterns.map((pattern) => {
+              const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
+              const relativeHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) * 100 : 0;
+              const isHighLatency = pattern.avg_latency > (patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length);
+              
+              return (
+                <div key={pattern.hour_of_day} className="flex items-center gap-4">
+                  <div className="w-12 text-xs font-medium text-muted-foreground">
+                    {formatHour(pattern.hour_of_day)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Progress 
+                        value={relativeHeight} 
+                        className="h-6 flex-1" 
+                      />
+                      <div className="w-16 text-xs text-right">
+                        <span className={`font-medium ${isHighLatency ? 'text-red-600' : 'text-green-600'}`}>
+                          {pattern.avg_latency.toFixed(0)}ms
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>{pattern.success_rate.toFixed(1)}% success</span>
+                      <span>{pattern.total_checks.toLocaleString()} checks</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Insights */}
