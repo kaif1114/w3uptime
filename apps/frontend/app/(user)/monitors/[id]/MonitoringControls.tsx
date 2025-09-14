@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
 
-export type TimePeriod = 'hour' | 'day' | 'week' | 'month';
+export type TimePeriod = 'day' | 'week' | 'month';
 export type UpdateFrequency = '30s' | '1m' | '5m' | '15m' | '30m';
 
 interface MonitoringControlsProps {
@@ -22,7 +22,6 @@ interface MonitoringControlsProps {
 }
 
 const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
-  'hour': 'Last Hour',
   'day': 'Last Day', 
   'week': 'Last Week',
   'month': 'Last Month',

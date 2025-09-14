@@ -7,7 +7,7 @@ import { AnalyticsOverview } from "./AnalyticsOverview";
 import { useMonitors } from "@/hooks/useMonitors";
 import { AlertTriangle } from "lucide-react";
 
-export type TimePeriod = 'hour' | 'day' | 'week' | 'month';
+export type TimePeriod = 'day' | 'week' | 'month';
 
 export default function AnalyticsPage() {
   const [selectedMonitorId, setSelectedMonitorId] = useState<string>("");
