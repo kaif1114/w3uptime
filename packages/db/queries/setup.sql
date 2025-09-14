@@ -413,9 +413,9 @@ BEGIN
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                COALESCE(SUM(monitor_tick_5min.total_ticks), 0) as total_checks,
-                COALESCE(SUM(monitor_tick_5min.successful_ticks), 0) as successful_checks,
-                COALESCE(SUM(monitor_tick_5min.total_ticks - monitor_tick_5min.successful_ticks), 0) as failed_checks,
+                COALESCE(SUM(monitor_tick_5min.total_ticks), 0)::BIGINT as total_checks,
+                COALESCE(SUM(monitor_tick_5min.successful_ticks), 0)::BIGINT as successful_checks,
+                COALESCE(SUM(monitor_tick_5min.total_ticks - monitor_tick_5min.successful_ticks), 0)::BIGINT as failed_checks,
                 CASE 
                     WHEN SUM(monitor_tick_5min.total_ticks) > 0 
                     THEN ROUND((SUM(monitor_tick_5min.successful_ticks)::NUMERIC / SUM(monitor_tick_5min.total_ticks)::NUMERIC) * 100, 2)
@@ -432,9 +432,9 @@ BEGIN
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                COALESCE(SUM(monitor_tick_30min.total_ticks), 0) as total_checks,
-                COALESCE(SUM(monitor_tick_30min.successful_ticks), 0) as successful_checks,
-                COALESCE(SUM(monitor_tick_30min.total_ticks - monitor_tick_30min.successful_ticks), 0) as failed_checks,
+                COALESCE(SUM(monitor_tick_30min.total_ticks), 0)::BIGINT as total_checks,
+                COALESCE(SUM(monitor_tick_30min.successful_ticks), 0)::BIGINT as successful_checks,
+                COALESCE(SUM(monitor_tick_30min.total_ticks - monitor_tick_30min.successful_ticks), 0)::BIGINT as failed_checks,
                 CASE 
                     WHEN SUM(monitor_tick_30min.total_ticks) > 0 
                     THEN ROUND((SUM(monitor_tick_30min.successful_ticks)::NUMERIC / SUM(monitor_tick_30min.total_ticks)::NUMERIC) * 100, 2)
@@ -451,9 +451,9 @@ BEGIN
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                COALESCE(SUM(monitor_tick_2hour.total_ticks), 0) as total_checks,
-                COALESCE(SUM(monitor_tick_2hour.successful_ticks), 0) as successful_checks,
-                COALESCE(SUM(monitor_tick_2hour.total_ticks - monitor_tick_2hour.successful_ticks), 0) as failed_checks,
+                COALESCE(SUM(monitor_tick_2hour.total_ticks), 0)::BIGINT as total_checks,
+                COALESCE(SUM(monitor_tick_2hour.successful_ticks), 0)::BIGINT as successful_checks,
+                COALESCE(SUM(monitor_tick_2hour.total_ticks - monitor_tick_2hour.successful_ticks), 0)::BIGINT as failed_checks,
                 CASE 
                     WHEN SUM(monitor_tick_2hour.total_ticks) > 0 
                     THEN ROUND((SUM(monitor_tick_2hour.successful_ticks)::NUMERIC / SUM(monitor_tick_2hour.total_ticks)::NUMERIC) * 100, 2)
@@ -820,6 +820,45 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function to get regional performance ranking
+CREATE OR REPLACE FUNCTION get_regional_performance_ranking(
+    p_region_type TEXT DEFAULT 'continent',
+    p_period TEXT DEFAULT 'day',
+    p_start_time TIMESTAMPTZ DEFAULT NULL,
+    p_end_time TIMESTAMPTZ DEFAULT NULL,
+    p_limit INTEGER DEFAULT 100
+) RETURNS TABLE (
+    region_id TEXT,
+    region_name TEXT,
+    avg_latency NUMERIC,
+    success_rate NUMERIC,
+    total_checks BIGINT,
+    performance_score NUMERIC,
+    rank_position BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        rs.region_id,
+        rs.region_id as region_name,
+        rs.avg_response_time as avg_latency,
+        rs.uptime_percentage as success_rate,
+        rs.total_checks,
+        rs.performance_score,
+        ROW_NUMBER() OVER (ORDER BY rs.performance_score DESC) as rank_position
+    FROM get_regional_stats(
+        p_region_type := p_region_type,
+        p_region_id := NULL,
+        p_period := p_period,
+        p_start_time := p_start_time,
+        p_end_time := p_end_time
+    ) rs
+    WHERE rs.total_checks > 0
+    ORDER BY rs.performance_score DESC
+    LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Function to get best performing regions
 CREATE OR REPLACE FUNCTION get_best_performing_regions(
     p_region_type TEXT DEFAULT 'continent',
@@ -930,9 +969,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."continentCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -962,9 +1001,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."continentCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -994,9 +1033,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."continentCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1029,9 +1068,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."countryCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1061,9 +1100,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."countryCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1093,9 +1132,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     c."countryCode"::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1128,9 +1167,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     CONCAT(c.city, ', ', c."countryCode")::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1160,9 +1199,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     CONCAT(c.city, ', ', c."countryCode")::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
@@ -1192,9 +1231,9 @@ BEGIN
                 SELECT 
                     p_region_type AS region_type,
                     CONCAT(c.city, ', ', c."countryCode")::TEXT AS region_id,
-                    COALESCE(SUM(c.total_ticks), 0) AS total_checks,
-                    COALESCE(SUM(c.successful_ticks), 0) AS successful_checks,
-                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0) AS failed_checks,
+                    COALESCE(SUM(c.total_ticks), 0)::BIGINT AS total_checks,
+                    COALESCE(SUM(c.successful_ticks), 0)::BIGINT AS successful_checks,
+                    COALESCE(SUM(c.total_ticks - c.successful_ticks), 0)::BIGINT AS failed_checks,
                     CASE 
                         WHEN SUM(c.total_ticks) > 0 
                         THEN ROUND((SUM(c.successful_ticks)::NUMERIC / SUM(c.total_ticks)::NUMERIC) * 100, 2)
