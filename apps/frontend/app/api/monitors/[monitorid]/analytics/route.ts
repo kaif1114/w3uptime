@@ -142,12 +142,6 @@ export const GET = withAuth(async (
         uptime_percentage: Number(stats.uptime_percentage || 0),
         availability_sla: Number(stats.uptime_percentage || 0), // Use uptime as SLA for now
       },
-      latency: {
-        avg_latency: Number(stats.avg_response_time || 0),
-        min_latency: Number(stats.min_response_time || 0),
-        max_latency: Number(stats.max_response_time || 0),
-        sample_count: Number(stats.total_checks || 0),
-      },
       bestRegion: bestRegion ? {
         region_type: "Country", // Default to country for now
         region_name: bestRegion.region_name || bestRegion.region_id || 'Unknown',

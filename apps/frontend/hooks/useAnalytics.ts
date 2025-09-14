@@ -2,8 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   AvailableRegionsResponse,
   AvailableCountriesResponse,
-  RegionalTimeSeriesResponse,
-  CountryAnalyticsResponse,
   EnhancedTimePeriod,
   CustomTimePeriod,
 } from "@/types/analytics";
@@ -79,135 +77,12 @@ export function useAvailableCountries(monitorId?: string, continent?: string) {
 
 // ===== REGIONAL ANALYTICS HOOKS =====
 
-/**
- * Hook to fetch regional timeseries data
- */
-export function useRegionalTimeseries(
-  region: string,
-  regionType: 'continent' | 'country' | 'city',
-  period: EnhancedTimePeriod | string,
-  customPeriod?: CustomTimePeriod,
-  enabled: boolean = true
-) {
-  return useQuery<RegionalTimeSeriesResponse>({
-    queryKey: ["regional-timeseries", region, regionType, period, customPeriod],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('region', region);
-      params.append('regionType', regionType);
-      
-      if (customPeriod && period === 'custom') {
-        params.append('period', 'day'); // Use day as base period for custom ranges
-        params.append('startTime', customPeriod.startDate);
-        params.append('endTime', customPeriod.endDate);
-      } else {
-        params.append('period', period as string);
-      }
 
-      const response = await fetch(`/api/analytics/regional-timeseries?${params.toString()}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch regional timeseries");
-      }
-      
-      return response.json();
-    },
-    enabled: enabled && !!region,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-/**
- * Hook to fetch country-specific analytics with timeseries and statistics
- */
-export function useCountryAnalytics(
-  country: string,
-  period: EnhancedTimePeriod | string,
-  customPeriod?: CustomTimePeriod,
-  includeStats: boolean = true,
-  enabled: boolean = true
-) {
-  return useQuery<CountryAnalyticsResponse>({
-    queryKey: ["country-analytics", country, period, customPeriod, includeStats],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('country', country);
-      params.append('includeStats', includeStats.toString());
-      
-      if (customPeriod && period === 'custom') {
-        params.append('period', 'day'); // Use day as base period for custom ranges
-        params.append('startTime', customPeriod.startDate);
-        params.append('endTime', customPeriod.endDate);
-      } else {
-        params.append('period', period as string);
-      }
-
-      const response = await fetch(`/api/analytics/country-timeseries?${params.toString()}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch country analytics");
-      }
-      
-      return response.json();
-    },
-    enabled: enabled && !!country,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
-  });
-}
 
 
 // ===== UTILITY HOOKS =====
 
-/**
- * Hook to get available continents for dropdown filtering
- */
-export function useContinentOptions(monitorId?: string) {
-  const { data, isLoading, error } = useAvailableRegions('continent', monitorId);
-  
-  return {
-    options: data?.regions.map(region => ({
-      value: region.region_id,
-      label: region.region_name,
-      dataCount: region.data_count,
-    })) || [],
-    isLoading,
-    error,
-  };
-}
 
-/**
- * Hook to get available countries for dropdown filtering
- */
-export function useCountryOptions(monitorId?: string, continent?: string) {
-  const { data, isLoading, error } = useAvailableCountries(monitorId, continent);
-  
-  return {
-    options: data?.countries.map(country => ({
-      value: country.country_code,
-      label: country.country_name,
-      continent: country.continent_code,
-      performance: {
-        avgLatency: country.avg_latency,
-        successRate: country.success_rate,
-        totalChecks: country.total_checks,
-      },
-    })) || [],
-    isLoading,
-    error,
-  };
-}
 
 /**
  * Hook for handling custom time periods with validation
