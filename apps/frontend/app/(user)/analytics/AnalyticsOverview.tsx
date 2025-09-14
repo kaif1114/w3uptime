@@ -32,9 +32,12 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
   const exportToPDF = async () => {
     setIsExporting(true);
     try {
+      // Store current active tab to restore later
+      const originalActiveTab = activeTab;
+      
       // Dynamic import to avoid SSR issues
       const html2canvas = (await import('html2canvas-pro')).default;
-      const jsPDF = (await import('jspdf')).jsPDF;
+      const jsPDF = (await import('jspdf')).default;
       
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -86,7 +89,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           summaryY += 6;
         }
         
-        yPosition = summaryY + 8;
+        summaryY = summaryY + 8;
       }
       
       let yPosition = 55;
@@ -96,6 +99,10 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Overview', margin, 20);
+      
+      // Switch to overview tab and wait for content to render
+      setActiveTab('overview');
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Capture Overview Tab
       const overviewElement = document.querySelector('[data-tab="overview"]');
@@ -136,12 +143,17 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       }
       
       // Capture Insights Tab
-      const insightsElement = document.querySelector('[data-tab="insights"]');
-      if (insightsElement && analytics.performanceInsights && analytics.performanceInsights.length > 0) {
-        pdf.addPage();
-        pdf.setFontSize(18);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Performance Insights', margin, 20);
+      if (analytics && analytics.performanceInsights && analytics.performanceInsights.length > 0) {
+        // Switch to insights tab and wait for content to render
+        setActiveTab('insights');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const insightsElement = document.querySelector('[data-tab="insights"]');
+        if (insightsElement) {
+          pdf.addPage();
+          pdf.setFontSize(18);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Performance Insights', margin, 20);
         
         const canvas = await html2canvas(insightsElement as HTMLElement, {
           scale: 1.5,
@@ -173,14 +185,20 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           }
         }
       }
+      }
       
       // Capture Rankings Tab
-      const rankingsElement = document.querySelector('[data-tab="rankings"]');
-      if (rankingsElement && availableCountries && availableCountries.countries.length > 0) {
-        pdf.addPage();
-        pdf.setFontSize(18);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Country Performance Rankings', margin, 20);
+      if (availableCountries && availableCountries.countries.length > 0) {
+        // Switch to rankings tab and wait for content to render
+        setActiveTab('rankings');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const rankingsElement = document.querySelector('[data-tab="rankings"]');
+        if (rankingsElement) {
+          pdf.addPage();
+          pdf.setFontSize(18);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Country Performance Rankings', margin, 20);
         
         const canvas = await html2canvas(rankingsElement as HTMLElement, {
           scale: 1.5,
@@ -212,6 +230,10 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           }
         }
       }
+      }
+      
+      // Restore original active tab
+      setActiveTab(originalActiveTab);
       
       // Save PDF
       pdf.save(`analytics-report-${monitorId}-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -219,6 +241,8 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Failed to export PDF. Please try again.');
+      // Restore original active tab on error
+      setActiveTab(originalActiveTab);
     } finally {
       setIsExporting(false);
     }
