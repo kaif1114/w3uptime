@@ -56,9 +56,9 @@ FROM "MonitorTick"
 GROUP BY time_bucket, "monitorId";
 
 -- 4. Create refresh policies for continuous aggregates
--- Refresh every 30 seconds for 5-minute aggregate (for near real-time updates)
+-- Refresh every 30 seconds for 5-minute aggregate (for day view - 24 hours)
 SELECT add_continuous_aggregate_policy('monitor_tick_5min',
-    start_offset => INTERVAL '1 hour',
+    start_offset => INTERVAL '25 hours',
     end_offset => INTERVAL '1 minute',
     schedule_interval => INTERVAL '30 seconds',
     if_not_exists => TRUE);
@@ -70,75 +70,75 @@ SELECT add_continuous_aggregate_policy('monitor_tick_5min',
 --     schedule_interval => INTERVAL '1 minutes',
 --     if_not_exists => TRUE);
 
--- Refresh every 5 minutes for 30-minute aggregate
+-- Refresh every 5 minutes for 30-minute aggregate (for week view - 7 days)
 SELECT add_continuous_aggregate_policy('monitor_tick_30min',
-    start_offset => INTERVAL '6 hours', 
+    start_offset => INTERVAL '8 days', 
     end_offset => INTERVAL '5 minutes',
     schedule_interval => INTERVAL '5 minutes',
     if_not_exists => TRUE);
 
--- Refresh every 15 minutes for 2-hour aggregate
+-- Refresh every 15 minutes for 2-hour aggregate (for month view - 30 days)
 SELECT add_continuous_aggregate_policy('monitor_tick_2hour',
-    start_offset => INTERVAL '1 day',
+    start_offset => INTERVAL '32 days',
     end_offset => INTERVAL '15 minutes', 
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists => TRUE);
 
 -- Regional continuous aggregates refresh policies
 
--- Continental aggregates refresh policies
+-- Continental aggregates refresh policies (for day view - 24 hours)
 SELECT add_continuous_aggregate_policy('continent_tick_5min',
-    start_offset => INTERVAL '1 hour',
+    start_offset => INTERVAL '25 hours',
     end_offset => INTERVAL '1 minute',
     schedule_interval => INTERVAL '30 seconds',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('continent_tick_30min',
-    start_offset => INTERVAL '6 hours', 
+    start_offset => INTERVAL '8 days', 
     end_offset => INTERVAL '5 minutes',
     schedule_interval => INTERVAL '5 minutes',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('continent_tick_2hour',
-    start_offset => INTERVAL '1 day',
+    start_offset => INTERVAL '32 days',
     end_offset => INTERVAL '15 minutes', 
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists => TRUE);
 
--- Country aggregates refresh policies
+-- Country aggregates refresh policies (for day view - 24 hours)
 SELECT add_continuous_aggregate_policy('country_tick_5min',
-    start_offset => INTERVAL '1 hour',
+    start_offset => INTERVAL '25 hours',
     end_offset => INTERVAL '1 minute',
     schedule_interval => INTERVAL '30 seconds',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('country_tick_30min',
-    start_offset => INTERVAL '6 hours', 
+    start_offset => INTERVAL '8 days', 
     end_offset => INTERVAL '5 minutes',
     schedule_interval => INTERVAL '5 minutes',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('country_tick_2hour',
-    start_offset => INTERVAL '1 day',
+    start_offset => INTERVAL '32 days',
     end_offset => INTERVAL '15 minutes', 
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists => TRUE);
 
--- City aggregates refresh policies
+-- City aggregates refresh policies (for day view - 24 hours)
 SELECT add_continuous_aggregate_policy('city_tick_5min',
-    start_offset => INTERVAL '1 hour',
+    start_offset => INTERVAL '25 hours',
     end_offset => INTERVAL '1 minute',
     schedule_interval => INTERVAL '30 seconds',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('city_tick_30min',
-    start_offset => INTERVAL '6 hours', 
+    start_offset => INTERVAL '8 days', 
     end_offset => INTERVAL '5 minutes',
     schedule_interval => INTERVAL '5 minutes',
     if_not_exists => TRUE);
 
 SELECT add_continuous_aggregate_policy('city_tick_2hour',
-    start_offset => INTERVAL '1 day',
+    start_offset => INTERVAL '32 days',
     end_offset => INTERVAL '15 minutes', 
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists => TRUE);
