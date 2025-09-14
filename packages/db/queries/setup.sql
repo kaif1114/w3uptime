@@ -55,6 +55,118 @@ SELECT
 FROM "MonitorTick"
 GROUP BY time_bucket, "monitorId";
 
+-- 3d. Regional continuous aggregates for country-level data
+
+-- 5-minute country-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_5min
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('5 minutes', "createdAt") AS time_bucket,
+    "monitorId",
+    "countryCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "countryCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "countryCode";
+
+-- 30-minute country-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_30min
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('30 minutes', "createdAt") AS time_bucket,
+    "monitorId",
+    "countryCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "countryCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "countryCode";
+
+-- 2-hour country-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_2hour
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('2 hours', "createdAt") AS time_bucket,
+    "monitorId",
+    "countryCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "countryCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "countryCode";
+
+-- 3e. Regional continuous aggregates for continent-level data
+
+-- 5-minute continent-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_5min
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('5 minutes', "createdAt") AS time_bucket,
+    "monitorId",
+    "continentCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "continentCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "continentCode";
+
+-- 30-minute continent-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_30min
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('30 minutes', "createdAt") AS time_bucket,
+    "monitorId",
+    "continentCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "continentCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "continentCode";
+
+-- 2-hour continent-level continuous aggregate
+CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_2hour
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('2 hours', "createdAt") AS time_bucket,
+    "monitorId",
+    "continentCode",
+    COUNT(*) as total_ticks,
+    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+    AVG(latency) as avg_latency,
+    MIN(latency) as min_latency,
+    MAX(latency) as max_latency,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+FROM "MonitorTick"
+WHERE "continentCode" IS NOT NULL
+GROUP BY time_bucket, "monitorId", "continentCode";
+
 
 -----------------------
 
@@ -86,6 +198,46 @@ SELECT add_continuous_aggregate_policy('monitor_tick_30min',
 
 -- Refresh every 15 minutes for 2-hour aggregate (for month view - 30 days)
 SELECT add_continuous_aggregate_policy('monitor_tick_2hour',
+    start_offset => INTERVAL '32 days',
+    end_offset => INTERVAL '30 minutes', 
+    schedule_interval => INTERVAL '30 minutes',
+    if_not_exists => TRUE);
+
+-- 5. Add refresh policies for regional continuous aggregates
+
+-- Country-level refresh policies
+SELECT add_continuous_aggregate_policy('monitor_tick_country_5min',
+    start_offset => INTERVAL '25 hours',
+    end_offset => INTERVAL '1 minute',
+    schedule_interval => INTERVAL '1 minute',
+    if_not_exists => TRUE);
+
+SELECT add_continuous_aggregate_policy('monitor_tick_country_30min',
+    start_offset => INTERVAL '8 days', 
+    end_offset => INTERVAL '10 minutes',
+    schedule_interval => INTERVAL '10 minutes',
+    if_not_exists => TRUE);
+
+SELECT add_continuous_aggregate_policy('monitor_tick_country_2hour',
+    start_offset => INTERVAL '32 days',
+    end_offset => INTERVAL '30 minutes', 
+    schedule_interval => INTERVAL '30 minutes',
+    if_not_exists => TRUE);
+
+-- Continent-level refresh policies
+SELECT add_continuous_aggregate_policy('monitor_tick_continent_5min',
+    start_offset => INTERVAL '25 hours',
+    end_offset => INTERVAL '1 minute',
+    schedule_interval => INTERVAL '1 minute',
+    if_not_exists => TRUE);
+
+SELECT add_continuous_aggregate_policy('monitor_tick_continent_30min',
+    start_offset => INTERVAL '8 days', 
+    end_offset => INTERVAL '10 minutes',
+    schedule_interval => INTERVAL '10 minutes',
+    if_not_exists => TRUE);
+
+SELECT add_continuous_aggregate_policy('monitor_tick_continent_2hour',
     start_offset => INTERVAL '32 days',
     end_offset => INTERVAL '30 minutes', 
     schedule_interval => INTERVAL '30 minutes',
@@ -277,56 +429,56 @@ BEGIN
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                mt."countryCode"::TEXT AS country_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."countryCode"::TEXT AS country_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '24 hours'
-                AND mt."countryCode" IS NOT NULL
-            GROUP BY mt."countryCode";
+            FROM monitor_tick_country_5min mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '24 hours'
+                AND mtc."countryCode" IS NOT NULL
+            GROUP BY mtc."countryCode";
             
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                mt."countryCode"::TEXT AS country_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."countryCode"::TEXT AS country_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '7 days'
-                AND mt."countryCode" IS NOT NULL
-            GROUP BY mt."countryCode";
+            FROM monitor_tick_country_30min mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '7 days'
+                AND mtc."countryCode" IS NOT NULL
+            GROUP BY mtc."countryCode";
             
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                mt."countryCode"::TEXT AS country_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."countryCode"::TEXT AS country_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '30 days'
-                AND mt."countryCode" IS NOT NULL
-            GROUP BY mt."countryCode";
+            FROM monitor_tick_country_2hour mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '30 days'
+                AND mtc."countryCode" IS NOT NULL
+            GROUP BY mtc."countryCode";
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
@@ -349,56 +501,56 @@ BEGIN
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                mt."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '24 hours'
-                AND mt."continentCode" IS NOT NULL
-            GROUP BY mt."continentCode";
+            FROM monitor_tick_continent_5min mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '24 hours'
+                AND mtc."continentCode" IS NOT NULL
+            GROUP BY mtc."continentCode";
             
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                mt."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '7 days'
-                AND mt."continentCode" IS NOT NULL
-            GROUP BY mt."continentCode";
+            FROM monitor_tick_continent_30min mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '7 days'
+                AND mtc."continentCode" IS NOT NULL
+            GROUP BY mtc."continentCode";
             
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                mt."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
-                COUNT(*)::BIGINT AS total_ticks,
-                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
+                mtc."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mtc.avg_latency)::NUMERIC, 2) AS avg_latency,
+                SUM(mtc.total_ticks)::BIGINT AS total_ticks,
+                SUM(mtc.successful_ticks)::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN COUNT(*) > 0 
-                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
+                    WHEN SUM(mtc.total_ticks) > 0 
+                    THEN ROUND((SUM(mtc.successful_ticks)::NUMERIC / SUM(mtc.total_ticks)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM "MonitorTick" mt
-            WHERE mt."monitorId" = p_monitor_id::text
-                AND mt."createdAt" >= NOW() - INTERVAL '30 days'
-                AND mt."continentCode" IS NOT NULL
-            GROUP BY mt."continentCode";
+            FROM monitor_tick_continent_2hour mtc
+            WHERE mtc."monitorId" = p_monitor_id::text
+                AND mtc.time_bucket >= NOW() - INTERVAL '30 days'
+                AND mtc."continentCode" IS NOT NULL
+            GROUP BY mtc."continentCode";
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
