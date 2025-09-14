@@ -1,0 +1,57 @@
+# This Dockerfile is optimized for building ONLY the data-ingestion service in a turborepo environment
+# It uses turbo prune to include only necessary dependencies
+
+FROM node:20-alpine AS base
+
+FROM base AS builder
+
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune data-ingestion --docker
+
+# Install dependencies for building
+FROM base AS deps
+
+WORKDIR /app
+# Copy pruned package files (only data-ingestion + its workspace deps)
+COPY --from=builder /app/out/json/ .
+RUN npm install
+
+# Install all dependencies needed for building
+# Build the project
+COPY --from=builder /app/out/full/ .
+
+RUN npx prisma generate --schema=./packages/db/prisma/schema.prisma
+RUN npm run build
+
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nodeapp
+
+# Copy node_modules from deps stage (already installed)
+COPY --from=deps --chown=nodeapp:nodejs /app/node_modules ./node_modules
+
+# Copy the built application
+COPY --from=deps --chown=nodeapp:nodejs /app/apps/data-ingestion/build ./apps/data-ingestion/build
+COPY --from=deps --chown=nodeapp:nodejs /app/apps/data-ingestion/package.json ./apps/data-ingestion/
+
+# Copy workspace packages that are needed at runtime (only what turbo prune included)
+COPY --from=deps --chown=nodeapp:nodejs /app/packages ./packages/
+
+USER nodeapp
+
+EXPOSE 4001
+ENV PORT=4001
+
+# Run the application
+CMD ["node", "apps/data-ingestion/build/src/main.js"]

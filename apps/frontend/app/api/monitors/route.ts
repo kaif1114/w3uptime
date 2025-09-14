@@ -12,8 +12,8 @@ const createMonitorSchema = z
     expectedStatusCodes: z
       .array(z.number().int())
       .default([200, 201, 202, 204]),
-    status: z.enum(["ACTIVE", "PAUSED", "DISABLED"]).default("ACTIVE"),
-    escalationPolicyId: z.string().uuid().optional().nullable(),
+    status: z.enum(["ACTIVE", "PAUSED"]).default("ACTIVE"),
+    escalationPolicyId: z.uuid().optional().nullable(),
     // Optional inline creation payload (minimal: one level)
     escalationPolicy: z
       .object({

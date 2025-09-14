@@ -42,7 +42,7 @@ export function createExpressServer(): { app: express.Application, httpServer: h
       
       if (city) {
         filteredValidators = filteredValidators.filter(v => 
-          v.location.city.toLowerCase() === (city as string).toLowerCase()
+          v.location.city?.toLowerCase() === (city as string).toLowerCase()
         );
       }
       
