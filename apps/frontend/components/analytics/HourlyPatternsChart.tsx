@@ -23,20 +23,18 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
   const sortedPatterns = [...patterns].sort((a, b) => a.hour_of_day - b.hour_of_day);
   
   const handleMouseEnter = (pattern: HourlyPattern, event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
     setTooltipData({
       pattern,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: event.clientX,
+      y: event.clientY
     });
   };
   
   const handleMouseMove = (pattern: HourlyPattern, event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
     setTooltipData({
       pattern,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: event.clientX,
+      y: event.clientY
     });
   };
   
@@ -291,11 +289,11 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
       {/* Cursor-following Tooltip */}
       {tooltipData && (
         <div 
-          className="fixed pointer-events-none z-50 transition-opacity duration-200"
+          className="fixed pointer-events-none z-50"
           style={{ 
             left: `${tooltipData.x + 10}px`, 
             top: `${tooltipData.y - 10}px`,
-            transform: 'translate(-50%, -100%)'
+            transform: 'translate(0, -100%)'
           }}
         >
           <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
