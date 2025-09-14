@@ -169,6 +169,36 @@ export interface MonitorAnalyticsResponse {
   worldMap: {
     byCountry: SampleCountData[];
   };
+  // Enhanced analytics data (optional for backward compatibility)
+  hourlyPatterns?: Array<{
+    hour_of_day: number;
+    avg_latency: number;
+    total_checks: number;
+    successful_checks: number;
+    success_rate: number;
+    check_frequency: number;
+  }>;
+  weeklyComparison?: Array<{
+    metric_name: string;
+    current_week: number;
+    previous_week: number;
+    change_percentage: number;
+    trend_direction: 'up' | 'down' | 'stable';
+  }>;
+  performanceInsights?: Array<{
+    insight_type: 'health_score' | 'uptime' | 'latency' | 'patterns';
+    insight_title: string;
+    insight_message: string;
+    severity: 'success' | 'warning' | 'error' | 'info';
+    recommendation: string;
+    health_score: string;
+  }>;
+  healthScore?: {
+    grade: string;
+    score: number;
+    color: 'green' | 'yellow' | 'orange' | 'red';
+    description: string;
+  };
   generatedAt: string;
 }
 

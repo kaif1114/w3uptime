@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMonitorAnalytics } from "@/hooks/useMonitors";
 import { useAvailableCountries } from "@/hooks/useAnalytics";
-import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, BarChart3 } from "lucide-react";
+import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, BarChart3, Lightbulb } from "lucide-react";
 import { CountryRankingTable } from "@/components/analytics/CountryRankingTable";
 import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
 import { RegionalLatencyChart } from "@/components/analytics/RegionalLatencyChart";
+import { PerformanceInsightsCard } from "@/components/analytics/PerformanceInsightsCard";
+import { HourlyPatternsChart } from "@/components/analytics/HourlyPatternsChart";
+import { WeeklyComparisonTable } from "@/components/analytics/WeeklyComparisonTable";
 
 interface AnalyticsOverviewProps {
   monitorId: string;
@@ -70,10 +73,14 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="overview" className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
           Overview
+        </TabsTrigger>
+        <TabsTrigger value="insights" className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4" />
+          Insights
         </TabsTrigger>
         <TabsTrigger value="rankings" className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
@@ -200,6 +207,41 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         </Card>
       </TabsContent>
 
+      {/* Insights Tab */}
+      <TabsContent value="insights" className="space-y-6">
+        {/* Performance Insights */}
+        {analytics.performanceInsights && analytics.healthScore && (
+          <PerformanceInsightsCard 
+            insights={analytics.performanceInsights}
+            healthScore={analytics.healthScore}
+          />
+        )}
+
+        {/* Weekly Comparison */}
+        {analytics.weeklyComparison && analytics.weeklyComparison.length > 0 && (
+          <WeeklyComparisonTable comparisons={analytics.weeklyComparison} />
+        )}
+
+        {/* Hourly Patterns */}
+        {analytics.hourlyPatterns && analytics.hourlyPatterns.length > 0 && (
+          <HourlyPatternsChart 
+            patterns={analytics.hourlyPatterns}
+            period={typeof period === 'string' ? period : 'day'}
+          />
+        )}
+
+        {/* Fallback message if no enhanced data */}
+        {(!analytics.performanceInsights || analytics.performanceInsights.length === 0) && 
+         (!analytics.weeklyComparison || analytics.weeklyComparison.length === 0) && 
+         (!analytics.hourlyPatterns || analytics.hourlyPatterns.length === 0) && (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Lightbulb className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">Enhanced insights will appear as more data is collected</p>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
 
       {/* Rankings Tab */}
       <TabsContent value="rankings" className="space-y-6">

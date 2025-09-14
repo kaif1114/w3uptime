@@ -369,3 +369,120 @@ export interface ProcessedMonitorRegionalData {
   avg_latency: number;
   sample_count: number;
 }
+
+// ===== ENHANCED ANALYTICS TYPES =====
+
+/**
+ * Hourly pattern data from get_monitor_hourly_patterns function
+ */
+export interface HourlyPattern {
+  hour_of_day: number;
+  avg_latency: number;
+  total_checks: number;
+  successful_checks: number;
+  success_rate: number;
+  check_frequency: number;
+}
+
+/**
+ * Weekly comparison data from get_monitor_weekly_comparison function
+ */
+export interface WeeklyComparison {
+  metric_name: string;
+  current_week: number;
+  previous_week: number;
+  change_percentage: number;
+  trend_direction: 'up' | 'down' | 'stable';
+}
+
+/**
+ * Performance insight from get_monitor_performance_insights function
+ */
+export interface PerformanceInsight {
+  insight_type: 'health_score' | 'uptime' | 'latency' | 'patterns';
+  insight_title: string;
+  insight_message: string;
+  severity: 'success' | 'warning' | 'error' | 'info';
+  recommendation: string;
+  health_score: string;
+}
+
+/**
+ * Health score with grade and color for display
+ */
+export interface HealthScore {
+  grade: string;
+  score: number;
+  color: 'green' | 'yellow' | 'orange' | 'red';
+  description: string;
+}
+
+/**
+ * Raw database result types for new functions
+ */
+export interface RawHourlyPatternResult {
+  hour_of_day: number | bigint;
+  avg_latency: number | string;
+  total_checks: number | bigint | string;
+  successful_checks: number | bigint | string;
+  success_rate: number | string;
+  check_frequency: number | string;
+}
+
+export interface RawWeeklyComparisonResult {
+  metric_name: string;
+  current_week: number | string;
+  previous_week: number | string;
+  change_percentage: number | string;
+  trend_direction: string;
+}
+
+export interface RawPerformanceInsightResult {
+  insight_type: string;
+  insight_title: string;
+  insight_message: string;
+  severity: string;
+  recommendation: string;
+  health_score: string;
+}
+
+/**
+ * Enhanced analytics response with new insights data
+ */
+export interface EnhancedAnalyticsResponse {
+  monitorId: string;
+  period: string;
+  uptime: {
+    total_checks: number;
+    successful_checks: number;
+    failed_checks: number;
+    uptime_percentage: number;
+    availability_sla: number;
+  } | null;
+  bestRegion: {
+    region_type: string;
+    region_name: string;
+    avg_latency: number;
+    sample_count: number;
+  } | null;
+  worstRegion: {
+    region_type: string;
+    region_name: string;
+    avg_latency: number;
+    sample_count: number;
+  } | null;
+  regional: {
+    byCountry: ProcessedMonitorRegionalData[];
+    byContinent: ProcessedMonitorRegionalData[];
+    byCity: ProcessedMonitorRegionalData[];
+  };
+  worldMap: {
+    byCountry: ProcessedMonitorRegionalData[];
+  };
+  // New enhanced features
+  hourlyPatterns: HourlyPattern[];
+  weeklyComparison: WeeklyComparison[];
+  performanceInsights: PerformanceInsight[];
+  healthScore: HealthScore;
+  generatedAt: string;
+}
