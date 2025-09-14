@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMonitorAnalytics } from "@/hooks/useMonitors";
+import { useMonitor, useMonitorAnalytics } from "@/hooks/useMonitors";
 import { useAvailableCountries } from "@/hooks/useAnalytics";
 import { AlertTriangle, CheckCircle, TrendingUp, MapPin, BarChart3, Lightbulb, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface AnalyticsOverviewProps {
 
 export function AnalyticsOverview({ monitorId, period, customPeriod }: AnalyticsOverviewProps) {
   const { data: analytics, isLoading, error } = useMonitorAnalytics(monitorId, period);
+  const { data: monitor } = useMonitor(monitorId);
   const { data: availableCountries } = useAvailableCountries(monitorId);
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -51,19 +52,25 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Monitor ID: ${monitorId}`, margin, 32);
-      pdf.text(`Period: ${typeof period === 'string' ? period : 'Custom'}`, margin, 39);
-      pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, 46);
+      let headerY = 32;
+      if (monitor) {
+        pdf.text(`Monitor: ${monitor.name}`, margin, headerY); headerY += 7;
+        pdf.text(`URL: ${monitor.url}`, margin, headerY); headerY += 7;
+        pdf.text(`Status: ${monitor.status}   Interval: ${monitor.checkInterval}s   Timeout: ${monitor.timeout}s`, margin, headerY); headerY += 7;
+      }
+      pdf.text(`Monitor ID: ${monitorId}`, margin, headerY); headerY += 7;
+      pdf.text(`Period: ${typeof period === 'string' ? period : 'Custom'}`, margin, headerY); headerY += 7;
+      pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, headerY); headerY += 7;
       
       // Add summary data if available
       if (analytics) {
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Performance Summary:', margin, 58);
+        pdf.text('Performance Summary:', margin, headerY + 12);
         
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
-        let summaryY = 66;
+        let summaryY = headerY + 20;
         
         if (analytics.uptime) {
           pdf.text(`• Uptime: ${Number(analytics.uptime.uptime_percentage || 0).toFixed(2)}%`, margin + 5, summaryY);
@@ -116,6 +123,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         const imgData = canvas.toDataURL('image/png', 0.95);
         const imgWidth = pageWidth - 2 * margin;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const xCentered = (pageWidth - imgWidth) / 2;
         
         // Split large images across multiple pages
         let remainingHeight = imgHeight;
@@ -128,7 +136,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           const sliceRatio = sliceHeight / imgHeight;
           const canvasSliceHeight = canvas.height * sliceRatio;
           
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, sliceHeight, undefined, 'FAST');
+          pdf.addImage(imgData, 'PNG', xCentered, currentY, imgWidth, sliceHeight, undefined, 'FAST');
           
           remainingHeight -= sliceHeight;
           sourceY += canvasSliceHeight;
@@ -162,26 +170,17 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         });
         
         const imgData = canvas.toDataURL('image/png', 0.95);
-        const imgWidth = pageWidth - 2 * margin;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Split large images across multiple pages
-        let remainingHeight = imgHeight;
-        let currentY = 30;
-        
-        while (remainingHeight > 0) {
-          const availableHeight = pageHeight - currentY - margin;
-          const sliceHeight = Math.min(remainingHeight, availableHeight);
-          
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, sliceHeight, undefined, 'FAST');
-          
-          remainingHeight -= sliceHeight;
-          
-          if (remainingHeight > 0) {
-            pdf.addPage();
-            currentY = margin;
-          }
+        const maxWidth = pageWidth - 2 * margin;
+        const maxHeight = pageHeight - 30 - margin;
+        let displayWidth = maxWidth;
+        let displayHeight = (canvas.height * displayWidth) / canvas.width;
+        if (displayHeight > maxHeight) {
+          const scale = maxHeight / displayHeight;
+          displayWidth = displayWidth * scale;
+          displayHeight = displayHeight * scale;
         }
+        const xCenteredInsights = (pageWidth - displayWidth) / 2;
+        pdf.addImage(imgData, 'PNG', xCenteredInsights, 30, displayWidth, displayHeight, undefined, 'FAST');
       }
       }
       
@@ -209,6 +208,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         const imgData = canvas.toDataURL('image/png', 0.95);
         const imgWidth = pageWidth - 2 * margin;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const xCenteredRankings = (pageWidth - imgWidth) / 2;
         
         // Split large images across multiple pages
         let remainingHeight = imgHeight;
@@ -218,7 +218,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           const availableHeight = pageHeight - currentY - margin;
           const sliceHeight = Math.min(remainingHeight, availableHeight);
           
-          pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, sliceHeight, undefined, 'FAST');
+          pdf.addImage(imgData, 'PNG', xCenteredRankings, currentY, imgWidth, sliceHeight, undefined, 'FAST');
           
           remainingHeight -= sliceHeight;
           
@@ -234,7 +234,8 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       setActiveTab(originalActiveTab);
       
       // Save PDF
-      pdf.save(`analytics-report-${monitorId}-${new Date().toISOString().split('T')[0]}.pdf`);
+      const fileSlug = monitor ? (monitor.name || monitor.url || monitorId).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : monitorId;
+      pdf.save(`analytics-report-${fileSlug}-${new Date().toISOString().split('T')[0]}.pdf`);
       
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -317,7 +318,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           className="flex items-center gap-2"
         >
           <Download className="h-4 w-4" />
-          {isExporting ? 'Exporting...' : 'Export PDF'}
+          {isExporting ? 'Exporting...' : 'Export Report'}
         </Button>
       </div>
       
