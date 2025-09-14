@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { HourlyPattern } from "@/types/analytics";
 import { Clock, Activity, TrendingUp } from "lucide-react";
+import { useState } from "react";
 
 interface HourlyPatternsChartProps {
   patterns: HourlyPattern[];
@@ -16,8 +17,32 @@ const formatHour = (hour: number): string => {
 };
 
 export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartProps) {
+  const [tooltipData, setTooltipData] = useState<{ pattern: HourlyPattern; x: number; y: number } | null>(null);
+  
   // Sort patterns by hour to ensure correct order
   const sortedPatterns = [...patterns].sort((a, b) => a.hour_of_day - b.hour_of_day);
+  
+  const handleMouseEnter = (pattern: HourlyPattern, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipData({
+      pattern,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    });
+  };
+  
+  const handleMouseMove = (pattern: HourlyPattern, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipData({
+      pattern,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    });
+  };
+  
+  const handleMouseLeave = () => {
+    setTooltipData(null);
+  };
   
   // Find peak hours (highest and lowest latency)
   const peakLatencyHour = patterns.reduce((max, current) => 
@@ -184,13 +209,16 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                         const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
                         
                         return (
-                          <div key={pattern.hour_of_day} className="relative group" style={{ width: barWidth }}>
+                          <div key={pattern.hour_of_day} className="relative" style={{ width: barWidth }}>
                             {/* Bar */}
                             <div 
                               className={`w-full rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer shadow-sm ${
                                 isHighLatency ? 'bg-gradient-to-t from-red-600 to-red-400' : 'bg-gradient-to-t from-green-600 to-green-400'
                               } ${isPeakHour ? 'ring-2 ring-red-400 ring-offset-1' : ''} ${isBestHour ? 'ring-2 ring-green-400 ring-offset-1' : ''}`}
                               style={{ height: `${barHeightPx}px` }}
+                              onMouseEnter={(e) => handleMouseEnter(pattern, e)}
+                              onMouseMove={(e) => handleMouseMove(pattern, e)}
+                              onMouseLeave={handleMouseLeave}
                             >
                               {/* Value label on top of bar */}
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground whitespace-nowrap">
@@ -210,20 +238,6 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                               )}
                             </div>
                             
-                            {/* Tooltip on Hover - Positioned below the bar */}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                              <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
-                                <div className="font-medium text-center mb-2">{formatHour(pattern.hour_of_day)}</div>
-                                <div className="space-y-1">
-                                  <div className={`font-medium ${isHighLatency ? 'text-red-600' : 'text-green-600'}`}>
-                                    Latency: {pattern.avg_latency.toFixed(0)}ms
-                                  </div>
-                                  <div>Success: {pattern.success_rate.toFixed(1)}%</div>
-                                  <div>Checks: {pattern.total_checks.toLocaleString()}</div>
-                                  <div>Frequency: {pattern.check_frequency}</div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         );
                       })}
@@ -273,6 +287,32 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
           </div>
         </div>
       </CardContent>
+      
+      {/* Cursor-following Tooltip */}
+      {tooltipData && (
+        <div 
+          className="fixed pointer-events-none z-50 transition-opacity duration-200"
+          style={{ 
+            left: `${tooltipData.x + 10}px`, 
+            top: `${tooltipData.y - 10}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-popover border rounded-lg shadow-lg p-3 text-xs min-w-32">
+            <div className="font-medium text-center mb-2">{formatHour(tooltipData.pattern.hour_of_day)}</div>
+            <div className="space-y-1">
+              <div className={`font-medium ${
+                tooltipData.pattern.avg_latency > (patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length) ? 'text-red-600' : 'text-green-600'
+              }`}>
+                Latency: {tooltipData.pattern.avg_latency.toFixed(0)}ms
+              </div>
+              <div>Success: {tooltipData.pattern.success_rate.toFixed(1)}%</div>
+              <div>Checks: {tooltipData.pattern.total_checks.toLocaleString()}</div>
+              <div>Frequency: {tooltipData.pattern.check_frequency}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
