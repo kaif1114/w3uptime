@@ -1295,7 +1295,7 @@ BEGIN
     RETURN QUERY SELECT
         'health_score'::TEXT,
         'Overall Health Grade'::TEXT,
-        format('Your monitor has a health grade of %s based on uptime (%.2f%%) and latency (%s ms)',
+        format('Your monitor has a health grade of %s based on uptime (%s%%) and latency (%s ms)',
                v_health_grade, COALESCE(v_uptime_percentage, 0), COALESCE(v_avg_latency, 0))::TEXT,
         CASE 
             WHEN v_health_grade IN ('A+', 'A') THEN 'success'::TEXT
@@ -1315,10 +1315,10 @@ BEGIN
             'uptime'::TEXT,
             'Uptime Performance'::TEXT,
             CASE 
-                WHEN v_uptime_percentage >= 99.9 THEN format('Excellent uptime of %.2f%% - meeting enterprise SLA standards.', v_uptime_percentage)
-                WHEN v_uptime_percentage >= 99.0 THEN format('Good uptime of %.2f%% - minor improvements possible.', v_uptime_percentage)
-                WHEN v_uptime_percentage >= 95.0 THEN format('Moderate uptime of %.2f%% - needs attention.', v_uptime_percentage)
-                ELSE format('Poor uptime of %.2f%% - critical issues detected.', v_uptime_percentage)
+                WHEN v_uptime_percentage >= 99.9 THEN format('Excellent uptime of %s%% - meeting enterprise SLA standards.', v_uptime_percentage)
+                WHEN v_uptime_percentage >= 99.0 THEN format('Good uptime of %s%% - minor improvements possible.', v_uptime_percentage)
+                WHEN v_uptime_percentage >= 95.0 THEN format('Moderate uptime of %s%% - needs attention.', v_uptime_percentage)
+                ELSE format('Poor uptime of %s%% - critical issues detected.', v_uptime_percentage)
             END::TEXT,
             CASE 
                 WHEN v_uptime_percentage >= 99.5 THEN 'success'::TEXT
