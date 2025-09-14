@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import { MonitorAnalyticsData } from "@/types/analytics";
+import { 
+  MonitorAnalyticsData, 
+  RawMonitorStatsResult, 
+  RawPerformingRegionResult, 
+  RawTimeseriesQueryResult,
+  ProcessedRegionData 
+} from "@/types/analytics";
 
 const analyticsQuerySchema = z.object({
   period: z.enum(['day', 'week', 'month']).default('day'),
@@ -91,15 +97,16 @@ export const GET = withAuth(async (
     };
 
     // Transform the data to match expected frontend format
-    const stats = (monitorStats as any[])[0] || {};
-    const bestRegion = (bestRegions as any[])[0] || null;
-    const worstRegion = (worstRegions as any[])[0] || null;
+    const stats = (monitorStats as RawMonitorStatsResult[])[0] || {};
+    const bestRegion = (bestRegions as RawPerformingRegionResult[])[0] || null;
+    const worstRegion = (worstRegions as RawPerformingRegionResult[])[0] || null;
 
     // Group regional data by continent/country for easier consumption
-    const continentMap = new Map();
-    (continentData as any[]).forEach(item => {
-      if (!continentMap.has(item.continent_code)) {
-        continentMap.set(item.continent_code, {
+    const continentMap = new Map<string, ProcessedRegionData>();
+    (continentData as RawTimeseriesQueryResult[]).forEach(item => {
+      if (!item.continent_code || !continentMap.has(item.continent_code)) {
+        const continentCode = item.continent_code || 'unknown';
+        continentMap.set(continentCode, {
           continent_code: item.continent_code,
           avg_latency: 0,
           sample_count: 0,
@@ -107,17 +114,20 @@ export const GET = withAuth(async (
           total_samples: 0
         });
       }
-      const continent = continentMap.get(item.continent_code);
-      continent.total_latency += Number(item.avg_latency || 0) * Number(item.total_ticks || 0);
-      continent.total_samples += Number(item.total_ticks || 0);
-      continent.avg_latency = continent.total_samples > 0 ? continent.total_latency / continent.total_samples : 0;
-      continent.sample_count = continent.total_samples;
+      const continent = continentMap.get(item.continent_code || 'unknown');
+      if (continent) {
+        continent.total_latency += Number(item.avg_latency || 0) * Number(item.total_ticks || 0);
+        continent.total_samples += Number(item.total_ticks || 0);
+        continent.avg_latency = continent.total_samples > 0 ? continent.total_latency / continent.total_samples : 0;
+        continent.sample_count = continent.total_samples;
+      }
     });
 
-    const countryMap = new Map();
-    (countryData as any[]).forEach(item => {
-      if (!countryMap.has(item.country_code)) {
-        countryMap.set(item.country_code, {
+    const countryMap = new Map<string, ProcessedRegionData>();
+    (countryData as RawTimeseriesQueryResult[]).forEach(item => {
+      if (!item.country_code || !countryMap.has(item.country_code)) {
+        const countryCode = item.country_code || 'unknown';
+        countryMap.set(countryCode, {
           country_code: item.country_code,
           avg_latency: 0,
           sample_count: 0,
@@ -125,11 +135,13 @@ export const GET = withAuth(async (
           total_samples: 0
         });
       }
-      const country = countryMap.get(item.country_code);
-      country.total_latency += Number(item.avg_latency || 0) * Number(item.total_ticks || 0);
-      country.total_samples += Number(item.total_ticks || 0);
-      country.avg_latency = country.total_samples > 0 ? country.total_latency / country.total_samples : 0;
-      country.sample_count = country.total_samples;
+      const country = countryMap.get(item.country_code || 'unknown');
+      if (country) {
+        country.total_latency += Number(item.avg_latency || 0) * Number(item.total_ticks || 0);
+        country.total_samples += Number(item.total_ticks || 0);
+        country.avg_latency = country.total_samples > 0 ? country.total_latency / country.total_samples : 0;
+        country.sample_count = country.total_samples;
+      }
     });
 
     return NextResponse.json({
