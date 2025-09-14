@@ -188,7 +188,7 @@ export function CustomPeriodSelector({
                         selected={startDate}
                         onSelect={setStartDate}
                         disabled={(date) => 
-                          date > new Date() || (endDate && date >= endDate)
+                          date > new Date() || (endDate ? date >= endDate : false)
                         }
                         initialFocus
                       />
@@ -217,7 +217,7 @@ export function CustomPeriodSelector({
                         selected={endDate}
                         onSelect={setEndDate}
                         disabled={(date) => 
-                          date > new Date() || (startDate && date <= startDate)
+                          date > new Date() || (startDate ? date <= startDate : false)
                         }
                         initialFocus
                       />
