@@ -7,7 +7,11 @@ import {
   RawMonitorStatsResult, 
   RawPerformingRegionResult, 
   RawTimeseriesQueryResult,
-  ProcessedRegionData 
+  ProcessedRegionData,
+  MonitorCountryDataResult,
+  MonitorContinentDataResult,
+  MonitorBestWorstRegionsResult,
+  ProcessedMonitorRegionalData
 } from "@/types/analytics";
 
 const analyticsQuerySchema = z.object({
@@ -94,17 +98,17 @@ export const GET = withAuth(async (
 
     // Transform the data to match expected frontend format
     const stats = (monitorStats as RawMonitorStatsResult[])[0] || {};
-    const bestRegion = (bestRegions as RawPerformingRegionResult[])[0] || null;
-    const worstRegion = (worstRegions as RawPerformingRegionResult[])[0] || null;
+    const bestRegion = (bestRegions as MonitorBestWorstRegionsResult[])[0] || null;
+    const worstRegion = (worstRegions as MonitorBestWorstRegionsResult[])[0] || null;
 
     // Process regional data - these are now already aggregated by the functions
-    const processedContinentData = (continentData as any[]).map(item => ({
+    const processedContinentData: ProcessedMonitorRegionalData[] = (continentData as MonitorContinentDataResult[]).map(item => ({
       continent_code: item.continent_code,
       avg_latency: Number(item.avg_latency || 0),
       sample_count: Number(item.total_ticks || 0),
     }));
 
-    const processedCountryData = (countryData as any[]).map(item => ({
+    const processedCountryData: ProcessedMonitorRegionalData[] = (countryData as MonitorCountryDataResult[]).map(item => ({
       country_code: item.country_code,
       avg_latency: Number(item.avg_latency || 0),
       sample_count: Number(item.total_ticks || 0),

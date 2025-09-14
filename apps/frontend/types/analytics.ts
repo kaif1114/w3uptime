@@ -309,3 +309,50 @@ export interface RawAvailableCountryResult {
   successful_checks: bigint;
   total_checks: bigint;
 }
+
+// ===== MONITOR-SPECIFIC REGIONAL ANALYTICS TYPES =====
+
+/**
+ * Monitor country data result from get_monitor_country_data function
+ */
+export interface MonitorCountryDataResult {
+  country_code: string;
+  avg_latency: number;
+  total_ticks: bigint;
+  successful_ticks: bigint;
+  success_rate: number;
+}
+
+/**
+ * Monitor continent data result from get_monitor_continent_data function
+ */
+export interface MonitorContinentDataResult {
+  continent_code: string;
+  avg_latency: number;
+  total_ticks: bigint;
+  successful_ticks: bigint;
+  success_rate: number;
+}
+
+/**
+ * Monitor best/worst regions result from get_monitor_best_worst_regions function
+ */
+export interface MonitorBestWorstRegionsResult {
+  region_id: string;
+  region_name: string;
+  avg_latency: number;
+  success_rate: number;
+  total_checks: bigint;
+  performance_score: number;
+  rank_position: bigint;
+}
+
+/**
+ * Processed regional data for frontend consumption
+ */
+export interface ProcessedMonitorRegionalData {
+  country_code?: string;
+  continent_code?: string;
+  avg_latency: number;
+  sample_count: number;
+}
