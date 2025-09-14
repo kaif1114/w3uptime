@@ -1,18 +1,15 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PerformanceInsight, HealthScore } from "@/types/analytics";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
-  Info,
-  Award
+import { HealthScore, PerformanceInsight } from "@/types/analytics";
+import {
+  Activity,
+  AlertTriangle,
+  Award,
+  CheckCircle,
+  Info
 } from "lucide-react";
 
 interface PerformanceInsightsCardProps {
