@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Clock } from "lucide-react";
-import { format, subDays, subWeeks, subMonths } from "date-fns";
-import { cn } from "@/lib/utils";
-import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
 import { useCustomTimePeriod } from "@/hooks/useAnalytics";
+import { cn } from "@/lib/utils";
+import { CustomTimePeriod, EnhancedTimePeriod } from "@/types/analytics";
+import { format, subDays } from "date-fns";
+import { CalendarIcon, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface CustomPeriodSelectorProps {
   value: EnhancedTimePeriod | CustomTimePeriod;

@@ -1,18 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "db/client";
-import { z } from "zod";
 import { withAuth } from "@/lib/auth";
-import { 
-  MonitorAnalyticsData, 
-  RawMonitorStatsResult, 
-  RawPerformingRegionResult, 
-  RawTimeseriesQueryResult,
-  ProcessedRegionData,
-  MonitorCountryDataResult,
-  MonitorContinentDataResult,
+import {
   MonitorBestWorstRegionsResult,
-  ProcessedMonitorRegionalData
+  MonitorContinentDataResult,
+  MonitorCountryDataResult,
+  ProcessedMonitorRegionalData,
+  RawMonitorStatsResult
 } from "@/types/analytics";
+import { prisma } from "db/client";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const analyticsQuerySchema = z.object({
   period: z.enum(['day', 'week', 'month']).default('day'),

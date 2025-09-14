@@ -1,15 +1,13 @@
 "use client";
 
-import { ValidatorBalance } from "@/types/validator";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Wallet, TrendingUp, Clock } from "lucide-react";
+import { ValidatorBalance } from "@/types/validator";
+import { Clock, TrendingUp, Wallet } from "lucide-react";
 
 interface BalanceOverviewProps {
   balance: ValidatorBalance;
