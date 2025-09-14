@@ -1137,7 +1137,7 @@ BEGIN
         SELECT 
             COALESCE(SUM(mt.total_ticks), 0) as total_checks,
             COALESCE(SUM(mt.successful_ticks), 0) as successful_checks,
-            ROUND(AVG(mt.avg_latency), 2) as avg_latency,
+            ROUND(AVG(mt.avg_latency)::NUMERIC, 2) as avg_latency,
             CASE 
                 WHEN SUM(mt.total_ticks) > 0 
                 THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
@@ -1151,7 +1151,7 @@ BEGIN
         SELECT 
             COALESCE(SUM(mt.total_ticks), 0) as total_checks,
             COALESCE(SUM(mt.successful_ticks), 0) as successful_checks,
-            ROUND(AVG(mt.avg_latency), 2) as avg_latency,
+            ROUND(AVG(mt.avg_latency)::NUMERIC, 2) as avg_latency,
             CASE 
                 WHEN SUM(mt.total_ticks) > 0 
                 THEN ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
@@ -1239,7 +1239,7 @@ BEGIN
                 CASE WHEN SUM(mt.total_ticks) > 0 THEN 
                     ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
                 ELSE 0 END,
-                ROUND(AVG(mt.avg_latency), 2)
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
             INTO uptime_percentage, avg_latency
             FROM monitor_tick_5min mt
             WHERE mt."monitorId" = p_monitor_id::text
@@ -1250,7 +1250,7 @@ BEGIN
                 CASE WHEN SUM(mt.total_ticks) > 0 THEN 
                     ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
                 ELSE 0 END,
-                ROUND(AVG(mt.avg_latency), 2)
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
             INTO uptime_percentage, avg_latency
             FROM monitor_tick_30min mt
             WHERE mt."monitorId" = p_monitor_id::text
@@ -1261,7 +1261,7 @@ BEGIN
                 CASE WHEN SUM(mt.total_ticks) > 0 THEN 
                     ROUND((SUM(mt.successful_ticks)::NUMERIC / SUM(mt.total_ticks)::NUMERIC) * 100, 2)
                 ELSE 0 END,
-                ROUND(AVG(mt.avg_latency), 2)
+                ROUND(AVG(mt.avg_latency)::NUMERIC, 2)
             INTO uptime_percentage, avg_latency
             FROM monitor_tick_2hour mt
             WHERE mt."monitorId" = p_monitor_id::text
