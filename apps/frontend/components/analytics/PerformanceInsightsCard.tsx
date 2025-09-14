@@ -91,29 +91,29 @@ export function PerformanceInsightsCard({ insights, healthScore }: PerformanceIn
         </div>
 
         {/* Performance Insights */}
-        <div className="space-y-3">
+        <div className="space-y-3 flex gap-3">
           {regularInsights.length > 0 ? (
             regularInsights.map((insight, index) => (
-              <Alert key={index} className="p-3">
-                <div className="flex items-start gap-3">
+              <div key={index} className="p-3">
+                <div className="flex gap-3">
                   {getSeverityIcon(insight.severity)}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 ">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-sm">{insight.insight_title}</h4>
                       <Badge variant={getSeverityVariant(insight.severity)} className="text-xs">
                         {insight.severity.toUpperCase()}
                       </Badge>
                     </div>
-                    <AlertDescription className="text-xs text-muted-foreground mb-2">
+                    <div className="text-xs text-muted-foreground mb-2">
                       {insight.insight_message}
-                    </AlertDescription>
+                    </div>
                     <div className="bg-muted/50 p-2 rounded text-xs">
                       <div className="font-medium mb-1 text-muted-foreground">Recommendation:</div>
                       <div>{insight.recommendation}</div>
                     </div>
                   </div>
                 </div>
-              </Alert>
+              </div>
             ))
           ) : (
             <div className="text-center py-6 text-muted-foreground">
