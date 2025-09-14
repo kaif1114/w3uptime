@@ -125,40 +125,57 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             {/* Horizontal Chart Container */}
             <div className="bg-muted/20 rounded-lg p-4 overflow-x-auto">
               <div className="min-w-[800px]">
-                {/* Chart Area */}
-                <div className="relative" style={{ height: '320px', paddingBottom: '40px' }}>
-                  {/* Background Grid Lines */}
-                  <div className="absolute inset-0 flex flex-col">
-                    {[0, 25, 50, 75, 100].map((percent) => (
-                      <div key={percent} className="flex-1 border-b border-muted/30 last:border-b-0"></div>
-                    ))}
-                  </div>
+                {(() => {
+                  const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
                   
-                  {/* Y-Axis Labels (Latency) */}
-                  <div className="absolute left-0 top-0 h-full w-12 flex flex-col justify-between text-xs text-muted-foreground py-2">
-                    {(() => {
-                      const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
-                      const steps = [maxLatency, maxLatency * 0.75, maxLatency * 0.5, maxLatency * 0.25, 0];
-                      return steps.map((value, index) => (
-                        <div key={index} className="text-right pr-2">
-                          {value.toFixed(0)}ms
+                  // Calculate dynamic heights based on data
+                  const minChartHeight = 120; // Minimum chart height
+                  const maxChartHeight = 400; // Maximum chart height
+                  const baseHeight = 200; // Base height for medium latencies
+                  
+                  // Scale chart height based on max latency (assuming 50-500ms is typical range)
+                  const latencyFactor = Math.min(Math.max(maxLatency / 100, 0.5), 4); // Scale factor 0.5x to 4x
+                  const dynamicChartHeight = Math.max(minChartHeight, Math.min(maxChartHeight, baseHeight * latencyFactor));
+                  
+                  const paddingTop = 40; // Space for labels and badges above bars
+                  const paddingBottom = 40; // Space for hour labels below
+                  const totalContainerHeight = dynamicChartHeight + paddingTop + paddingBottom;
+                  const barsAreaHeight = dynamicChartHeight;
+                  
+                  return (
+                    <>
+                      {/* Chart Area */}
+                      <div className="relative" style={{ height: `${totalContainerHeight}px` }}>
+                        {/* Background Grid Lines */}
+                        <div className="absolute left-0 right-0" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
+                          <div className="h-full flex flex-col">
+                            {[0, 25, 50, 75, 100].map((percent) => (
+                              <div key={percent} className="flex-1 border-b border-muted/30 last:border-b-0"></div>
+                            ))}
+                          </div>
                         </div>
-                      ));
-                    })()}
-                  </div>
-                  
-                  {/* Bars */}
-                  <div className="ml-12 relative" style={{ height: '280px' }}>
-                    {/* Bars container */}
-                    <div className="absolute bottom-0 left-0 right-0 flex items-end gap-1">
-                      {sortedPatterns.map((pattern) => {
-                        const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
                         
-                        // Enhanced height calculation with proper alignment
-                        const normalizedHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) : 0;
-                        const minBarHeightPx = 8; // Minimum bar height in pixels
-                        const maxBarHeightPx = 280; // Maximum bar height in pixels
-                        const barHeightPx = Math.max(minBarHeightPx, normalizedHeight * maxBarHeightPx);
+                        {/* Y-Axis Labels (Latency) */}
+                        <div className="absolute left-0 w-12 flex flex-col justify-between text-xs text-muted-foreground" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
+                          {(() => {
+                            const steps = [maxLatency, maxLatency * 0.75, maxLatency * 0.5, maxLatency * 0.25, 0];
+                            return steps.map((value, index) => (
+                              <div key={index} className="text-right pr-2">
+                                {value.toFixed(0)}ms
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                  
+                        {/* Bars */}
+                        <div className="ml-12 absolute left-0 right-0" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
+                          {/* Bars container */}
+                          <div className="ml-12 absolute bottom-0 left-0 right-0 flex items-end gap-1">
+                            {sortedPatterns.map((pattern) => {
+                              // Enhanced height calculation with dynamic scaling
+                              const normalizedHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) : 0;
+                              const minBarHeightPx = 4; // Minimum bar height
+                              const barHeightPx = Math.max(minBarHeightPx, normalizedHeight * barsAreaHeight);
                         
                         const avgLatency = patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length;
                         const isHighLatency = pattern.avg_latency > avgLatency;
@@ -212,19 +229,22 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                       })}
                     </div>
                     
-                    {/* Hour Labels - positioned outside the bars container */}
-                    <div className="absolute -bottom-8 left-0 right-0 flex gap-1">
-                      {sortedPatterns.map((pattern) => {
-                        const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
-                        return (
-                          <div key={`label-${pattern.hour_of_day}`} className="text-xs font-mono text-center text-muted-foreground font-medium" style={{ width: barWidth }}>
-                            {pattern.hour_of_day.toString().padStart(2, '0')}
+                          {/* Hour Labels - positioned outside the bars container */}
+                          <div className="ml-12 absolute left-0 right-0 flex gap-1" style={{ top: `${barsAreaHeight + 8}px` }}>
+                            {sortedPatterns.map((pattern) => {
+                              const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
+                              return (
+                                <div key={`label-${pattern.hour_of_day}`} className="text-xs font-mono text-center text-muted-foreground font-medium" style={{ width: barWidth }}>
+                                  {pattern.hour_of_day.toString().padStart(2, '0')}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
                 
                 {/* X-axis label */}
                 <div className="mt-4 text-xs text-muted-foreground text-center">
