@@ -10,6 +10,7 @@ import { useAvailableCountries } from "@/hooks/useAnalytics";
 import { AlertTriangle, CheckCircle, Activity, TrendingUp, MapPin, BarChart3 } from "lucide-react";
 import { CountryRankingTable } from "@/components/analytics/CountryRankingTable";
 import { EnhancedTimePeriod, CustomTimePeriod } from "@/types/analytics";
+import { RegionalLatencyChart } from "@/components/analytics/RegionalLatencyChart";
 
 interface AnalyticsOverviewProps {
   monitorId: string;
@@ -155,6 +156,9 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
             </Card>
           )}
         </div>
+
+        {/* Regional Latency Chart */}
+        <RegionalLatencyChart monitorId={monitorId} period={typeof period === 'string' ? period : 'day'} />
 
         {/* Regional Distribution */}
         <Card>

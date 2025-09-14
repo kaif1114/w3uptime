@@ -159,6 +159,19 @@ export interface RegionalTimeSeriesResponse {
   generatedAt: string;
 }
 
+// Raw row type from get_monitor_regional_timeseries
+export interface RawRegionalTimeSeriesPoint {
+  timestamp_bucket: Date | string;
+  avg_latency: number | string;
+  min_latency: number | string;
+  max_latency: number | string;
+  median_latency: number | string;
+  p95_latency: number | string;
+  total_ticks: bigint | number | string;
+  successful_ticks: bigint | number | string;
+  success_rate: number | string;
+}
+
 /**
  * Regional statistics
  */

@@ -626,3 +626,173 @@ $$ LANGUAGE plpgsql;
 
 
 -- Debugging queries are commented out at the end of this file for reference
+
+
+-- Function to get monitor regional timeseries (country or continent)
+CREATE OR REPLACE FUNCTION get_monitor_regional_timeseries(
+    p_monitor_id UUID,
+    p_region_type TEXT DEFAULT 'country', -- 'country' | 'continent'
+    p_region_code TEXT,
+    p_period TEXT DEFAULT 'day'
+) RETURNS TABLE (
+    timestamp_bucket TIMESTAMPTZ,
+    avg_latency NUMERIC,
+    min_latency NUMERIC,
+    max_latency NUMERIC,
+    median_latency NUMERIC,
+    p95_latency NUMERIC,
+    total_ticks BIGINT,
+    successful_ticks BIGINT,
+    success_rate NUMERIC
+) AS $$
+BEGIN
+    IF p_region_type NOT IN ('country', 'continent') THEN
+        RAISE EXCEPTION 'Invalid region_type. Use: country or continent';
+    END IF;
+
+    CASE p_period
+        WHEN 'day' THEN
+            IF p_region_type = 'country' THEN
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_country_5min mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."countryCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '24 hours'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            ELSE
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_continent_5min mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."continentCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '24 hours'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            END IF;
+
+        WHEN 'week' THEN
+            IF p_region_type = 'country' THEN
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_country_30min mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."countryCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '7 days'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            ELSE
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_continent_30min mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."continentCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '7 days'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            END IF;
+
+        WHEN 'month' THEN
+            IF p_region_type = 'country' THEN
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_country_2hour mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."countryCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '30 days'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            ELSE
+                RETURN QUERY
+                SELECT 
+                    mt.time_bucket::TIMESTAMPTZ AS timestamp_bucket,
+                    ROUND(mt.avg_latency::NUMERIC, 2) AS avg_latency,
+                    ROUND(mt.min_latency::NUMERIC, 2) AS min_latency,
+                    ROUND(mt.max_latency::NUMERIC, 2) AS max_latency,
+                    ROUND(mt.median_latency::NUMERIC, 2) AS median_latency,
+                    ROUND(mt.p95_latency::NUMERIC, 2) AS p95_latency,
+                    COALESCE(mt.total_ticks, 0)::BIGINT AS total_ticks,
+                    COALESCE(mt.successful_ticks, 0)::BIGINT AS successful_ticks,
+                    CASE 
+                        WHEN mt.total_ticks > 0 
+                        THEN ROUND((mt.successful_ticks::NUMERIC / mt.total_ticks::NUMERIC) * 100, 2)
+                        ELSE 0
+                    END AS success_rate
+                FROM monitor_tick_continent_2hour mt
+                WHERE mt."monitorId" = p_monitor_id::text
+                    AND mt."continentCode" = p_region_code
+                    AND mt.time_bucket >= NOW() - INTERVAL '30 days'
+                    AND mt.time_bucket <= NOW()
+                ORDER BY mt.time_bucket ASC;
+            END IF;
+        ELSE
+            RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
+    END CASE;
+END;
+$$ LANGUAGE plpgsql;

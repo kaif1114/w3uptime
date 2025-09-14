@@ -51,42 +51,47 @@ export const GET = withAuth(async (
 
     let availableRegions: RawRegionQueryResult[] = [];
 
-    // Get available regions based on type
+    // Get available regions based on type (use parameterized raw queries)
     switch (regionType) {
-      case 'continent':
-        // Get all continents that have monitoring data
-        availableRegions = await prisma.$queryRaw`
+      case 'continent': {
+        let sql = `
           SELECT DISTINCT 
             "continentCode" as region_id,
             "continentCode" as region_name,
             COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
-          WHERE "continentCode" IS NOT NULL
-          ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}
-          GROUP BY "continentCode"
-          ORDER BY data_count DESC
-        `;
+          WHERE "continentCode" IS NOT NULL`;
+        const params: unknown[] = [];
+        if (monitorId) {
+          sql += ` AND "monitorId" = $1`;
+          params.push(monitorId);
+        }
+        sql += ` GROUP BY "continentCode" ORDER BY data_count DESC`;
+        availableRegions = await prisma.$queryRawUnsafe(sql, ...params);
         break;
-      
-      case 'country':
-        // Get all countries that have monitoring data
-        availableRegions = await prisma.$queryRaw`
+      }
+
+      case 'country': {
+        let sql = `
           SELECT DISTINCT 
             "countryCode" as region_id,
             "countryCode" as region_name,
             "continentCode",
             COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
-          WHERE "countryCode" IS NOT NULL
-          ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}
-          GROUP BY "countryCode", "continentCode"
-          ORDER BY data_count DESC
-        `;
+          WHERE "countryCode" IS NOT NULL`;
+        const params: unknown[] = [];
+        if (monitorId) {
+          sql += ` AND "monitorId" = $1`;
+          params.push(monitorId);
+        }
+        sql += ` GROUP BY "countryCode", "continentCode" ORDER BY data_count DESC`;
+        availableRegions = await prisma.$queryRawUnsafe(sql, ...params);
         break;
-      
-      case 'city':
-        // Get all cities that have monitoring data
-        availableRegions = await prisma.$queryRaw`
+      }
+
+      case 'city': {
+        let sql = `
           SELECT DISTINCT 
             CONCAT(city, ', ', "countryCode") as region_id,
             city as region_name,
@@ -94,12 +99,16 @@ export const GET = withAuth(async (
             "continentCode",
             COUNT(*)::BIGINT as data_count
           FROM "MonitorTick" 
-          WHERE city IS NOT NULL AND "countryCode" IS NOT NULL
-          ${monitorId ? prisma.$queryRaw`AND "monitorId" = ${monitorId}` : prisma.$queryRaw``}
-          GROUP BY city, "countryCode", "continentCode"
-          ORDER BY data_count DESC
-        `;
+          WHERE city IS NOT NULL AND "countryCode" IS NOT NULL`;
+        const params: unknown[] = [];
+        if (monitorId) {
+          sql += ` AND "monitorId" = $1`;
+          params.push(monitorId);
+        }
+        sql += ` GROUP BY city, "countryCode", "continentCode" ORDER BY data_count DESC`;
+        availableRegions = await prisma.$queryRawUnsafe(sql, ...params);
         break;
+      }
     }
 
     // Helper function to convert BigInt to Number

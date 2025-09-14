@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { 
-  AvailableRegionsResponse,
+import {
   AvailableCountriesResponse,
-  EnhancedTimePeriod,
+  AvailableRegionsResponse,
   CustomTimePeriod,
+  RegionalTimeSeriesResponse
 } from "@/types/analytics";
+import { useQuery } from "@tanstack/react-query";
 
 // ===== AVAILABLE REGIONS HOOKS =====
 
@@ -77,7 +77,36 @@ export function useAvailableCountries(monitorId?: string, continent?: string) {
 
 // ===== REGIONAL ANALYTICS HOOKS =====
 
+export function useMonitorRegionalTimeseries(
+  monitorId: string,
+  regionType: 'continent' | 'country',
+  regionCode: string,
+  period: 'day' | 'week' | 'month' = 'day'
+) {
+  return useQuery<RegionalTimeSeriesResponse>({
+    queryKey: ["monitor-regional-timeseries", monitorId, regionType, regionCode, period],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('period', period);
+      params.append('regionType', regionType);
+      params.append('regionCode', regionCode);
 
+      const response = await fetch(`/api/monitors/${monitorId}/regional-timeseries?${params.toString()}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch regional timeseries");
+      }
+      return response.json();
+    },
+    enabled: !!monitorId && !!regionType && !!regionCode,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+}
 
 
 // ===== UTILITY HOOKS =====
