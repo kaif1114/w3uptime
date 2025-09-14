@@ -5,7 +5,7 @@ import { withAuth } from "@/lib/auth";
 import { MonitorStatsData } from "@/types/analytics";
 
 const statsQuerySchema = z.object({
-  period: z.enum(['hour', 'day', 'week', 'month']).default('day'),
+  period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
 // GET /api/monitors/[monitorid]/stats - Get monitor statistics
