@@ -5,10 +5,15 @@ import { withAuth } from "@/lib/auth";
 import { EnhancedTimeSeriesPoint, RegionalTimeSeriesResponse } from "@/types/analytics";
 
 const querySchema = z.object({
-  period: z.enum(['day', 'week', 'month']).default('day'),
+  period: z.enum(['day', 'week', 'month', 'custom']).default('day'),
   regionType: z.enum(['continent', 'country']),
   regionCode: z.string().min(1),
-});
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
+}).refine((data) => {
+  if (data.period !== 'custom') return true;
+  return !!data.start && !!data.end;
+}, { message: 'Custom period requires start and end query params' });
 
 // GET /api/monitors/[monitorid]/regional-timeseries - Regional time series for a monitor
 export const GET = withAuth(async (
@@ -34,7 +39,7 @@ export const GET = withAuth(async (
       );
     }
 
-    const { period, regionType, regionCode } = validation.data;
+    const { period, regionType, regionCode, start, end } = validation.data;
 
     // Verify monitor ownership
     const monitor = await prisma.monitor.findFirst({
@@ -51,13 +56,22 @@ export const GET = withAuth(async (
       );
     }
 
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT * FROM get_monitor_regional_timeseries($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT)`,
-      monitorid,
-      regionType,
-      regionCode,
-      period
-    );
+    const rows = period === 'custom'
+      ? await prisma.$queryRawUnsafe(
+          `SELECT * FROM get_monitor_regional_timeseries_range($1::UUID, $2::TEXT, $3::TEXT, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ)`,
+          monitorid,
+          regionType,
+          regionCode,
+          start as string,
+          end as string,
+        )
+      : await prisma.$queryRawUnsafe(
+          `SELECT * FROM get_monitor_regional_timeseries($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT)`,
+          monitorid,
+          regionType,
+          regionCode,
+          period
+        );
 
     type RawRow = {
       timestamp_bucket: Date | string;
@@ -91,8 +105,8 @@ export const GET = withAuth(async (
       };
     });
 
-    const startTime = data.length > 0 ? data[0].time_bucket : null;
-    const endTime = data.length > 0 ? data[data.length - 1].time_bucket : null;
+    const startTime = data.length > 0 ? data[0].time_bucket : (start ?? null);
+    const endTime = data.length > 0 ? data[data.length - 1].time_bucket : (end ?? null);
 
     const response: RegionalTimeSeriesResponse = {
       region: regionCode,

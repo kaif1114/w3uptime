@@ -81,15 +81,20 @@ export function useMonitorRegionalTimeseries(
   monitorId: string,
   regionType: 'continent' | 'country',
   regionCode: string,
-  period: 'day' | 'week' | 'month' = 'day'
+  period: 'day' | 'week' | 'month' | 'custom' = 'day',
+  custom?: { start: string; end: string }
 ) {
   return useQuery<RegionalTimeSeriesResponse>({
-    queryKey: ["monitor-regional-timeseries", monitorId, regionType, regionCode, period],
+    queryKey: ["monitor-regional-timeseries", monitorId, regionType, regionCode, period, custom?.start, custom?.end],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('period', period);
       params.append('regionType', regionType);
       params.append('regionCode', regionCode);
+      if (period === 'custom' && custom?.start && custom?.end) {
+        params.append('start', custom.start);
+        params.append('end', custom.end);
+      }
 
       const response = await fetch(`/api/monitors/${monitorId}/regional-timeseries?${params.toString()}`, {
         credentials: 'include',
@@ -102,7 +107,7 @@ export function useMonitorRegionalTimeseries(
       }
       return response.json();
     },
-    enabled: !!monitorId && !!regionType && !!regionCode,
+    enabled: !!monitorId && !!regionType && !!regionCode && (period !== 'custom' || (!!custom?.start && !!custom?.end)),
     refetchInterval: 60000,
     staleTime: 30000,
   });

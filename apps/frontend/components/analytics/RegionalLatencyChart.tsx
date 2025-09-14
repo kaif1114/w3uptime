@@ -13,9 +13,10 @@ interface RegionalLatencyChartProps {
   monitorId: string;
   period: EnhancedTimePeriod | string;
   defaultRegionType?: 'continent' | 'country';
+  customPeriod?: { startDate: string; endDate: string };
 }
 
-export function RegionalLatencyChart({ monitorId, period, defaultRegionType = 'country' }: RegionalLatencyChartProps) {
+export function RegionalLatencyChart({ monitorId, period, defaultRegionType = 'country', customPeriod }: RegionalLatencyChartProps) {
   const [regionType, setRegionType] = useState<'continent' | 'country'>(defaultRegionType);
   const { data: regions, isLoading: loadingRegions } = useAvailableRegions(regionType, monitorId);
   const firstRegionCode = regions?.regions?.[0]?.region_id ?? '';
@@ -26,7 +27,12 @@ export function RegionalLatencyChart({ monitorId, period, defaultRegionType = 'c
     monitorId,
     regionType,
     effectiveRegionCode,
-    (typeof period === 'string' ? period : 'day') as 'day' | 'week' | 'month'
+    (typeof period === 'string' ? period : 'day') as 'day' | 'week' | 'month' | 'custom',
+    typeof period === 'object' && period === 'custom'
+      ? (customPeriod ? { start: customPeriod.startDate, end: customPeriod.endDate } : undefined)
+      : (typeof period === 'string' && period === 'custom' && customPeriod
+          ? { start: customPeriod.startDate, end: customPeriod.endDate }
+          : undefined)
   );
 
   const chartData = useMemo(() => {

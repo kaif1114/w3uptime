@@ -18,7 +18,7 @@ interface AnalyticsOverviewProps {
   customPeriod?: CustomTimePeriod;
 }
 
-export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps) {
+export function AnalyticsOverview({ monitorId, period, customPeriod }: AnalyticsOverviewProps) {
   const { data: analytics, isLoading, error } = useMonitorAnalytics(monitorId, period);
   const { data: availableCountries } = useAvailableCountries(monitorId);
   
@@ -158,7 +158,11 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </div>
 
         {/* Regional Latency Chart */}
-        <RegionalLatencyChart monitorId={monitorId} period={typeof period === 'string' ? period : 'day'} />
+        <RegionalLatencyChart 
+          monitorId={monitorId} 
+          period={typeof period === 'string' ? period : 'day'} 
+          customPeriod={customPeriod ? { startDate: customPeriod.startDate, endDate: customPeriod.endDate } : undefined}
+        />
 
         {/* Regional Distribution */}
         <Card>
