@@ -772,7 +772,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get monitor-specific regional data by continent (optimized with materialized views)
+-- Function to get monitor-specific regional data by continent
 CREATE OR REPLACE FUNCTION get_monitor_continent_data(
     p_monitor_id UUID,
     p_period TEXT DEFAULT 'day'
@@ -788,56 +788,56 @@ BEGIN
         WHEN 'day' THEN
             RETURN QUERY
             SELECT 
-                mc."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mc.avg_latency)::NUMERIC, 2) AS avg_latency,
-                COALESCE(SUM(mc.total_ticks), 0)::BIGINT AS total_ticks,
-                COALESCE(SUM(mc.successful_ticks), 0)::BIGINT AS successful_ticks,
+                mt."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+                COUNT(*)::BIGINT AS total_ticks,
+                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN SUM(mc.total_ticks) > 0 
-                    THEN ROUND((SUM(mc.successful_ticks)::NUMERIC / SUM(mc.total_ticks)::NUMERIC) * 100, 2)
+                    WHEN COUNT(*) > 0 
+                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM monitor_continent_tick_5min mc
-            WHERE mc."monitorId" = p_monitor_id::text
-                AND mc.time_bucket >= NOW() - INTERVAL '24 hours'
-                AND mc.time_bucket <= NOW()
-            GROUP BY mc."continentCode";
+            FROM "MonitorTick" mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt."createdAt" >= NOW() - INTERVAL '24 hours'
+                AND mt."continentCode" IS NOT NULL
+            GROUP BY mt."continentCode";
             
         WHEN 'week' THEN
             RETURN QUERY
             SELECT 
-                mc."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mc.avg_latency)::NUMERIC, 2) AS avg_latency,
-                COALESCE(SUM(mc.total_ticks), 0)::BIGINT AS total_ticks,
-                COALESCE(SUM(mc.successful_ticks), 0)::BIGINT AS successful_ticks,
+                mt."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+                COUNT(*)::BIGINT AS total_ticks,
+                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN SUM(mc.total_ticks) > 0 
-                    THEN ROUND((SUM(mc.successful_ticks)::NUMERIC / SUM(mc.total_ticks)::NUMERIC) * 100, 2)
+                    WHEN COUNT(*) > 0 
+                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM monitor_continent_tick_30min mc
-            WHERE mc."monitorId" = p_monitor_id::text
-                AND mc.time_bucket >= NOW() - INTERVAL '7 days'
-                AND mc.time_bucket <= NOW()
-            GROUP BY mc."continentCode";
+            FROM "MonitorTick" mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt."createdAt" >= NOW() - INTERVAL '7 days'
+                AND mt."continentCode" IS NOT NULL
+            GROUP BY mt."continentCode";
             
         WHEN 'month' THEN
             RETURN QUERY
             SELECT 
-                mc."continentCode"::TEXT AS continent_code,
-                ROUND(AVG(mc.avg_latency)::NUMERIC, 2) AS avg_latency,
-                COALESCE(SUM(mc.total_ticks), 0)::BIGINT AS total_ticks,
-                COALESCE(SUM(mc.successful_ticks), 0)::BIGINT AS successful_ticks,
+                mt."continentCode"::TEXT AS continent_code,
+                ROUND(AVG(mt.latency)::NUMERIC, 2) AS avg_latency,
+                COUNT(*)::BIGINT AS total_ticks,
+                COUNT(*) FILTER (WHERE mt.status = 'GOOD')::BIGINT AS successful_ticks,
                 CASE 
-                    WHEN SUM(mc.total_ticks) > 0 
-                    THEN ROUND((SUM(mc.successful_ticks)::NUMERIC / SUM(mc.total_ticks)::NUMERIC) * 100, 2)
+                    WHEN COUNT(*) > 0 
+                    THEN ROUND((COUNT(*) FILTER (WHERE mt.status = 'GOOD')::NUMERIC / COUNT(*)::NUMERIC) * 100, 2)
                     ELSE 0
                 END AS success_rate
-            FROM monitor_continent_tick_2hour mc
-            WHERE mc."monitorId" = p_monitor_id::text
-                AND mc.time_bucket >= NOW() - INTERVAL '30 days'
-                AND mc.time_bucket <= NOW()
-            GROUP BY mc."continentCode";
+            FROM "MonitorTick" mt
+            WHERE mt."monitorId" = p_monitor_id::text
+                AND mt."createdAt" >= NOW() - INTERVAL '30 days'
+                AND mt."continentCode" IS NOT NULL
+            GROUP BY mt."continentCode";
         ELSE
             RAISE EXCEPTION 'Invalid period. Use: day, week, or month';
     END CASE;
