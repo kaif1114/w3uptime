@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { IncidentsListSkeleton } from '@/components/skeletons/StatusPageSkeletons';
 
 interface MonthData {
   month: string;
@@ -23,6 +24,7 @@ interface IncidentsListProps {
 function IncidentsList({ statusPageId }: IncidentsListProps) {
   const [rangeStartIndex, setRangeStartIndex] = useState<number>(0);
   const [monthsWithIncidents, setMonthsWithIncidents] = useState<Map<string, number>>(new Map());
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   
   // Constants
   const MONTHS_PER_VIEW = 3;
@@ -83,6 +85,7 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
       const idealStart = Math.max(0, currentMonthIndex - Math.floor(MONTHS_PER_VIEW / 2));
       setRangeStartIndex(Math.min(idealStart, allMonths.length - MONTHS_PER_VIEW));
     }
+    setIsInitialLoading(false);
   }, []);
 
   // Fetch incident data for visible months
@@ -152,6 +155,11 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
   };
 
   const months = getCurrentViewMonths();
+
+  // Show skeleton during initial loading
+  if (isInitialLoading) {
+    return <IncidentsListSkeleton />;
+  }
 
   // Get status info for each month
   const getMonthStatusInfo = (monthData: MonthData) => {

@@ -9,6 +9,12 @@ import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { StatusOverview } from "./StatusOverview";
+import {
+  StatusOverviewSkeleton,
+  PerformanceMetricsSkeleton,
+  BarChartSkeleton,
+  ResponseTimeChartsSkeleton,
+} from "@/components/skeletons/StatusPageSkeletons";
 
 // Types for components (matching the expected interfaces)
 interface Monitor {
@@ -51,8 +57,18 @@ const PublicPage = ({ id }: { id: string }) => {
   // Handle loading state
   if (isStatusPageLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="container mx-auto px-4 py-8">
+        <StatusOverviewSkeleton />
+        
+        <div>
+          <PerformanceMetricsSkeleton />
+        </div>
+        <div>
+          <BarChartSkeleton />
+        </div>
+        <div>
+          <ResponseTimeChartsSkeleton />
+        </div>
       </div>
     );
   }
@@ -117,9 +133,7 @@ const PublicPage = ({ id }: { id: string }) => {
         </div>
         <div>
           {isDailyStatusLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 "></div>
-            </div>
+            <BarChartSkeleton />
           ) : (
             <DailyStatusBarChart
               data={dailyStatusData?.data || []}

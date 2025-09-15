@@ -27,9 +27,6 @@ const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, serviceId }: NavbarPro
   const currentPage = getCurrentPage(pathname);
   return (
     <div className="w-full">
-      {/* Dark header bar */}
-      <div className="bg-primary h-2 w-full"></div>
-      
       {/* Main navbar */}
       <div className="bg-background px-6 py-4 border-b">
         <div className="flex items-center justify-between">

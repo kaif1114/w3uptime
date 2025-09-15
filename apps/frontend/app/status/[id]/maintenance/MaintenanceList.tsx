@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import React from 'react'
 import { useMaintenanceData, type PublicMaintenanceData } from '@/hooks/usePublicMaintenances'
+import { MaintenanceListSkeleton } from '@/components/skeletons/StatusPageSkeletons'
 
 interface MaintenanceListProps {
   statusPageId: string;
@@ -14,23 +15,7 @@ const MaintenanceList = ({ statusPageId, isPublic = true }: MaintenanceListProps
   const maintenances = maintenancesData?.maintenances || [];
 
   if (isLoading) {
-    return (
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <MaintenanceListSkeleton />;
   }
 
   if (error) {
