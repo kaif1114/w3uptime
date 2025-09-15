@@ -40,14 +40,12 @@ export function StructureTab({
       {
         id,
         name: "",
+        widgetType: "with_history" as WidgetType,
         resources: [
           {
             id: crypto.randomUUID(),
             type: "monitor",
             monitorId: "",
-            publicName: "",
-            explanation: "",
-            widgetType: "with_history" as WidgetType,
           },
         ],
       },
@@ -73,6 +71,14 @@ export function StructureTab({
     );
   }
 
+  function updateSectionWidgetType(sectionId: string, widgetType: WidgetType) {
+    setSections(
+      sections.map((s) =>
+        s.id === sectionId ? { ...s, widgetType } : s
+      )
+    );
+  }
+
   function removeResource(sectionId: string, index: number) {
     setSections(
       sections.map((s) =>
@@ -86,28 +92,6 @@ export function StructureTab({
     );
   }
 
-  function patchResource(
-    sectionId: string,
-    index: number,
-    patch: Partial<{
-      publicName: string;
-      explanation?: string;
-      widgetType: WidgetType;
-    }>
-  ) {
-    setSections(
-      sections.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              resources: s.resources.map((r, i) =>
-                i === index ? { ...r, ...patch } : r
-              ),
-            }
-          : s
-      )
-    );
-  }
 
   return (
     <div className="space-y-12">
@@ -175,6 +159,33 @@ export function StructureTab({
 
                       <div className="space-y-3">
                         <Label className="text-sm font-medium text-foreground">
+                          Widget Type
+                        </Label>
+                        <Select
+                          value={section.widgetType || "with_history"}
+                          onValueChange={(v) =>
+                            updateSectionWidgetType(section.id, v as WidgetType)
+                          }
+                        >
+                          <SelectTrigger className="h-10 text-sm border-border bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="current">
+                              Current status only
+                            </SelectItem>
+                            <SelectItem value="with_history">
+                              With status history
+                            </SelectItem>
+                            <SelectItem value="with_history_chart">
+                              With status history & chart
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">
                           Resources
                         </Label>
                         <div className="space-y-4">
@@ -184,57 +195,7 @@ export function StructureTab({
                               className="flex items-start gap-3 p-3 border border-border/30 rounded-lg bg-background/30"
                             >
                               <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mt-2" />
-                              <div className="flex-1 space-y-3">
-                                {/* Name field */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs font-medium text-foreground">
-                                    Name
-                                  </Label>
-                                  <Input
-                                    value={res.publicName || ""}
-                                    onChange={(e) =>
-                                      patchResource(section.id, resIdx, {
-                                        publicName: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Enter resource name"
-                                    className="h-9 text-sm border-border bg-background rounded-full"
-                                  />
-                                </div>
-
-                                {/* Widget type dropdown - in the middle */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs font-medium text-foreground">
-                                    Widget Type
-                                  </Label>
-                                  <Select
-                                    value={
-                                      res.widgetType ||
-                                      "with_history"
-                                    }
-                                    onValueChange={(v) =>
-                                      patchResource(section.id, resIdx, {
-                                        widgetType: v as WidgetType,
-                                      })
-                                    }
-                                  >
-                                    <SelectTrigger className="h-9 text-sm border-border bg-background">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="current">
-                                        Current status only
-                                      </SelectItem>
-                                      <SelectItem value="with_history">
-                                        With status history
-                                      </SelectItem>
-                                      <SelectItem value="with_history_chart">
-                                        With status history & chart
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
+                              <div className="flex-1">
                                 {/* Monitor dropdown */}
                                 <div className="space-y-2 w-full">
                                   <Label className="text-xs font-medium text-foreground">

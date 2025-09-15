@@ -151,21 +151,16 @@ export function useStatusPageEditor(mode: "create" | "edit", id?: string) {
       const normalizedSections = (statusPageData.sections || []).map(
         (s: StatusPageSection) => ({
           ...s,
+          widgetType: s.widgetType || ("with_history" as WidgetType),
           resources: (s.resources || []).map(
             (r: {
               id?: string;
               type?: string;
               monitorId: string;
-              publicName?: string;
-              widgetType?: string;
-              explanation?: string;
             }) => ({
               id: r.id || crypto.randomUUID(),
               type: "monitor" as const,
               monitorId: r.monitorId || "",
-              publicName: r.publicName || "",
-              explanation: r.explanation || "",
-              widgetType: (r.widgetType || "with_history") as WidgetType,
             })
           ),
         })

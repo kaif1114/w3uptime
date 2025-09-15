@@ -17,14 +17,12 @@ const updateSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string(),
+        widgetType: z.enum(["current", "with_history", "with_history_chart"]).optional(),
         resources: z.array(
           z.object({
             id: z.string().optional(),
             type: z.literal("monitor"),
             monitorId: z.string(),
-            publicName: z.string().optional(),
-            explanation: z.string().optional(),
-            widgetType: z.enum(["current", "with_history", "with_history_chart"]).optional(),
           })
         ),
       })
@@ -88,21 +86,13 @@ export const GET = withAuth(
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
         sections: statusPage.statusPageSections.map((section) => {
-          let resourceMetadata = {
-            publicName: "",
-            explanation: "",
-            widgetType: "with_history" as const,
-          };
+          let widgetType = "with_history" as const;
           
-          // Parse resource metadata from description field if it exists
+          // Parse widget type from description field if it exists
           if (section.description) {
             try {
               const parsed = JSON.parse(section.description);
-              resourceMetadata = {
-                publicName: parsed.publicName || "",
-                explanation: parsed.explanation || "",
-                widgetType: parsed.widgetType || "with_history",
-              };
+              widgetType = parsed.widgetType || "with_history";
             } catch {
               // If parsing fails, keep defaults
             }
@@ -111,13 +101,11 @@ export const GET = withAuth(
           return {
             id: section.id,
             name: section.name,
+            widgetType,
             resources: [{
               id: crypto.randomUUID(),
               type: "monitor" as const,
               monitorId: section.monitorId,
-              publicName: resourceMetadata.publicName,
-              explanation: resourceMetadata.explanation,
-              widgetType: resourceMetadata.widgetType,
             }],
           };
         }),
@@ -204,11 +192,9 @@ export const PATCH = withAuth(
           const resource = section.resources?.[0];
           const monitorId = resource?.monitorId;
 
-          // Prepare resource metadata to store in description field
-          const resourceMetadata = {
-            publicName: resource?.publicName || "",
-            explanation: resource?.explanation || "",
-            widgetType: resource?.widgetType || "with_history",
+          // Prepare section metadata to store in description field
+          const sectionMetadata = {
+            widgetType: section.widgetType || "with_history",
           };
 
           try {
@@ -216,7 +202,7 @@ export const PATCH = withAuth(
               where: { id: section.id },
               data: {
                 name: section.name,
-                description: JSON.stringify(resourceMetadata),
+                description: JSON.stringify(sectionMetadata),
                 order: index + 1,
                 ...(typeof monitorId === "string" && monitorId.trim().length > 0
                   ? { monitorId }
@@ -230,7 +216,7 @@ export const PATCH = withAuth(
                 data: {
                   id: section.id,
                   name: section.name,
-                  description: JSON.stringify(resourceMetadata),
+                  description: JSON.stringify(sectionMetadata),
                   order: index + 1,
                   type: "BOTH",
                   monitorId,
@@ -278,21 +264,13 @@ export const PATCH = withAuth(
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
         sections: finalStatusPage.statusPageSections.map((section) => {
-          let resourceMetadata = {
-            publicName: "",
-            explanation: "",
-            widgetType: "with_history" as const,
-          };
+          let widgetType = "with_history" as const;
           
-          // Parse resource metadata from description field if it exists
+          // Parse widget type from description field if it exists
           if (section.description) {
             try {
               const parsed = JSON.parse(section.description);
-              resourceMetadata = {
-                publicName: parsed.publicName || "",
-                explanation: parsed.explanation || "",
-                widgetType: parsed.widgetType || "with_history",
-              };
+              widgetType = parsed.widgetType || "with_history";
             } catch {
               // If parsing fails, keep defaults
             }
@@ -301,13 +279,11 @@ export const PATCH = withAuth(
           return {
             id: section.id,
             name: section.name,
+            widgetType,
             resources: [{
               id: crypto.randomUUID(),
               type: "monitor" as const,
               monitorId: section.monitorId,
-              publicName: resourceMetadata.publicName,
-              explanation: resourceMetadata.explanation,
-              widgetType: resourceMetadata.widgetType,
             }],
           };
         }),
