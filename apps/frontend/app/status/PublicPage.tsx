@@ -86,27 +86,6 @@ const PublicPage = ({ id }: { id: string }) => {
     })
   );
 
-  const transformedMaintenances: MaintenanceItem[] =
-    statusPageData.maintenances.map((maintenance) => ({
-      id: maintenance.id,
-      title: maintenance.title,
-      description: maintenance.description,
-      startDate: new Date(maintenance.from),
-      endDate: new Date(maintenance.to),
-      status: maintenance.status as "scheduled" | "in_progress" | "completed",
-      affectedServices: [], // Would need to map from actual affected sections
-    }));
-
-  const transformedUpdates: UpdateItem[] = statusPageData.updates.map(
-    (update) => ({
-      id: update.id,
-      title: update.title,
-      description: update.description,
-      publishedAt: new Date(update.publishedAt),
-      type: "improvement" as const, // Default type
-      changes: [], // Would need to extract from description or separate field
-    })
-  );
 
   return (
     <div className="min-h-screen bg-background mx-auto container max-w-3xl">

@@ -55,7 +55,7 @@ export const GET = async (
     const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 
     // Build where clause
-    const whereClause: any = {
+    const whereClause: Record<string, unknown> = {
       monitorId: {
         in: monitorIds,
       },
@@ -80,7 +80,7 @@ export const GET = async (
     }
 
     // Build orderBy clause
-    const orderBy: any = {};
+    const orderBy: Record<string, unknown> = {};
     if (sortBy === 'createdAt' || sortBy === 'resolvedAt') {
       orderBy[sortBy] = sortOrder;
     } else if (sortBy === 'downtime') {
