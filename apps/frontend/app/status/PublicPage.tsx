@@ -6,6 +6,7 @@ import { useState } from "react";
 import Navbar from "./Navbar";
 
 import { useDailyStatus } from "@/hooks/useDailyStatus";
+import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { ServicesSection } from "./ServicesSection";
@@ -17,7 +18,12 @@ const PublicPage = ({ id }: { id: string }) => {
     "24h"
   );
 
-  
+  // Fetch public status page data (includes sections, maintenances, updates)
+  const {
+    data: statusPageData,
+    isLoading: isStatusPageLoading,
+    error: statusPageError,
+  } = usePublicStatusPageData(id);
 
   // Fetch daily status data for the chart
   const { data: dailyStatusData, isLoading: isDailyStatusLoading } =
@@ -28,7 +34,17 @@ const PublicPage = ({ id }: { id: string }) => {
       enabled: !!id,
     });
 
-  if (!statusPageData) {
+  // Handle loading state
+  if (isStatusPageLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (statusPageError || !statusPageData) {
     notFound();
   }
 
@@ -39,7 +55,7 @@ const PublicPage = ({ id }: { id: string }) => {
         companyName={statusPageData.name}
         logoLinkUrl={statusPageData.logoLinkUrl}
         currentPage="status"
-        serviceId={params.service}
+        serviceId={undefined}
       />
 
       <div className="container mx-auto px-4 py-8">
