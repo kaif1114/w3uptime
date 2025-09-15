@@ -9,6 +9,7 @@ import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { StatusOverview } from "./StatusOverview";
+import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
 import {
   StatusOverviewSkeleton,
   PerformanceMetricsSkeleton,
@@ -101,6 +102,17 @@ const PublicPage = ({ id }: { id: string }) => {
     })
   );
 
+  // Determine which charts to show based on section types
+  const shouldShowHistory = statusPageData.sections.some(section => 
+    section.type === "HISTORY" || section.type === "BOTH"
+  );
+  const shouldShowStatus = statusPageData.sections.some(section => 
+    section.type === "STATUS" || section.type === "BOTH"
+  );
+
+  // Get monitor ID for history chart (use first monitor)
+  const monitorId = statusPageData.sections[0]?.monitor.id;
+
   return (
     <Card>
       <CardHeader>
@@ -109,46 +121,63 @@ const PublicPage = ({ id }: { id: string }) => {
         <StatusOverview sections={transformedSections} />
 
         {/* Charts Section */}
-
-        <div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5" />
-              <span>Performance Metrics</span>
-            </div>
-            <div className="flex space-x-2">
-              {["24h", "7d", "30d"].map((period) => (
-                <Button
-                  key={period}
-                  variant={selectedPeriod === period ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setSelectedPeriod(period as "24h" | "7d" | "30d")
-                  }
-                >
-                  {period}
-                </Button>
-              ))}
+        {(shouldShowHistory || shouldShowStatus) && (
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5" />
+                <span>Performance Metrics</span>
+              </div>
+              {shouldShowHistory && (
+                <div className="flex space-x-2">
+                  {["24h", "7d", "30d"].map((period) => (
+                    <Button
+                      key={period}
+                      variant={selectedPeriod === period ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        setSelectedPeriod(period as "24h" | "7d" | "30d")
+                      }
+                    >
+                      {period}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
         </CardHeader>
         <CardContent>
-        <div>
-          {isDailyStatusLoading ? (
-            <BarChartSkeleton />
-          ) : (
-            <DailyStatusBarChart
-              data={dailyStatusData?.data || []}
-              period={30}
-              title="30-Day Status History"
-              showLegend={true}
+        {/* Status Chart - Show for STATUS and BOTH types */}
+        {shouldShowStatus && (
+          <div>
+            {isDailyStatusLoading ? (
+              <BarChartSkeleton />
+            ) : (
+              <DailyStatusBarChart
+                data={dailyStatusData?.data || []}
+                period={30}
+                title="30-Day Status History"
+                showLegend={true}
+              />
+            )}
+          </div>
+        )}
+        
+        {/* History Chart - Show for HISTORY and BOTH types */}
+        {shouldShowHistory && monitorId && (
+          <div className="mt-6">
+            <PublicTimeSeriesChart
+              monitorId={monitorId}
+              period={
+                selectedPeriod === "24h" ? "day" : 
+                selectedPeriod === "7d" ? "week" : "month"
+              }
+              type="latency"
             />
-          )}
-        </div>
-        <div>
-          <ResponseTimeCharts />
-        </div>
+          </div>
+        )}
 
         {/* Services Section Component */}
       </CardContent>

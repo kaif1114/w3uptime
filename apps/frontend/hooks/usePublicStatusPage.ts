@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { MonitorTimeSeriesResponse } from "@/types/monitor";
 
 // Public API Types
 export interface PublicStatusPageSection {
@@ -166,4 +167,25 @@ export function usePublicStatusPageData(id: string) {
       updatesQuery.refetch();
     },
   };
+}
+
+// Hook for fetching public monitor timeseries data
+export function usePublicMonitorTimeSeries(monitorId: string, period: string = 'day') {
+  return useQuery<MonitorTimeSeriesResponse>({
+    queryKey: ["public-monitor-timeseries", monitorId, period],
+    queryFn: async () => {
+      const response = await fetch(`/api/public/monitors/${monitorId}/timeseries?period=${period}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch public monitor timeseries");
+      }
+      return response.json();
+    },
+    enabled: !!monitorId,
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
 }
