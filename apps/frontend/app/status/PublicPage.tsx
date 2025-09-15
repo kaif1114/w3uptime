@@ -10,7 +10,6 @@ import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import { MaintenanceItem, UpdateItem } from "@/types/generic";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
-import { ServicesSection } from "./ServicesSection";
 import { StatusOverview } from "./StatusOverview";
 
 // Types for components (matching the expected interfaces)
@@ -110,7 +109,7 @@ const PublicPage = ({ id }: { id: string }) => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mx-auto container max-w-3xl">
       <Navbar
         logoUrl={statusPageData.logoUrl || undefined}
         companyName={statusPageData.name}
@@ -166,11 +165,7 @@ const PublicPage = ({ id }: { id: string }) => {
         </div>
 
         {/* Services Section Component */}
-        <ServicesSection
-          sections={transformedSections}
-          maintenances={transformedMaintenances}
-          updates={transformedUpdates}
-        />
+        
       </div>
     </div>
   );
