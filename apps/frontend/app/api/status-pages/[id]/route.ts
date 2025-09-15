@@ -86,16 +86,21 @@ export const GET = withAuth(
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
         sections: statusPage.statusPageSections.map((section) => {
-          let widgetType = "with_history" as const;
+          // Map database StatusPageSectionType to frontend WidgetType
+          let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
           
-          // Parse widget type from description field if it exists
-          if (section.description) {
-            try {
-              const parsed = JSON.parse(section.description);
-              widgetType = parsed.widgetType || "with_history";
-            } catch {
-              // If parsing fails, keep defaults
-            }
+          switch (section.type) {
+            case "STATUS":
+              widgetType = "current";
+              break;
+            case "HISTORY":
+              widgetType = "with_history";
+              break;
+            case "BOTH":
+              widgetType = "with_history_chart";
+              break;
+            default:
+              widgetType = "with_history";
           }
 
           return {
@@ -192,17 +197,29 @@ export const PATCH = withAuth(
           const resource = section.resources?.[0];
           const monitorId = resource?.monitorId;
 
-          // Prepare section metadata to store in description field
-          const sectionMetadata = {
-            widgetType: section.widgetType || "with_history",
-          };
+          // Map frontend WidgetType to database StatusPageSectionType
+          let dbType: "STATUS" | "HISTORY" | "BOTH" = "BOTH";
+          
+          switch (section.widgetType) {
+            case "current":
+              dbType = "STATUS";
+              break;
+            case "with_history":
+              dbType = "HISTORY";
+              break;
+            case "with_history_chart":
+              dbType = "BOTH";
+              break;
+            default:
+              dbType = "BOTH";
+          }
 
           try {
             await prisma.statusPageSection.update({
               where: { id: section.id },
               data: {
                 name: section.name,
-                description: JSON.stringify(sectionMetadata),
+                type: dbType,
                 order: index + 1,
                 ...(typeof monitorId === "string" && monitorId.trim().length > 0
                   ? { monitorId }
@@ -216,9 +233,8 @@ export const PATCH = withAuth(
                 data: {
                   id: section.id,
                   name: section.name,
-                  description: JSON.stringify(sectionMetadata),
+                  type: dbType,
                   order: index + 1,
-                  type: "BOTH",
                   monitorId,
                   statusPageId: id,
                 },
@@ -264,16 +280,21 @@ export const PATCH = withAuth(
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
         sections: finalStatusPage.statusPageSections.map((section) => {
-          let widgetType = "with_history" as const;
+          // Map database StatusPageSectionType to frontend WidgetType
+          let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
           
-          // Parse widget type from description field if it exists
-          if (section.description) {
-            try {
-              const parsed = JSON.parse(section.description);
-              widgetType = parsed.widgetType || "with_history";
-            } catch {
-              // If parsing fails, keep defaults
-            }
+          switch (section.type) {
+            case "STATUS":
+              widgetType = "current";
+              break;
+            case "HISTORY":
+              widgetType = "with_history";
+              break;
+            case "BOTH":
+              widgetType = "with_history_chart";
+              break;
+            default:
+              widgetType = "with_history";
           }
 
           return {
