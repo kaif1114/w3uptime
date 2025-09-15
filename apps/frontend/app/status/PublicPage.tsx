@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 import { notFound } from "next/navigation";
 import { useState } from "react";
-import Navbar from "./Navbar";
 
 import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
@@ -87,15 +86,7 @@ const PublicPage = ({ id }: { id: string }) => {
 
 
   return (
-    <div className="min-h-screen bg-background mx-auto container max-w-3xl">
-      <Navbar
-        logoUrl={statusPageData.logoUrl || undefined}
-        companyName={statusPageData.name}
-        logoLinkUrl={statusPageData.logoLinkUrl || undefined}
-        currentPage="status"
-        serviceId={undefined}
-      />
-
+    <div >
       <div className="container mx-auto px-4 py-8">
         {/* Status Overview Component */}
         <StatusOverview sections={transformedSections} />
