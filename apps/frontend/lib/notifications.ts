@@ -1,5 +1,6 @@
 import pgClient from "./pg";
 import { createIncident, resolveIncident } from "./incident";
+import escalationService from "./escalation";
 
 // Global registry for active SSE streams with user authorization (using globalThis for persistence)
 const globalForStreams = globalThis as unknown as {
@@ -49,10 +50,21 @@ export const initializeNotificationHandler = () => {
           stream.controller.enqueue(new TextEncoder().encode(sseData));
         }
         if(payload.status === 'BAD') {
-          createIncident(payload.monitorId, 'Monitor is down', new Date(payload.checkedAt));
+          const incidentTime = new Date(payload.checkedAt);
+          createIncident(payload.monitorId, 'Monitor is down', incidentTime);
+          
+          // Start escalation process
+          escalationService.startEscalation({
+            monitorId: payload.monitorId,
+            incidentTitle: 'Monitor is down',
+            timestamp: incidentTime
+          });
         }
         else if(payload.status === 'GOOD') {
           resolveIncident(payload.monitorId, new Date(payload.checkedAt));
+          
+          // Stop escalation process
+          escalationService.stopEscalation(payload.monitorId);
         }
       }
     } catch (error) {
