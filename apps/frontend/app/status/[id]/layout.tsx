@@ -1,6 +1,6 @@
 
 import React from 'react';
-import StatusLayoutClient from './StatusLayoutClient';
+import Navbar from '../Navbar';
 import { getStatusPageNavInfo } from '@/lib/actions/status-page';
 
 export default async function StatusLayout({
@@ -21,11 +21,14 @@ export default async function StatusLayout({
   }
 
   return (
-    <StatusLayoutClient
-      statusPage={statusPage}
-      serviceId={id}
-    >
+    <div className="min-h-screen bg-background mx-auto container max-w-3xl">
+      <Navbar
+        logoUrl={statusPage.logoUrl || undefined}
+        companyName={statusPage.name}
+        logoLinkUrl={statusPage.logoLinkUrl || undefined}
+        serviceId={id}
+      />
       {children}
-    </StatusLayoutClient>
+    </div>
   );
 }

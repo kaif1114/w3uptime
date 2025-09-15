@@ -1,19 +1,30 @@
-import React from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { ModeToggle } from '@/components/mode-toggle'
-import Image from 'next/image'
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { ModeToggle } from '@/components/mode-toggle';
+import Image from 'next/image';
 
 interface NavbarProps {
   logoUrl?: string;
   companyName?: string;
   logoLinkUrl?: string;
-  currentPage?: string;
   serviceId?: string;
 }
 
-const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, currentPage = "status", serviceId }: NavbarProps) => {
+// Helper function to determine current page from pathname
+function getCurrentPage(pathname: string): string {
+  if (pathname.includes('/maintenance')) return 'maintenance';
+  if (pathname.includes('/previousincident')) return 'previousincident';
+  return 'status';
+}
+
+const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, serviceId }: NavbarProps) => {
+  const pathname = usePathname();
+  const currentPage = getCurrentPage(pathname);
   return (
     <div className="w-full">
       {/* Dark header bar */}
