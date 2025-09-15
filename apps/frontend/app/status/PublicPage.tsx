@@ -13,14 +13,12 @@ import ResponseTimeCharts from "./Chart";
 import { ServicesSection } from "./ServicesSection";
 import { StatusOverview } from "./StatusOverview";
 
-
-
 // Types for components (matching the expected interfaces)
 interface Monitor {
   id: string;
   name: string;
   url: string;
-  status: 'up' | 'down' | 'maintenance';
+  status: "up" | "down" | "maintenance";
   uptime: number;
   responseTime: number;
   lastChecked: string;
@@ -68,38 +66,48 @@ const PublicPage = ({ id }: { id: string }) => {
   }
 
   // Transform API data to match component interfaces
-  const transformedSections: Section[] = statusPageData.sections.map(section => ({
-    id: section.id,
-    name: section.name,
-    monitors: [{
-      id: section.monitor.id,
-      name: section.monitor.name,
-      url: section.monitor.url,
-      status: section.monitor.status === 'ACTIVE' ? 'up' : 'down' as 'up' | 'down' | 'maintenance',
-      uptime: 99.9, // Default uptime - would need to calculate from actual data
-      responseTime: 150, // Default response time - would need actual data
-      lastChecked: new Date().toISOString(),
-    }]
-  }));
+  const transformedSections: Section[] = statusPageData.sections.map(
+    (section) => ({
+      id: section.id,
+      name: section.name,
+      monitors: [
+        {
+          id: section.monitor.id,
+          name: section.monitor.name,
+          url: section.monitor.url,
+          status:
+            section.monitor.status === "ACTIVE"
+              ? "up"
+              : ("down" as "up" | "down" | "maintenance"),
+          uptime: 99.9, // Default uptime - would need to calculate from actual data
+          responseTime: 150, // Default response time - would need actual data
+          lastChecked: new Date().toISOString(),
+        },
+      ],
+    })
+  );
 
-  const transformedMaintenances: MaintenanceItem[] = statusPageData.maintenances.map(maintenance => ({
-    id: maintenance.id,
-    title: maintenance.title,
-    description: maintenance.description,
-    startDate: new Date(maintenance.from),
-    endDate: new Date(maintenance.to),
-    status: maintenance.status as 'scheduled' | 'in_progress' | 'completed',
-    affectedServices: [], // Would need to map from actual affected sections
-  }));
+  const transformedMaintenances: MaintenanceItem[] =
+    statusPageData.maintenances.map((maintenance) => ({
+      id: maintenance.id,
+      title: maintenance.title,
+      description: maintenance.description,
+      startDate: new Date(maintenance.from),
+      endDate: new Date(maintenance.to),
+      status: maintenance.status as "scheduled" | "in_progress" | "completed",
+      affectedServices: [], // Would need to map from actual affected sections
+    }));
 
-  const transformedUpdates: UpdateItem[] = statusPageData.updates.map(update => ({
-    id: update.id,
-    title: update.title,
-    description: update.description,
-    publishedAt: new Date(update.publishedAt),
-    type: 'improvement' as const, // Default type
-    changes: [], // Would need to extract from description or separate field
-  }));
+  const transformedUpdates: UpdateItem[] = statusPageData.updates.map(
+    (update) => ({
+      id: update.id,
+      title: update.title,
+      description: update.description,
+      publishedAt: new Date(update.publishedAt),
+      type: "improvement" as const, // Default type
+      changes: [], // Would need to extract from description or separate field
+    })
+  );
 
   return (
     <div className="min-h-screen bg-background">
