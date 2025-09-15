@@ -7,11 +7,30 @@ import Navbar from "./Navbar";
 
 import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
+import { MaintenanceItem, UpdateItem } from "@/types/generic";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { ServicesSection } from "./ServicesSection";
 import { StatusOverview } from "./StatusOverview";
 
+
+
+// Types for components (matching the expected interfaces)
+interface Monitor {
+  id: string;
+  name: string;
+  url: string;
+  status: 'up' | 'down' | 'maintenance';
+  uptime: number;
+  responseTime: number;
+  lastChecked: string;
+}
+
+interface Section {
+  id: string;
+  name: string;
+  monitors: Monitor[];
+}
 
 const PublicPage = ({ id }: { id: string }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<"24h" | "7d" | "30d">(
@@ -48,19 +67,53 @@ const PublicPage = ({ id }: { id: string }) => {
     notFound();
   }
 
+  // Transform API data to match component interfaces
+  const transformedSections: Section[] = statusPageData.sections.map(section => ({
+    id: section.id,
+    name: section.name,
+    monitors: [{
+      id: section.monitor.id,
+      name: section.monitor.name,
+      url: section.monitor.url,
+      status: section.monitor.status === 'ACTIVE' ? 'up' : 'down' as 'up' | 'down' | 'maintenance',
+      uptime: 99.9, // Default uptime - would need to calculate from actual data
+      responseTime: 150, // Default response time - would need actual data
+      lastChecked: new Date().toISOString(),
+    }]
+  }));
+
+  const transformedMaintenances: MaintenanceItem[] = statusPageData.maintenances.map(maintenance => ({
+    id: maintenance.id,
+    title: maintenance.title,
+    description: maintenance.description,
+    startDate: new Date(maintenance.from),
+    endDate: new Date(maintenance.to),
+    status: maintenance.status as 'scheduled' | 'in_progress' | 'completed',
+    affectedServices: [], // Would need to map from actual affected sections
+  }));
+
+  const transformedUpdates: UpdateItem[] = statusPageData.updates.map(update => ({
+    id: update.id,
+    title: update.title,
+    description: update.description,
+    publishedAt: new Date(update.publishedAt),
+    type: 'improvement' as const, // Default type
+    changes: [], // Would need to extract from description or separate field
+  }));
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar
-        logoUrl={statusPageData.logoUrl}
+        logoUrl={statusPageData.logoUrl || undefined}
         companyName={statusPageData.name}
-        logoLinkUrl={statusPageData.logoLinkUrl}
+        logoLinkUrl={statusPageData.logoLinkUrl || undefined}
         currentPage="status"
         serviceId={undefined}
       />
 
       <div className="container mx-auto px-4 py-8">
         {/* Status Overview Component */}
-        <StatusOverview sections={statusPageData.sections} />
+        <StatusOverview sections={transformedSections} />
 
         {/* Charts Section */}
 
@@ -106,9 +159,9 @@ const PublicPage = ({ id }: { id: string }) => {
 
         {/* Services Section Component */}
         <ServicesSection
-          sections={statusPageData.sections}
-          maintenances={statusPageData.maintenances}
-          updates={statusPageData.updates}
+          sections={transformedSections}
+          maintenances={transformedMaintenances}
+          updates={transformedUpdates}
         />
       </div>
     </div>
