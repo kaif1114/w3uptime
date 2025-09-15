@@ -1,9 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { usePublicIncidentsByMonth } from '@/hooks/usePublicIncidents';
 
 interface MonthData {
   month: string;
@@ -13,11 +14,16 @@ interface MonthData {
   hasIncidents: boolean;
   isPast: boolean;
   isCurrent: boolean;
+  incidentCount?: number;
 }
 
+interface IncidentsListProps {
+  statusPageId: string;
+}
 
-function IncidentsList() {
+function IncidentsList({ statusPageId }: IncidentsListProps) {
   const [rangeStartIndex, setRangeStartIndex] = useState<number>(0);
+  const [monthsWithIncidents, setMonthsWithIncidents] = useState<Map<string, number>>(new Map());
   
   // Constants
   const MONTHS_PER_VIEW = 3;
@@ -49,15 +55,18 @@ function IncidentsList() {
       const isPastMonth = i < 0;
       const isCurrentMonth = i === 0;
       
+      const monthKey = `${yearValue}-${monthIndex + 1}`;
+      const incidentCount = monthsWithIncidents.get(monthKey) || 0;
       
       result.push({
         month: months[monthIndex],
         shortMonth: shortMonths[monthIndex],
         year: yearValue,
         displayName: `${months[monthIndex]} ${yearValue}`,
-        hasIncidents: false, // Static for now
+        hasIncidents: incidentCount > 0,
         isPast: isPastMonth,
-        isCurrent: isCurrentMonth
+        isCurrent: isCurrentMonth,
+        incidentCount
       });
     }
     
@@ -76,6 +85,37 @@ function IncidentsList() {
       setRangeStartIndex(Math.min(idealStart, allMonths.length - MONTHS_PER_VIEW));
     }
   }, []);
+
+  // Fetch incident data for visible months
+  useEffect(() => {
+    if (!statusPageId) return;
+    
+    const endIndex = Math.min(rangeStartIndex + MONTHS_PER_VIEW, allMonths.length);
+    const currentViewMonths = allMonths.slice(rangeStartIndex, endIndex);
+    
+    // For each month in current view, fetch incident data
+    currentViewMonths.forEach(async (monthData) => {
+      try {
+        const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthData.month);
+        
+        const response = await fetch(
+          `/api/public/status-pages/${statusPageId}/incidents?` +
+          `startDate=${new Date(monthData.year, monthIndex, 1).toISOString()}&` +
+          `endDate=${new Date(monthData.year, monthIndex + 1, 0, 23, 59, 59).toISOString()}&` +
+          `pageSize=100`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          const monthKey = `${monthData.year}-${monthIndex + 1}`;
+          setMonthsWithIncidents(prev => new Map(prev.set(monthKey, data.total || 0)));
+        }
+      } catch (error) {
+        console.error(`Error fetching incidents for ${monthData.displayName}:`, error);
+      }
+    });
+  }, [statusPageId, rangeStartIndex, allMonths]);
 
   // Get current view months
   const getCurrentViewMonths = (): MonthData[] => {
@@ -116,24 +156,28 @@ function IncidentsList() {
 
   // Get status info for each month
   const getMonthStatusInfo = (monthData: MonthData) => {
-    if (monthData.hasIncidents) {
+    const incidentCount = monthData.incidentCount || 0;
+    
+    if (incidentCount > 0) {
       return {
-        icon: <CheckCircle className="w-5 h-5 text-destructive" />,
-        text: "Incidents reported",
-        textColor: "text-destructive"
+        icon: <XCircle className="w-5 h-5 text-destructive" />,
+        text: `${incidentCount} incident${incidentCount > 1 ? 's' : ''} reported`,
+        textColor: "text-destructive",
+        bgColor: "bg-destructive/10 border-destructive/20"
       };
     } else if (monthData.isCurrent) {
       return {
         icon: <CheckCircle className="w-5 h-5 text-primary" />,
         text: "Current month - No incidents reported",
-        textColor: "text-primary"
+        textColor: "text-primary",
+        bgColor: "bg-primary/10 border-primary/20"
       };
-    
     } else {
       return {
         icon: <CheckCircle className="w-5 h-5 text-green-500" />,
         text: "No incidents reported",
-        textColor: "text-muted-foreground"
+        textColor: "text-muted-foreground",
+        bgColor: ""
       };
     }
   };
@@ -177,9 +221,9 @@ function IncidentsList() {
           return (
             <Card 
               key={`${monthData.month}-${monthData.year}-${index}`} 
-              className={`shadow-sm hover:shadow-md transition-all duration-200 ${
-                monthData.isCurrent ? 'ring-2 ring-primary/20 bg-primary/5 border-primary/20' : 'hover:border-primary/10'
-              }`}
+              className={`shadow-sm hover:shadow-md transition-all duration-200 ${statusInfo.bgColor} ${
+                monthData.isCurrent ? 'ring-2 ring-primary/20' : ''
+              } ${monthData.hasIncidents ? 'ring-2 ring-destructive/20' : 'hover:border-primary/10'}`}
             >
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
