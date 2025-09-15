@@ -15,6 +15,7 @@ import {
   BarChartSkeleton,
   ResponseTimeChartsSkeleton,
 } from "@/components/skeletons/StatusPageSkeletons";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 // Types for components (matching the expected interfaces)
 interface Monitor {
@@ -59,7 +60,7 @@ const PublicPage = ({ id }: { id: string }) => {
     return (
       <div className="container mx-auto px-4 py-8">
         <StatusOverviewSkeleton />
-        
+
         <div>
           <PerformanceMetricsSkeleton />
         </div>
@@ -100,10 +101,10 @@ const PublicPage = ({ id }: { id: string }) => {
     })
   );
 
-
   return (
-    <div >
-      <div className="container mx-auto px-4 py-8">
+    <Card>
+      <CardHeader>
+     
         {/* Status Overview Component */}
         <StatusOverview sections={transformedSections} />
 
@@ -131,6 +132,8 @@ const PublicPage = ({ id }: { id: string }) => {
             </div>
           </div>
         </div>
+        </CardHeader>
+        <CardContent>
         <div>
           {isDailyStatusLoading ? (
             <BarChartSkeleton />
@@ -148,9 +151,8 @@ const PublicPage = ({ id }: { id: string }) => {
         </div>
 
         {/* Services Section Component */}
-        
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

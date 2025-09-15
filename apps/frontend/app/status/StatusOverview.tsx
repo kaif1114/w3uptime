@@ -62,13 +62,13 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
       </div>
 
       {/* Main Status Card */}
-      <Card>
-        <CardHeader>
+   
+        <div>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <Activity className="h-5 w-5" />
               <span>monitor maintenance</span>
-            </CardTitle>
+            </div>
             <div className="flex items-center space-x-2">
               {getStatusIcon(overallStatus)}
               <span className="text-sm font-medium text-foreground">
@@ -76,8 +76,8 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
               </span>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div>
           {sections.map((section) => (
             <div key={section.id} className="space-y-4">
               {section.monitors.map((monitor) => (
@@ -99,8 +99,8 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
               ))}
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+  
     </div>
   );
 };
