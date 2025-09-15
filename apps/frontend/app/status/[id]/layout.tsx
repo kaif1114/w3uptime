@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { notFound } from 'next/navigation';
-import Navbar from '../Navbar';
-import { prisma } from 'db/client';
+import StatusLayoutClient from './StatusLayoutClient';
+import { getStatusPageNavInfo } from '@/lib/actions/status-page';
 
 export default async function StatusLayout({
   children,
@@ -13,35 +12,20 @@ export default async function StatusLayout({
 }>) {
   const { id } = await params;
 
-  // Fetch status page data server-side for the navbar
-  const statusPage = await prisma.statusPage.findFirst({
-    where: {
-      id,
-      isPublished: true, // Only published status pages are accessible
-    },
-    select: {
-      id: true,
-      name: true,
-      logoUrl: true,
-      logo: true, // logoLinkUrl
-      supportUrl: true,
-    },
-  });
+  // Fetch status page data using server action
+  const statusPage = await getStatusPageNavInfo(id);
 
   if (!statusPage) {
-    notFound();
+    // Server action handles notFound() internally, but double check
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-background mx-auto container max-w-3xl">
-      <Navbar
-        logoUrl={statusPage.logoUrl || undefined}
-        companyName={statusPage.name}
-        logoLinkUrl={statusPage.logo || undefined}
-        currentPage="status"
-        serviceId={id}
-      />
+    <StatusLayoutClient
+      statusPage={statusPage}
+      serviceId={id}
+    >
       {children}
-    </div>
+    </StatusLayoutClient>
   );
 }
