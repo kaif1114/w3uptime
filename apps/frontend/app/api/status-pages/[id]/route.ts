@@ -18,7 +18,14 @@ const updateSchema = z.object({
         id: z.string(),
         name: z.string(),
         resources: z.array(
-          z.object({ type: z.literal("monitor"), monitorId: z.string() })
+          z.object({
+            id: z.string().optional(),
+            type: z.literal("monitor"),
+            monitorId: z.string(),
+            publicName: z.string().optional(),
+            explanation: z.string().optional(),
+            widgetType: z.enum(["current", "with_history", "with_history_chart"]).optional(),
+          })
         ),
       })
     )
@@ -80,11 +87,40 @@ export const GET = withAuth(
         logoLinkUrl: statusPage.logo,
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
-        sections: statusPage.statusPageSections.map((section) => ({
-          id: section.id,
-          name: section.name,
-          resources: [{ type: "monitor", monitorId: section.monitorId }],
-        })),
+        sections: statusPage.statusPageSections.map((section) => {
+          let resourceMetadata = {
+            publicName: "",
+            explanation: "",
+            widgetType: "with_history" as const,
+          };
+          
+          // Parse resource metadata from description field if it exists
+          if (section.description) {
+            try {
+              const parsed = JSON.parse(section.description);
+              resourceMetadata = {
+                publicName: parsed.publicName || "",
+                explanation: parsed.explanation || "",
+                widgetType: parsed.widgetType || "with_history",
+              };
+            } catch {
+              // If parsing fails, keep defaults
+            }
+          }
+
+          return {
+            id: section.id,
+            name: section.name,
+            resources: [{
+              id: crypto.randomUUID(),
+              type: "monitor" as const,
+              monitorId: section.monitorId,
+              publicName: resourceMetadata.publicName,
+              explanation: resourceMetadata.explanation,
+              widgetType: resourceMetadata.widgetType,
+            }],
+          };
+        }),
         maintenances: statusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,
@@ -165,13 +201,22 @@ export const PATCH = withAuth(
         // Update existing sections and create new ones if needed; do not delete others
         for (let index = 0; index < parsed.data.sections.length; index++) {
           const section = parsed.data.sections[index];
-          const monitorId = section.resources?.[0]?.monitorId;
+          const resource = section.resources?.[0];
+          const monitorId = resource?.monitorId;
+
+          // Prepare resource metadata to store in description field
+          const resourceMetadata = {
+            publicName: resource?.publicName || "",
+            explanation: resource?.explanation || "",
+            widgetType: resource?.widgetType || "with_history",
+          };
 
           try {
             await prisma.statusPageSection.update({
               where: { id: section.id },
               data: {
                 name: section.name,
+                description: JSON.stringify(resourceMetadata),
                 order: index + 1,
                 ...(typeof monitorId === "string" && monitorId.trim().length > 0
                   ? { monitorId }
@@ -185,7 +230,7 @@ export const PATCH = withAuth(
                 data: {
                   id: section.id,
                   name: section.name,
-                  description: null,
+                  description: JSON.stringify(resourceMetadata),
                   order: index + 1,
                   type: "BOTH",
                   monitorId,
@@ -232,11 +277,40 @@ export const PATCH = withAuth(
         logoLinkUrl: finalStatusPage.logo,
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
-        sections: finalStatusPage.statusPageSections.map((section) => ({
-          id: section.id,
-          name: section.name,
-          resources: [{ type: "monitor", monitorId: section.monitorId }],
-        })),
+        sections: finalStatusPage.statusPageSections.map((section) => {
+          let resourceMetadata = {
+            publicName: "",
+            explanation: "",
+            widgetType: "with_history" as const,
+          };
+          
+          // Parse resource metadata from description field if it exists
+          if (section.description) {
+            try {
+              const parsed = JSON.parse(section.description);
+              resourceMetadata = {
+                publicName: parsed.publicName || "",
+                explanation: parsed.explanation || "",
+                widgetType: parsed.widgetType || "with_history",
+              };
+            } catch {
+              // If parsing fails, keep defaults
+            }
+          }
+
+          return {
+            id: section.id,
+            name: section.name,
+            resources: [{
+              id: crypto.randomUUID(),
+              type: "monitor" as const,
+              monitorId: section.monitorId,
+              publicName: resourceMetadata.publicName,
+              explanation: resourceMetadata.explanation,
+              widgetType: resourceMetadata.widgetType,
+            }],
+          };
+        }),
         maintenances: finalStatusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,
