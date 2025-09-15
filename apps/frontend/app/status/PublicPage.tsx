@@ -7,7 +7,6 @@ import Navbar from "./Navbar";
 
 import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
-import { MaintenanceItem, UpdateItem } from "@/types/generic";
 import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { StatusOverview } from "./StatusOverview";
