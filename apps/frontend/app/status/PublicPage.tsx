@@ -122,11 +122,11 @@ const PublicPage = ({ id }: { id: string }) => {
           </p>
         </div>
 
-        {/* Services Section */}
+        {/* Combined Services and Response Times Section */}
         <div className="bg-card rounded-lg border border-border p-6 space-y-6">
+          {/* Section Header */}
           {transformedSections.map((section) => (
             <div key={section.id}>
-              {/* Section Header */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-card-foreground">{section.name}</h2>
                 <div className="flex items-center space-x-2">
@@ -136,7 +136,7 @@ const PublicPage = ({ id }: { id: string }) => {
                 </div>
               </div>
 
-              {/* Monitor Row */}
+              {/* Monitor Row with Status Bars and Uptime */}
               {section.monitors.map((monitor) => (
                 <div key={monitor.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -155,39 +155,39 @@ const PublicPage = ({ id }: { id: string }) => {
               ))}
             </div>
           ))}
-        </div>
 
-        {/* Response Times Chart */}
-        {shouldShowHistory && monitorId && (
-          <div className="bg-card rounded-lg border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-card-foreground">Response times</h3>
-              {/* Period Selection Buttons */}
-              <div className="flex space-x-2">
-                {["24h", "7d", "30d"].map((period) => (
-                  <Button
-                    key={period}
-                    variant={selectedPeriod === period ? "default" : "outline"}
-                    size="sm"
-                    onClick={() =>
-                      setSelectedPeriod(period as "24h" | "7d" | "30d")
-                    }
-                  >
-                    {period}
-                  </Button>
-                ))}
+          {/* Response Times Chart */}
+          {shouldShowHistory && monitorId && (
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-card-foreground">Response times</h3>
+                {/* Period Selection Buttons */}
+                <div className="flex space-x-2">
+                  {["24h", "7d", "30d"].map((period) => (
+                    <Button
+                      key={period}
+                      variant={selectedPeriod === period ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        setSelectedPeriod(period as "24h" | "7d" | "30d")
+                      }
+                    >
+                      {period}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              <PublicTimeSeriesChart
+                monitorId={monitorId}
+                period={
+                  selectedPeriod === "24h" ? "day" : 
+                  selectedPeriod === "7d" ? "week" : "month"
+                }
+                type="latency"
+              />
             </div>
-            <PublicTimeSeriesChart
-              monitorId={monitorId}
-              period={
-                selectedPeriod === "24h" ? "day" : 
-                selectedPeriod === "7d" ? "week" : "month"
-              }
-              type="latency"
-            />
-          </div>
-        )}
+          )}
+        </div>
 
       </div>
     </div>
