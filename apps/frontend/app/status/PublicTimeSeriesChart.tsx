@@ -2,7 +2,7 @@
 
 import { usePublicMonitorTimeSeries } from "@/hooks/usePublicStatusPage";
 import { AlertTriangle } from "lucide-react";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, LineChart, Line } from 'recharts';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 
@@ -165,7 +165,7 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
         <div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="timeFormatted"
@@ -187,21 +187,14 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
                     borderRadius: '6px',
                   }}
                 />
-                <Area 
+                <Line 
                   type="monotone" 
                   dataKey="latency" 
                   stroke="hsl(var(--primary))"
-                  fill="url(#latencyGradient)"
                   strokeWidth={3}
                   dot={false}
                 />
-                <defs>
-                  <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
@@ -233,7 +226,7 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
       <div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="timeFormatted"
@@ -256,15 +249,14 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
                   borderRadius: '6px',
                 }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="uptime" 
-                stroke="hsl(var(--green-500))"
-                fill="hsl(var(--green-500))"
-                fillOpacity={0.2}
-                strokeWidth={2}
-              />
-            </AreaChart>
+                <Line 
+                  type="monotone" 
+                  dataKey="uptime" 
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={3}
+                  dot={false}
+                />
+            </LineChart>
           </ResponsiveContainer>
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
