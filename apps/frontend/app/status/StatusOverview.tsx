@@ -21,9 +21,10 @@ interface Section {
 
 interface StatusOverviewProps {
   sections: Section[];
+  renderStatusBars?: (monitorId: string) => React.ReactNode;
 }
 
-export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
+export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections, renderStatusBars }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'up':
@@ -89,6 +90,12 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
+                    {/* Status Bars */}
+                    {renderStatusBars && (
+                      <div className="hidden sm:block">
+                        {renderStatusBars(monitor.id)}
+                      </div>
+                    )}
                     <span className="text-green-600 font-semibold">{monitor.uptime.toFixed(3)}% uptime</span>
                     <div className="flex items-center space-x-1">
                       {getStatusIcon(monitor.status)}

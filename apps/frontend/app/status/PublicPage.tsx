@@ -10,6 +10,7 @@ import DailyStatusBarChart from "./Barchart";
 import ResponseTimeCharts from "./Chart";
 import { StatusOverview } from "./StatusOverview";
 import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
+import { UptimeStatusBars } from "@/components/status/UptimeStatusBars";
 import {
   StatusOverviewSkeleton,
   PerformanceMetricsSkeleton,
@@ -118,7 +119,15 @@ const PublicPage = ({ id }: { id: string }) => {
       <CardHeader>
      
         {/* Status Overview Component */}
-        <StatusOverview sections={transformedSections} />
+        <StatusOverview 
+          sections={transformedSections}
+          renderStatusBars={(monitorId) => (
+            <UptimeStatusBars 
+              monitorId={monitorId} 
+              period={selectedPeriod}
+            />
+          )}
+        />
 
         {/* Charts Section */}
         {(shouldShowHistory || shouldShowStatus) && (
