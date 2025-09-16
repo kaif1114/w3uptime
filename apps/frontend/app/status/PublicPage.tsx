@@ -138,18 +138,22 @@ const PublicPage = ({ id }: { id: string }) => {
 
               {/* Monitor Row with Status Bars and Uptime */}
               {section.monitors.map((monitor) => (
-                <div key={monitor.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="font-medium text-card-foreground">{monitor.name}</span>
+                <div key={monitor.id} className="space-y-2">
+                  {/* Service name and uptime percentage row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="font-medium text-card-foreground">{monitor.name}</span>
+                    </div>
+                    <span className="text-green-600 font-medium">{monitor.uptime.toFixed(3)}% uptime</span>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    {/* Status Bars */}
+                  
+                  {/* Status Bars on separate row */}
+                  <div className="pl-8">
                     <UptimeStatusBars 
                       monitorId={monitor.id} 
                       period={selectedPeriod}
                     />
-                    <span className="text-green-600 font-medium">{monitor.uptime.toFixed(3)}% uptime</span>
                   </div>
                 </div>
               ))}
