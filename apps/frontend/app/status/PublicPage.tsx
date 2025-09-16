@@ -1,5 +1,6 @@
 "use client";
 import { CheckCircle, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -54,7 +55,7 @@ const PublicPage = ({ id }: { id: string }) => {
   // Handle loading state
   if (isStatusPageLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           <StatusOverviewSkeleton />
           <ResponseTimeChartsSkeleton />
@@ -107,31 +108,31 @@ const PublicPage = ({ id }: { id: string }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Header Section */}
         <div className="text-center space-y-4">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-          <h1 className="text-4xl font-semibold text-gray-900">
+          <h1 className="text-4xl font-semibold text-foreground">
             {allOperational ? "All services are online" : "Some services are down"}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-muted-foreground">
             Last updated on {format(new Date(), "MMM dd 'at' hh:mmaaa")} HDT
           </p>
         </div>
 
         {/* Services Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
           {transformedSections.map((section) => (
             <div key={section.id}>
               {/* Section Header */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-900">{section.name}</h2>
+                <h2 className="text-lg font-medium text-card-foreground">{section.name}</h2>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-medium text-gray-900">Operational</span>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-card-foreground">Operational</span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
 
@@ -140,7 +141,7 @@ const PublicPage = ({ id }: { id: string }) => {
                 <div key={monitor.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="font-medium text-gray-900">{monitor.name}</span>
+                    <span className="font-medium text-card-foreground">{monitor.name}</span>
                   </div>
                   <div className="flex items-center space-x-4">
                     {/* Status Bars */}
@@ -158,8 +159,25 @@ const PublicPage = ({ id }: { id: string }) => {
 
         {/* Response Times Chart */}
         {shouldShowHistory && monitorId && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Response times</h3>
+          <div className="bg-card rounded-lg border border-border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-card-foreground">Response times</h3>
+              {/* Period Selection Buttons */}
+              <div className="flex space-x-2">
+                {["24h", "7d", "30d"].map((period) => (
+                  <Button
+                    key={period}
+                    variant={selectedPeriod === period ? "default" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      setSelectedPeriod(period as "24h" | "7d" | "30d")
+                    }
+                  >
+                    {period}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <PublicTimeSeriesChart
               monitorId={monitorId}
               period={
