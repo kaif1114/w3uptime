@@ -148,11 +148,11 @@ const PublicPage = ({ id }: { id: string }) => {
                     <span className="text-green-600 font-medium">{monitor.uptime.toFixed(3)}% uptime</span>
                   </div>
                   
-                  {/* Status Bars on separate row */}
-                  <div className="pl-8">
+                  {/* Status Bars on separate row - full width, always 30 days */}
+                  <div className="w-full">
                     <UptimeStatusBars 
                       monitorId={monitor.id} 
-                      period={selectedPeriod}
+                      period="30d"
                     />
                   </div>
                 </div>
@@ -160,27 +160,30 @@ const PublicPage = ({ id }: { id: string }) => {
             </div>
           ))}
 
+          {/* Period Selection Buttons - for response times chart only */}
+          {shouldShowHistory && (
+            <div className="flex justify-center mt-6">
+              <div className="flex space-x-2">
+                {["24h", "7d", "30d"].map((period) => (
+                  <Button
+                    key={period}
+                    variant={selectedPeriod === period ? "default" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      setSelectedPeriod(period as "24h" | "7d" | "30d")
+                    }
+                  >
+                    {period}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Response Times Chart */}
           {shouldShowHistory && monitorId && (
-            <div className="mt-8 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-card-foreground">Response times</h3>
-                {/* Period Selection Buttons */}
-                <div className="flex space-x-2">
-                  {["24h", "7d", "30d"].map((period) => (
-                    <Button
-                      key={period}
-                      variant={selectedPeriod === period ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setSelectedPeriod(period as "24h" | "7d" | "30d")
-                      }
-                    >
-                      {period}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-medium text-card-foreground">Response times</h3>
               <PublicTimeSeriesChart
                 monitorId={monitorId}
                 period={
