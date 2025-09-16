@@ -39,51 +39,54 @@ const transformTimeSeriesToStatusBars = (
   period: "24h" | "7d" | "30d"
 ): StatusBar[] => {
   const expectedCount = period === "24h" ? 24 : period === "7d" ? 7 : 30;
+  const timeUnit = period === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 1 hour or 1 day
   
-  if (!data || data.length === 0) {
-    // Return empty bars for the expected count
-    return Array.from({ length: expectedCount }, (_, i) => ({
-      id: `empty-${i}`,
-      timestamp: new Date(Date.now() - (expectedCount - i - 1) * (period === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000)).toISOString(),
-      status: 'no-data' as const,
-      uptime_percentage: 0,
-    }));
+  // Create a map of existing data points by date
+  const dataMap = new Map<string, TimeSeriesPoint>();
+  if (data && data.length > 0) {
+    data.forEach(point => {
+      const date = new Date(point.time_bucket);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      dataMap.set(dateKey, point);
+    });
   }
 
-  // Sort data by timestamp and take the most recent entries
-  const sortedData = [...data]
-    .sort((a, b) => new Date(a.time_bucket).getTime() - new Date(b.time_bucket).getTime())
-    .slice(-expectedCount); // Take the most recent entries
-
-  // If we have fewer data points than expected, pad with no-data entries
+  // Generate exactly the expected number of bars
   const bars: StatusBar[] = [];
+  const now = new Date();
   
-  // Add missing historical bars if we don't have enough data
-  const missingCount = expectedCount - sortedData.length;
-  for (let i = 0; i < missingCount; i++) {
-    bars.push({
-      id: `missing-${i}`,
-      timestamp: new Date(Date.now() - (expectedCount - i - 1) * (period === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000)).toISOString(),
-      status: 'no-data' as const,
-      uptime_percentage: 0,
-    });
+  for (let i = expectedCount - 1; i >= 0; i--) {
+    // For 30d, we want daily data going back 30 days
+    const targetDate = new Date(now);
+    targetDate.setDate(targetDate.getDate() - i);
+    const dateKey = targetDate.toISOString().split('T')[0];
+    
+    const existingData = dataMap.get(dateKey);
+    
+    if (existingData) {
+      // We have data for this day
+      bars.push({
+        id: `data-${dateKey}`,
+        timestamp: existingData.time_bucket,
+        status: existingData.total_checks === 0 
+          ? 'no-data' as const
+          : existingData.uptime_percentage >= 95 
+            ? 'up' as const 
+            : 'down' as const,
+        uptime_percentage: existingData.uptime_percentage || 0,
+      });
+    } else {
+      // No data for this day - show grey bar
+      bars.push({
+        id: `no-data-${dateKey}`,
+        timestamp: targetDate.toISOString(),
+        status: 'no-data' as const,
+        uptime_percentage: 0,
+      });
+    }
   }
 
-  // Add actual data bars
-  sortedData.forEach((point, index) => {
-    bars.push({
-      id: `${point.time_bucket}-${index}`,
-      timestamp: point.time_bucket,
-      status: point.total_checks === 0 
-        ? 'no-data' as const
-        : point.uptime_percentage >= 95 
-          ? 'up' as const 
-          : 'down' as const,
-      uptime_percentage: point.uptime_percentage || 0,
-    });
-  });
-
-  return bars.slice(-expectedCount); // Ensure we return exactly the expected count
+  return bars;
 };
 
 export const useUptimeStatusBars = (

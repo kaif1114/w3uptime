@@ -29,14 +29,13 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   if (isLoading) {
-    // Show skeleton bars while loading  
-    const skeletonCount = period === "24h" ? 24 : period === "7d" ? 7 : 30;
+    // Show exactly 30 skeleton bars for loading state
     return (
       <div className="flex items-center justify-center w-full space-x-px">
-        {Array.from({ length: skeletonCount }).map((_, i) => (
+        {Array.from({ length: 30 }).map((_, i) => (
           <div
             key={i}
-            className="flex-1 h-6 bg-muted animate-pulse max-w-3"
+            className="flex-1 h-6 bg-muted animate-pulse max-w-4"
           />
         ))}
       </div>
@@ -44,14 +43,13 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   }
 
   if (error || !statusBars) {
-    // Show empty bars on error
-    const errorCount = period === "24h" ? 24 : period === "7d" ? 7 : 30;
+    // Show exactly 30 grey bars on error
     return (
       <div className="flex items-center justify-center w-full space-x-px">
-        {Array.from({ length: errorCount }).map((_, i) => (
+        {Array.from({ length: 30 }).map((_, i) => (
           <div
             key={i}
-            className="flex-1 h-6 bg-muted max-w-3"
+            className="flex-1 h-6 bg-muted max-w-4"
             title="No data available"
           />
         ))}
@@ -60,9 +58,9 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   }
 
   const getBarColor = (bar: StatusBar) => {
-    if (bar.status === 'no-data') return 'bg-gray-200';
-    if (bar.uptime_percentage >= 95) return 'bg-green-500';
-    return 'bg-red-500';
+    if (bar.status === 'no-data') return 'bg-muted'; // Grey for no data
+    if (bar.status === 'up') return 'bg-green-500'; // Green for operational
+    return 'bg-red-500'; // Red for down
   };
 
   const formatTooltipDate = (timestamp: string) => {
@@ -101,7 +99,7 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
         {statusBars.map((bar) => (
           <div
             key={bar.id}
-            className={`flex-1 h-6 transition-all duration-200 hover:scale-y-110 cursor-pointer max-w-3 ${getBarColor(bar)}`}
+            className={`flex-1 h-6 transition-all duration-200 hover:scale-y-110 cursor-pointer max-w-4 ${getBarColor(bar)}`}
             onMouseEnter={(e) => handleBarHover(bar, e)}
             onMouseLeave={handleBarLeave}
           />
