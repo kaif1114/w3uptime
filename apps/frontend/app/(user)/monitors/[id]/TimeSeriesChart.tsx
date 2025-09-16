@@ -2,7 +2,7 @@
 
 import { useMonitorTimeSeries } from "@/hooks/useMonitors";
 import { AlertTriangle } from "lucide-react";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
 import { format } from 'date-fns';
 
 interface TimeSeriesChartProps {
@@ -106,7 +106,7 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
         <div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="timeFormatted"
@@ -128,15 +128,15 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
                     borderRadius: '6px',
                   }}
                 />
-                <Area 
+                <Line 
                   type="monotone" 
                   dataKey="latency" 
-                  stroke="hsl(var(--primary))"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.2}
+                  stroke="#8b5cf6"
                   strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
@@ -154,7 +154,7 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
       <div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="timeFormatted"
@@ -177,15 +177,15 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
                   borderRadius: '6px',
                 }}
               />
-              <Area 
+              <Line 
                 type="monotone" 
                 dataKey="uptime" 
-                stroke="hsl(var(--green-500))"
-                fill="hsl(var(--green-500))"
-                fillOpacity={0.2}
+                stroke="#8b5cf6"
                 strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
