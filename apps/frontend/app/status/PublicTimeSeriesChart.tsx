@@ -1,10 +1,10 @@
 'use client';
 
-import { usePublicMonitorTimeSeries } from "@/hooks/usePublicStatusPage";
-import { AlertTriangle } from "lucide-react";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, LineChart, Line } from 'recharts';
-import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
+import { usePublicMonitorTimeSeries } from "@/hooks/usePublicStatusPage";
+import { format } from 'date-fns';
+import { AlertTriangle } from "lucide-react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface PublicTimeSeriesChartProps {
   monitorId: string;
@@ -190,9 +190,10 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
                 <Line 
                   type="monotone" 
                   dataKey="latency" 
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={3}
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -252,9 +253,10 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
                 <Line 
                   type="monotone" 
                   dataKey="uptime" 
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={3}
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
             </LineChart>
           </ResponsiveContainer>
