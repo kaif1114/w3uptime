@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useUptimeStatusBars } from '@/hooks/useUptimeStatusBars';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 interface UptimeStatusBarsProps {
   monitorId: string;
@@ -73,9 +73,19 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   };
 
   const getStatusText = (bar: StatusBar) => {
-    if (bar.status === 'no-data') return "No data";
-    if (bar.uptime_percentage >= 95) return "Operational";
-    return "Outage";
+    if (bar.status === 'no-data') return "Not Monitored";
+    if (bar.status === 'up') return "Operational";
+    return "Downtime";
+  };
+
+  const getStatusIcon = (bar: StatusBar) => {
+    if (bar.status === 'no-data') {
+      return <AlertTriangle className="w-4 h-4 text-muted-foreground" />;
+    }
+    if (bar.status === 'up') {
+      return <CheckCircle className="w-4 h-4 text-green-500" />;
+    }
+    return <XCircle className="w-4 h-4 text-red-500" />;
   };
 
   const handleBarHover = (bar: StatusBar, event: React.MouseEvent) => {
@@ -116,7 +126,7 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
           }}
         >
           <div className="flex items-center space-x-2">
-            <CheckCircle className="w-4 h-4 text-green-500" />
+            {getStatusIcon(tooltip.bar)}
             <span className="text-sm font-medium text-card-foreground">
               {getStatusText(tooltip.bar)}
             </span>
