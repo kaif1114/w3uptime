@@ -191,10 +191,16 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
                   type="monotone" 
                   dataKey="latency" 
                   stroke="hsl(var(--primary))"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.2}
-                  strokeWidth={2}
+                  fill="url(#latencyGradient)"
+                  strokeWidth={3}
+                  dot={false}
                 />
+                <defs>
+                  <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
               </AreaChart>
             </ResponsiveContainer>
           </div>
