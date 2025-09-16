@@ -22,14 +22,14 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   const { data: statusBars, isLoading, error } = useUptimeStatusBars(monitorId, period);
 
   if (isLoading) {
-    // Show skeleton bars while loading
+    // Show skeleton bars while loading  
     const skeletonCount = period === "24h" ? 24 : period === "7d" ? 7 : 30;
     return (
-      <div className="flex items-center space-x-0.5">
+      <div className="flex items-center space-x-px">
         {Array.from({ length: skeletonCount }).map((_, i) => (
           <div
             key={i}
-            className="w-1 h-6 bg-gray-200 rounded-sm animate-pulse"
+            className="w-1 h-6 bg-gray-200 animate-pulse"
           />
         ))}
       </div>
@@ -37,12 +37,15 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   }
 
   if (error || !statusBars) {
+    // Show empty bars on error
+    const errorCount = period === "24h" ? 24 : period === "7d" ? 7 : 30;
     return (
-      <div className="flex items-center space-x-0.5">
-        {Array.from({ length: 30 }).map((_, i) => (
+      <div className="flex items-center space-x-px">
+        {Array.from({ length: errorCount }).map((_, i) => (
           <div
             key={i}
-            className="w-1 h-6 bg-gray-200 rounded-sm"
+            className="w-1 h-6 bg-gray-200"
+            title="No data available"
           />
         ))}
       </div>
@@ -77,11 +80,11 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-0.5 px-2">
+    <div className="flex items-center space-x-px">
       {statusBars.map((bar) => (
         <div
           key={bar.id}
-          className={`w-1 h-6 rounded-sm transition-all duration-200 hover:scale-110 cursor-pointer ${getBarColor(bar)}`}
+          className={`w-1 h-6 transition-all duration-200 hover:scale-110 cursor-pointer ${getBarColor(bar)}`}
           title={`${formatTooltipDate(bar.timestamp, period)}: ${formatUptimeText(bar.uptime_percentage)}`}
         />
       ))}

@@ -91,7 +91,7 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections, render
                   <div className="flex items-center space-x-4">
                     {/* Status Bars */}
                     {renderStatusBars && (
-                      <div className="hidden sm:block">
+                      <div className="flex-shrink-0">
                         {renderStatusBars(monitor.id)}
                       </div>
                     )}
