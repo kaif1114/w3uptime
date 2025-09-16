@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import bullMQEscalationService from "@/lib/escalationBullmq";
 
 const updateIncidentSchema = z.object({
   status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]),
@@ -180,6 +181,17 @@ export const PATCH = withAuth(
 
         return updatedIncident;
       });
+
+      // Stop BullMQ escalation if incident is resolved
+      if (status === "RESOLVED") {
+        try {
+          await bullMQEscalationService.stopEscalation(result.monitorId);
+          console.log(`🛑 BullMQ escalation stopped for resolved incident: ${result.title}`);
+        } catch (escalationError) {
+          console.error('Failed to stop escalation:', escalationError);
+          // Don't fail the incident update if escalation stop fails
+        }
+      }
 
       return NextResponse.json({
         message: "Incident updated successfully",

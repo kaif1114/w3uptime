@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import bullMQEscalationService from "@/lib/escalationBullmq";
 
 const createIncidentSchema = z.object({
   title: z.string().min(1),
@@ -78,6 +79,21 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 
       return incident;
     });
+
+    // Trigger BullMQ escalation if monitor has escalation policy
+    if (result.Monitor.escalationPolicy) {
+      try {
+        await bullMQEscalationService.startEscalation({
+          monitorId: result.monitorId,
+          incidentTitle: result.title,
+          timestamp: result.createdAt,
+        });
+        console.log(`🚨 BullMQ escalation triggered for incident: ${result.title}`);
+      } catch (escalationError) {
+        console.error('Failed to trigger escalation:', escalationError);
+        // Don't fail the incident creation if escalation fails
+      }
+    }
 
     return NextResponse.json(
       {

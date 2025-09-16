@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { z } from "zod";
-import bullMQEscalationService from "@/lib/escalation-bullmq";
+import bullMQEscalationService from "@/lib/escalationBullmq";
 import { prisma } from "db/client";
 
 const testAlertSchema = z.object({

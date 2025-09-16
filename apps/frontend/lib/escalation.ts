@@ -1,5 +1,18 @@
 import { prisma } from "db/client";
+import { Prisma } from "@prisma/client";
 import emailService, { createIncidentEmailTemplate, createRecoveryEmailTemplate } from "./email";
+
+// Define the Monitor type with the specific includes we use in this service
+type MonitorWithEscalationPolicy = Prisma.MonitorGetPayload<{
+  include: {
+    escalationPolicy: {
+      include: {
+        levels: true;
+      };
+    };
+    user: true;
+  };
+}>;
 
 export interface EscalationContext {
   monitorId: string;
@@ -106,7 +119,7 @@ class EscalationService {
   private async executeEscalationLevel(
     alertId: string,
     level: EscalationLevelData,
-    monitor: any,
+    monitor: MonitorWithEscalationPolicy,
     context: EscalationContext
   ): Promise<void> {
     try {
@@ -147,7 +160,7 @@ class EscalationService {
   private scheduleNextEscalationLevels(
     alertId: string,
     remainingLevels: EscalationLevelData[],
-    monitor: any,
+    monitor: MonitorWithEscalationPolicy,
     context: EscalationContext
   ): void {
     if (remainingLevels.length === 0) {
@@ -190,7 +203,7 @@ class EscalationService {
    */
   private async sendEmailNotifications(
     level: EscalationLevelData,
-    monitor: any,
+    monitor: MonitorWithEscalationPolicy,
     context: EscalationContext,
     escalationLogId: string
   ): Promise<void> {
@@ -201,7 +214,7 @@ class EscalationService {
         context.incidentTitle,
         context.timestamp,
         level.levelOrder,
-        level.message
+        level.message as string
       );
 
       const emailsSent: string[] = [];
@@ -241,7 +254,7 @@ class EscalationService {
    */
   private async sendSlackNotifications(
     level: EscalationLevelData,
-    monitor: any,
+    monitor: MonitorWithEscalationPolicy,
     context: EscalationContext,
     escalationLogId: string
   ): Promise<void> {
@@ -255,7 +268,7 @@ class EscalationService {
    */
   private async sendWebhookNotifications(
     level: EscalationLevelData,
-    monitor: any,
+    monitor: MonitorWithEscalationPolicy,
     context: EscalationContext,
     escalationLogId: string
   ): Promise<void> {

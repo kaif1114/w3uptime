@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
-import { getAlertSystemStats, isAlertSystemInitialized } from "@/lib/alert-system-init";
+import { getAlertSystemStats, isAlertSystemInitialized } from "@/lib/alertsysteminit";
 
 // GET /api/queue/stats - Get BullMQ system statistics
 export const GET = withAuth(async (req: NextRequest, user) => {
