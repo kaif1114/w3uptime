@@ -1,22 +1,17 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { TrendingUp } from "lucide-react";
+import { CheckCircle, ChevronDown } from "lucide-react";
 import { notFound } from "next/navigation";
 import { useState } from "react";
+import { format } from "date-fns";
 
 import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
-import DailyStatusBarChart from "./Barchart";
-import { StatusOverview } from "./StatusOverview";
 import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
 import { UptimeStatusBars } from "@/components/status/UptimeStatusBars";
 import {
   StatusOverviewSkeleton,
-  PerformanceMetricsSkeleton,
-  BarChartSkeleton,
   ResponseTimeChartsSkeleton,
 } from "@/components/skeletons/StatusPageSkeletons";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 // Types for components (matching the expected interfaces)
 interface Monitor {
@@ -59,16 +54,9 @@ const PublicPage = ({ id }: { id: string }) => {
   // Handle loading state
   if (isStatusPageLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <StatusOverviewSkeleton />
-
-        <div>
-          <PerformanceMetricsSkeleton />
-        </div>
-        <div>
-          <BarChartSkeleton />
-        </div>
-        <div>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <StatusOverviewSkeleton />
           <ResponseTimeChartsSkeleton />
         </div>
       </div>
@@ -113,69 +101,65 @@ const PublicPage = ({ id }: { id: string }) => {
   // Get monitor ID for history chart (use first monitor)
   const monitorId = statusPageData.sections[0]?.monitor.id;
 
-  return (
-    <Card>
-      <CardHeader>
-     
-        {/* Status Overview Component */}
-        <StatusOverview 
-          sections={transformedSections}
-          renderStatusBars={(monitorId) => (
-            <UptimeStatusBars 
-              monitorId={monitorId} 
-              period={selectedPeriod}
-            />
-          )}
-        />
+  // Check overall status
+  const allOperational = transformedSections.every(section => 
+    section.monitors.every(monitor => monitor.status === 'up')
+  );
 
-        {/* Charts Section */}
-        {(shouldShowHistory || shouldShowStatus) && (
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>Performance Metrics</span>
-              </div>
-              {shouldShowHistory && (
-                <div className="flex space-x-2">
-                  {["24h", "7d", "30d"].map((period) => (
-                    <Button
-                      key={period}
-                      variant={selectedPeriod === period ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setSelectedPeriod(period as "24h" | "7d" | "30d")
-                      }
-                    >
-                      {period}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        </CardHeader>
-        <CardContent>
-        {/* Status Chart - Show for STATUS and BOTH types */}
-        {shouldShowStatus && (
-          <div>
-            {isDailyStatusLoading ? (
-              <BarChartSkeleton />
-            ) : (
-              <DailyStatusBarChart
-                data={dailyStatusData?.data || []}
-                period={30}
-                title="30-Day Status History"
-                showLegend={true}
-              />
-            )}
-          </div>
-        )}
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* History Chart - Show for HISTORY and BOTH types */}
+        {/* Header Section */}
+        <div className="text-center space-y-4">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+          <h1 className="text-4xl font-semibold text-gray-900">
+            {allOperational ? "All services are online" : "Some services are down"}
+          </h1>
+          <p className="text-gray-500">
+            Last updated on {format(new Date(), "MMM dd 'at' hh:mmaaa")} HDT
+          </p>
+        </div>
+
+        {/* Services Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+          {transformedSections.map((section) => (
+            <div key={section.id}>
+              {/* Section Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-gray-900">{section.name}</h2>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm font-medium text-gray-900">Operational</span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
+
+              {/* Monitor Row */}
+              {section.monitors.map((monitor) => (
+                <div key={monitor.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="font-medium text-gray-900">{monitor.name}</span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    {/* Status Bars */}
+                    <UptimeStatusBars 
+                      monitorId={monitor.id} 
+                      period={selectedPeriod}
+                    />
+                    <span className="text-green-600 font-medium">{monitor.uptime.toFixed(3)}% uptime</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Response Times Chart */}
         {shouldShowHistory && monitorId && (
-          <div className="mt-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Response times</h3>
             <PublicTimeSeriesChart
               monitorId={monitorId}
               period={
@@ -187,9 +171,8 @@ const PublicPage = ({ id }: { id: string }) => {
           </div>
         )}
 
-        {/* Services Section Component */}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
