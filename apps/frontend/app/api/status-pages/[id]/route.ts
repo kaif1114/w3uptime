@@ -17,8 +17,13 @@ const updateSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string(),
+        widgetType: z.enum(["current", "with_history", "with_history_chart"]).optional(),
         resources: z.array(
-          z.object({ type: z.literal("monitor"), monitorId: z.string() })
+          z.object({
+            id: z.string().optional(),
+            type: z.literal("monitor"),
+            monitorId: z.string(),
+          })
         ),
       })
     )
@@ -80,11 +85,35 @@ export const GET = withAuth(
         logoLinkUrl: statusPage.logo,
         supportUrl: statusPage.supportUrl,
         historyRange: "7d", // Default value
-        sections: statusPage.statusPageSections.map((section) => ({
-          id: section.id,
-          name: section.name,
-          resources: [{ type: "monitor", monitorId: section.monitorId }],
-        })),
+        sections: statusPage.statusPageSections.map((section) => {
+          // Map database StatusPageSectionType to frontend WidgetType
+          let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
+          
+          switch (section.type) {
+            case "STATUS":
+              widgetType = "current";
+              break;
+            case "HISTORY":
+              widgetType = "with_history";
+              break;
+            case "BOTH":
+              widgetType = "with_history_chart";
+              break;
+            default:
+              widgetType = "with_history";
+          }
+
+          return {
+            id: section.id,
+            name: section.name,
+            widgetType,
+            resources: [{
+              id: crypto.randomUUID(),
+              type: "monitor" as const,
+              monitorId: section.monitorId,
+            }],
+          };
+        }),
         maintenances: statusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,
@@ -165,13 +194,32 @@ export const PATCH = withAuth(
         // Update existing sections and create new ones if needed; do not delete others
         for (let index = 0; index < parsed.data.sections.length; index++) {
           const section = parsed.data.sections[index];
-          const monitorId = section.resources?.[0]?.monitorId;
+          const resource = section.resources?.[0];
+          const monitorId = resource?.monitorId;
+
+          // Map frontend WidgetType to database StatusPageSectionType
+          let dbType: "STATUS" | "HISTORY" | "BOTH" = "BOTH";
+          
+          switch (section.widgetType) {
+            case "current":
+              dbType = "STATUS";
+              break;
+            case "with_history":
+              dbType = "HISTORY";
+              break;
+            case "with_history_chart":
+              dbType = "BOTH";
+              break;
+            default:
+              dbType = "BOTH";
+          }
 
           try {
             await prisma.statusPageSection.update({
               where: { id: section.id },
               data: {
                 name: section.name,
+                type: dbType,
                 order: index + 1,
                 ...(typeof monitorId === "string" && monitorId.trim().length > 0
                   ? { monitorId }
@@ -185,9 +233,8 @@ export const PATCH = withAuth(
                 data: {
                   id: section.id,
                   name: section.name,
-                  description: null,
+                  type: dbType,
                   order: index + 1,
-                  type: "BOTH",
                   monitorId,
                   statusPageId: id,
                 },
@@ -232,11 +279,35 @@ export const PATCH = withAuth(
         logoLinkUrl: finalStatusPage.logo,
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
-        sections: finalStatusPage.statusPageSections.map((section) => ({
-          id: section.id,
-          name: section.name,
-          resources: [{ type: "monitor", monitorId: section.monitorId }],
-        })),
+        sections: finalStatusPage.statusPageSections.map((section) => {
+          // Map database StatusPageSectionType to frontend WidgetType
+          let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
+          
+          switch (section.type) {
+            case "STATUS":
+              widgetType = "current";
+              break;
+            case "HISTORY":
+              widgetType = "with_history";
+              break;
+            case "BOTH":
+              widgetType = "with_history_chart";
+              break;
+            default:
+              widgetType = "with_history";
+          }
+
+          return {
+            id: section.id,
+            name: section.name,
+            widgetType,
+            resources: [{
+              id: crypto.randomUUID(),
+              type: "monitor" as const,
+              monitorId: section.monitorId,
+            }],
+          };
+        }),
         maintenances: finalStatusPage.maintenances.map((maintenance: DbMaintenance) => ({
           id: maintenance.id,
           title: maintenance.title,

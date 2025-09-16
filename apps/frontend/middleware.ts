@@ -12,6 +12,7 @@ const publicRoutes: string[] = [
   "/api/auth/session",
   "/api/auth/logout",
   "/api/public/status-pages",
+  "/api/public/monitors", // Allow public access to monitor timeseries data
   "/api/proposals", // Allow public access to proposals API for reading
   "/status",
   "/_next", // Next.js internal assets

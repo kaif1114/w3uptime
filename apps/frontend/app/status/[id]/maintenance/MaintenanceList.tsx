@@ -2,35 +2,20 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import React from 'react'
-import { useMaintenances } from '@/hooks/useMaintenances'
-import type { Maintenance as MaintenanceType } from "@/hooks/useMaintenances";
+import { useMaintenanceData, type PublicMaintenanceData } from '@/hooks/usePublicMaintenances'
+import { MaintenanceListSkeleton } from '@/components/skeletons/StatusPageSkeletons'
 
 interface MaintenanceListProps {
   statusPageId: string;
+  isPublic?: boolean;
 }
 
-const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
-  const { data: maintenancesData, isLoading, error } = useMaintenances(statusPageId);
+const MaintenanceList = ({ statusPageId, isPublic = true }: MaintenanceListProps) => {
+  const { data: maintenancesData, isLoading, error } = useMaintenanceData(statusPageId, isPublic);
   const maintenances = maintenancesData?.maintenances || [];
 
   if (isLoading) {
-    return (
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <MaintenanceListSkeleton />;
   }
 
   if (error) {
@@ -60,7 +45,7 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="space-y-4">
-        {maintenances.map((maintenance: MaintenanceType) => (
+        {maintenances.map((maintenance: PublicMaintenanceData) => (
           <Card key={maintenance.id} className="border border-border/50 bg-card shadow-sm">
             <CardContent className="p-6">
               <div className="space-y-2">
@@ -73,8 +58,8 @@ const MaintenanceList = ({ statusPageId }: MaintenanceListProps) => {
                   </p>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  {new Date(maintenance.start).toLocaleString()} -{" "}
-                  {new Date(maintenance.end).toLocaleString()}
+                  {new Date(maintenance.from).toLocaleString()} -{" "}
+                  {new Date(maintenance.to).toLocaleString()}
                 </div>
                 <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                   {maintenance.status}

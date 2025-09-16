@@ -147,10 +147,10 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
 
   return (
     <TooltipProvider>
-      <Card className={className}>
-        <CardHeader>
+   
+        <div>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-medium">{title}</CardTitle>
+            <div className="text-lg font-medium">{title}</div>
             <div className="text-right">
               <div className="text-2xl font-bold text-green-600">
                 {overallUptime.toFixed(2)}
@@ -160,8 +160,8 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        </div>
+        <div className="space-y-6">
           {/* Status bars grid */}
           <div className="space-y-4">
             <div className="flex gap-1">
@@ -205,8 +205,8 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
               <StatusLegend />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+    
     </TooltipProvider>
   );
 };

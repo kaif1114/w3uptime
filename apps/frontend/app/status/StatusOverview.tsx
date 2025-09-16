@@ -1,7 +1,6 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { CheckCircle, XCircle, AlertTriangle, Clock, Activity } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface Monitor {
   id: string;
@@ -21,9 +20,10 @@ interface Section {
 
 interface StatusOverviewProps {
   sections: Section[];
+  renderStatusBars?: (monitorId: string) => React.ReactNode;
 }
 
-export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
+export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections, renderStatusBars }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'up':
@@ -62,13 +62,13 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
       </div>
 
       {/* Main Status Card */}
-      <Card>
-        <CardHeader>
+   
+        <div>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <Activity className="h-5 w-5" />
               <span>monitor maintenance</span>
-            </CardTitle>
+            </div>
             <div className="flex items-center space-x-2">
               {getStatusIcon(overallStatus)}
               <span className="text-sm font-medium text-foreground">
@@ -76,8 +76,8 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
               </span>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div>
           {sections.map((section) => (
             <div key={section.id} className="space-y-4">
               {section.monitors.map((monitor) => (
@@ -89,6 +89,12 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
+                    {/* Status Bars */}
+                    {renderStatusBars && (
+                      <div className="flex-shrink-0">
+                        {renderStatusBars(monitor.id)}
+                      </div>
+                    )}
                     <span className="text-green-600 font-semibold">{monitor.uptime.toFixed(3)}% uptime</span>
                     <div className="flex items-center space-x-1">
                       {getStatusIcon(monitor.status)}
@@ -99,8 +105,8 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections }) => {
               ))}
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+  
     </div>
   );
 };
