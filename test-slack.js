@@ -15,7 +15,7 @@ async function testSlackIntegration() {
 
   // Check environment variables
   const token = process.env.SLACK_BOT_TOKEN;
-  const defaultChannel = process.env.SLACK_DEFAULT_CHANNEL || '#alerts';
+  const defaultChannel = process.env.SLACK_CHANNEL || 'W3UPTIME';
 
   if (!token) {
     console.error('❌ SLACK_BOT_TOKEN is not set in environment variables');

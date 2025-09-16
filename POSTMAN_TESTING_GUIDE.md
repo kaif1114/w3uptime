@@ -196,7 +196,7 @@ EMAIL_FROM="W3Uptime Test <noreply@test.com>"
 
 # Optional: Slack Testing
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-SLACK_DEFAULT_CHANNEL=#alerts
+SLACK_CHANNEL=W3UPTIME
 ```
 
 ## Common Issues & Solutions

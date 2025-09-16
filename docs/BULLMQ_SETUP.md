@@ -62,7 +62,7 @@ EMAIL_FROM="W3Uptime <noreply@your-domain.com>"
 
 # Slack Configuration (Optional)
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-SLACK_DEFAULT_CHANNEL=#alerts
+SLACK_CHANNEL=W3UPTIME
 
 # Application URL (for email links)
 NEXT_PUBLIC_APP_URL=http://localhost:8000
