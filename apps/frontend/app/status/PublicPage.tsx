@@ -7,7 +7,6 @@ import { useState } from "react";
 import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import DailyStatusBarChart from "./Barchart";
-import ResponseTimeCharts from "./Chart";
 import { StatusOverview } from "./StatusOverview";
 import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
 import { UptimeStatusBars } from "@/components/status/UptimeStatusBars";

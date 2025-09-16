@@ -1,7 +1,6 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { CheckCircle, XCircle, AlertTriangle, Clock, Activity } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface Monitor {
   id: string;
