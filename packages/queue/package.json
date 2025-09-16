@@ -1,0 +1,26 @@
+{
+  "name": "@w3uptime/queue",
+  "version": "0.1.0",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.10.0",
+    "axios": "^1.7.7",
+    "bullmq": "^5.28.0",
+    "ioredis": "^5.4.1",
+    "nodemailer": "^6.9.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "@types/nodemailer": "^6.4.19",
+    "typescript": "5.8.3"
+  },
+  "peerDependencies": {
+    "db": "*"
+  }
+}

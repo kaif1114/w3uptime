@@ -27,6 +27,22 @@ services:
       - -c  
       - timescaledb.max_background_workers=16
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: pgadmin
@@ -46,6 +62,7 @@ services:
 volumes:
   timescaledb_data:
   pgadmin_data:
+  redis_data:
 
 networks:
   app-network:
