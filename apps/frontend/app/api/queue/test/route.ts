@@ -11,7 +11,7 @@ const testAlertSchema = z.object({
 });
 
 // POST /api/queue/test - Test BullMQ alert system
-export const POST = withAuth(async (req: NextRequest, user) => {
+export const POST = withAuth(async (req: NextRequest, user, session) => {
   try {
     const body = await req.json();
     const validation = testAlertSchema.safeParse(body);
@@ -89,6 +89,11 @@ export const POST = withAuth(async (req: NextRequest, user) => {
           url: monitor.url,
         },
       });
+    } else {
+      return NextResponse.json(
+        { error: "Invalid test type" },
+        { status: 400 }
+      );
     }
 
   } catch (error) {
