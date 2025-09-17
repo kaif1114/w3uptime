@@ -21,6 +21,7 @@ export const getEmailConfig = (): EmailConfig => ({
 export const getSlackConfig = (): SlackConfig => ({
   token: process.env.SLACK_BOT_TOKEN || '',
   defaultChannel: process.env.SLACK_CHANNEL || 'W3UPTIME',
+
 });
 
 export const queueConfig: QueueConfig = {
