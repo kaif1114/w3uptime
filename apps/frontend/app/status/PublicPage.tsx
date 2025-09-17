@@ -1,161 +1,193 @@
-//this contains all the components for the public page main /status/id
-//this is the main page for the public page
+"use client";
+import { CheckCircle, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
+import { useState } from "react";
+import { format } from "date-fns";
 
-'use client'
-import React, { useState } from 'react'
-import Navbar from './Navbar'
-import { notFound } from 'next/navigation'
-import { TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useDailyStatus } from "@/hooks/useDailyStatus";
+import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
+import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
+import { UptimeStatusBars } from "@/components/status/UptimeStatusBars";
+import {
+  StatusOverviewSkeleton,
+  ResponseTimeChartsSkeleton,
+} from "@/components/skeletons/StatusPageSkeletons";
 
-import { StatusOverview } from './StatusOverview'
-import { ServicesSection } from './ServicesSection'
-import ResponseTimeCharts from './Chart'
-import DailyStatusBarChart from './Barchart'
-import { useDailyStatus } from '@/hooks/useDailyStatus'  
-// Sample data for demonstration
-const sampleStatusPageData = {
-  id: '1',
-  name: 'Digital Alternatives GCC',
-  logoUrl: '/logo.png',
-  logoLinkUrl: 'https://digitalalternativesgcc.com',
-  supportUrl: 'https://support.digitalalternativesgcc.com',
-  sections: [
-    {
-      id: '1',
-      name: 'Core Services',
-      monitors: [
-        {
-          id: '1',
-          name: 'digitalalternativesgcc.com',
-          url: 'https://digitalalternativesgcc.com',
-          status: 'up' as const,
-          uptime: 99.985,
-          responseTime: 245,
-          lastChecked: new Date().toISOString()
-        }
-      ]
-    }
-  ],
-  maintenances: [],
-  updates: [],
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
-};
+// Types for components (matching the expected interfaces)
+interface Monitor {
+  id: string;
+  name: string;
+  url: string;
+  status: "up" | "down" | "maintenance";
+  uptime: number;
+  responseTime: number;
+  lastChecked: string;
+}
 
-// Sample chart data
-const generateSampleChartData = () => {
-  const data: Array<{
-    timestamp: string;
-    responseTime: number;
-    uptime: number;
-    status: 'up' | 'down' | 'maintenance';
-  }> = [];
-  const now = new Date();
-  
-  for (let i = 23; i >= 0; i--) {
-    const timestamp = new Date(now.getTime() - (i * 60 * 60 * 1000));
-    const responseTime = 200 + Math.random() * 600; // 200-800ms
-    const uptime = 95 + Math.random() * 5; // 95-100%
-    const status: 'up' | 'down' | 'maintenance' = Math.random() > 0.95 ? 'down' : 'up';
-    
-    data.push({
-      timestamp: timestamp.toISOString(),
-      responseTime,
-      uptime,
-      status
-    });
-  }
-  
-  return data;
-};
+interface Section {
+  id: string;
+  name: string;
+  monitors: Monitor[];
+}
 
-const PublicPage = ({params}: {params: {service: string}}) => {
-  const [selectedPeriod, setSelectedPeriod] = useState<'24h' | '7d' | '30d'>('24h');
-  
-  // For demo purposes, use sample data
-  const statusPageData = sampleStatusPageData;
-  
-  // Get the monitor ID from the first monitor in the first section
-  const monitorId = statusPageData.sections[0]?.monitors[0]?.id || '';
-  
+const PublicPage = ({ id }: { id: string }) => {
+  const [selectedPeriod, setSelectedPeriod] = useState<"24h" | "7d" | "30d">(
+    "24h"
+  );
+
+  // Fetch public status page data (includes sections, maintenances, updates)
+  const {
+    data: statusPageData,
+    isLoading: isStatusPageLoading,
+    error: statusPageError,
+  } = usePublicStatusPageData(id);
+
   // Fetch daily status data for the chart
-  const { data: dailyStatusData, isLoading: isDailyStatusLoading } = useDailyStatus({
-    monitorId,
-    period: '30d',
-    isPublic: true,
-    enabled: !!monitorId
-  });
+  const { data: dailyStatusData, isLoading: isDailyStatusLoading } =
+    useDailyStatus({
+      monitorId: id,
+      period: "30d",
+      isPublic: true,
+      enabled: !!id,
+    });
 
-  if (!statusPageData) {
+  // Handle loading state
+  if (isStatusPageLoading) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <StatusOverviewSkeleton />
+          <ResponseTimeChartsSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (statusPageError || !statusPageData) {
     notFound();
   }
 
+  // Transform API data to match component interfaces
+  const transformedSections: Section[] = statusPageData.sections.map(
+    (section) => ({
+      id: section.id,
+      name: section.name,
+      monitors: [
+        {
+          id: section.monitor.id,
+          name: section.monitor.name,
+          url: section.monitor.url,
+          status:
+            section.monitor.status === "ACTIVE"
+              ? "up"
+              : ("down" as "up" | "down" | "maintenance"),
+          uptime: 99.9, // Default uptime - would need to calculate from actual data
+          responseTime: 150, // Default response time - would need actual data
+          lastChecked: new Date().toISOString(),
+        },
+      ],
+    })
+  );
+
+  // Determine which charts to show based on section types
+  const shouldShowHistory = statusPageData.sections.some(
+    (section) => section.type === "HISTORY" || section.type === "BOTH"
+  );
+  const shouldShowStatus = statusPageData.sections.some(
+    (section) => section.type === "STATUS" || section.type === "BOTH"
+  );
+
+  // Get monitor ID for history chart (use first monitor)
+  const monitorId = statusPageData.sections[0]?.monitor.id;
+
+  // Check overall status
+  const allOperational = transformedSections.every((section) =>
+    section.monitors.every((monitor) => monitor.status === "up")
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar 
-        logoUrl={statusPageData.logoUrl}
-        companyName={statusPageData.name}
-        logoLinkUrl={statusPageData.logoLinkUrl}
-        currentPage="status"
-        serviceId={params.service}
-      />
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Status Overview Component */}
-        <StatusOverview sections={statusPageData.sections} />
+    <div className="min-h-screen bg-background p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="text-center space-y-4">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+          <h1 className="text-4xl font-semibold text-foreground">
+            {allOperational
+              ? "All services are online"
+              : "Some services are down"}
+          </h1>
+          <p className="text-muted-foreground">
+            Last updated on {format(new Date(), "MMM dd 'at' hh:mmaaa")} HDT
+          </p>
+        </div>
 
-        {/* Charts Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>Performance Metrics</span>
-              </CardTitle>
-              <div className="flex space-x-2">
-                {['24h', '7d', '30d'].map((period) => (
-                  <Button
-                    key={period}
-                    variant={selectedPeriod === period ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedPeriod(period as '24h' | '7d' | '30d')}
-                  >
-                    {period}
-                  </Button>
-                ))}
+        {/* Combined Services and Response Times Section */}
+        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
+          {/* Section Header */}
+          {transformedSections.map((section) => (
+            <div key={section.id}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-card-foreground">
+                  {section.name}
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm font-medium text-card-foreground">
+                    Operational
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </div>
               </div>
+
+              {/* Monitor Row with Status Bars and Uptime */}
+              {section.monitors.map((monitor) => (
+                <div key={monitor.id} className="space-y-2">
+                  {/* Service name and uptime percentage row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="font-medium text-card-foreground">
+                        {monitor.name}
+                      </span>
+                    </div>
+                    <span className="text-green-600 font-medium">
+                      {monitor.uptime.toFixed(3)}% uptime
+                    </span>
+                  </div>
+
+                  {/* Status Bars on separate row - full width, always 30 days */}
+                  <div className="w-full">
+                    <UptimeStatusBars monitorId={monitor.id} period="30d" />
+                  </div>
+                </div>
+              ))}
             </div>
-          </CardHeader>
-          <CardContent>
-            {isDailyStatusLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 "></div>
-              </div>
-            ) : (
-              <DailyStatusBarChart 
-                data={dailyStatusData?.data || []} 
-                period={30}
-                title="30-Day Status History"
-                showLegend={true}
-              />
-            )}
-          </CardContent>
-          <CardContent>
-            <ResponseTimeCharts />
-          </CardContent>
-        </Card>
+          ))}
 
-        {/* Services Section Component */}
-        <ServicesSection 
-          sections={statusPageData.sections}
-          maintenances={statusPageData.maintenances}
-          updates={statusPageData.updates}
-        />
+          {/* Response Times Chart */}
+          {shouldShowHistory && monitorId && (
+            <div className="mt-6">
+              <PublicTimeSeriesChart
+                monitorId={monitorId}
+                period={
+                  selectedPeriod === "24h"
+                    ? "day"
+                    : selectedPeriod === "7d"
+                      ? "week"
+                      : "month"
+                }
+                type="latency"
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default PublicPage;

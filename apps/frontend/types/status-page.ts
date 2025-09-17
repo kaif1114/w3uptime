@@ -6,9 +6,6 @@ export interface StatusPageResourceMonitor {
   id: string;
   type: "monitor";
   monitorId: string;
-  publicName?: string;
-  explanation?: string;
-  widgetType?: WidgetType;
 }
 
 export type StatusPageResource = StatusPageResourceMonitor; // Future: add groups/services
@@ -16,6 +13,7 @@ export type StatusPageResource = StatusPageResourceMonitor; // Future: add group
 export interface StatusPageSection {
   id: string;
   name: string;
+  widgetType: WidgetType;
   resources: StatusPageResource[];
 }
 

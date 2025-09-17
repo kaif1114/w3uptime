@@ -1,23 +1,40 @@
 'use client';
 
-import { useMonitorTimeSeries } from "@/hooks/useMonitors";
-import { AlertTriangle } from "lucide-react";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
+import { Button } from "@/components/ui/button";
+import { usePublicMonitorTimeSeries } from "@/hooks/usePublicStatusPage";
 import { format } from 'date-fns';
+import { AlertTriangle } from "lucide-react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-interface TimeSeriesChartProps {
+interface PublicTimeSeriesChartProps {
   monitorId: string;
   period: string;
   type: 'latency' | 'uptime';
+  selectedPeriod: "24h" | "7d" | "30d";
+  onPeriodChange: (period: "24h" | "7d" | "30d") => void;
 }
 
-export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProps) {
-  const { data: timeseriesData, isLoading, error } = useMonitorTimeSeries(monitorId, period);
+export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod, onPeriodChange }: PublicTimeSeriesChartProps) {
+  const { data: timeseriesData, isLoading, error } = usePublicMonitorTimeSeries(monitorId, period);
 
   if (isLoading) {
     return (
       <div>
-        <h1 className="capitalize">{type} Over Time</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="capitalize">{type} Over Time</h1>
+          <div className="flex space-x-2">
+            {["24h", "7d", "30d"].map((periodOption) => (
+              <Button
+                key={periodOption}
+                variant={selectedPeriod === periodOption ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPeriodChange(periodOption as "24h" | "7d" | "30d")}
+              >
+                {periodOption}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div>
           <div className="animate-pulse">
             <div className="h-80 bg-muted rounded"></div>
@@ -30,7 +47,21 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
   if (error) {
     return (
       <div>
-        <h1 className="capitalize">{type} Over Time</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="capitalize">{type} Over Time</h1>
+          <div className="flex space-x-2">
+            {["24h", "7d", "30d"].map((periodOption) => (
+              <Button
+                key={periodOption}
+                variant={selectedPeriod === periodOption ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPeriodChange(periodOption as "24h" | "7d" | "30d")}
+              >
+                {periodOption}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div>
           <div className="text-center py-12">
             <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
@@ -44,7 +75,21 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
   if (!timeseriesData?.data || timeseriesData.data.length === 0) {
     return (
       <div>
-        <h1 className="capitalize">{type} Over Time</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="capitalize">{type} Over Time</h1>
+          <div className="flex space-x-2">
+            {["24h", "7d", "30d"].map((periodOption) => (
+              <Button
+                key={periodOption}
+                variant={selectedPeriod === periodOption ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPeriodChange(periodOption as "24h" | "7d" | "30d")}
+              >
+                {periodOption}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div>
           <div className="text-center py-12">
             <p className="text-muted-foreground">No {type} data available for this period</p>
@@ -102,7 +147,21 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
   if (type === 'latency') {
     return (
       <div>
-        <h1>Response Time Over Time</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1>Response Time Over Time</h1>
+          <div className="flex space-x-2">
+            {["24h", "7d", "30d"].map((periodOption) => (
+              <Button
+                key={periodOption}
+                variant={selectedPeriod === periodOption ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPeriodChange(periodOption as "24h" | "7d" | "30d")}
+              >
+                {periodOption}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -150,7 +209,21 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
   // Uptime chart
   return (
       <div>
-      <h1>Uptime Over Time</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1>Uptime Over Time</h1>
+        <div className="flex space-x-2">
+          {["24h", "7d", "30d"].map((periodOption) => (
+            <Button
+              key={periodOption}
+              variant={selectedPeriod === periodOption ? "default" : "outline"}
+              size="sm"
+              onClick={() => onPeriodChange(periodOption as "24h" | "7d" | "30d")}
+            >
+              {periodOption}
+            </Button>
+          ))}
+        </div>
+      </div>
       <div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -177,14 +250,14 @@ export function TimeSeriesChart({ monitorId, period, type }: TimeSeriesChartProp
                   borderRadius: '6px',
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="uptime" 
-                stroke="#8b5cf6"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
+                <Line 
+                  type="monotone" 
+                  dataKey="uptime" 
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
             </LineChart>
           </ResponsiveContainer>
         </div>
