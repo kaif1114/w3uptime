@@ -1,5 +1,6 @@
 import { prisma } from 'db/client';
 import { alertSystem } from "../../../packages/queue/src";
+import emailService, { createRecoveryEmailTemplate } from "./email";
 export interface EscalationContext {
   monitorId: string;
   incidentTitle: string;
@@ -26,6 +27,19 @@ class BullMQEscalationService {
    */
   async startEscalation(context: EscalationContext): Promise<void> {
     try {
+      // Check if there's already an ongoing incident for this monitor
+      const existingIncident = await prisma.incident.findFirst({
+        where: {
+          monitorId: context.monitorId,
+          status: { in: ['ONGOING', 'ACKNOWLEDGED'] }
+        }
+      });
+
+      if (existingIncident) {
+        console.log(`Incident already exists for monitor: ${context.monitorId}, skipping BullMQ escalation`);
+        return;
+      }
+
       // Get monitor with escalation policy
       const monitor = await prisma.monitor.findUnique({
         where: { id: context.monitorId },
@@ -119,6 +133,7 @@ class BullMQEscalationService {
         monitorUrl: monitor.url,
         incidentTitle: context.incidentTitle,
         severity,
+        userId: monitor.userId, // Pass the user ID for user-specific integrations
         escalationLevels: monitor.escalationPolicy.levels.map(level => ({
           id: level.id,
           levelOrder: level.levelOrder,
@@ -157,6 +172,32 @@ class BullMQEscalationService {
    */
   private async sendRecoveryNotifications(monitorId: string): Promise<void> {
     try {
+      // Check if recovery notifications were already sent for the current incident
+      const currentIncident = await prisma.incident.findFirst({
+        where: {
+          monitorId,
+          status: { in: ['ONGOING', 'ACKNOWLEDGED'] }
+        }
+      });
+
+      if (!currentIncident) {
+        console.log(`No ongoing incident found for monitor: ${monitorId}, skipping recovery notifications`);
+        return;
+      }
+
+      // Check if recovery notification was already sent for this incident
+      const existingRecoveryEvent = await prisma.timelineEvent.findFirst({
+        where: {
+          incidentId: currentIncident.id,
+          description: { contains: 'Recovery notification sent' }
+        }
+      });
+
+      if (existingRecoveryEvent) {
+        console.log(`Recovery notification already sent for incident: ${currentIncident.id}`);
+        return;
+      }
+
       const monitor = await prisma.monitor.findUnique({
         where: { id: monitorId },
         include: {
@@ -170,7 +211,7 @@ class BullMQEscalationService {
 
       if (!monitor) return;
 
-      // Get all recent escalation logs for this monitor
+      // Get all recent escalation logs for this monitor from the current incident
       const recentAlerts = await prisma.alert.findMany({
         where: {
           monitorId,
@@ -187,10 +228,63 @@ class BullMQEscalationService {
         }
       });
 
-     }
-     catch (error) {
+      // Collect all unique email contacts who received notifications
+      const notifiedContacts = new Set<string>();
+      
+      recentAlerts.forEach(alert => {
+        alert.EscalationLog.forEach(log => {
+          if (log.escalationLevel.channel === 'EMAIL') {
+            log.escalationLevel.contacts.forEach(contact => {
+              if (this.isValidEmail(contact)) {
+                notifiedContacts.add(contact);
+              }
+            });
+          }
+        });
+      });
+
+      if (notifiedContacts.size > 0) {
+        // Send recovery emails directly using the email service
+        const recoveryTemplate = createRecoveryEmailTemplate(
+          monitor.name,
+          monitor.url,
+          new Date()
+        );
+
+        // Send recovery emails to all notified contacts
+        for (const contact of notifiedContacts) {
+          await emailService.sendEmail({
+            to: contact,
+            subject: recoveryTemplate.subject,
+            html: recoveryTemplate.html,
+            text: recoveryTemplate.text
+          });
+        }
+
+        // Mark recovery notification as sent in timeline
+        await prisma.timelineEvent.create({
+          data: {
+            description: `Recovery notification sent to ${notifiedContacts.size} contacts`,
+            incidentId: currentIncident.id,
+            type: 'RESOLUTION',
+            createdAt: new Date()
+          }
+        });
+
+        console.log(`Recovery notifications sent to ${notifiedContacts.size} contacts for monitor: ${monitor.name}`);
+      }
+
+    } catch (error) {
       console.error('Error sending recovery notifications:', error);
     }
+  }
+
+  /**
+   * Validate email address
+   */
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
   /**
@@ -204,14 +298,6 @@ class BullMQEscalationService {
     if (levelCount >= 3) return 'HIGH';
     if (levelCount >= 2) return 'MEDIUM';
     return 'LOW';
-  }
-
-  /**
-   * Validate email address
-   */
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 
   /**

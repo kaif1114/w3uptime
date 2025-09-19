@@ -38,6 +38,26 @@ class EscalationService {
    */
   async startEscalation(context: EscalationContext): Promise<void> {
     try {
+      // Check if escalation is already active for this monitor
+      const escalationKey = `escalation_${context.monitorId}`;
+      if (this.activeEscalations.has(escalationKey)) {
+        console.log(`Escalation already active for monitor: ${context.monitorId}`);
+        return;
+      }
+
+      // Check if there's already an ongoing incident for this monitor
+      const existingIncident = await prisma.incident.findFirst({
+        where: {
+          monitorId: context.monitorId,
+          status: { in: ['ONGOING', 'ACKNOWLEDGED'] }
+        }
+      });
+
+      if (existingIncident) {
+        console.log(`Incident already exists for monitor: ${context.monitorId}, skipping escalation`);
+        return;
+      }
+
       // Get monitor with escalation policy
       const monitor = await prisma.monitor.findUnique({
         where: { id: context.monitorId },
@@ -106,11 +126,11 @@ class EscalationService {
     if (this.activeEscalations.has(escalationKey)) {
       clearTimeout(this.activeEscalations.get(escalationKey)!);
       this.activeEscalations.delete(escalationKey);
-      console.log(`Stopped escalation for monitor: ${monitorId}`);
+      console.log(`Stopped legacy escalation for monitor: ${monitorId}`);
     }
 
-    // Send recovery notifications to all contacts who received alerts
-    await this.sendRecoveryNotifications(monitorId);
+    // Note: Recovery notifications are now handled by BullMQ escalation service
+    // to prevent duplicate emails. Legacy service only stops timers.
   }
 
   /**

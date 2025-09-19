@@ -1,6 +1,8 @@
 import pgClient from "./pg";
 import { createIncident, resolveIncident } from "./incident";
 import escalationService from "./escalation";
+import bullMQEscalationService from "./escalationBullmq";
+import { prisma } from "db/client";
 
 // Global registry for active SSE streams with user authorization (using globalThis for persistence)
 const globalForStreams = globalThis as unknown as {
@@ -29,7 +31,7 @@ export const initializeNotificationHandler = () => {
   }
 
   // Set up global notification handler
-  pgClient.on('notification', (msg) => {
+  pgClient.on('notification', async (msg) => {
     try {
       if (msg.channel === 'monitor_update') {
         const payload = JSON.parse(msg.payload || '{}');
@@ -51,20 +53,33 @@ export const initializeNotificationHandler = () => {
         }
         if(payload.status === 'BAD') {
           const incidentTime = new Date(payload.checkedAt);
-          createIncident(payload.monitorId, 'Monitor is down', incidentTime);
           
-          // Start escalation process
-          escalationService.startEscalation({
-            monitorId: payload.monitorId,
-            incidentTitle: 'Monitor is down',
-            timestamp: incidentTime
+          // Check if there's already an ongoing incident for this monitor
+          const existingIncident = await prisma.incident.findFirst({
+            where: {
+              monitorId: payload.monitorId,
+              status: { in: ['ONGOING', 'ACKNOWLEDGED'] }
+            }
           });
+          
+          // Only create incident and start escalation if no ongoing incident exists
+          if (!existingIncident) {
+            createIncident(payload.monitorId, 'Monitor is down', incidentTime);
+            
+            // Start escalation process only for new incidents
+            escalationService.startEscalation({
+              monitorId: payload.monitorId,
+              incidentTitle: 'Monitor is down',
+              timestamp: incidentTime
+            });
+          }
         }
         else if(payload.status === 'GOOD') {
           resolveIncident(payload.monitorId, new Date(payload.checkedAt));
           
-          // Stop escalation process
-          escalationService.stopEscalation(payload.monitorId);
+          // Stop both escalation processes but only send recovery notifications once via BullMQ service
+          await escalationService.stopEscalation(payload.monitorId);
+          await bullMQEscalationService.stopEscalation(payload.monitorId);
         }
       }
     } catch (error) {

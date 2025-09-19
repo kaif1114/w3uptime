@@ -29,6 +29,8 @@ model User {
   proposals          Proposal[]
   proposalComments   ProposalComment[]
   proposalVotes      ProposalVote[]
+  // Integrations
+  slackIntegrations  SlackIntegration[]
 }
 
 model GeoLocation {
@@ -195,6 +197,26 @@ model Session {
   @@index([sessionId])
   @@index([userId])
   @@index([walletAddress])
+}
+
+model SlackIntegration {
+  id                String   @id @default(uuid())
+  userId            String
+  teamId            String
+  teamName          String
+  accessToken       String
+  botUserId         String?
+  botAccessToken    String?
+  scope             String
+  authedUser        Json?    // Store the authed user object from Slack OAuth
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
 }
 
 model StatusPage {
