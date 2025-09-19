@@ -141,7 +141,13 @@ export class WorkerManager {
           data.message
         );
 
-        const result = await slackService.sendSlackMessage(data.contacts, message);
+        // Use user-specific Slack integration if userId is provided, otherwise fall back to global token
+        let result;
+        if (data.userId) {
+          result = await slackService.sendSlackMessageToUser(data.userId, data.contacts, message);
+        } else {
+          result = await slackService.sendSlackMessage(data.contacts, message);
+        }
         
         // Log the notification
         if (result.success) {

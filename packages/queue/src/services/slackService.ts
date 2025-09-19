@@ -2,6 +2,10 @@ import { WebClient } from '@slack/web-api';
 import { getSlackConfig } from '../config';
 import { NotificationResult } from '../types';
 
+// Use CommonJS require for Prisma to avoid ESM/CJS issues
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { prisma } = require('db/client');
+
 export interface SlackMessage {
   channel: string;
   text: string;
@@ -55,7 +59,9 @@ class SlackService {
           sentTo.push(channel);
           console.log(`💬 Slack message sent to ${channel}: ${result.ts}`);
         } else {
-          errors.push(`Failed to send to ${channel}: ${result.error}`);
+          const errorMsg = this.getSlackErrorMessage(result.error, channel);
+          errors.push(errorMsg);
+          console.error(`❌ Failed to send Slack message to ${channel}: ${result.error}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -71,12 +77,127 @@ class SlackService {
     };
   }
 
+  /**
+   * Send Slack message using user-specific integration
+   * This method fetches the user's Slack integration and uses their token
+   */
+  async sendSlackMessageToUser(
+    userId: string, 
+    channels: string[], 
+    message: SlackMessage
+  ): Promise<NotificationResult> {
+    try {
+      // Get user's active Slack integrations
+      const integrations = await prisma.slackIntegration.findMany({
+        where: {
+          userId: userId,
+          isActive: true
+        },
+        select: {
+          id: true,
+          teamId: true,
+          teamName: true,
+          accessToken: true,
+          botAccessToken: true
+        }
+      });
+
+      if (integrations.length === 0) {
+        return {
+          success: false,
+          sentTo: [],
+          errors: ['No active Slack integrations found for user']
+        };
+      }
+
+      const sentTo: string[] = [];
+      const errors: string[] = [];
+
+      // Try each integration until we find one that works for the channels
+      for (const integration of integrations) {
+        const token = integration.botAccessToken || integration.accessToken;
+        const slack = new WebClient(token);
+
+        for (const channel of channels) {
+          try {
+            const result = await slack.chat.postMessage({
+              channel: this.normalizeChannel(channel),
+              text: message.text,
+              blocks: message.blocks,
+            });
+
+            if (result.ok) {
+              sentTo.push(`${channel} (${integration.teamName})`);
+              console.log(`💬 Slack message sent to ${channel} in ${integration.teamName}: ${result.ts}`);
+            } else {
+              const errorMsg = this.getSlackErrorMessage(result.error, `${channel} (${integration.teamName})`);
+              errors.push(errorMsg);
+              console.error(`❌ Failed to send Slack message to ${channel} in ${integration.teamName}: ${result.error}`);
+            }
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            errors.push(`Failed to send to ${channel} (${integration.teamName}): ${errorMessage}`);
+            console.error(`❌ Failed to send Slack message to ${channel} in ${integration.teamName}:`, error);
+          }
+        }
+      }
+
+      return {
+        success: sentTo.length > 0,
+        sentTo,
+        errors
+      };
+
+    } catch (error) {
+      console.error('Error in sendSlackMessageToUser:', error);
+      return {
+        success: false,
+        sentTo: [],
+        errors: ['Failed to send Slack message: ' + (error instanceof Error ? error.message : 'Unknown error')]
+      };
+    }
+  }
+
   private normalizeChannel(channel: string): string {
-    // Ensure channel starts with # for public channels or @ for DMs
-    if (!channel.startsWith('#') && !channel.startsWith('@') && !channel.startsWith('C') && !channel.startsWith('D')) {
+    // Handle different channel formats:
+    // - Channel IDs: C1234567890 (public), D1234567890 (DM), G1234567890 (private)
+    // - Channel names: #channel-name or channel-name
+    // - User mentions: @username
+    
+    if (channel.match(/^[CDG][A-Z0-9]{8,10}$/)) {
+      // Already a valid channel ID, use as-is
+      return channel;
+    } else if (channel.startsWith('@')) {
+      // User mention, use as-is
+      return channel;
+    } else if (channel.startsWith('#')) {
+      // Channel name with #, use as-is
+      return channel;
+    } else {
+      // Plain channel name, add # prefix
       return `#${channel}`;
     }
-    return channel;
+  }
+
+  private getSlackErrorMessage(error: string | undefined, channel: string): string {
+    switch (error) {
+      case 'channel_not_found':
+        return `Channel ${channel} not found. Make sure the Channel ID is correct.`;
+      case 'not_in_channel':
+        return `Bot not in channel ${channel}. Please invite the W3Uptime bot to this channel.`;
+      case 'account_inactive':
+        return `Slack account inactive. Please check your bot token.`;
+      case 'invalid_auth':
+        return `Invalid Slack bot token. Please check your configuration.`;
+      case 'channel_is_archived':
+        return `Channel ${channel} is archived. Please unarchive or use a different channel.`;
+      case 'msg_too_long':
+        return `Message too long for channel ${channel}.`;
+      case 'rate_limited':
+        return `Rate limited when sending to ${channel}. Will retry automatically.`;
+      default:
+        return `Failed to send to ${channel}: ${error || 'Unknown error'}`;
+    }
   }
 }
 

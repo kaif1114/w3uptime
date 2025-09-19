@@ -489,7 +489,7 @@ export function EscalationPolicyDetailPage({
                                       {...form.register(
                                         `levels.${index}.target`
                                       )}
-                                      placeholder="Email, channel, or webhook URL"
+                                      placeholder="Email, Slack Channel ID, or webhook URL"
                                       onChange={(e) => {
                                         form.setValue(
                                           `levels.${index}.target`,

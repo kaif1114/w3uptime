@@ -465,13 +465,13 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                  minZoom={1}
                  fog={{
                    "color": "#220b30",
-                   "high-color": "#245cdf", 
+                   "high-color": "#245cdf",   
                    "horizon-blend": 0.02,
                    "space-color": "#000b19",
                    "star-intensity": 0.15
                  }}
                >
-                {/* Add country boundaries for hover detection */}
+
                 <Source
                   id="countries"
                   type="vector"

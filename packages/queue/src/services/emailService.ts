@@ -168,7 +168,7 @@ export const createRecoveryEmailTemplate = (
   recoveryTime: Date,
   downtimeDuration?: string
 ): EmailTemplate => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8000';
   const subject = `✅ Resolved: ${monitorName} is back online`;
 
   const html = `

@@ -18,9 +18,31 @@ import {
   Mail,
   MessageSquare,
   Webhook,
+  ExternalLink,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import z from "zod";
+
+interface SlackChannel {
+  id: string;
+  name: string;
+  isPrivate: boolean;
+  isMember: boolean;
+  purpose: string;
+  memberCount: number;
+}
+
+interface SlackIntegration {
+  id: string;
+  teamId: string;
+  teamName: string;
+  scope: string;
+  createdAt: string;
+  channels: SlackChannel[];
+  error?: string;
+}
 
 interface EscalationLevelItemProps {
   level: number;
@@ -66,6 +88,44 @@ export function EscalationLevelItem({
   const [errors, setErrors] = useState<{ target?: string; waitTime?: string }>(
     {}
   );
+  const [slackIntegrations, setSlackIntegrations] = useState<SlackIntegration[]>([]);
+  const [loadingSlack, setLoadingSlack] = useState(false);
+
+  // Fetch Slack integrations when method changes to SLACK
+  useEffect(() => {
+    if (method === "SLACK") {
+      fetchSlackIntegrations();
+    }
+  }, [method]);
+
+  const fetchSlackIntegrations = async () => {
+    try {
+      setLoadingSlack(true);
+      const response = await fetch('/api/integrations/slack/channels', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSlackIntegrations(data.integrations || []);
+      } else {
+        console.error('Failed to fetch Slack integrations');
+      }
+    } catch (error) {
+      console.error('Error fetching Slack integrations:', error);
+    } finally {
+      setLoadingSlack(false);
+    }
+  };
+
+  const getAllChannels = (): (SlackChannel & { teamName: string })[] => {
+    return slackIntegrations.flatMap(integration => 
+      integration.channels.map(channel => ({
+        ...channel,
+        teamName: integration.teamName
+      }))
+    );
+  };
 
   const validateTarget = (value: string) => {
     if (!value.trim()) {
@@ -76,6 +136,11 @@ export function EscalationLevelItem({
       const result = z.email().safeParse(value);
       if (!result.success) {
         return "Please enter a valid email address";
+      }
+    } else if (method === "SLACK") {
+      // Validate Slack channel ID format
+      if (!/^[CDG][A-Z0-9]{8,10}$/.test(value)) {
+        return "Please enter a valid Slack Channel ID (e.g., C1234567890)";
       }
     } else if (method === "WEBHOOK") {
       try {
@@ -115,7 +180,7 @@ export function EscalationLevelItem({
       case "EMAIL":
         return "user@example.com";
       case "SLACK":
-        return "#alerts or @username";
+        return "C1234567890 (Channel ID)";
       case "WEBHOOK":
         return "https://webhook.example.com/alerts";
       default:
@@ -128,7 +193,7 @@ export function EscalationLevelItem({
       case "EMAIL":
         return "Email Address";
       case "SLACK":
-        return "Slack Channel/User";
+        return "Slack Channel ID";
       case "WEBHOOK":
         return "Webhook URL";
       default:
@@ -207,14 +272,77 @@ export function EscalationLevelItem({
 
             <div className="space-y-2">
               <Label htmlFor={`target-${level}`}>{getTargetLabel()}</Label>
-              <Input
-                id={`target-${level}`}
-                value={target}
-                onChange={(e) => handleTargetChange(e.target.value)}
-                placeholder={getTargetPlaceholder()}
-                disabled={!method}
-                className={errors.target ? "border-destructive" : ""}
-              />
+              
+              {method === "SLACK" ? (
+                <div className="space-y-2">
+                  {loadingSlack ? (
+                    <div className="flex items-center gap-2 p-2 border rounded">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      <span className="text-sm text-muted-foreground">Loading channels...</span>
+                    </div>
+                  ) : slackIntegrations.length === 0 ? (
+                    <div className="p-3 border rounded bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                      <p className="text-sm text-amber-800 dark:text-amber-200 mb-2">
+                        No Slack integrations found. Connect your Slack workspace first.
+                      </p>
+                      <Link href="/settings/integrations" className="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" />
+                        Connect Slack
+                      </Link>
+                    </div>
+                  ) : (
+                    <Select value={target} onValueChange={handleTargetChange}>
+                      <SelectTrigger className={errors.target ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Select a Slack channel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAllChannels().map((channel) => (
+                          <SelectItem key={`${channel.teamName}-${channel.id}`} value={channel.id}>
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="text-gray-500">#</span>
+                              <span className="font-mono text-sm">{channel.name}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {channel.teamName}
+                              </Badge>
+                              {channel.isPrivate && (
+                                <Badge variant="outline" className="text-xs">Private</Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {/* Manual input fallback */}
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      Or enter Channel ID manually
+                    </summary>
+                    <div className="mt-2">
+                      <Input
+                        value={target}
+                        onChange={(e) => handleTargetChange(e.target.value)}
+                        placeholder="C1234567890 (Channel ID)"
+                        className={errors.target ? "border-destructive" : ""}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        💡 To find Channel ID: Right-click channel name → View channel details → Copy Channel ID
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              ) : (
+                <Input
+                  id={`target-${level}`}
+                  value={target}
+                  onChange={(e) => handleTargetChange(e.target.value)}
+                  placeholder={getTargetPlaceholder()}
+                  disabled={!method}
+                  className={errors.target ? "border-destructive" : ""}
+                />
+              )}
+              
               {errors.target && (
                 <p className="text-sm text-destructive">{errors.target}</p>
               )}

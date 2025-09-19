@@ -1,6 +1,5 @@
 import pgClient from "./pg";
 import { createIncident, resolveIncident } from "./incident";
-import escalationService from "./escalation";
 import bullMQEscalationService from "./escalationBullmq";
 import { prisma } from "db/client";
 
@@ -66,8 +65,8 @@ export const initializeNotificationHandler = () => {
           if (!existingIncident) {
             createIncident(payload.monitorId, 'Monitor is down', incidentTime);
             
-            // Start escalation process only for new incidents
-            escalationService.startEscalation({
+            // Start BullMQ escalation process only for new incidents (disabled legacy escalation)
+            await bullMQEscalationService.startEscalation({
               monitorId: payload.monitorId,
               incidentTitle: 'Monitor is down',
               timestamp: incidentTime
@@ -77,8 +76,7 @@ export const initializeNotificationHandler = () => {
         else if(payload.status === 'GOOD') {
           resolveIncident(payload.monitorId, new Date(payload.checkedAt));
           
-          // Stop both escalation processes but only send recovery notifications once via BullMQ service
-          await escalationService.stopEscalation(payload.monitorId);
+          // Stop BullMQ escalation process (disabled legacy escalation system)
           await bullMQEscalationService.stopEscalation(payload.monitorId);
         }
       }

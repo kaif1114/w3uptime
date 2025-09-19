@@ -16,6 +16,7 @@ async function testSlackIntegration() {
   // Check environment variables
   const token = process.env.SLACK_BOT_TOKEN;
   const defaultChannel = process.env.SLACK_CHANNEL || 'W3UPTIME';
+  const testChannelId = process.env.SLACK_TEST_CHANNEL_ID; // Optional: test with specific channel ID
 
   if (!token) {
     console.error('❌ SLACK_BOT_TOKEN is not set in environment variables');
@@ -36,11 +37,15 @@ async function testSlackIntegration() {
     const authTest = await slack.auth.test();
     console.log(`✅ Connected as: ${authTest.user} in ${authTest.team}`);
 
-    // Send test message
-    console.log(`\n📤 Sending test message to ${defaultChannel}...`);
+    // Determine which channel to test
+    const targetChannel = testChannelId || defaultChannel;
+    console.log(`\n📤 Sending test message to ${targetChannel}...`);
+    if (testChannelId) {
+      console.log(`   Using Channel ID: ${testChannelId}`);
+    }
     
     const testMessage = {
-      channel: defaultChannel,
+      channel: targetChannel,
       text: '🧪 W3Uptime Slack Integration Test',
       blocks: [
         {
@@ -71,7 +76,7 @@ async function testSlackIntegration() {
             },
             {
               type: 'mrkdwn',
-              text: `*Channel:*\n${defaultChannel}`
+              text: `*Channel:*\n${targetChannel}`
             },
             {
               type: 'mrkdwn',
@@ -101,9 +106,12 @@ async function testSlackIntegration() {
       
       console.log('\n🎉 Slack Integration Test PASSED!');
       console.log('\nNext steps:');
-      console.log('1. Create escalation policies with SLACK channel');
-      console.log('2. Add Slack channels to escalation levels');
-      console.log('3. Test with real incidents');
+      console.log('1. Create escalation policies with SLACK method');
+      console.log('2. Add Slack Channel IDs to escalation levels');
+      console.log('3. Invite W3Uptime bot to target channels');
+      console.log('4. Test with real incidents');
+      console.log('\n💡 To test with a specific Channel ID:');
+      console.log('   Set SLACK_TEST_CHANNEL_ID=C1234567890 in your .env file');
       
     } else {
       console.error('❌ Failed to send test message:', result.error);

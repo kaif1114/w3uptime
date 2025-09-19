@@ -19,6 +19,7 @@ export interface AlertJobData {
   incidentTitle: string;
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   timestamp: Date;
+  userId: string; // Added to support user-specific integrations
 }
 
 export interface EscalationJobData extends AlertJobData {
@@ -85,3 +86,6 @@ export interface QueueConfig {
     };
   };
 }
+
+
+

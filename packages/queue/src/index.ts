@@ -70,6 +70,7 @@ export class AlertSystem {
     monitorUrl: string;
     incidentTitle: string;
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    userId: string; // Added to support user-specific integrations
     escalationLevels: Array<{
       id: string;
       levelOrder: number;
@@ -105,6 +106,7 @@ export class AlertSystem {
       incidentTitle: data.incidentTitle,
       severity: data.severity,
       timestamp,
+      userId: data.userId,
     });
 
     // Schedule remaining levels
@@ -126,6 +128,7 @@ export class AlertSystem {
         timestamp,
         waitMinutes: secondLevel.waitMinutes,
         remainingLevels: data.escalationLevels.slice(2),
+        userId: data.userId,
       });
     }
 
