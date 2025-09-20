@@ -189,7 +189,7 @@ export default function IntegrationsPage() {
               
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg text-left">
                 <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                  If you see "Slack integration not configured" errors, you need to set up environment variables:
+                  If you see Slack integration not configured errors, you need to set up environment variables:
                 </p>
                 <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
                   See <code>docs/SLACK_INTEGRATION_SETUP.md</code> for detailed setup instructions.
@@ -274,7 +274,7 @@ export default function IntegrationsPage() {
             <AlertDescription>
               <strong>Setup Instructions:</strong>
               <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>Click "Connect Slack" to authorize W3Uptime</li>
+                <li>Click Connect Slack to authorize W3Uptime</li>
                 <li>Invite the W3Uptime bot to your desired channels</li>
                 <li>Use channel names in your escalation policies</li>
               </ol>
