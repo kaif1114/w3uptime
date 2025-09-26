@@ -23,6 +23,9 @@ export class WorkerManager {
       // Initialize escalation worker
       await this.initializeEscalationWorker();
       
+      // Set up shutdown handlers
+      setupShutdownHandlers();
+      
       console.log('✅ All workers initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize workers:', error);
@@ -93,37 +96,22 @@ export class WorkerManager {
   }
 }
 
-// Auto-initialize in development mode
-if (process.env.NODE_ENV === 'development') {
-  const workerManager = WorkerManager.getInstance();
-  
-  // Initialize workers when module is loaded
-  workerManager.initializeWorkers().catch((error) => {
-    console.error('Failed to auto-initialize workers:', error);
-  });
+// Graceful shutdown handlers - only set up when workers are initialized
+let shutdownHandlersSet = false;
 
-  // Graceful shutdown handlers
+function setupShutdownHandlers() {
+  if (shutdownHandlersSet) return;
+  
   const handleShutdown = async () => {
     console.log('📴 Shutting down worker manager...');
+    const workerManager = WorkerManager.getInstance();
     await workerManager.stopWorkers();
     process.exit(0);
   };
 
   process.on('SIGTERM', handleShutdown);
   process.on('SIGINT', handleShutdown);
-
-  // Handle hot reload in development
-  if (module.hot) {
-    module.hot.accept(() => {
-      console.log('🔥 Hot reload detected, restarting workers...');
-      workerManager.restartWorkers().catch(console.error);
-    });
-
-    module.hot.dispose(() => {
-      console.log('🧹 Cleaning up workers for hot reload...');
-      workerManager.stopWorkers().catch(console.error);
-    });
-  }
+  shutdownHandlersSet = true;
 }
 
 export default WorkerManager;
