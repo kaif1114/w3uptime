@@ -169,6 +169,12 @@ export const PUT = withAuth(
         );
         
         if (levelsToDelete.length > 0) {
+          // First delete associated escalation logs to avoid foreign key constraint violation
+          await tx.escalationLog.deleteMany({
+            where: { escalationLevelId: { in: levelsToDelete } },
+          });
+          
+          // Then delete the escalation levels
           await tx.escalationLevel.deleteMany({
             where: { id: { in: levelsToDelete } },
           });
