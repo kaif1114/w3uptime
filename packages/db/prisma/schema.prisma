@@ -25,6 +25,7 @@ model User {
   sessions           Session[]
   customPage         StatusPage[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
+  slackIntegrations  SlackIntegration[]
   // Community governance relations
   proposals          Proposal[]
   proposalComments   ProposalComment[]
@@ -195,6 +196,24 @@ model Session {
   @@index([sessionId])
   @@index([userId])
   @@index([walletAddress])
+}
+
+model SlackIntegration {
+  id           String   @id @default(uuid())
+  userId       String
+  teamId       String   @unique
+  teamName     String
+  accessToken  String
+  botUserId    String
+  scope        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true)
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([teamId])
 }
 
 model StatusPage {
