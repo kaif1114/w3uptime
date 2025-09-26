@@ -15,14 +15,25 @@ const updateEscalationPolicySchema = z.object({
     .array(
       z.object({
         id: z.string().optional(),
-        order: z.number(),
         method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
-        target: z.string().min(1, "Target is required"),
+        target: z.string(),
+        slackChannels: z.array(z.object({
+          teamId: z.string(),
+          teamName: z.string(),
+          channelId: z.string(),
+          channelName: z.string(),
+        })).optional(),
         waitTimeMinutes: z
           .number()
           .min(0, "Wait time cannot be negative")
           .max(1440, "Wait time cannot exceed 24 hours"),
       })
+      .refine((level) => {
+        if (level.method === "SLACK") {
+          return level.slackChannels && level.slackChannels.length > 0;
+        }
+        return level.target && level.target.trim().length > 0;
+      }, "Target or Slack channels are required")
     )
     .min(1, "At least one escalation level is required")
     .max(10, "Cannot have more than 10 escalation levels"),
@@ -77,6 +88,7 @@ export const GET = withAuth(
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
           target: level.contacts[0] || "",
+          slackChannels: level.slackChannels ? JSON.parse(level.slackChannels as string) : [],
           waitTimeMinutes: level.waitMinutes,
         })),
         createdAt: escalationPolicy.createdAt,
@@ -182,14 +194,15 @@ export const PUT = withAuth(
 
         // Process each level (update existing or create new)
         const processedLevels = await Promise.all(
-          levels.map(async (level: { id?: string; order: number; method: EscalationMethod; target: string; waitTimeMinutes: number }) => {
+          levels.map(async (level: { id?: string; method: EscalationMethod; target: string; slackChannels?: any[]; waitTimeMinutes: number }, index: number) => {
             const levelData = {
-              levelOrder: level.order,
+              levelOrder: index + 1,
               waitMinutes: level.waitTimeMinutes,
               contacts: [level.target],
               channel: level.method,
-              name: `Level ${level.order}`,
-              message: `Escalation level ${level.order} for ${name}`,
+              slackChannels: level.slackChannels ? JSON.stringify(level.slackChannels) : null,
+              name: `Level ${index + 1}`,
+              message: `Escalation level ${index + 1} for ${name}`,
             };
 
             if (level.id && existingLevelIds.includes(level.id)) {
@@ -226,6 +239,7 @@ export const PUT = withAuth(
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
           target: level.contacts[0] || "",
+          slackChannels: level.slackChannels ? JSON.parse(level.slackChannels as string) : [],
           waitTimeMinutes: level.waitMinutes,
         })),
         createdAt: updatedPolicy.createdAt,

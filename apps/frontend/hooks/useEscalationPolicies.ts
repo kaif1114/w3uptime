@@ -116,9 +116,9 @@ async function updateEscalationPolicy(
     name: string;
     levels: {
       id?: string;
-      order: number;
       method: "EMAIL" | "SLACK" | "WEBHOOK";
       target: string;
+      slackChannels?: any[];
       waitTimeMinutes: number;
     }[];
   }
