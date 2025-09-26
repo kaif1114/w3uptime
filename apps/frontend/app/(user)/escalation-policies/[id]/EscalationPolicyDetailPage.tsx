@@ -33,6 +33,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import { SlackChannelSelector, SelectedSlackChannel } from "@/components/slack-channel-selector";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -72,12 +73,24 @@ const escalationPolicySchema = z.object({
         id: z.string().optional(),
         order: z.number(),
         method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
-        target: z.string().min(1, "Target is required"),
+        target: z.string(),
+        slackChannels: z.array(z.object({
+          teamId: z.string(),
+          teamName: z.string(),
+          channelId: z.string(),
+          channelName: z.string(),
+        })).optional(),
         waitTimeMinutes: z
           .number()
           .min(0, "Wait time cannot be negative")
           .max(1440, "Wait time cannot exceed 24 hours"),
       })
+      .refine((level) => {
+        if (level.method === "SLACK") {
+          return level.slackChannels && level.slackChannels.length > 0;
+        }
+        return level.target && level.target.trim().length > 0;
+      }, "Target or Slack channels are required")
     )
     .min(1, "At least one escalation level is required")
     .max(10, "Cannot have more than 10 escalation levels"),
@@ -121,7 +134,8 @@ export function EscalationPolicyDetailPage({
           id: level.id,
           order: level.order,
           method: level.method as "EMAIL" | "SLACK" | "WEBHOOK",
-          target: level.target,
+          target: level.target || "",
+          slackChannels: level.slackChannels || [],
           waitTimeMinutes: level.waitTimeMinutes,
         })),
       };
@@ -143,7 +157,8 @@ export function EscalationPolicyDetailPage({
           id: level.id,
           order: level.order,
           method: level.method as "EMAIL" | "SLACK" | "WEBHOOK",
-          target: level.target,
+          target: level.target || "",
+          slackChannels: level.slackChannels || [],
           waitTimeMinutes: level.waitTimeMinutes,
         })),
       };
@@ -190,6 +205,7 @@ export function EscalationPolicyDetailPage({
       order: newOrder,
       method: "EMAIL",
       target: "",
+      slackChannels: [],
       waitTimeMinutes: 30,
     });
   };
@@ -484,20 +500,42 @@ export function EscalationPolicyDetailPage({
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label>Target</Label>
-                                    <Input
-                                      {...form.register(
-                                        `levels.${index}.target`
-                                      )}
-                                      placeholder="Email, channel, or webhook URL"
-                                      onChange={(e) => {
-                                        form.setValue(
-                                          `levels.${index}.target`,
-                                          e.target.value
-                                        );
-                                        form.trigger(`levels.${index}.target`);
-                                      }}
-                                    />
+                                    <Label>
+                                      {currentLevel?.method === "SLACK" 
+                                        ? "Slack Channels" 
+                                        : "Target"}
+                                    </Label>
+                                    {currentLevel?.method === "SLACK" ? (
+                                      <SlackChannelSelector
+                                        value={currentLevel?.slackChannels || []}
+                                        onChange={(selectedChannels) => {
+                                          form.setValue(
+                                            `levels.${index}.slackChannels`,
+                                            selectedChannels
+                                          );
+                                          form.trigger(`levels.${index}.slackChannels`);
+                                        }}
+                                        placeholder="Select Slack channels..."
+                                      />
+                                    ) : (
+                                      <Input
+                                        {...form.register(
+                                          `levels.${index}.target`
+                                        )}
+                                        placeholder={
+                                          currentLevel?.method === "EMAIL" 
+                                            ? "Email address" 
+                                            : "Webhook URL"
+                                        }
+                                        onChange={(e) => {
+                                          form.setValue(
+                                            `levels.${index}.target`,
+                                            e.target.value
+                                          );
+                                          form.trigger(`levels.${index}.target`);
+                                        }}
+                                      />
+                                    )}
                                   </div>
 
                                   <div className="space-y-2">
@@ -577,7 +615,19 @@ export function EscalationPolicyDetailPage({
                               Wait {level.waitTimeMinutes} minutes
                             </span>
                           </div>
-                          <p className="text-sm font-medium">{level.target}</p>
+                          {level.method === "SLACK" && level.slackChannels && level.slackChannels.length > 0 ? (
+                            <div className="space-y-1">
+                              {level.slackChannels.map((channel: SelectedSlackChannel, idx: number) => (
+                                <div key={idx} className="text-sm font-medium">
+                                  <span className="text-muted-foreground">{channel.teamName}</span>
+                                  <span className="mx-1">•</span>
+                                  <span>#{channel.channelName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm font-medium">{level.target}</p>
+                          )}
                         </div>
                       </div>
                     </div>
