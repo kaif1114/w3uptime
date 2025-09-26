@@ -118,7 +118,7 @@ export default function SlackIntegrationCard() {
             </div>
             <div className="pt-2 border-t">
               <a 
-                href="https://slack.com/oauth/v2/authorize?client_id=9604180472545.9587048237669&scope=incoming-webhook,chat:write&user_scope="
+                href="https://slack.com/oauth/v2/authorize?client_id=9604180472545.9587048237669&scope=incoming-webhook,chat:write,channels:read&user_scope="
                 className="inline-block"
               >
                 <Button variant="outline" size="sm">
@@ -134,7 +134,7 @@ export default function SlackIntegrationCard() {
             <p className="text-muted-foreground mb-4">
               No Slack workspaces connected yet.
             </p>
-            <a href="https://slack.com/oauth/v2/authorize?client_id=9604180472545.9587048237669&scope=incoming-webhook,chat:write&user_scope=">
+            <a href="https://slack.com/oauth/v2/authorize?client_id=9604180472545.9587048237669&scope=incoming-webhook,chat:write,channels:read&user_scope=">
               <img 
                 alt="Add to Slack" 
                 height="40" 

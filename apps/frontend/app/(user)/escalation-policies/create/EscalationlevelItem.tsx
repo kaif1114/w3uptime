@@ -21,14 +21,17 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import z from "zod";
+import SlackChannelSelector, { SelectedSlackChannel } from "@/components/slack-channel-selector";
 
 interface EscalationLevelItemProps {
   level: number;
   method: EscalationMethod | "";
   target: string;
+  slackChannels?: SelectedSlackChannel[];
   waitTimeMinutes: number;
   onMethodChange: (method: EscalationMethod) => void;
   onTargetChange: (target: string) => void;
+  onSlackChannelsChange?: (channels: SelectedSlackChannel[]) => void;
   onWaitTimeChange: (minutes: number) => void;
   onRemove: () => void;
   onDragStart: (event: React.DragEvent) => void;
@@ -50,9 +53,11 @@ export function EscalationLevelItem({
   level,
   method,
   target,
+  slackChannels = [],
   waitTimeMinutes,
   onMethodChange,
   onTargetChange,
+  onSlackChannelsChange,
   onWaitTimeChange,
   onRemove,
   onDragStart,
@@ -160,9 +165,11 @@ export function EscalationLevelItem({
                 className="font-medium text-left"
               >
                 Escalation Level {level}
-                {!isExpanded && method && target && (
+                {!isExpanded && method && (method === "SLACK" ? slackChannels.length > 0 : target) && (
                   <span className="ml-2 text-xs text-muted-foreground">
-                    - {method} → {target}
+                    - {method} → {method === "SLACK" 
+                      ? `${slackChannels.length} channel${slackChannels.length > 1 ? 's' : ''}`
+                      : target}
                   </span>
                 )}
               </button>
@@ -207,14 +214,22 @@ export function EscalationLevelItem({
 
             <div className="space-y-2">
               <Label htmlFor={`target-${level}`}>{getTargetLabel()}</Label>
-              <Input
-                id={`target-${level}`}
-                value={target}
-                onChange={(e) => handleTargetChange(e.target.value)}
-                placeholder={getTargetPlaceholder()}
-                disabled={!method}
-                className={errors.target ? "border-destructive" : ""}
-              />
+              {method === "SLACK" ? (
+                <SlackChannelSelector
+                  selectedChannels={slackChannels}
+                  onChannelsChange={onSlackChannelsChange || (() => {})}
+                  placeholder="Select Slack channels for alerts..."
+                />
+              ) : (
+                <Input
+                  id={`target-${level}`}
+                  value={target}
+                  onChange={(e) => handleTargetChange(e.target.value)}
+                  placeholder={getTargetPlaceholder()}
+                  disabled={!method}
+                  className={errors.target ? "border-destructive" : ""}
+                />
+              )}
               {errors.target && (
                 <p className="text-sm text-destructive">{errors.target}</p>
               )}
