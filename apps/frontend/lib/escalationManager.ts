@@ -73,7 +73,7 @@ export class EscalationManager {
           title: incident.title
         };
 
-        const jobName = getJobName(monitorId, incidentId, level.levelOrder);
+        const jobName = getJobName(incidentId, level.levelOrder);
 
         // Create delayed job
         const job = await escalationQueue.add(
@@ -107,7 +107,7 @@ export class EscalationManager {
       const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
       const jobsToCancel = jobs.filter(job => {
         if (!job.name) return false;
-        const pattern = getJobPattern(monitorId, incidentId);
+        const pattern = getJobPattern(incidentId);
         const regex = new RegExp(pattern.replace('*', '\\d+'));
         return regex.test(job.name);
       });
@@ -145,7 +145,7 @@ export class EscalationManager {
       const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
       
       const pattern = incidentId 
-        ? getJobPattern(monitorId, incidentId)
+        ? getJobPattern(incidentId)
         : `escalation-${monitorId}-*`;
       
       const regex = new RegExp(pattern.replace(/\*/g, '[^-]+'));

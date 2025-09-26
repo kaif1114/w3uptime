@@ -134,9 +134,6 @@ export const PUT = withAuth(
           id,
           userId: user.id, // Direct userId lookup
         },
-        include: {
-          monitors: true,
-        },
       });
 
       if (!existingPolicy) {
@@ -146,19 +143,8 @@ export const PUT = withAuth(
         );
       }
 
-      // Check if policy is in use by any monitors
-      if (existingPolicy.monitors.length > 0) {
-        return NextResponse.json(
-          {
-            error: "Cannot update escalation policy that is in use by monitors",
-            monitors: existingPolicy.monitors.map((m) => ({
-              id: m.id,
-              name: m.name,
-            })),
-          },
-          { status: 400 }
-        );
-      }
+      // Allow updates even when policy is in use by monitors
+      // Removed restriction to enable escalation policy updates
 
       // Update policy and levels in a transaction
       const updatedPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {

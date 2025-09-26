@@ -18,17 +18,14 @@ export class WorkerManager {
    */
   async initializeWorkers(): Promise<void> {
     try {
-      console.log('🚀 Initializing workers...');
+      console.log('Initializing workers...');
       
       // Initialize escalation worker
       await this.initializeEscalationWorker();
       
-      // Set up shutdown handlers
-      setupShutdownHandlers();
-      
-      console.log('✅ All workers initialized successfully');
+      console.log('All workers initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize workers:', error);
+      console.error('Failed to initialize workers:', error);
       throw error;
     }
   }
@@ -46,7 +43,7 @@ export class WorkerManager {
       const worker = getEscalationWorker();
       await worker.start();
       this.escalationWorkerStarted = true;
-      console.log('✅ Escalation worker started successfully');
+      console.log('Escalation worker started successfully');
     } catch (error) {
       console.error('❌ Failed to start escalation worker:', error);
       throw error;
@@ -96,22 +93,7 @@ export class WorkerManager {
   }
 }
 
-// Graceful shutdown handlers - only set up when workers are initialized
-let shutdownHandlersSet = false;
 
-function setupShutdownHandlers() {
-  if (shutdownHandlersSet) return;
-  
-  const handleShutdown = async () => {
-    console.log('📴 Shutting down worker manager...');
-    const workerManager = WorkerManager.getInstance();
-    await workerManager.stopWorkers();
-    process.exit(0);
-  };
 
-  process.on('SIGTERM', handleShutdown);
-  process.on('SIGINT', handleShutdown);
-  shutdownHandlersSet = true;
-}
 
 export default WorkerManager;
