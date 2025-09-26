@@ -13,11 +13,7 @@ export class EscalationWorker {
   constructor() {
     this.worker = new Worker("escalation", this.processJob.bind(this), {
       connection: redis,
-      concurrency: 5, // Process up to 5 escalation jobs simultaneously
-      limiter: {
-        max: 10, // Maximum 10 jobs per duration
-        duration: 60000, // 1 minute
-      },
+      concurrency: 5,
     });
 
     this.setupEventListeners();
@@ -37,10 +33,7 @@ export class EscalationWorker {
       title,
     } = job.data;
 
-    console.log(`= Processing escalation job: ${job.name}`);
-    console.log(
-      `=� Details: Monitor ${monitorId}, Incident ${incidentId}, Method: ${method}`
-    );
+    console.log(`Processing escalation job: ${job.name}`);
 
     try {
       // Check if incident is still ongoing (not acknowledged or resolved)
@@ -50,7 +43,7 @@ export class EscalationWorker {
       });
 
       if (!incident) {
-        console.log(`� Incident ${incidentId} not found, skipping escalation`);
+        console.log(`Incident ${incidentId} not found, skipping escalation`);
         return;
       }
 
@@ -59,7 +52,7 @@ export class EscalationWorker {
         incident.status === "RESOLVED"
       ) {
         console.log(
-          ` Incident ${incidentId} is ${incident.status.toLowerCase()}, skipping escalation`
+          `Incident ${incidentId} is ${incident.status.toLowerCase()}, skipping escalation`
         );
         return;
       }

@@ -35,7 +35,7 @@ export class WorkerManager {
    */
   private async initializeEscalationWorker(): Promise<void> {
     if (this.escalationWorkerStarted) {
-      console.log('ℹ️ Escalation worker already started');
+      console.log('ℹEscalation worker already started');
       return;
     }
 
@@ -45,7 +45,7 @@ export class WorkerManager {
       this.escalationWorkerStarted = true;
       console.log('Escalation worker started successfully');
     } catch (error) {
-      console.error('❌ Failed to start escalation worker:', error);
+      console.error('Failed to start escalation worker:', error);
       throw error;
     }
   }
@@ -55,18 +55,18 @@ export class WorkerManager {
    */
   async stopWorkers(): Promise<void> {
     try {
-      console.log('🛑 Stopping workers...');
+      console.log('Stopping workers...');
       
       if (this.escalationWorkerStarted) {
         const worker = getEscalationWorker();
         await worker.stop();
         this.escalationWorkerStarted = false;
-        console.log('✅ Escalation worker stopped');
+        console.log('Escalation worker stopped');
       }
 
-      console.log('✅ All workers stopped successfully');
+      console.log('All workers stopped successfully');
     } catch (error) {
-      console.error('❌ Error stopping workers:', error);
+      console.error('Error stopping workers:', error);
     }
   }
 
@@ -86,10 +86,10 @@ export class WorkerManager {
    * Restart workers (useful for development)
    */
   async restartWorkers(): Promise<void> {
-    console.log('🔄 Restarting workers...');
+    console.log('Restarting workers...');
     await this.stopWorkers();
     await this.initializeWorkers();
-    console.log('✅ Workers restarted successfully');
+    console.log('Workers restarted successfully');
   }
 }
 
