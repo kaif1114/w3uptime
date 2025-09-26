@@ -15,6 +15,11 @@ const publicRoutes: string[] = [
   "/api/public/monitors", // Allow public access to monitor timeseries data
   "/api/proposals", // Allow public access to proposals API for reading
   "/status",
+  "/slack/callback",
+  "/slack/success",
+  "/slack/error",
+  "/api/slack/oauth",
+  "/api/slack/integrations",
   "/_next", // Next.js internal assets
 ];
 
