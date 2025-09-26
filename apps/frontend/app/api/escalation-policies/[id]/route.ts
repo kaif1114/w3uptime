@@ -134,6 +134,9 @@ export const PUT = withAuth(
           id,
           userId: user.id, // Direct userId lookup
         },
+        include: {
+          levels: true, // Include existing levels for comparison
+        },
       });
 
       if (!existingPolicy) {
@@ -157,31 +160,53 @@ export const PUT = withAuth(
           },
         });
 
-        // Delete existing levels
-        await tx.escalationLevel.deleteMany({
-          where: { escalationId: id },
-        });
+        const existingLevelIds = existingPolicy.levels.map(level => level.id);
+        const incomingLevelIds = levels.filter(level => level.id).map(level => level.id);
+        
+        // Delete levels that are no longer present
+        const levelsToDelete = existingLevelIds.filter(existingId => 
+          !incomingLevelIds.includes(existingId)
+        );
+        
+        if (levelsToDelete.length > 0) {
+          await tx.escalationLevel.deleteMany({
+            where: { id: { in: levelsToDelete } },
+          });
+        }
 
-        // Create new levels
-        const createdLevels = await Promise.all(
-          levels.map((level: { order: number; method: EscalationMethod; target: string; waitTimeMinutes: number }) =>
-            tx.escalationLevel.create({
-              data: {
-                escalationId: id,
-                levelOrder: level.order,
-                waitMinutes: level.waitTimeMinutes,
-                contacts: [level.target], // Store as array
-                channel: level.method,
-                name: `Level ${level.order}`,
-                message: `Escalation level ${level.order} for ${name}`,
-              },
-            })
-          )
+        // Process each level (update existing or create new)
+        const processedLevels = await Promise.all(
+          levels.map(async (level: { id?: string; order: number; method: EscalationMethod; target: string; waitTimeMinutes: number }) => {
+            const levelData = {
+              levelOrder: level.order,
+              waitMinutes: level.waitTimeMinutes,
+              contacts: [level.target],
+              channel: level.method,
+              name: `Level ${level.order}`,
+              message: `Escalation level ${level.order} for ${name}`,
+            };
+
+            if (level.id && existingLevelIds.includes(level.id)) {
+              // Update existing level
+              return await tx.escalationLevel.update({
+                where: { id: level.id },
+                data: levelData,
+              });
+            } else {
+              // Create new level
+              return await tx.escalationLevel.create({
+                data: {
+                  escalationId: id,
+                  ...levelData,
+                },
+              });
+            }
+          })
         );
 
         return {
           ...policy,
-          levels: createdLevels,
+          levels: processedLevels,
         };
       });
 
