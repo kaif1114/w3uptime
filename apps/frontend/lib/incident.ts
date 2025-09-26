@@ -1,4 +1,5 @@
 import { prisma } from "db/client";
+import { startEscalation, stopEscalation } from "./escalation";
 
 export async function createIncident(monitorId: string, title: string, time: Date) {
   try {
@@ -32,6 +33,7 @@ export async function createIncident(monitorId: string, title: string, time: Dat
         createdAt: time,
       },
     });
+    startEscalation(monitorId);
   } catch (error) {
     console.error("Error creating incident:", error);
   }
@@ -62,6 +64,7 @@ export async function resolveIncident(monitorId: string, time: Date) {
                     createdAt: time,
                 },
             });
+            stopEscalation(monitorId);
         }
     } catch (error) {
         console.error("Error resolving incident:", error);
