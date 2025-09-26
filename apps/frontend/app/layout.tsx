@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
+import "@/lib/initApp"; // Initialize workers and services
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
