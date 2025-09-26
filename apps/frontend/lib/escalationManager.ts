@@ -1,3 +1,4 @@
+import { Job } from "bullmq";
 import { prisma } from "db/client";
 import { escalationQueue, EscalationJobData, getJobName, getJobPattern } from "./queue";
 
@@ -140,7 +141,7 @@ export class EscalationManager {
   /**
    * Get active escalation jobs for a monitor
    */
-  static async getActiveEscalations(monitorId: string, incidentId?: string): Promise<any[]> {
+  static async getActiveEscalations(monitorId: string, incidentId?: string): Promise<Job[]> {
     try {
       const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
       

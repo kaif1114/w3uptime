@@ -51,7 +51,7 @@ export async function sendEscalationSlack(
     console.log(`💬 Sending escalation Slack message for monitor ${monitorId}`);
     
     // Parse slack channels data
-    let slackChannels: any[] = [];
+    let slackChannels: { teamId: string; teamName: string; channelId: string; channelName: string; }[] = [];
     if (slackChannelsData) {
         try {
             slackChannels = JSON.parse(slackChannelsData);
