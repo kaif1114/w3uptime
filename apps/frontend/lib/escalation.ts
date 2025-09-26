@@ -5,7 +5,6 @@ import EscalationManager from './escalationManager';
  * This function is called when an incident is created
  */
 export async function startEscalation(monitorId: string, incidentId: string): Promise<void> {
-    console.log(`🚨 Starting escalation for monitor ${monitorId}, incident ${incidentId}`);
     await EscalationManager.startEscalation(monitorId, incidentId);
 }
 
@@ -14,7 +13,6 @@ export async function startEscalation(monitorId: string, incidentId: string): Pr
  * This function is called when an incident is acknowledged or resolved
  */
 export async function stopEscalation(monitorId: string, incidentId: string): Promise<void> {
-    console.log(`🛑 Stopping escalation for monitor ${monitorId}, incident ${incidentId}`);
     await EscalationManager.stopEscalation(monitorId, incidentId);
 }
 
