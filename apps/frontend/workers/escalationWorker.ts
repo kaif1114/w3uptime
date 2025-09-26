@@ -108,7 +108,7 @@ export class EscalationWorker {
               title,
               message || "",
               monitorId,
-              escalationLevel.slackChannels
+              escalationLevel.slackChannels as string | null
             );
             const channelInfo = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
