@@ -33,7 +33,7 @@ export async function createIncident(monitorId: string, title: string, time: Dat
         createdAt: time,
       },
     });
-    startEscalation(monitorId);
+    startEscalation(monitorId, incident.id);
   } catch (error) {
     console.error("Error creating incident:", error);
   }
@@ -64,7 +64,7 @@ export async function resolveIncident(monitorId: string, time: Date) {
                     createdAt: time,
                 },
             });
-            stopEscalation(monitorId);
+            stopEscalation(monitorId, incident.id);
         }
     } catch (error) {
         console.error("Error resolving incident:", error);
