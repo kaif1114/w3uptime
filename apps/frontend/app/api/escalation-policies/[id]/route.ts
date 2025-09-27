@@ -20,8 +20,8 @@ const updateEscalationPolicySchema = z.object({
         slackChannels: z.array(z.object({
           teamId: z.string(),
           teamName: z.string(),
-          channelId: z.string(),
-          channelName: z.string(),
+          defaultChannelId: z.string(),
+          defaultChannelName: z.string(),
         })).optional(),
         waitTimeMinutes: z
           .number()
