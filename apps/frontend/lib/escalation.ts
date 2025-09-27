@@ -79,7 +79,7 @@ export async function sendEscalationEmail(
             const validEmails = contacts.filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `📧 Email alert sent to: ${validEmails.join(', ')}`
+                `Email alert sent to: ${validEmails.join(', ')}`
             );
         }
         
@@ -150,7 +150,7 @@ export async function sendEscalationSlack(
         if (currentIncidentId) {
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `💬 Slack alert attempted but no workspaces configured: ${contacts.join(', ')}`
+                `Slack alert attempted but no workspaces configured for contacts: ${contacts.join(', ')}`
             );
         }
         return;
@@ -194,7 +194,7 @@ export async function sendEscalationSlack(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `💬 Slack webhook alert sent`
+                    `Slack webhook alert sent`
                 );
             }
         }
@@ -231,7 +231,7 @@ export async function sendEscalationSlack(
                     if (currentIncidentId) {
                         await createEscalationTimelineEvent(
                             currentIncidentId,
-                            `💬 Slack alert sent to ${workspace.teamName}#${workspace.defaultChannelName}`
+                            `Slack alert sent to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
                 } else {
@@ -305,7 +305,7 @@ export async function sendEscalationWebhook(
         if (currentIncidentId) {
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `Webhook alert attempted but no valid URLs: ${contacts.join(', ')}`
+                `Webhook alert attempted but no valid URLs provided: ${contacts.join(', ')}`
             );
         }
         return;
@@ -343,7 +343,7 @@ export async function sendEscalationWebhook(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `Webhook alert sent to ${webhookUrl}`
+                    `Webhook alert sent to: ${webhookUrl}`
                 );
             }
             

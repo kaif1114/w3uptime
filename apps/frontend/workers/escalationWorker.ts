@@ -158,8 +158,8 @@ export class EscalationWorker {
       await prisma.timelineEvent.create({
         data: {
           description: success
-            ? `Escalation level ${escalationLevel.levelOrder} sent via ${method} to ${contacts.join(", ")}`
-            : `Failed to send escalation level ${escalationLevel.levelOrder} via ${method}: ${error}`,
+            ? `Alert sent via ${method} to ${contacts.join(", ")}`
+            : `Failed to send alert via ${method} to ${contacts.join(", ")}: ${error}`,
           incidentId,
           type: "ESCALATION",
           createdAt: new Date(),
