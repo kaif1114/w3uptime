@@ -95,6 +95,15 @@ Time: ${new Date().toLocaleString()}
         },
       });
 
+      // Log the escalation attempt first to get the ID
+      const escalationLog = await prisma.escalationLog.create({
+        data: {
+          alertId: alert.id,
+          escalationLevelId,
+          wasAcknowledged: false, // Will be updated if/when acknowledged
+        },
+      });
+
       // Send the escalation based on the method
       let success = false;
       let error: string | null = null;
@@ -158,15 +167,6 @@ Time: ${new Date().toLocaleString()}
             ? escalationError.message
             : String(escalationError);
       }
-
-      // Log the escalation attempt
-      const escalationLog = await prisma.escalationLog.create({
-        data: {
-          alertId: alert.id,
-          escalationLevelId,
-          wasAcknowledged: false, // Will be updated if/when acknowledged
-        },
-      });
 
 
       if (!success && error) {
