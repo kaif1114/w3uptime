@@ -10,6 +10,8 @@ interface SlackIntegration {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  defaultChannelId?: string;
+  defaultChannelName?: string;
 }
 
 interface SlackIntegrationsResponse {

@@ -22,6 +22,8 @@ export async function GET() {
         createdAt: true,
         updatedAt: true,
         isActive: true,
+        defaultChannelId: true,
+        defaultChannelName: true,
       },
     });
 

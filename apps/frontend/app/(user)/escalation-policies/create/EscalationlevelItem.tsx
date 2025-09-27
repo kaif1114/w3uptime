@@ -21,17 +21,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import z from "zod";
-import SlackChannelSelector, { SelectedSlackChannel } from "@/components/slack-channel-selector";
+import { useSlackIntegrations } from "@/hooks/use-slack-integrations";
 
 interface EscalationLevelItemProps {
   level: number;
   method: EscalationMethod | "";
   target: string;
-  slackChannels?: SelectedSlackChannel[];
   waitTimeMinutes: number;
   onMethodChange: (method: EscalationMethod) => void;
   onTargetChange: (target: string) => void;
-  onSlackChannelsChange?: (channels: SelectedSlackChannel[]) => void;
   onWaitTimeChange: (minutes: number) => void;
   onRemove: () => void;
   onDragStart: (event: React.DragEvent) => void;
@@ -53,11 +51,9 @@ export function EscalationLevelItem({
   level,
   method,
   target,
-  slackChannels = [],
   waitTimeMinutes,
   onMethodChange,
   onTargetChange,
-  onSlackChannelsChange,
   onWaitTimeChange,
   onRemove,
   onDragStart,
@@ -71,6 +67,7 @@ export function EscalationLevelItem({
   const [errors, setErrors] = useState<{ target?: string; waitTime?: string }>(
     {}
   );
+  const { data: slackIntegrations } = useSlackIntegrations();
 
   const validateTarget = (value: string) => {
     if (!value.trim()) {
@@ -120,7 +117,7 @@ export function EscalationLevelItem({
       case "EMAIL":
         return "user@example.com";
       case "SLACK":
-        return "#alerts or @username";
+        return "Will use authorized Slack channels";
       case "WEBHOOK":
         return "https://webhook.example.com/alerts";
       default:
@@ -133,12 +130,19 @@ export function EscalationLevelItem({
       case "EMAIL":
         return "Email Address";
       case "SLACK":
-        return "Slack Channel/User";
+        return "Slack Integration";
       case "WEBHOOK":
         return "Webhook URL";
       default:
         return "Target";
     }
+  };
+
+  const getAuthorizedSlackChannels = () => {
+    if (!slackIntegrations?.integrations) return [];
+    return slackIntegrations.integrations.filter(integration => 
+      integration.isActive && integration.defaultChannelId && integration.defaultChannelName
+    );
   };
 
   return (
@@ -165,10 +169,10 @@ export function EscalationLevelItem({
                 className="font-medium text-left"
               >
                 Escalation Level {level}
-                {!isExpanded && method && (method === "SLACK" ? slackChannels.length > 0 : target) && (
+                {!isExpanded && method && (method === "SLACK" ? getAuthorizedSlackChannels().length > 0 : target) && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     - {method} → {method === "SLACK" 
-                      ? `${slackChannels.length} channel${slackChannels.length > 1 ? 's' : ''}`
+                      ? `${getAuthorizedSlackChannels().length} authorized channel${getAuthorizedSlackChannels().length > 1 ? 's' : ''}`
                       : target}
                   </span>
                 )}
@@ -215,11 +219,34 @@ export function EscalationLevelItem({
             <div className="space-y-2">
               <Label htmlFor={`target-${level}`}>{getTargetLabel()}</Label>
               {method === "SLACK" ? (
-                <SlackChannelSelector
-                  selectedChannels={slackChannels}
-                  onChannelsChange={onSlackChannelsChange || (() => {})}
-                  placeholder="Select Slack channels for alerts..."
-                />
+                <div className="space-y-2">
+                  {getAuthorizedSlackChannels().length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        Will send to your authorized Slack channels:
+                      </div>
+                      <div className="space-y-1">
+                        {getAuthorizedSlackChannels().map((integration) => (
+                          <div
+                            key={integration.id}
+                            className="flex items-center gap-2 p-2 bg-muted rounded-md"
+                          >
+                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm">
+                              {integration.teamName} - #{integration.defaultChannelName}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        No Slack workspaces with authorized channels found. Please connect a Slack workspace first in Settings.
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <Input
                   id={`target-${level}`}
@@ -230,7 +257,7 @@ export function EscalationLevelItem({
                   className={errors.target ? "border-destructive" : ""}
                 />
               )}
-              {errors.target && (
+              {method !== "SLACK" && errors.target && (
                 <p className="text-sm text-destructive">{errors.target}</p>
               )}
             </div>
