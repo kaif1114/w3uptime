@@ -379,7 +379,9 @@ export function createEscalationMessage(escalation: {
   ];
 
   // Add actions block if escalation log ID is provided
+  console.log('Slack createEscalationMessage - escalationLogId:', escalation.escalationLogId);
   if (escalation.escalationLogId) {
+    console.log('Adding acknowledge button to Slack');
     blocks.push({
       type: "actions",
       elements: [

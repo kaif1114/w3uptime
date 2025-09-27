@@ -150,6 +150,7 @@ export async function sendEscalationSlack(
     } = await import('./slack');
 
     // Create escalation message (more specific than incident message)
+    console.log('Slack escalation - escalationLogId:', escalationLogId);
     const escalationMsg = createEscalationMessage({
         title,
         monitorName: monitor.name,

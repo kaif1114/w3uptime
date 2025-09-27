@@ -103,6 +103,8 @@ Time: ${new Date().toLocaleString()}
           wasAcknowledged: false, // Will be updated if/when acknowledged
         },
       });
+      
+      console.log('Worker created escalationLog ID:', escalationLog.id);
 
       // Send the escalation based on the method
       let success = false;

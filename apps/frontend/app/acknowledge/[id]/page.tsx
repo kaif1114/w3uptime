@@ -189,11 +189,10 @@ export default async function AcknowledgePage({
           )}
 
           <div className="flex flex-col space-y-2">
-            <Button
-              onClick={() => window.location.href = process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}
-              className="w-full"
-            >
-              Go to Dashboard
+            <Button asChild className="w-full">
+              <a href={process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}>
+                Go to Dashboard
+              </a>
             </Button>
           </div>
         </CardContent>

@@ -65,7 +65,7 @@ const createEscalationEmailTemplate = (
                 <div class="actions">
                     ${escalationLogId ? `<a href="${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/acknowledge/${escalationLogId}?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
                         ✓ Acknowledge Alert
-                    </a>` : ''}
+                    </a>` : `<!-- DEBUG: No escalationLogId (${escalationLogId}) -->`}
                     <a href="${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
                         View Monitor Details
                     </a>
@@ -112,6 +112,7 @@ export async function sendEscalationEmail(
   incidentId?: string,
   escalationLogId?: string
 ): Promise<void> {
+  console.log('Email escalation - escalationLogId:', escalationLogId);
   try {
     // Validate email addresses
     const validEmails = contacts.filter(email => 
