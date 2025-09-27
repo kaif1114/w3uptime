@@ -83,7 +83,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
                 contacts: [level.target],
                 channel: level.method,
                 name: `Level ${index + 1}`,
-                message: `Escalation level ${index + 1} for ${escalationPolicy.name}`,
+                message: `Alert escalation for ${escalationPolicy.name}`,
               },
             })
           )

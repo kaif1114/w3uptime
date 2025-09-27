@@ -75,11 +75,9 @@ export class EscalationWorker {
       // Create alert record for this escalation attempt
       const alert = await prisma.alert.create({
         data: {
-          title: `Escalation Level ${escalationLevel.levelOrder}`,
+          title: title || "Monitor Alert",
           type: "URL_UNAVAILABLE",
-          message:
-            message ||
-            `Escalation level ${escalationLevel.levelOrder} triggered for incident: ${title}`,
+          message: message || `Alert triggered for incident: ${title}`,
           monitorId,
           triggeredAt: new Date(),
         },

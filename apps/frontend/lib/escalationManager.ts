@@ -70,7 +70,7 @@ export class EscalationManager {
           levelOrder: level.levelOrder,
           method: level.channel,
           contacts: level.contacts,
-          message: level.message || `Escalation level ${level.levelOrder} for incident: ${incident.title}`,
+          message: level.message || `Alert escalated for incident: ${incident.title}`,
           title: incident.title
         };
 

@@ -202,7 +202,7 @@ export const PUT = withAuth(
               channel: level.method,
               slackChannels: level.slackChannels ? JSON.stringify(level.slackChannels) : undefined,
               name: `Level ${index + 1}`,
-              message: `Escalation level ${index + 1} for ${name}`,
+              message: `Alert escalation for ${name}`,
             };
 
             if (level.id && existingLevelIds.includes(level.id)) {

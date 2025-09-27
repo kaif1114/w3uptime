@@ -183,7 +183,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
               channel: level.method.toUpperCase() as "EMAIL" | "SLACK" | "WEBHOOK",
               slackChannels: level.slackChannels ? JSON.stringify(level.slackChannels) : undefined,
               name: `Level ${index + 1}`,
-              message: `Escalation level ${index + 1} for ${name}`,
+              message: `Alert escalation for ${name}`,
             },
           })
         )
