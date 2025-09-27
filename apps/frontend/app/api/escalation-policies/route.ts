@@ -287,14 +287,23 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
 
     // Delete policies and their levels in a transaction
     const result = await prisma.$transaction(async (tx: PrismaTransaction) => {
-      // Delete escalation levels first (due to foreign key constraints)
+      // Delete escalation logs first (due to foreign key constraints)
+      await tx.escalationLog.deleteMany({
+        where: {
+          escalationLevel: {
+            escalationId: { in: ids },
+          },
+        },
+      });
+
+      // Delete escalation levels next
       await tx.escalationLevel.deleteMany({
         where: {
           escalationId: { in: ids },
         },
       });
 
-      // Delete escalation policies
+      // Delete escalation policies last
       const deletedPolicies = await tx.escalationPolicy.deleteMany({
         where: {
           id: { in: ids },
