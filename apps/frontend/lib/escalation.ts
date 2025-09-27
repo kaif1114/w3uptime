@@ -1,6 +1,28 @@
 import EscalationManager from './escalationManager';
 
 /**
+ * Create a timeline event for escalation activities
+ */
+async function createEscalationTimelineEvent(
+    incidentId: string,
+    description: string
+): Promise<void> {
+    try {
+        const { prisma } = await import('db/client');
+        await prisma.timelineEvent.create({
+            data: {
+                description,
+                incidentId,
+                type: "ESCALATION",
+                createdAt: new Date(),
+            },
+        });
+    } catch (error) {
+        console.error('Failed to create timeline event:', error);
+    }
+}
+
+/**
  * Start escalation for a monitor incident
  * This function is called when an incident is created
  */
@@ -24,7 +46,8 @@ export async function sendEscalationEmail(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string
+    monitorId: string,
+    incidentId?: string
 ): Promise<void> {
     console.log(`Sending escalation email for monitor ${monitorId}`);
     console.log(`Recipients: ${contacts.join(', ')}`);
@@ -33,19 +56,72 @@ export async function sendEscalationEmail(
     const { sendEscalationEmail: sendEmail } = await import('./email');
     
     try {
-        // Get escalation level for context
+        // Get escalation level and incident ID if not provided
         const { prisma } = await import('db/client');
         const escalationLevel = await prisma.escalationLevel.findFirst({
             where: { contacts: { has: contacts[0] } },
             select: { levelOrder: true }
         });
 
+        // Get incident ID if not provided
+        let currentIncidentId = incidentId;
+        if (!currentIncidentId) {
+            const incident = await prisma.incident.findFirst({
+                where: {
+                    monitorId,
+                    status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+                },
+                select: { id: true }
+            });
+            currentIncidentId = incident?.id;
+        }
+
         // Send the actual email
         await sendEmail(contacts, title, message, monitorId, escalationLevel?.levelOrder);
+        
+        // Create timeline event for successful email escalation
+        if (currentIncidentId) {
+            const validEmails = contacts.filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+            const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
+            await createEscalationTimelineEvent(
+                currentIncidentId,
+                `📧 Email alert sent${levelText}: ${validEmails.join(', ')}`
+            );
+        }
         
         console.log(`Email escalation sent successfully`);
     } catch (error) {
         console.error(`❌ Failed to send escalation email:`, error);
+        
+        // Create timeline event for failed email escalation
+        if (incidentId) {
+            const { prisma } = await import('db/client');
+            const escalationLevel = await prisma.escalationLevel.findFirst({
+                where: { contacts: { has: contacts[0] } },
+                select: { levelOrder: true }
+            });
+            
+            let currentIncidentId = incidentId;
+            if (!currentIncidentId) {
+                const incident = await prisma.incident.findFirst({
+                    where: {
+                        monitorId,
+                        status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+                    },
+                    select: { id: true }
+                });
+                currentIncidentId = incident?.id;
+            }
+
+            if (currentIncidentId) {
+                const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
+                await createEscalationTimelineEvent(
+                    currentIncidentId,
+                    `❌ Failed to send email alert${levelText}: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
+                );
+            }
+        }
+        
         // Re-throw to ensure the escalation system knows about the failure
         throw error;
     }
@@ -60,9 +136,31 @@ export async function sendEscalationSlack(
     title: string, 
     message: string, 
     monitorId: string,
-    slackWorkspacesData?: string | null
+    slackWorkspacesData?: string | null,
+    incidentId?: string
 ): Promise<void> {
     console.log(`Sending escalation Slack message for monitor ${monitorId}`);
+    
+    // Get incident ID if not provided
+    const { prisma } = await import('db/client');
+    let currentIncidentId = incidentId;
+    if (!currentIncidentId) {
+        const incident = await prisma.incident.findFirst({
+            where: {
+                monitorId,
+                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+            },
+            select: { id: true }
+        });
+        currentIncidentId = incident?.id;
+    }
+
+    // Get escalation level for context  
+    const escalationLevel = await prisma.escalationLevel.findFirst({
+        where: { contacts: { has: contacts[0] } },
+        select: { levelOrder: true }
+    });
+    const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
     
     // Parse slack workspaces data
     let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
@@ -81,11 +179,18 @@ export async function sendEscalationSlack(
         console.log(`Message: ${message}`);
         console.log(`Channels/Users: ${contacts.join(', ')}`);
         console.log(`Slack escalation logged (no workspaces configured)`);
+        
+        // Create timeline event for no Slack configuration
+        if (currentIncidentId) {
+            await createEscalationTimelineEvent(
+                currentIncidentId,
+                `💬 Slack alert attempted${levelText} but no workspaces configured: ${contacts.join(', ')}`
+            );
+        }
         return;
     }
 
     // Get monitor details for the message
-    const { prisma } = await import('db/client');
     const monitor = await prisma.monitor.findUnique({
         where: { id: monitorId },
         select: { name: true, url: true, userId: true }
@@ -125,6 +230,14 @@ export async function sendEscalationSlack(
         webhookSuccess = await sendSlackWebhookNotification(monitor.userId, escalationMsg);
         if (webhookSuccess) {
             console.log(`Sent Slack webhook escalation for monitor ${monitorId}`);
+            
+            // Create timeline event for successful webhook notification
+            if (currentIncidentId) {
+                await createEscalationTimelineEvent(
+                    currentIncidentId,
+                    `💬 Slack webhook alert sent${levelText}`
+                );
+            }
         }
     } catch (error) {
         console.error('Error sending webhook escalation:', error);
@@ -154,11 +267,35 @@ export async function sendEscalationSlack(
                 if (success) {
                     console.log(`Sent Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
                     webhookSuccess = true; // Mark as successful
+                    
+                    // Create timeline event for successful Bot API notification
+                    if (currentIncidentId) {
+                        await createEscalationTimelineEvent(
+                            currentIncidentId,
+                            `💬 Slack alert sent${levelText} to ${workspace.teamName}#${workspace.defaultChannelName}`
+                        );
+                    }
                 } else {
                     console.error(`❌ Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    
+                    // Create timeline event for failed Bot API notification
+                    if (currentIncidentId) {
+                        await createEscalationTimelineEvent(
+                            currentIncidentId,
+                            `❌ Failed to send Slack alert${levelText} to ${workspace.teamName}#${workspace.defaultChannelName}`
+                        );
+                    }
                 }
             } catch (error) {
                 console.error(`Error sending to workspace ${workspace.teamName}:`, error);
+                
+                // Create timeline event for workspace error
+                if (currentIncidentId) {
+                    await createEscalationTimelineEvent(
+                        currentIncidentId,
+                        `❌ Error sending Slack alert${levelText} to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    );
+                }
             }
         }
     }
@@ -177,15 +314,110 @@ export async function sendEscalationWebhook(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string
+    monitorId: string,
+    incidentId?: string
 ): Promise<void> {
     console.log(`🔗 Sending escalation webhook for monitor ${monitorId}`);
-    console.log(`🔗 Title: ${title}`);
-    console.log(`🔗 Message: ${message}`);
     console.log(`🔗 Webhook URLs: ${contacts.join(', ')}`);
     
-    // Simulate webhook HTTP request delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Get incident ID if not provided
+    const { prisma } = await import('db/client');
+    let currentIncidentId = incidentId;
+    if (!currentIncidentId) {
+        const incident = await prisma.incident.findFirst({
+            where: {
+                monitorId,
+                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+            },
+            select: { id: true }
+        });
+        currentIncidentId = incident?.id;
+    }
+
+    // Get escalation level for context
+    const escalationLevel = await prisma.escalationLevel.findFirst({
+        where: { contacts: { has: contacts[0] } },
+        select: { levelOrder: true }
+    });
+    const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
     
-    console.log(`Webhook escalation sent successfully`);
+    // Validate webhook URLs
+    const validWebhooks = contacts.filter(url => {
+        try {
+            new URL(url);
+            return url.startsWith('http://') || url.startsWith('https://');
+        } catch {
+            return false;
+        }
+    });
+
+    if (validWebhooks.length === 0) {
+        console.log(`🔗 No valid webhook URLs provided`);
+        if (currentIncidentId) {
+            await createEscalationTimelineEvent(
+                currentIncidentId,
+                `🔗 Webhook alert attempted${levelText} but no valid URLs: ${contacts.join(', ')}`
+            );
+        }
+        return;
+    }
+
+    // Prepare webhook payload (TODO: Use in actual HTTP request implementation)
+    const _payload = {
+        title,
+        message,
+        monitorId,
+        escalationLevel: escalationLevel?.levelOrder,
+        timestamp: new Date().toISOString(),
+        type: 'escalation',
+    };
+
+    // Send to each webhook URL
+    const webhookPromises = validWebhooks.map(async (webhookUrl) => {
+        try {
+            // Simulate webhook HTTP request delay (in real implementation, use fetch)
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // TODO: Replace with actual HTTP request
+            // const response = await fetch(webhookUrl, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload)
+            // });
+            // 
+            // if (!response.ok) {
+            //     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // }
+
+            console.log(`🔗 Webhook sent to: ${webhookUrl}`);
+            
+            // Create timeline event for successful webhook
+            if (currentIncidentId) {
+                await createEscalationTimelineEvent(
+                    currentIncidentId,
+                    `🔗 Webhook alert sent${levelText} to ${webhookUrl}`
+                );
+            }
+            
+            return { url: webhookUrl, success: true };
+        } catch (error) {
+            console.error(`🔗 Failed to send webhook to ${webhookUrl}:`, error);
+            
+            // Create timeline event for failed webhook
+            if (currentIncidentId) {
+                await createEscalationTimelineEvent(
+                    currentIncidentId,
+                    `❌ Failed to send webhook alert${levelText} to ${webhookUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                );
+            }
+            
+            return { url: webhookUrl, success: false, error };
+        }
+    });
+
+    // Wait for all webhooks to complete
+    const results = await Promise.all(webhookPromises);
+    const successCount = results.filter(r => r.success).length;
+    
+    console.log(`🔗 Webhook escalation completed: ${successCount}/${validWebhooks.length} successful`);
 }

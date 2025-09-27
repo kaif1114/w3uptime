@@ -202,7 +202,7 @@ export function createMonitorDownMessage(monitor: {
 
 export function createTestMessage(): SlackMessage {
   return {
-    text: "🧪 Test message from W3Uptime",
+    text: "Test message from W3Uptime",
     attachments: [
       {
         color: "good",
@@ -264,7 +264,7 @@ export class SlackWebhookAPI {
    */
   async testWebhook(): Promise<boolean> {
     const testMessage: SlackMessage = {
-      text: "🧪 Webhook test from W3Uptime",
+      text: "Webhook test from W3Uptime",
       attachments: [
         {
           color: "good",

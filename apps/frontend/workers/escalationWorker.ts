@@ -96,7 +96,8 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId
+              monitorId,
+              incidentId
             );
             console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
@@ -108,13 +109,14 @@ export class EscalationWorker {
               title,
               message || "",
               monitorId,
-              escalationLevel.slackChannels as string | null
+              escalationLevel.slackChannels as string | null,
+              incidentId
             );
-            const workspaceInfo = escalationLevel.slackChannels 
+            const workspaceInfo: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
               : [];
             const slackTargets = workspaceInfo.length > 0 
-              ? workspaceInfo.map((ws: any) => `${ws.teamName}#${ws.defaultChannelName}`).join(", ")
+              ? workspaceInfo.map((ws) => `${ws.teamName}#${ws.defaultChannelName}`).join(", ")
               : "selected workspaces";
             console.log(`Sent SLACK escalation to: ${slackTargets}`);
             success = true;
@@ -125,7 +127,8 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId
+              monitorId,
+              incidentId
             );
             console.log(`= Sent WEBHOOK escalation to: ${contacts.join(", ")}`);
             success = true;
