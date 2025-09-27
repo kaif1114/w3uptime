@@ -2,6 +2,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { SelectedSlackChannel } from "@/components/slack-channel-selector";
+
+interface SlackChannelData {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -513,14 +520,14 @@ export function EscalationPolicyDetailPage({
                                               Configured Slack workspaces:
                                             </div>
                                             <div className="space-y-1">
-                                              {currentLevel.slackChannels.map((workspace: SelectedSlackChannel) => (
+                                              {currentLevel.slackChannels.map((workspace: SlackChannelData) => (
                                                 <div
                                                   key={workspace.teamId}
                                                   className="flex items-center gap-2 p-2 bg-muted rounded-md"
                                                 >
                                                   <MessageSquare className="h-4 w-4 text-blue-600" />
                                                   <span className="text-sm">
-                                                    {workspace.teamName} - #{workspace.channelName}
+                                                    {workspace.teamName} - #{workspace.defaultChannelName}
                                                   </span>
                                                 </div>
                                               ))}
@@ -634,11 +641,11 @@ export function EscalationPolicyDetailPage({
                           </div>
                           {level.method === "SLACK" && level.slackChannels && level.slackChannels.length > 0 ? (
                             <div className="space-y-1">
-                              {level.slackChannels.map((channel: SelectedSlackChannel, idx: number) => (
+                              {level.slackChannels.map((channel: SlackChannelData, idx: number) => (
                                 <div key={idx} className="text-sm font-medium">
                                   <span className="text-muted-foreground">{channel.teamName}</span>
                                   <span className="mx-1">•</span>
-                                  <span>#{channel.channelName}</span>
+                                  <span>#{channel.defaultChannelName}</span>
                                 </div>
                               ))}
                             </div>
