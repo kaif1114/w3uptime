@@ -272,7 +272,7 @@ export function UpdatesTab({
                                 (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
-                              r.publicName || monitorName || "Resource";
+                              monitorName || "Resource";
                             const current =
                               reportDraft.affected[r.id] ||
                               "not_affected";
