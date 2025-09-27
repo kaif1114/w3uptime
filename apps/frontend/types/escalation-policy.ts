@@ -5,7 +5,7 @@ export interface EscalationLevel {
   order: number;
   method: EscalationMethod;
   target: string; // email address, webhook URL, or automatically uses selected Slack workspaces
-  slackWorkspaces?: Array<{
+  slackChannels?: Array<{
     teamId: string;
     teamName: string;
     defaultChannelId: string;

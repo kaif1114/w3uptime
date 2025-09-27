@@ -506,13 +506,13 @@ export function EscalationPolicyDetailPage({
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
                                       <div className="space-y-2">
-                                        {currentLevel?.slackWorkspaces && currentLevel.slackWorkspaces.length > 0 ? (
+                                        {currentLevel?.slackChannels && currentLevel.slackChannels.length > 0 ? (
                                           <div className="space-y-2">
                                             <div className="text-sm text-muted-foreground">
                                               Configured Slack workspaces:
                                             </div>
                                             <div className="space-y-1">
-                                              {currentLevel.slackWorkspaces.map((workspace) => (
+                                              {currentLevel.slackChannels.map((workspace: any) => (
                                                 <div
                                                   key={workspace.teamId}
                                                   className="flex items-center gap-2 p-2 bg-muted rounded-md"
@@ -633,11 +633,11 @@ export function EscalationPolicyDetailPage({
                           </div>
                           {level.method === "SLACK" && level.slackChannels && level.slackChannels.length > 0 ? (
                             <div className="space-y-1">
-                              {level.slackChannels.map((channel: SelectedSlackChannel, idx: number) => (
+                              {level.slackChannels.map((channel: any, idx: number) => (
                                 <div key={idx} className="text-sm font-medium">
                                   <span className="text-muted-foreground">{channel.teamName}</span>
                                   <span className="mx-1">•</span>
-                                  <span>#{channel.channelName}</span>
+                                  <span>#{channel.defaultChannelName}</span>
                                 </div>
                               ))}
                             </div>

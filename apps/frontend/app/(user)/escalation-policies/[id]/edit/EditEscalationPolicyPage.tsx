@@ -90,7 +90,7 @@ export function EditEscalationPolicyPage({
         id: level.id,
         method: level.method.toUpperCase() as EscalationMethod,
         target: level.target || "",
-        slackWorkspaces: level.slackWorkspaces || [],
+        slackWorkspaces: level.slackChannels || [],
         waitTimeMinutes: level.waitTimeMinutes,
       }));
       
@@ -203,7 +203,7 @@ export function EditEscalationPolicyPage({
           id: level.id,
           method: level.method as EscalationMethod,
           target: level.target.trim(),
-          slackWorkspaces: level.method === "SLACK" ? level.slackWorkspaces : undefined,
+          slackChannels: level.method === "SLACK" ? level.slackWorkspaces : undefined,
           waitTimeMinutes:
             index === validLevels.length - 1 ? 0 : level.waitTimeMinutes,
         })),

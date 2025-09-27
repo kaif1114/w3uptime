@@ -108,10 +108,10 @@ export class EscalationWorker {
               title,
               message || "",
               monitorId,
-              escalationLevel.slackWorkspaces as string | null
+              escalationLevel.slackChannels as string | null
             );
-            const workspaceInfo = escalationLevel.slackWorkspaces 
-              ? JSON.parse(escalationLevel.slackWorkspaces as string)
+            const workspaceInfo = escalationLevel.slackChannels 
+              ? JSON.parse(escalationLevel.slackChannels as string)
               : [];
             const slackTargets = workspaceInfo.length > 0 
               ? workspaceInfo.map((ws: any) => `${ws.teamName}#${ws.defaultChannelName}`).join(", ")

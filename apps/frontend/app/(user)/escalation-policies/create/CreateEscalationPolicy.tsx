@@ -186,7 +186,7 @@ export function CreateEscalationPolicyForm() {
         levels: validLevels.map((level, index) => ({
           method: level.method as EscalationMethod,
           target: level.target.trim(),
-          slackWorkspaces: level.method === "SLACK" ? level.slackWorkspaces : undefined,
+          slackChannels: level.method === "SLACK" ? level.slackWorkspaces : undefined,
           waitTimeMinutes:
             index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, // Last level gets 0 wait time
         })),
