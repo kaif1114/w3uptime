@@ -66,7 +66,7 @@ import { useState } from "react";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {
-    alert(`✅ ${message}`);
+    alert(`${message}`);
   },
   error: (message: string) => {
     alert(`❌ ${message}`);

@@ -98,7 +98,7 @@ export class EscalationWorker {
               message || "",
               monitorId
             );
-            console.log(`=� Sent EMAIL escalation to: ${contacts.join(", ")}`);
+            console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
             break;
 
@@ -116,7 +116,7 @@ export class EscalationWorker {
             const slackTargets = workspaceInfo.length > 0 
               ? workspaceInfo.map((ws: any) => `${ws.teamName}#${ws.defaultChannelName}`).join(", ")
               : "selected workspaces";
-            console.log(`=📱 Sent SLACK escalation to: ${slackTargets}`);
+            console.log(`Sent SLACK escalation to: ${slackTargets}`);
             success = true;
             break;
 
@@ -210,7 +210,7 @@ export class EscalationWorker {
    * Stop the worker gracefully
    */
   async stop(): Promise<void> {
-    console.log("=� Stopping escalation worker...");
+    console.log(" Stopping escalation worker...");
     await this.worker.close();
     console.log(" Escalation worker stopped");
   }

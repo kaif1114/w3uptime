@@ -186,7 +186,7 @@ export const PATCH = withAuth(
       if (status === "ACKNOWLEDGED" || status === "RESOLVED") {
         try {
           await stopEscalation(result.Monitor.id, incidentid);
-          console.log(`✅ Escalation stopped for incident ${incidentid} (status: ${status})`);
+          console.log(`Escalation stopped for incident ${incidentid} (status: ${status})`);
         } catch (escalationError) {
           console.error(`❌ Failed to stop escalation for incident ${incidentid}:`, escalationError);
           // Don't fail the entire request if escalation stopping fails

@@ -176,7 +176,7 @@ export function createMonitorDownMessage(monitor: {
   lastCheckedAt: Date;
 }): SlackMessage {
   return {
-    text: `🚨 Monitor Down: ${monitor.name}`,
+    text: `Monitor Down: ${monitor.name}`,
     attachments: [
       {
         color: "danger",
@@ -335,11 +335,11 @@ export function createEscalationMessage(escalation: {
   createdAt: Date;
 }): SlackMessage {
   return {
-    text: `🚨 Escalation Level ${escalation.level}: ${escalation.title}`,
+    text: `Escalation Level ${escalation.level}: ${escalation.title}`,
     attachments: [
       {
         color: "danger",
-        title: `🚨 Escalation Level ${escalation.level}`,
+        title: `Escalation Level ${escalation.level}`,
         text: escalation.message || `Monitor "${escalation.monitorName}" requires attention`,
         fields: [
           {

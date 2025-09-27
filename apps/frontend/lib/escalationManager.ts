@@ -10,7 +10,7 @@ export class EscalationManager {
    */
   static async startEscalation(monitorId: string, incidentId: string): Promise<void> {
     try {
-      console.log(`🚨 Starting escalation for monitor ${monitorId}, incident ${incidentId}`);
+      console.log(`Starting escalation for monitor ${monitorId}, incident ${incidentId}`);
 
       // Fetch monitor with its escalation policy and levels
       const monitor = await prisma.monitor.findUnique({
@@ -55,7 +55,7 @@ export class EscalationManager {
         return;
       }
 
-      console.log(`📋 Found ${escalationPolicy.levels.length} escalation levels for policy "${escalationPolicy.name}"`);
+      console.log(`Found ${escalationPolicy.levels.length} escalation levels for policy "${escalationPolicy.name}"`);
 
       // Calculate delay and create jobs for each level
       let cumulativeDelay = 0;
@@ -86,10 +86,10 @@ export class EscalationManager {
           }
         );
 
-        console.log(`⏰ Scheduled ${level.channel} escalation (Level ${level.levelOrder}) in ${level.waitMinutes} minutes (total delay: ${cumulativeDelay/1000/60}min) - Job ID: ${job.id}`);
+        console.log(`Scheduled ${level.channel} escalation (Level ${level.levelOrder}) in ${level.waitMinutes} minutes (total delay: ${cumulativeDelay/1000/60}min) - Job ID: ${job.id}`);
       }
 
-      console.log(`✅ Successfully scheduled ${escalationPolicy.levels.length} escalation jobs for monitor ${monitorId}`);
+      console.log(`Successfully scheduled ${escalationPolicy.levels.length} escalation jobs for monitor ${monitorId}`);
 
     } catch (error) {
       console.error(`❌ Error starting escalation for monitor ${monitorId}:`, error);
@@ -131,7 +131,7 @@ export class EscalationManager {
       });
 
       await Promise.all(cancelPromises);
-      console.log(`✅ Successfully stopped escalation for monitor ${monitorId}, incident ${incidentId}`);
+      console.log(`Successfully stopped escalation for monitor ${monitorId}, incident ${incidentId}`);
 
     } catch (error) {
       console.error(`❌ Error stopping escalation for monitor ${monitorId}:`, error);

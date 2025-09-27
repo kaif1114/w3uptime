@@ -26,8 +26,8 @@ export async function sendEscalationEmail(
     message: string, 
     monitorId: string
 ): Promise<void> {
-    console.log(`📧 Sending escalation email for monitor ${monitorId}`);
-    console.log(`📧 Recipients: ${contacts.join(', ')}`);
+    console.log(`Sending escalation email for monitor ${monitorId}`);
+    console.log(`Recipients: ${contacts.join(', ')}`);
     
     // Import the actual email sending function
     const { sendEscalationEmail: sendEmail } = await import('./email');
@@ -43,7 +43,7 @@ export async function sendEscalationEmail(
         // Send the actual email
         await sendEmail(contacts, title, message, monitorId, escalationLevel?.levelOrder);
         
-        console.log(`✅ Email escalation sent successfully`);
+        console.log(`Email escalation sent successfully`);
     } catch (error) {
         console.error(`❌ Failed to send escalation email:`, error);
         // Re-throw to ensure the escalation system knows about the failure
@@ -62,7 +62,7 @@ export async function sendEscalationSlack(
     monitorId: string,
     slackWorkspacesData?: string | null
 ): Promise<void> {
-    console.log(`💬 Sending escalation Slack message for monitor ${monitorId}`);
+    console.log(`Sending escalation Slack message for monitor ${monitorId}`);
     
     // Parse slack workspaces data
     let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
@@ -75,12 +75,12 @@ export async function sendEscalationSlack(
     }
 
     if (slackWorkspaces.length === 0) {
-        console.log(`💬 No Slack workspaces configured for this escalation`);
+        console.log(`No Slack workspaces configured for this escalation`);
         // Fallback to legacy behavior (logging only)
-        console.log(`💬 Title: ${title}`);
-        console.log(`💬 Message: ${message}`);
-        console.log(`💬 Channels/Users: ${contacts.join(', ')}`);
-        console.log(`✅ Slack escalation logged (no workspaces configured)`);
+        console.log(`Title: ${title}`);
+        console.log(`Message: ${message}`);
+        console.log(`Channels/Users: ${contacts.join(', ')}`);
+        console.log(`Slack escalation logged (no workspaces configured)`);
         return;
     }
 
@@ -124,7 +124,7 @@ export async function sendEscalationSlack(
     try {
         webhookSuccess = await sendSlackWebhookNotification(monitor.userId, escalationMsg);
         if (webhookSuccess) {
-            console.log(`✅ Sent Slack webhook escalation for monitor ${monitorId}`);
+            console.log(`Sent Slack webhook escalation for monitor ${monitorId}`);
         }
     } catch (error) {
         console.error('Error sending webhook escalation:', error);
@@ -152,7 +152,7 @@ export async function sendEscalationSlack(
 
                 const success = await sendSlackNotification(monitor.userId, channelMessage);
                 if (success) {
-                    console.log(`✅ Sent Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    console.log(`Sent Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
                     webhookSuccess = true; // Mark as successful
                 } else {
                     console.error(`❌ Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
@@ -165,7 +165,7 @@ export async function sendEscalationSlack(
 
     // If neither method worked, throw error
     if (!webhookSuccess && slackWorkspaces.length === 0) {
-        console.log(`💬 No Slack integration methods available (no webhook URLs or selected workspaces)`);
+        console.log(`No Slack integration methods available (no webhook URLs or selected workspaces)`);
     }
 }
 
@@ -187,5 +187,5 @@ export async function sendEscalationWebhook(
     // Simulate webhook HTTP request delay
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    console.log(`✅ Webhook escalation sent successfully`);
+    console.log(`Webhook escalation sent successfully`);
 }

@@ -62,7 +62,7 @@ program
         options.walletName
       );
       
-      console.log(chalk.green('✅ Wallet imported successfully'));
+      console.log(chalk.green('Wallet imported successfully'));
       
       // Set as default wallet
       const walletName = path.basename(walletResult.keystorePath, '.json');
@@ -71,7 +71,7 @@ program
       // Save configuration
       await configManager.saveConfig();
       
-      console.log(chalk.cyan(`📋 Wallet Address: ${walletResult.address}`));
+      console.log(chalk.cyan(`Wallet Address: ${walletResult.address}`));
       console.log(chalk.cyan(`📁 Keystore Path: ${walletResult.keystorePath}`));
       console.log(chalk.cyan(`⚙️  Config Path: ${configManager.getConfigPath()}`));
       console.log(chalk.yellow('🔐 Keep your password safe - it cannot be recovered!'));
@@ -230,8 +230,8 @@ walletCmd
       
       const result = await keystoreManager.importWallet(privateKey, password, name);
       
-      console.log(chalk.green('✅ Wallet imported successfully'));
-      console.log(chalk.cyan(`📋 Address: ${result.address}`));
+      console.log(chalk.green('Wallet imported successfully'));
+      console.log(chalk.cyan(`Address: ${result.address}`));
       console.log(chalk.cyan(`📁 Path: ${result.keystorePath}`));
       
     } catch (error) {
@@ -288,7 +288,7 @@ configCmd
       configManager.updateConfig(config);
       await configManager.saveConfig();
       
-      console.log(chalk.green(`✅ Configuration updated: ${key} = ${value}`));
+      console.log(chalk.green(`Configuration updated: ${key} = ${value}`));
       
     } catch (error) {
       console.error(chalk.red(`❌ Failed to set config: ${error instanceof Error ? error.message : String(error)}`));
@@ -319,7 +319,7 @@ configCmd
       configManager.resetToDefaults();
       await configManager.saveConfig();
       
-      console.log(chalk.green('✅ Configuration reset to defaults'));
+      console.log(chalk.green('Configuration reset to defaults'));
       
     } catch (error) {
       console.error(chalk.red(`❌ Failed to reset config: ${error instanceof Error ? error.message : String(error)}`));

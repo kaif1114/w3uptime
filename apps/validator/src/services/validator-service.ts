@@ -70,13 +70,13 @@ export class ValidatorService extends EventEmitter {
       // Authenticate with wallet
       await this.authenticateWallet(walletName);
       
-      console.log(chalk.green('✅ Authentication successful'));
+      console.log(chalk.green('Authentication successful'));
       console.log(chalk.blue('🌐 Connecting to hub...'));
       
       // Create and start WebSocket connection
       await this.initializeWebSocketClient();
       
-      console.log(chalk.green('✅ Connected to hub'))
+      console.log(chalk.green('Connected to hub'))
       console.log(chalk.blue('📝 Registering as validator...'));
       
       // Register with hub
@@ -127,7 +127,7 @@ export class ValidatorService extends EventEmitter {
       this.monitor.destroy();
 
       this.isRunning = false;
-      console.log(chalk.green('✅ Validator service stopped'));
+      console.log(chalk.green('Validator service stopped'));
       
       this.emit('stopped');
       
@@ -209,7 +209,7 @@ export class ValidatorService extends EventEmitter {
     });
 
     this.websocketClient.on('registered', (data: { validatorId: string }) => {
-      console.log(chalk.green(`✅ Registered as validator: ${data.validatorId}`));
+      console.log(chalk.green(`Registered as validator: ${data.validatorId}`));
     });
 
     this.websocketClient.on('validationRequest', async (data: { url: string; callbackId: string; monitorId?: string }) => {

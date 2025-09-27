@@ -6,7 +6,7 @@ const createTransporter = () => {
     throw new Error('Email configuration missing: GOOGLE_APP_USER and GOOGLE_APP_PASSWORD environment variables are required');
   }
 
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.GOOGLE_APP_USER,
@@ -45,7 +45,7 @@ const createEscalationEmailTemplate = (
     <body>
         <div class="container">
             <div class="header">
-                <h1>=¨ W3Uptime Alert</h1>
+                <h1> W3Uptime Alert</h1>
                 <span class="alert-badge">ESCALATION ${escalationLevel ? `LEVEL ${escalationLevel}` : ''}</span>
             </div>
             <div class="content">
@@ -126,7 +126,7 @@ export async function sendEscalationEmail(
           address: process.env.GOOGLE_APP_USER!,
         },
         to: email,
-        subject: `=¨ W3Uptime Alert: ${title}`,
+        subject: ` W3Uptime Alert: ${title}`,
         text,
         html,
         priority: 'high' as const,
