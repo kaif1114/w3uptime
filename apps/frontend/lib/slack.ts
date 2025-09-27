@@ -330,16 +330,15 @@ export function createEscalationMessage(escalation: {
   title: string;
   monitorName: string;
   monitorUrl: string;
-  level: number;
   message?: string;
   createdAt: Date;
 }): SlackMessage {
   return {
-    text: `Escalation Level ${escalation.level}: ${escalation.title}`,
+    text: `Escalation Alert: ${escalation.title}`,
     attachments: [
       {
         color: "danger",
-        title: `Escalation Level ${escalation.level}`,
+        title: "Escalation Alert",
         text: escalation.message || `Monitor "${escalation.monitorName}" requires attention`,
         fields: [
           {
@@ -350,11 +349,6 @@ export function createEscalationMessage(escalation: {
           {
             title: "URL",
             value: escalation.monitorUrl,
-            short: true,
-          },
-          {
-            title: "Escalation Level",
-            value: escalation.level.toString(),
             short: true,
           },
           {

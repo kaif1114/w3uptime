@@ -196,7 +196,7 @@ export class ValidatorService extends EventEmitter {
     
     // Setup WebSocket event handlers
     this.websocketClient.on('connected', () => {
-      console.log(chalk.green('🔗 Connected to hub'));
+      console.log(chalk.green('Connected to hub'));
     });
 
     this.websocketClient.on('disconnected', () => {

@@ -96,8 +96,7 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId,
-              incidentId
+              monitorId
             );
             console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
@@ -109,8 +108,7 @@ export class EscalationWorker {
               title,
               message || "",
               monitorId,
-              escalationLevel.slackChannels as string | null,
-              incidentId
+              escalationLevel.slackChannels as string | null
             );
             const workspaceInfo: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
@@ -127,8 +125,7 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId,
-              incidentId
+              monitorId
             );
             console.log(`= Sent WEBHOOK escalation to: ${contacts.join(", ")}`);
             success = true;

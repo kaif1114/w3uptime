@@ -21,8 +21,7 @@ const createTransporter = () => {
 const createEscalationEmailTemplate = (
   title: string,
   message: string,
-  monitorId: string,
-  escalationLevel?: number
+  monitorId: string
 ) => {
   const html = `
     <!DOCTYPE html>
@@ -46,7 +45,7 @@ const createEscalationEmailTemplate = (
         <div class="container">
             <div class="header">
                 <h1> W3Uptime Alert</h1>
-                <span class="alert-badge">ESCALATION ${escalationLevel ? `LEVEL ${escalationLevel}` : ''}</span>
+                <span class="alert-badge">ESCALATION</span>
             </div>
             <div class="content">
                 <h2>${title}</h2>
@@ -71,7 +70,7 @@ const createEscalationEmailTemplate = (
   `;
 
   const text = `
-W3UPTIME ALERT - ESCALATION ${escalationLevel ? `LEVEL ${escalationLevel}` : ''}
+W3UPTIME ALERT - ESCALATION
 
 ${title}
 
@@ -96,8 +95,7 @@ export async function sendEscalationEmail(
   contacts: string[],
   title: string,
   message: string,
-  monitorId: string,
-  escalationLevel?: number
+  monitorId: string
 ): Promise<void> {
   try {
     // Validate email addresses
@@ -116,7 +114,7 @@ export async function sendEscalationEmail(
     await transporter.verify();
 
     // Generate email template
-    const { html, text } = createEscalationEmailTemplate(title, message, monitorId, escalationLevel);
+    const { html, text } = createEscalationEmailTemplate(title, message, monitorId);
 
     // Send email to each contact
     const emailPromises = validEmails.map(async (email) => {

@@ -46,8 +46,7 @@ export async function sendEscalationEmail(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string,
-    incidentId?: string
+    monitorId: string
 ): Promise<void> {
     console.log(`Sending escalation email for monitor ${monitorId}`);
     console.log(`Recipients: ${contacts.join(', ')}`);
@@ -55,12 +54,8 @@ export async function sendEscalationEmail(
     // Import the actual email sending function
     const { sendEscalationEmail: sendEmail } = await import('./email');
     
-    // Get escalation level and incident ID if not provided (moved outside try block)
+    // Get incident ID if not provided
     const { prisma } = await import('db/client');
-    const escalationLevel = await prisma.escalationLevel.findFirst({
-        where: { contacts: { has: contacts[0] } },
-        select: { levelOrder: true }
-    });
 
     // Get incident ID if not provided
     let currentIncidentId = incidentId;
@@ -77,7 +72,7 @@ export async function sendEscalationEmail(
     
     try {
         // Send the actual email
-        await sendEmail(contacts, title, message, monitorId, escalationLevel?.levelOrder);
+        await sendEmail(contacts, title, message, monitorId);
         
         // Create timeline event for successful email escalation
         if (currentIncidentId) {
@@ -114,8 +109,7 @@ export async function sendEscalationSlack(
     title: string, 
     message: string, 
     monitorId: string,
-    slackWorkspacesData?: string | null,
-    incidentId?: string
+    slackWorkspacesData?: string | null
 ): Promise<void> {
     console.log(`Sending escalation Slack message for monitor ${monitorId}`);
     
@@ -133,11 +127,6 @@ export async function sendEscalationSlack(
         currentIncidentId = incident?.id;
     }
 
-    // Get escalation level for context  
-    const escalationLevel = await prisma.escalationLevel.findFirst({
-        where: { contacts: { has: contacts[0] } },
-        select: { levelOrder: true }
-    });
     
     // Parse slack workspaces data
     let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
@@ -190,7 +179,6 @@ export async function sendEscalationSlack(
         title,
         monitorName: monitor.name,
         monitorUrl: monitor.url,
-        level: escalationLevel?.levelOrder || 1,
         message,
         createdAt: new Date()
     });
@@ -285,31 +273,22 @@ export async function sendEscalationWebhook(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string,
-    incidentId?: string
+    monitorId: string
 ): Promise<void> {
-    console.log(`🔗 Sending escalation webhook for monitor ${monitorId}`);
-    console.log(`🔗 Webhook URLs: ${contacts.join(', ')}`);
+    console.log(`Sending escalation webhook for monitor ${monitorId}`);
+    console.log(`Webhook URLs: ${contacts.join(', ')}`);
     
-    // Get incident ID if not provided
+    // Get incident ID
     const { prisma } = await import('db/client');
-    let currentIncidentId = incidentId;
-    if (!currentIncidentId) {
-        const incident = await prisma.incident.findFirst({
-            where: {
-                monitorId,
-                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
-            },
-            select: { id: true }
-        });
-        currentIncidentId = incident?.id;
-    }
-
-    // Get escalation level for context
-    const escalationLevel = await prisma.escalationLevel.findFirst({
-        where: { contacts: { has: contacts[0] } },
-        select: { levelOrder: true }
+    const incident = await prisma.incident.findFirst({
+        where: {
+            monitorId,
+            status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+        },
+        select: { id: true }
     });
+    const currentIncidentId = incident?.id;
+
     
     // Validate webhook URLs
     const validWebhooks = contacts.filter(url => {
@@ -322,11 +301,11 @@ export async function sendEscalationWebhook(
     });
 
     if (validWebhooks.length === 0) {
-        console.log(`🔗 No valid webhook URLs provided`);
+        console.log(`No valid webhook URLs provided`);
         if (currentIncidentId) {
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `🔗 Webhook alert attempted but no valid URLs: ${contacts.join(', ')}`
+                `Webhook alert attempted but no valid URLs: ${contacts.join(', ')}`
             );
         }
         return;
@@ -337,7 +316,6 @@ export async function sendEscalationWebhook(
         title,
         message,
         monitorId,
-        escalationLevel: escalationLevel?.levelOrder,
         timestamp: new Date().toISOString(),
         type: 'escalation',
     };
@@ -359,19 +337,19 @@ export async function sendEscalationWebhook(
             //     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             // }
 
-            console.log(`🔗 Webhook sent to: ${webhookUrl}`);
+            console.log(`Webhook sent to: ${webhookUrl}`);
             
             // Create timeline event for successful webhook
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `🔗 Webhook alert sent to ${webhookUrl}`
+                    `Webhook alert sent to ${webhookUrl}`
                 );
             }
             
             return { url: webhookUrl, success: true };
         } catch (error) {
-            console.error(`🔗 Failed to send webhook to ${webhookUrl}:`, error);
+            console.error(`Failed to send webhook to ${webhookUrl}:`, error);
             
             // Create timeline event for failed webhook
             if (currentIncidentId) {
@@ -389,5 +367,5 @@ export async function sendEscalationWebhook(
     const results = await Promise.all(webhookPromises);
     const successCount = results.filter(r => r.success).length;
     
-    console.log(`🔗 Webhook escalation completed: ${successCount}/${validWebhooks.length} successful`);
+    console.log(`Webhook escalation completed: ${successCount}/${validWebhooks.length} successful`);
 }
