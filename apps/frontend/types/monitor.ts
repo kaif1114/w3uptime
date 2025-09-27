@@ -40,6 +40,7 @@ export interface UpdateMonitorData {
   checkInterval: number;
   expectedStatusCodes: number[];
   status: MonitorStatus;
+  escalationPolicyId?: string | null;
 }
 
 export interface MonitorApiResponse {
