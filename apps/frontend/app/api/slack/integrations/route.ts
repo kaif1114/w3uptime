@@ -24,6 +24,7 @@ export async function GET() {
         isActive: true,
         defaultChannelId: true,
         defaultChannelName: true,
+        webhookUrl: true,
       },
     });
 

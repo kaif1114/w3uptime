@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract webhook URL if incoming webhook was authorized
+    let webhookUrl: string | null = null;
+    if (tokenData.incoming_webhook) {
+      webhookUrl = tokenData.incoming_webhook.url;
+      console.log("Webhook URL received from Slack:", webhookUrl);
+    }
+
     // Get default channel (try #general first, then first available channel)
     let defaultChannelId: string | null = null;
     let defaultChannelName: string | null = null;
@@ -96,6 +103,7 @@ export async function POST(request: NextRequest) {
           scope: tokenData.scope,
           defaultChannelId,
           defaultChannelName,
+          webhookUrl,
           isActive: true,
           updatedAt: new Date(),
         },
@@ -112,6 +120,7 @@ export async function POST(request: NextRequest) {
           scope: tokenData.scope,
           defaultChannelId,
           defaultChannelName,
+          webhookUrl,
           isActive: true,
         },
       });
@@ -126,6 +135,10 @@ export async function POST(request: NextRequest) {
       defaultChannel: defaultChannelId ? {
         id: defaultChannelId,
         name: defaultChannelName,
+      } : null,
+      webhook: webhookUrl ? {
+        url: webhookUrl,
+        configured: true,
       } : null,
     });
   } catch (error) {
