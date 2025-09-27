@@ -5,6 +5,21 @@ import { z } from "zod";
 import { PrismaTransaction } from "@/types/database-operations";
 import { EscalationMethod } from "@/types/escalation-policy";
 
+interface SlackChannelConfig {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+}
+
+interface EscalationLevelUpdateInput {
+  id?: string;
+  method: EscalationMethod;
+  target: string;
+  slackChannels?: SlackChannelConfig[];
+  waitTimeMinutes: number;
+}
+
 // Validation schema for updating escalation policy
 const updateEscalationPolicySchema = z.object({
   name: z
@@ -194,7 +209,7 @@ export const PUT = withAuth(
 
         // Process each level (update existing or create new)
         const processedLevels = await Promise.all(
-          levels.map(async (level: { id?: string; method: EscalationMethod; target: string; slackChannels?: any[]; waitTimeMinutes: number }, index: number) => {
+          levels.map(async (level: EscalationLevelUpdateInput, index: number) => {
             const levelData = {
               levelOrder: index + 1,
               waitMinutes: level.waitTimeMinutes,

@@ -5,6 +5,20 @@ import { withAuth } from "@/lib/auth";
 import { WhereClause, OrderByClause, DbEscalationPolicyWithLevels, DbEscalationLevel, PrismaTransaction } from "@/types/database-operations";
 import { EscalationMethod } from "@/types/escalation-policy";
 
+interface SlackChannelConfig {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+}
+
+interface EscalationLevelInput {
+  method: EscalationMethod;
+  target: string;
+  slackChannels?: SlackChannelConfig[];
+  waitTimeMinutes: number;
+}
+
 
 // Validation schema for creating escalation policy
 const createEscalationPolicySchema = z.object({
@@ -173,7 +187,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 
       // Create escalation levels
       const createdLevels = await Promise.all(
-        levels.map((level: { method: EscalationMethod; target: string; slackChannels?: any[]; waitTimeMinutes: number }, index: number) =>
+        levels.map((level: EscalationLevelInput, index: number) =>
           tx.escalationLevel.create({
             data: {
               escalationId: policy.id,
