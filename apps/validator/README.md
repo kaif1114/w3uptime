@@ -231,7 +231,7 @@ export W3UPTIME_LOG_FILE="/var/log/w3uptime-validator.log"
 
 #### Connection Failed
 ```
-❌ Failed to connect to hub
+Failed to connect to hub
 ```
 - Check hub URL in configuration
 - Verify network connectivity
@@ -239,7 +239,7 @@ export W3UPTIME_LOG_FILE="/var/log/w3uptime-validator.log"
 
 #### Authentication Failed
 ```
-❌ Authentication failed: Invalid password
+Authentication failed: Invalid password
 ```
 - Verify wallet password
 - Check keystore file integrity
@@ -247,7 +247,7 @@ export W3UPTIME_LOG_FILE="/var/log/w3uptime-validator.log"
 
 #### Signature Verification Failed
 ```
-❌ Hub error: Invalid signature
+Hub error: Invalid signature
 ```
 - Check system clock synchronization
 - Verify private key integrity

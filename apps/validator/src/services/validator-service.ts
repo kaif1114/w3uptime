@@ -132,7 +132,7 @@ export class ValidatorService extends EventEmitter {
       this.emit('stopped');
       
     } catch (error) {
-      console.error(chalk.red(`❌ Error during shutdown: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Error during shutdown: ${error instanceof Error ? error.message : String(error)}`));
     } finally {
       this.shutdownInProgress = false;
     }
@@ -217,11 +217,11 @@ export class ValidatorService extends EventEmitter {
     });
 
     this.websocketClient.on('hubError', (error: { message: string }) => {
-      console.log(chalk.red(`❌ Hub error: ${error.message}`));
+      console.log(chalk.red(`Hub error: ${error.message}`));
     });
 
     this.websocketClient.on('error', (error: Error) => {
-      console.log(chalk.red(`❌ WebSocket error: ${error.message}`));
+      console.log(chalk.red(`WebSocket error: ${error.message}`));
     });
 
     // Connect to hub
@@ -257,7 +257,7 @@ export class ValidatorService extends EventEmitter {
         console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
       
     } catch (error) {
-      console.log(chalk.red(`❌ Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
+      console.log(chalk.red(`Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
       
       // Send error result
       try {
@@ -268,7 +268,7 @@ export class ValidatorService extends EventEmitter {
           monitorId: data.monitorId || 'unknown'
         });
       } catch (sendError) {
-        console.log(chalk.red(`❌ Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`) );
+        console.log(chalk.red(`Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`) );
       }
       
       this.stats.failedValidations++;

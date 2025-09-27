@@ -29,7 +29,7 @@ export class EscalationManager {
       });
 
       if (!monitor) {
-        console.error(`❌ Monitor ${monitorId} not found`);
+        console.error(`Monitor ${monitorId} not found`);
         return;
       }
 
@@ -51,7 +51,7 @@ export class EscalationManager {
       });
 
       if (!incident) {
-        console.error(`❌ Incident ${incidentId} not found`);
+        console.error(`Incident ${incidentId} not found`);
         return;
       }
 
@@ -92,7 +92,7 @@ export class EscalationManager {
       console.log(`Successfully scheduled ${escalationPolicy.levels.length} escalation jobs for monitor ${monitorId}`);
 
     } catch (error) {
-      console.error(`❌ Error starting escalation for monitor ${monitorId}:`, error);
+      console.error(`Error starting escalation for monitor ${monitorId}:`, error);
     }
   }
 
@@ -124,7 +124,7 @@ export class EscalationManager {
       const cancelPromises = jobsToCancel.map(async (job) => {
         try {
           await job.remove();
-          console.log(`❌ Cancelled job: ${job.name}`);
+          console.log(`Cancelled job: ${job.name}`);
         } catch (error) {
           console.error(`Failed to cancel job ${job.name}:`, error);
         }
@@ -134,7 +134,7 @@ export class EscalationManager {
       console.log(`Successfully stopped escalation for monitor ${monitorId}, incident ${incidentId}`);
 
     } catch (error) {
-      console.error(`❌ Error stopping escalation for monitor ${monitorId}:`, error);
+      console.error(`Error stopping escalation for monitor ${monitorId}:`, error);
     }
   }
 

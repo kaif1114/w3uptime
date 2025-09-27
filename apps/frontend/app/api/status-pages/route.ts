@@ -95,7 +95,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
-      console.error("❌ Validation error:", parsed.error);
+      console.error("Validation error:", parsed.error);
       return NextResponse.json(
         { error: parsed.error.message },
         { status: 400 }
@@ -166,8 +166,8 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       { status: 201 }
     );
   } catch (error) {
-    console.error("❌ Error creating status page:", error);
-    console.error("❌ Error stack:", (error as Error).stack);
+    console.error("Error creating status page:", error);
+    console.error("Error stack:", (error as Error).stack);
     return NextResponse.json(
       { error: "Internal server error", details: (error as Error).message },
       { status: 500 }

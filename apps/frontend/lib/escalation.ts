@@ -55,27 +55,27 @@ export async function sendEscalationEmail(
     // Import the actual email sending function
     const { sendEscalationEmail: sendEmail } = await import('./email');
     
-    try {
-        // Get escalation level and incident ID if not provided
-        const { prisma } = await import('db/client');
-        const escalationLevel = await prisma.escalationLevel.findFirst({
-            where: { contacts: { has: contacts[0] } },
-            select: { levelOrder: true }
+    // Get escalation level and incident ID if not provided (moved outside try block)
+    const { prisma } = await import('db/client');
+    const escalationLevel = await prisma.escalationLevel.findFirst({
+        where: { contacts: { has: contacts[0] } },
+        select: { levelOrder: true }
+    });
+
+    // Get incident ID if not provided
+    let currentIncidentId = incidentId;
+    if (!currentIncidentId) {
+        const incident = await prisma.incident.findFirst({
+            where: {
+                monitorId,
+                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
+            },
+            select: { id: true }
         });
-
-        // Get incident ID if not provided
-        let currentIncidentId = incidentId;
-        if (!currentIncidentId) {
-            const incident = await prisma.incident.findFirst({
-                where: {
-                    monitorId,
-                    status: { in: ["ONGOING", "ACKNOWLEDGED"] }
-                },
-                select: { id: true }
-            });
-            currentIncidentId = incident?.id;
-        }
-
+        currentIncidentId = incident?.id;
+    }
+    
+    try {
         // Send the actual email
         await sendEmail(contacts, title, message, monitorId, escalationLevel?.levelOrder);
         
@@ -90,34 +90,14 @@ export async function sendEscalationEmail(
         
         console.log(`Email escalation sent successfully`);
     } catch (error) {
-        console.error(`❌ Failed to send escalation email:`, error);
+        console.error(`Failed to send escalation email:`, error);
         
         // Create timeline event for failed email escalation
-        if (incidentId) {
-            const { prisma } = await import('db/client');
-            const escalationLevel = await prisma.escalationLevel.findFirst({
-                where: { contacts: { has: contacts[0] } },
-                select: { levelOrder: true }
-            });
-            
-            let currentIncidentId = incidentId;
-            if (!currentIncidentId) {
-                const incident = await prisma.incident.findFirst({
-                    where: {
-                        monitorId,
-                        status: { in: ["ONGOING", "ACKNOWLEDGED"] }
-                    },
-                    select: { id: true }
-                });
-                currentIncidentId = incident?.id;
-            }
-
-            if (currentIncidentId) {
-                await createEscalationTimelineEvent(
-                    currentIncidentId,
-                    `❌ Failed to send email alert to: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
-                );
-            }
+        if (currentIncidentId) {
+            await createEscalationTimelineEvent(
+                currentIncidentId,
+                `❌ Failed to send email alert to: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
         }
         
         // Re-throw to ensure the escalation system knows about the failure
@@ -273,13 +253,13 @@ export async function sendEscalationSlack(
                         );
                     }
                 } else {
-                    console.error(`❌ Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    console.error(`Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
                     
                     // Create timeline event for failed Bot API notification
                     if (currentIncidentId) {
                         await createEscalationTimelineEvent(
                             currentIncidentId,
-                            `❌ Failed to send Slack alert to ${workspace.teamName}#${workspace.defaultChannelName}`
+                            `Failed to send Slack alert to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
                 }
@@ -290,7 +270,7 @@ export async function sendEscalationSlack(
                 if (currentIncidentId) {
                     await createEscalationTimelineEvent(
                         currentIncidentId,
-                        `❌ Error sending Slack alert to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        `Error sending Slack alert to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
                     );
                 }
             }
@@ -403,7 +383,7 @@ export async function sendEscalationWebhook(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `❌ Failed to send webhook alert to ${webhookUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    `Failed to send webhook alert to ${webhookUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
                 );
             }
             
