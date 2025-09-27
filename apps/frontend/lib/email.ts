@@ -57,7 +57,8 @@ const createEscalationEmailTemplate = (
                 <h2>${title}</h2>
                 <div class="monitor-info">
                     <h3>Alert Details</h3>
-                    <p><strong>Message:</strong> ${message}</p>
+                    <p><strong>Message:</strong></p>
+                    <pre style="white-space: pre-wrap; font-family: Arial, sans-serif; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0;">${message}</pre>
                     <p><strong>Monitor ID:</strong> ${monitorId}</p>
                     <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
                 </div>
