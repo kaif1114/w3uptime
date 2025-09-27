@@ -10,7 +10,7 @@ const patchMonitorSchema = z.object({
   checkInterval: z.number().int().positive().default(300), // seconds
   status: z.enum(["ACTIVE", "PAUSED", "DOWN", "RECOVERING"]).default("ACTIVE"),
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
-  escalationPolicyId: z.string().nullable().optional(),
+  escalationPolicyId: z.string().min(1, "Escalation policy is required"),
 });
 
 // GET /api/monitors/[monitorid] - Get single monitor

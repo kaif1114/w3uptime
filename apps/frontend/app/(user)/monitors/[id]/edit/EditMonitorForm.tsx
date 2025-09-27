@@ -35,7 +35,7 @@ const editMonitorSchema = z.object({
   checkInterval: z.number().int().min(60).max(3600),
   status: z.enum(["ACTIVE", "PAUSED"]),
   expectedStatusCodes: z.array(z.number().int().min(100).max(599)).min(1, "At least one status code is required"),
-  escalationPolicyId: z.string().nullable().optional(),
+  escalationPolicyId: z.string().min(1, "An escalation policy must be selected"),
 });
 
 type EditMonitorFormData = z.infer<typeof editMonitorSchema>;
@@ -108,7 +108,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       checkInterval: monitor.checkInterval,
       status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : (monitor.status === "ACTIVE" ? "ACTIVE" : "PAUSED"),
       expectedStatusCodes: monitor.expectedStatusCodes,
-      escalationPolicyId: monitor.escalationPolicyId,
+      escalationPolicyId: monitor.escalationPolicyId || "",
     },
   });
 
@@ -376,7 +376,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         <CardHeader>
           <CardTitle className="text-base">Escalation Policy</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Select an escalation policy to handle alerts when this monitor fails
+            Select an escalation policy to handle alerts when this monitor fails (required)
           </p>
         </CardHeader>
         <CardContent>
@@ -389,16 +389,13 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
               </div>
             ) : (
               <Select
-                value={watch("escalationPolicyId") || "none"}
-                onValueChange={(value) => setValue("escalationPolicyId", value === "none" ? null : value)}
+                value={watch("escalationPolicyId") || ""}
+                onValueChange={(value) => setValue("escalationPolicyId", value)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an escalation policy (optional)" />
+                <SelectTrigger className={errors.escalationPolicyId ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select an escalation policy (required)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">
-                    <span className="text-muted-foreground">No escalation policy</span>
-                  </SelectItem>
                   {escalationPolicies?.escalationPolicies?.map((policy) => (
                     <SelectItem key={policy.id} value={policy.id}>
                       <div className="flex items-center justify-between w-full">
@@ -411,6 +408,10 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            
+            {errors.escalationPolicyId && (
+              <p className="text-sm text-destructive">{errors.escalationPolicyId.message}</p>
             )}
             
             {/* Show current escalation policy info */}
