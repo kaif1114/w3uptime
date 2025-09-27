@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { EscalationLevelItem } from "./EscalationlevelItem";
+import { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
 
 const escalationPolicySchema = z.object({
   name: z
@@ -50,6 +51,7 @@ interface EscalationLevelForm {
   id: string;
   method: EscalationMethod | "";
   target: string;
+  slackWorkspaces: SelectedSlackWorkspace[];
   waitTimeMinutes: number;
 }
 
@@ -58,7 +60,7 @@ export function CreateEscalationPolicyForm() {
   const createMutation = useCreateEscalationPolicy();
 
   const [levels, setLevels] = useState<EscalationLevelForm[]>([
-    { id: uuidv4(), method: "", target: "", waitTimeMinutes: 60 },
+    { id: uuidv4(), method: "", target: "", slackWorkspaces: [], waitTimeMinutes: 60 },
   ]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [policyName, setPolicyName] = useState("");
@@ -93,6 +95,7 @@ export function CreateEscalationPolicyForm() {
         id: uuidv4(),
         method: "" as EscalationMethod | "",
         target: "",
+        slackWorkspaces: [],
         waitTimeMinutes: 60,
       };
       setLevels([...levels, newLevel]);
@@ -165,7 +168,7 @@ export function CreateEscalationPolicyForm() {
       const validLevels = levels.filter(
         (level, index) => {
           const hasValidTarget = level.method === "SLACK" 
-            ? true // Slack uses authorized channels automatically
+            ? level.slackWorkspaces.length > 0 
             : level.target.trim();
           return level.method &&
             hasValidTarget &&
@@ -183,6 +186,7 @@ export function CreateEscalationPolicyForm() {
         levels: validLevels.map((level, index) => ({
           method: level.method as EscalationMethod,
           target: level.target.trim(),
+          slackWorkspaces: level.method === "SLACK" ? level.slackWorkspaces : undefined,
           waitTimeMinutes:
             index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, // Last level gets 0 wait time
         })),
@@ -215,7 +219,7 @@ export function CreateEscalationPolicyForm() {
     const hasValidLevels = levels.some(
       (level, index) => {
         const hasValidTarget = level.method === "SLACK" 
-          ? true // Slack uses authorized channels automatically
+          ? level.slackWorkspaces.length > 0 
           : level.target.trim();
         return level.method &&
           hasValidTarget &&
@@ -302,9 +306,11 @@ export function CreateEscalationPolicyForm() {
                     level={index + 1}
                     method={level.method}
                     target={level.target}
+                    slackWorkspaces={level.slackWorkspaces}
                     waitTimeMinutes={level.waitTimeMinutes}
                     onMethodChange={(method) => updateLevel(index, { method })}
                     onTargetChange={(target) => updateLevel(index, { target })}
+                    onSlackWorkspacesChange={(slackWorkspaces) => updateLevel(index, { slackWorkspaces })}
                     onWaitTimeChange={(waitTimeMinutes) =>
                       updateLevel(index, { waitTimeMinutes })
                     }

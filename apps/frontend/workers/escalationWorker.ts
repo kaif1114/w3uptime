@@ -107,9 +107,16 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId
+              monitorId,
+              escalationLevel.slackWorkspaces as string | null
             );
-            console.log(`=📱 Sent SLACK escalation to default channels`);
+            const workspaceInfo = escalationLevel.slackWorkspaces 
+              ? JSON.parse(escalationLevel.slackWorkspaces as string)
+              : [];
+            const slackTargets = workspaceInfo.length > 0 
+              ? workspaceInfo.map((ws: any) => `${ws.teamName}#${ws.defaultChannelName}`).join(", ")
+              : "selected workspaces";
+            console.log(`=📱 Sent SLACK escalation to: ${slackTargets}`);
             success = true;
             break;
 

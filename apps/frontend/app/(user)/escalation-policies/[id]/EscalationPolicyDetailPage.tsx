@@ -505,10 +505,33 @@ export function EscalationPolicyDetailPage({
                                         : "Target"}
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
-                                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                                          This escalation will send to your authorized Slack channels. Manage your Slack integrations in Settings.
-                                        </p>
+                                      <div className="space-y-2">
+                                        {currentLevel?.slackWorkspaces && currentLevel.slackWorkspaces.length > 0 ? (
+                                          <div className="space-y-2">
+                                            <div className="text-sm text-muted-foreground">
+                                              Configured Slack workspaces:
+                                            </div>
+                                            <div className="space-y-1">
+                                              {currentLevel.slackWorkspaces.map((workspace) => (
+                                                <div
+                                                  key={workspace.teamId}
+                                                  className="flex items-center gap-2 p-2 bg-muted rounded-md"
+                                                >
+                                                  <MessageSquare className="h-4 w-4 text-blue-600" />
+                                                  <span className="text-sm">
+                                                    {workspace.teamName} - #{workspace.defaultChannelName}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                                              No Slack workspaces configured for this escalation level.
+                                            </p>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
                                       <Input

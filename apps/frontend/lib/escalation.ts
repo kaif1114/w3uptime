@@ -38,18 +38,39 @@ export async function sendEscalationEmail(
 }
 
 /**
- * Send escalation via Slack using default channel from integration
- * This function sends escalation messages to the default Slack channel
+ * Send escalation via Slack using selected workspaces
+ * This function sends escalation messages to the selected Slack workspaces
  */
 export async function sendEscalationSlack(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string
+    monitorId: string,
+    slackWorkspacesData?: string | null
 ): Promise<void> {
     console.log(`💬 Sending escalation Slack message for monitor ${monitorId}`);
     
-    // Get monitor and user's Slack integrations
+    // Parse slack workspaces data
+    let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
+    if (slackWorkspacesData) {
+        try {
+            slackWorkspaces = JSON.parse(slackWorkspacesData);
+        } catch (error) {
+            console.error('Error parsing slack workspaces data:', error);
+        }
+    }
+
+    if (slackWorkspaces.length === 0) {
+        console.log(`💬 No Slack workspaces configured for this escalation`);
+        // Fallback to legacy behavior (logging only)
+        console.log(`💬 Title: ${title}`);
+        console.log(`💬 Message: ${message}`);
+        console.log(`💬 Channels/Users: ${contacts.join(', ')}`);
+        console.log(`✅ Slack escalation logged (no workspaces configured)`);
+        return;
+    }
+
+    // Get monitor details for the message
     const { prisma } = await import('db/client');
     const monitor = await prisma.monitor.findUnique({
         where: { id: monitorId },
@@ -58,27 +79,6 @@ export async function sendEscalationSlack(
 
     if (!monitor) {
         throw new Error(`Monitor ${monitorId} not found`);
-    }
-
-    // Get user's active Slack integrations with default channels
-    const integrations = await prisma.slackIntegration.findMany({
-        where: {
-            userId: monitor.userId,
-            isActive: true,
-            defaultChannelId: {
-                not: null
-            }
-        },
-    });
-
-    if (integrations.length === 0) {
-        console.log(`💬 No Slack integrations with default channels found for user ${monitor.userId}`);
-        // Fallback to legacy behavior (logging only)
-        console.log(`💬 Title: ${title}`);
-        console.log(`💬 Message: ${message}`);
-        console.log(`💬 Channels/Users: ${contacts.join(', ')}`);
-        console.log(`✅ Slack escalation logged (no integrations with default channels)`);
-        return;
     }
 
     // Use actual Slack integration
@@ -93,23 +93,23 @@ export async function sendEscalationSlack(
         createdAt: new Date()
     });
 
-    // Send to each integration's default channel
-    for (const integration of integrations) {
+    // Send to each selected workspace
+    for (const workspace of slackWorkspaces) {
         try {
             // Update message with specific channel
             const channelMessage = {
                 ...incidentMessage,
-                channel: integration.defaultChannelId!
+                channel: workspace.defaultChannelId
             };
 
             const success = await sendSlackNotification(monitor.userId, channelMessage);
             if (success) {
-                console.log(`✅ Sent Slack notification to ${integration.teamName}#${integration.defaultChannelName}`);
+                console.log(`✅ Sent Slack notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
             } else {
-                console.error(`❌ Failed to send Slack notification to ${integration.teamName}#${integration.defaultChannelName}`);
+                console.error(`❌ Failed to send Slack notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
             }
         } catch (error) {
-            console.error(`Error sending to channel ${integration.defaultChannelName}:`, error);
+            console.error(`Error sending to workspace ${workspace.teamName}:`, error);
         }
     }
 }

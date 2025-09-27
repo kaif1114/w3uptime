@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { EscalationLevelItem } from "../../create/EscalationlevelItem";
+import { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
 import Link from "next/link";
 
 const escalationPolicySchema = z.object({
@@ -51,6 +52,7 @@ interface EscalationLevelForm {
   id: string;
   method: EscalationMethod | "";
   target: string;
+  slackWorkspaces: SelectedSlackWorkspace[];
   waitTimeMinutes: number;
 }
 
@@ -88,6 +90,7 @@ export function EditEscalationPolicyPage({
         id: level.id,
         method: level.method.toUpperCase() as EscalationMethod,
         target: level.target || "",
+        slackWorkspaces: level.slackWorkspaces || [],
         waitTimeMinutes: level.waitTimeMinutes,
       }));
       
@@ -117,6 +120,7 @@ export function EditEscalationPolicyPage({
         id: uuidv4(),
         method: "" as EscalationMethod | "",
         target: "",
+        slackWorkspaces: [],
         waitTimeMinutes: 60,
       };
       setLevels([...levels, newLevel]);
@@ -180,7 +184,7 @@ export function EditEscalationPolicyPage({
       const validLevels = levels.filter(
         (level, index) => {
           const hasValidTarget = level.method === "SLACK" 
-            ? true // Slack uses authorized channels automatically
+            ? level.slackWorkspaces.length > 0 
             : level.target.trim();
           return level.method &&
             hasValidTarget &&
@@ -199,6 +203,7 @@ export function EditEscalationPolicyPage({
           id: level.id,
           method: level.method as EscalationMethod,
           target: level.target.trim(),
+          slackWorkspaces: level.method === "SLACK" ? level.slackWorkspaces : undefined,
           waitTimeMinutes:
             index === validLevels.length - 1 ? 0 : level.waitTimeMinutes,
         })),
@@ -227,7 +232,7 @@ export function EditEscalationPolicyPage({
     const hasValidLevels = levels.some(
       (level, index) => {
         const hasValidTarget = level.method === "SLACK" 
-          ? true // Slack uses authorized channels automatically
+          ? level.slackWorkspaces.length > 0 
           : level.target.trim();
         return level.method &&
           hasValidTarget &&
@@ -358,9 +363,11 @@ export function EditEscalationPolicyPage({
                     level={index + 1}
                     method={level.method}
                     target={level.target}
+                    slackWorkspaces={level.slackWorkspaces}
                     waitTimeMinutes={level.waitTimeMinutes}
                     onMethodChange={(method) => updateLevel(index, { method })}
                     onTargetChange={(target) => updateLevel(index, { target })}
+                    onSlackWorkspacesChange={(slackWorkspaces) => updateLevel(index, { slackWorkspaces })}
                     onWaitTimeChange={(waitTimeMinutes) =>
                       updateLevel(index, { waitTimeMinutes })
                     }
