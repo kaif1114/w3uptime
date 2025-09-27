@@ -76,15 +76,29 @@ export default async function AcknowledgePage({
           }
         });
 
-        // If we have escalation log info, update it
+        // Update escalation logs if we have acknowledgment details
         if (via && contact) {
-          // Find the escalation log for this incident and update acknowledgment details
-          const alert = await tx.alert.findFirst({
-            where: { monitorId: incident.Monitor.id },
-            include: { EscalationLog: true }
+          // Find recent escalation logs for this monitor that haven't been acknowledged
+          // We look for alerts created around the incident time to find relevant escalation logs
+          const recentAlerts = await tx.alert.findMany({
+            where: { 
+              monitorId: incident.Monitor.id,
+              triggeredAt: {
+                gte: new Date(new Date(incident.createdAt).getTime() - 5 * 60 * 1000), // 5 minutes before incident
+                lte: new Date() // up to now
+              }
+            },
+            include: { 
+              EscalationLog: {
+                where: {
+                  wasAcknowledged: false
+                }
+              }
+            }
           });
 
-          if (alert && alert.EscalationLog) {
+          // Update all unacknowledged escalation logs from recent alerts
+          for (const alert of recentAlerts) {
             for (const log of alert.EscalationLog) {
               await tx.escalationLog.update({
                 where: { id: log.id },
