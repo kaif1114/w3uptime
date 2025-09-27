@@ -33,6 +33,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useSlackIntegrations } from "@/hooks/use-slack-integrations";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -505,17 +506,11 @@ export function EscalationPolicyDetailPage({
                                         : "Target"}
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
-                                      <SlackChannelSelector
-                                        selectedChannels={currentLevel?.slackChannels || []}
-                                        onChannelsChange={(selectedChannels: SelectedSlackChannel[]) => {
-                                          form.setValue(
-                                            `levels.${index}.slackChannels`,
-                                            selectedChannels
-                                          );
-                                          form.trigger(`levels.${index}.slackChannels`);
-                                        }}
-                                        placeholder="Select Slack channels..."
-                                      />
+                                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                                          This escalation will send to your authorized Slack channels. Manage your Slack integrations in Settings.
+                                        </p>
+                                      </div>
                                     ) : (
                                       <Input
                                         {...form.register(
