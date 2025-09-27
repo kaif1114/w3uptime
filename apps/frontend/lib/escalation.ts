@@ -185,12 +185,6 @@ export async function sendEscalationSlack(
         createEscalationMessage 
     } = await import('./slack');
 
-    // Get escalation level for context
-    const escalationLevel = await prisma.escalationLevel.findFirst({
-        where: { contacts: { has: contacts[0] } },
-        select: { levelOrder: true }
-    });
-
     // Create escalation message (more specific than incident message)
     const escalationMsg = createEscalationMessage({
         title,
