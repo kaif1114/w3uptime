@@ -520,7 +520,7 @@ export function EscalationPolicyDetailPage({
                                                 >
                                                   <MessageSquare className="h-4 w-4 text-blue-600" />
                                                   <span className="text-sm">
-                                                    {workspace.teamName} - #{workspace.defaultChannelName}
+                                                    {workspace.teamName} - #{workspace.channelName}
                                                   </span>
                                                 </div>
                                               ))}
@@ -638,7 +638,7 @@ export function EscalationPolicyDetailPage({
                                 <div key={idx} className="text-sm font-medium">
                                   <span className="text-muted-foreground">{channel.teamName}</span>
                                   <span className="mx-1">•</span>
-                                  <span>#{channel.defaultChannelName}</span>
+                                  <span>#{channel.channelName}</span>
                                 </div>
                               ))}
                             </div>
