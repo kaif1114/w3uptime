@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMonitor, useUpdateMonitor } from "@/hooks/useMonitors";
 import { useEscalationPolicies } from "@/hooks/useEscalationPolicies";
 import { Monitor } from "@/types/monitor";
@@ -18,24 +24,28 @@ import { z } from "zod";
 // Simple toast replacement - you can install sonner or use your preferred toast library
 const toast = {
   success: (message: string) => {
-    alert(`✅ ${message}`);
+    alert(`${message}`);
   },
   error: (message: string) => {
-    alert(`❌ ${message}`);
+    alert(`${message}`);
   },
   warning: (message: string) => {
-    alert(`⚠️ ${message}`);
+    alert(`${message}`);
   },
 };
 
 const editMonitorSchema = z.object({
   name: z.string().min(1, "Monitor name is required"),
-  url: z.string().url("Please enter a valid URL"),
+  url: z.url("Please enter a valid URL"),
   timeout: z.number().int().min(1).max(300),
   checkInterval: z.number().int().min(60).max(3600),
   status: z.enum(["ACTIVE", "PAUSED"]),
-  expectedStatusCodes: z.array(z.number().int().min(100).max(599)).min(1, "At least one status code is required"),
-  escalationPolicyId: z.string().min(1, "An escalation policy must be selected"),
+  expectedStatusCodes: z
+    .array(z.number().int().min(100).max(599))
+    .min(1, "At least one status code is required"),
+  escalationPolicyId: z
+    .string()
+    .min(1, "An escalation policy must be selected"),
 });
 
 type EditMonitorFormData = z.infer<typeof editMonitorSchema>;
@@ -46,7 +56,7 @@ interface EditMonitorFormProps {
 
 export function EditMonitorForm({ monitorId }: EditMonitorFormProps) {
   const { data: monitor, isLoading, error } = useMonitor(monitorId);
-  
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -67,7 +77,9 @@ export function EditMonitorForm({ monitorId }: EditMonitorFormProps) {
       <div className="text-center py-12">
         <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
         <h3 className="text-lg font-semibold mb-2">Failed to load monitor</h3>
-        <p className="text-muted-foreground mb-4">Please try refreshing the page.</p>
+        <p className="text-muted-foreground mb-4">
+          Please try refreshing the page.
+        </p>
       </div>
     );
   }
@@ -87,10 +99,12 @@ export function EditMonitorForm({ monitorId }: EditMonitorFormProps) {
 function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
   const router = useRouter();
   const updateMonitor = useUpdateMonitor();
-  const { data: escalationPolicies, isLoading: loadingPolicies } = useEscalationPolicies();
-  const [statusCodes, setStatusCodes] = useState<number[]>(monitor.expectedStatusCodes);
+  const { data: escalationPolicies, isLoading: loadingPolicies } =
+    useEscalationPolicies();
+  const [statusCodes, setStatusCodes] = useState<number[]>(
+    monitor.expectedStatusCodes
+  );
   const [newStatusCode, setNewStatusCode] = useState("");
-  const [isTestingUrl, setIsTestingUrl] = useState(false);
 
   const {
     register,
@@ -106,7 +120,12 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       url: monitor.url,
       timeout: monitor.timeout,
       checkInterval: monitor.checkInterval,
-      status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : (monitor.status === "ACTIVE" ? "ACTIVE" : "PAUSED"),
+      status:
+        monitor.status === "DOWN" || monitor.status === "RECOVERING"
+          ? "PAUSED"
+          : monitor.status === "ACTIVE"
+            ? "ACTIVE"
+            : "PAUSED",
       expectedStatusCodes: monitor.expectedStatusCodes,
       escalationPolicyId: monitor.escalationPolicyId || "",
     },
@@ -145,37 +164,9 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
   };
 
   const removeStatusCode = (code: number) => {
-    const newCodes = statusCodes.filter(c => c !== code);
+    const newCodes = statusCodes.filter((c) => c !== code);
     setStatusCodes(newCodes);
     setValue("expectedStatusCodes", newCodes);
-  };
-
-  const testUrl = async () => {
-    if (!watchedUrl) return;
-    
-    setIsTestingUrl(true);
-    try {
-      // Note: Direct URL testing may fail due to CORS policies
-      // This is a simplified test - in production, you'd want to use your backend API
-      const response = await fetch(`/api/test-url?url=${encodeURIComponent(watchedUrl)}`);
-      const result = await response.json();
-      
-      if (response.ok) {
-        toast.success(`URL is reachable (Status: ${result.status})`);
-      } else {
-        toast.warning(`URL test failed: ${result.error}`);
-      }
-    } catch (error) {
-      // For now, just show a simple validation that the URL format is correct
-      try {
-        new URL(watchedUrl);
-        toast.success("URL format is valid");
-      } catch (urlError) {
-        toast.error("Invalid URL format");
-      }
-    } finally {
-      setIsTestingUrl(false);
-    }
   };
 
   const handleReset = () => {
@@ -217,7 +208,9 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
           <Label htmlFor="status">Status</Label>
           <Select
             value={watch("status")}
-            onValueChange={(value) => setValue("status", value as "ACTIVE" | "PAUSED")}
+            onValueChange={(value) =>
+              setValue("status", value as "ACTIVE" | "PAUSED")
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -225,13 +218,17 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
             <SelectContent>
               <SelectItem value="ACTIVE">
                 <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant("ACTIVE")}>Active</Badge>
+                  <Badge variant={getStatusBadgeVariant("ACTIVE")}>
+                    Active
+                  </Badge>
                   <span>Monitor is running</span>
                 </div>
               </SelectItem>
               <SelectItem value="PAUSED">
                 <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant("PAUSED")}>Paused</Badge>
+                  <Badge variant={getStatusBadgeVariant("PAUSED")}>
+                    Paused
+                  </Badge>
                   <span>Monitor is paused</span>
                 </div>
               </SelectItem>
@@ -243,27 +240,14 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       {/* URL Configuration */}
       <div className="space-y-2">
         <Label htmlFor="url">Website URL</Label>
-        <div className="flex gap-2">
-          <Input
-            id="url"
-            {...register("url")}
-            placeholder="https://example.com"
-            className={`flex-1 ${errors.url ? "border-destructive" : ""}`}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={testUrl}
-            disabled={!watchedUrl || isTestingUrl}
-          >
-            {isTestingUrl ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <TestTube className="h-4 w-4" />
-            )}
-            Test
-          </Button>
-        </div>
+
+        <Input
+          id="url"
+          {...register("url")}
+          placeholder="https://example.com"
+          className={`flex-1 ${errors.url ? "border-destructive" : ""}`}
+        />
+
         {errors.url && (
           <p className="text-sm text-destructive">{errors.url.message}</p>
         )}
@@ -275,7 +259,9 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
           <Label htmlFor="checkInterval">Check Interval (seconds)</Label>
           <Select
             value={watch("checkInterval").toString()}
-            onValueChange={(value) => setValue("checkInterval", parseInt(value))}
+            onValueChange={(value) =>
+              setValue("checkInterval", parseInt(value))
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -290,7 +276,9 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
             </SelectContent>
           </Select>
           {errors.checkInterval && (
-            <p className="text-sm text-destructive">{errors.checkInterval.message}</p>
+            <p className="text-sm text-destructive">
+              {errors.checkInterval.message}
+            </p>
           )}
         </div>
 
@@ -318,18 +306,22 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       </div>
 
       {/* Expected Status Codes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Expected Status Codes</CardTitle>
+      <div>
+        <div>
+          <div className="text-base">Expected Status Codes</div>
           <p className="text-sm text-muted-foreground">
             HTTP status codes that indicate a successful response
           </p>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div>
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               {statusCodes.map((code) => (
-                <Badge key={code} variant="secondary" className="flex items-center gap-1">
+                <Badge
+                  key={code}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
                   {code}
                   <button
                     type="button"
@@ -341,7 +333,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                 </Badge>
               ))}
             </div>
-            
+
             <div className="flex gap-2">
               <Input
                 value={newStatusCode}
@@ -363,36 +355,44 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                 Add
               </Button>
             </div>
-            
+
             {errors.expectedStatusCodes && (
-              <p className="text-sm text-destructive">{errors.expectedStatusCodes.message}</p>
+              <p className="text-sm text-destructive">
+                {errors.expectedStatusCodes.message}
+              </p>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Escalation Policy */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Escalation Policy</CardTitle>
+      <div>
+        <div>
+          <div className="text-base">Escalation Policy</div>
           <p className="text-sm text-muted-foreground">
-            Select an escalation policy to handle alerts when this monitor fails (required)
+            Select an escalation policy to handle alerts when this monitor fails
+            (required)
           </p>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div>
           <div className="space-y-2">
-            <Label htmlFor="escalationPolicy">Escalation Policy</Label>
             {loadingPolicies ? (
               <div className="flex items-center space-x-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading escalation policies...</span>
+                <span className="text-sm text-muted-foreground">
+                  Loading escalation policies...
+                </span>
               </div>
             ) : (
               <Select
                 value={watch("escalationPolicyId") || ""}
                 onValueChange={(value) => setValue("escalationPolicyId", value)}
               >
-                <SelectTrigger className={errors.escalationPolicyId ? "border-destructive" : ""}>
+                <SelectTrigger
+                  className={
+                    errors.escalationPolicyId ? "border-destructive" : ""
+                  }
+                >
                   <SelectValue placeholder="Select an escalation policy (required)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -409,39 +409,49 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
                 </SelectContent>
               </Select>
             )}
-            
+
             {errors.escalationPolicyId && (
-              <p className="text-sm text-destructive">{errors.escalationPolicyId.message}</p>
+              <p className="text-sm text-destructive">
+                {errors.escalationPolicyId.message}
+              </p>
             )}
-            
+
             {/* Show current escalation policy info */}
-            {watch("escalationPolicyId") && escalationPolicies?.escalationPolicies && (
-              <div className="mt-2 p-3 bg-muted rounded-lg">
-                {(() => {
-                  const selectedPolicy = escalationPolicies.escalationPolicies.find(
-                    (p) => p.id === watch("escalationPolicyId")
-                  );
-                  if (!selectedPolicy) return null;
-                  
-                  return (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">{selectedPolicy.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedPolicy.levels?.length || 0} escalation levels configured
-                      </p>
-                      {selectedPolicy.levels && selectedPolicy.levels.length > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          First level: {selectedPolicy.levels[0]?.method} after {selectedPolicy.levels[0]?.waitTimeMinutes} minutes
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
+            {watch("escalationPolicyId") &&
+              escalationPolicies?.escalationPolicies && (
+                <div className="mt-2 p-3 bg-muted rounded-lg">
+                  {(() => {
+                    const selectedPolicy =
+                      escalationPolicies.escalationPolicies.find(
+                        (p) => p.id === watch("escalationPolicyId")
+                      );
+                    if (!selectedPolicy) return null;
+
+                    return (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          {selectedPolicy.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedPolicy.levels?.length || 0} escalation levels
+                          configured
+                        </p>
+                        {selectedPolicy.levels &&
+                          selectedPolicy.levels.length > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              First level: {selectedPolicy.levels[0]?.method}{" "}
+                              after {selectedPolicy.levels[0]?.waitTimeMinutes}{" "}
+                              minutes
+                            </div>
+                          )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Form Actions */}
       <div className="flex items-center justify-between pt-6 border-t">
@@ -453,7 +463,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         >
           Reset Changes
         </Button>
-        
+
         <div className="flex gap-3">
           <Button
             type="button"
