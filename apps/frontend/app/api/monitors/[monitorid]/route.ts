@@ -10,6 +10,7 @@ const patchMonitorSchema = z.object({
   checkInterval: z.number().int().positive().default(300), // seconds
   status: z.enum(["ACTIVE", "PAUSED", "DOWN", "RECOVERING"]).default("ACTIVE"),
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
+  escalationPolicyId: z.string().nullable().optional(),
 });
 
 // GET /api/monitors/[monitorid] - Get single monitor
@@ -46,6 +47,7 @@ export const GET = withAuth(
           timeout: monitor.timeout,
           checkInterval: monitor.checkInterval,
           expectedStatusCodes: monitor.expectedStatusCodes,
+          escalationPolicyId: monitor.escalationPolicyId,
           createdAt: monitor.createdAt.toISOString(),
           updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
           lastCheckedAt: monitor.lastCheckedAt
@@ -91,7 +93,7 @@ export const PATCH = withAuth(
         );
       }
 
-      const { name, url, timeout, checkInterval, status, expectedStatusCodes } =
+      const { name, url, timeout, checkInterval, status, expectedStatusCodes, escalationPolicyId } =
         validation.data;
 
       const existingMonitor = await prisma.monitor.findFirst({
@@ -119,6 +121,7 @@ export const PATCH = withAuth(
           checkInterval,
           expectedStatusCodes,
           status,
+          escalationPolicyId,
         },
       });
 
