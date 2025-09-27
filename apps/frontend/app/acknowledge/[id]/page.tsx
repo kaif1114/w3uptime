@@ -126,10 +126,12 @@ export default async function AcknowledgePage({
           });
 
           // Stop any pending escalations for this incident
-          try {
-            await stopEscalation(escalationData.Alert.monitor.id, incident.id);
-          } catch (escalationError) {
-            console.error(`Failed to stop escalation:`, escalationError);
+          if (escalationData) {
+            try {
+              await stopEscalation(escalationData.Alert.monitor.id, incident.id);
+            } catch (escalationError) {
+              console.error(`Failed to stop escalation:`, escalationError);
+            }
           }
         }
       });
