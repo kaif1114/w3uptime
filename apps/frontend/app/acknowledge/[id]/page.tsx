@@ -74,7 +74,7 @@ export default async function AcknowledgePage({
     if (!escalationData) {
       status = 'error';
       message = 'Escalation record not found';
-    } else if (escalationData.wasAcknowledged) {
+    } else if (escalationData.acknowledgedAt) {
       status = 'already_acknowledged';
       message = 'This alert has already been acknowledged';
       if (escalationData.acknowledgedAt) {
