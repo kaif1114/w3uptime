@@ -21,7 +21,9 @@ const createTransporter = () => {
 const createEscalationEmailTemplate = (
   title: string,
   message: string,
-  monitorId: string
+  monitorId: string,
+  incidentId?: string,
+  recipientEmail?: string
 ) => {
   const html = `
     <!DOCTYPE html>
@@ -38,7 +40,10 @@ const createEscalationEmailTemplate = (
             .alert-badge { background: #dc2626; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
             .monitor-info { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #ef4444; }
             .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            .btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+            .btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
+            .btn-acknowledge { background: #10b981; }
+            .btn-acknowledge:hover { background: #059669; }
+            .actions { text-align: center; margin: 20px 0; }
         </style>
     </head>
     <body>
@@ -56,9 +61,14 @@ const createEscalationEmailTemplate = (
                     <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
                 </div>
                 <p>This alert has been escalated and requires your immediate attention.</p>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
-                    View Monitor Details
-                </a>
+                <div class="actions">
+                    ${incidentId ? `<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${incidentId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
+                        ✓ Acknowledge Incident
+                    </a>` : ''}
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
+                        View Monitor Details
+                    </a>
+                </div>
             </div>
             <div class="footer">
                 <p>This is an automated message from W3Uptime monitoring service.</p>
@@ -81,7 +91,9 @@ Alert Details:
 
 This alert has been escalated and requires your immediate attention.
 
-View monitor details: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}
+${incidentId ? `ACKNOWLEDGE INCIDENT: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${incidentId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}
+
+` : ''}View monitor details: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}
 
 ---
 This is an automated message from W3Uptime monitoring service.
@@ -95,7 +107,8 @@ export async function sendEscalationEmail(
   contacts: string[],
   title: string,
   message: string,
-  monitorId: string
+  monitorId: string,
+  incidentId?: string
 ): Promise<void> {
   try {
     // Validate email addresses
@@ -113,11 +126,11 @@ export async function sendEscalationEmail(
     // Verify SMTP connection
     await transporter.verify();
 
-    // Generate email template
-    const { html, text } = createEscalationEmailTemplate(title, message, monitorId);
-
     // Send email to each contact
     const emailPromises = validEmails.map(async (email) => {
+      // Generate personalized email template for each recipient
+      const { html, text } = createEscalationEmailTemplate(title, message, monitorId, incidentId, email);
+      
       const mailOptions = {
         from: {
           name: 'W3Uptime Alerts',

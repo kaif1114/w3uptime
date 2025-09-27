@@ -57,7 +57,7 @@ export async function sendEscalationEmail(
     
     try {
         // Send the actual email
-        await sendEmail(contacts, title, message, monitorId);
+        await sendEmail(contacts, title, message, monitorId, incidentId);
         
         // Create timeline event for successful email escalation
         if (incidentId) {
