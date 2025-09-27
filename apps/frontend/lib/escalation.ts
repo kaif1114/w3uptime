@@ -153,7 +153,8 @@ export async function sendEscalationSlack(
         monitorName: monitor.name,
         monitorUrl: monitor.url,
         message,
-        createdAt: new Date()
+        createdAt: new Date(),
+        incidentId
     });
 
     // First try webhook approach (simpler, more reliable)

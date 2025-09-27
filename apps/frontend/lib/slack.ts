@@ -33,6 +33,15 @@ export interface SlackBlock {
     type: string;
     text: string;
   }[];
+  elements?: Array<{
+    type: string;
+    text?: {
+      type: string;
+      text: string;
+    };
+    style?: string;
+    url?: string;
+  }>;
 }
 
 export class SlackAPI {
@@ -332,9 +341,71 @@ export function createEscalationMessage(escalation: {
   monitorUrl: string;
   message?: string;
   createdAt: Date;
+  incidentId?: string;
 }): SlackMessage {
+  const blocks: SlackBlock[] = [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "🚨 Escalation Alert"
+      }
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${escalation.title}*\n${escalation.message || `Monitor "${escalation.monitorName}" requires attention`}`
+      }
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*Monitor:*\n${escalation.monitorName}`
+        },
+        {
+          type: "mrkdwn", 
+          text: `*URL:*\n${escalation.monitorUrl}`
+        },
+        {
+          type: "mrkdwn",
+          text: `*Time:*\n${escalation.createdAt.toLocaleString()}`
+        }
+      ]
+    }
+  ];
+
+  // Add actions block if incident ID is provided
+  if (escalation.incidentId) {
+    blocks.push({
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "✓ Acknowledge Incident"
+          },
+          style: "primary",
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${escalation.incidentId}/acknowledge?via=slack`
+        },
+        {
+          type: "button", 
+          text: {
+            type: "plain_text",
+            text: "View Details"
+          },
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incidents/${escalation.incidentId}`
+        }
+      ]
+    });
+  }
+
   return {
     text: `Escalation Alert: ${escalation.title}`,
+    blocks,
     attachments: [
       {
         color: "danger",
