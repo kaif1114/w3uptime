@@ -10,6 +10,31 @@ interface AcknowledgePageProps {
   searchParams: Promise<{ via?: string; contact?: string }>;
 }
 
+interface EscalationData {
+  id: string;
+  alertId: string;
+  escalationLevelId: string;
+  acknowledgedAt: Date | null;
+  acknowledgedBy: string | null;
+  createdAt: Date;
+  Alert: {
+    id: string;
+    title: string;
+    message: string;
+    triggeredAt: Date;
+    monitor: {
+      id: string;
+      name: string;
+      url: string;
+      userId: string;
+    };
+  };
+  escalationLevel: {
+    levelOrder: number;
+    channel: string;
+  };
+}
+
 export default async function AcknowledgePage({ 
   params, 
   searchParams 
@@ -19,7 +44,7 @@ export default async function AcknowledgePage({
   
   let status: 'success' | 'error' | 'already_acknowledged' = 'error';
   let message = '';
-  let escalationData: any = null;
+  let escalationData: EscalationData | null = null;
 
   try {
     // Find the escalation log and get related data
