@@ -38,8 +38,8 @@ export async function sendEscalationEmail(
 }
 
 /**
- * Send escalation via Slack using configured channels
- * This function sends escalation messages to Slack channels
+ * Send escalation via Slack using default channel from integration
+ * This function sends escalation messages to the default Slack channel
  */
 export async function sendEscalationSlack(
     contacts: string[], 
@@ -50,65 +50,68 @@ export async function sendEscalationSlack(
 ): Promise<void> {
     console.log(`💬 Sending escalation Slack message for monitor ${monitorId}`);
     
-    // Parse slack channels data
-    let slackChannels: { teamId: string; teamName: string; channelId: string; channelName: string; }[] = [];
-    if (slackChannelsData) {
-        try {
-            slackChannels = JSON.parse(slackChannelsData);
-        } catch (error) {
-            console.error('Error parsing slack channels data:', error);
-        }
+    // Get monitor and user's Slack integrations
+    const { prisma } = await import('db/client');
+    const monitor = await prisma.monitor.findUnique({
+        where: { id: monitorId },
+        select: { name: true, url: true, userId: true }
+    });
+
+    if (!monitor) {
+        throw new Error(`Monitor ${monitorId} not found`);
     }
 
-    if (slackChannels.length > 0) {
-        // Use actual Slack integration
-        const { sendSlackNotification, createIncidentMessage } = await import('./slack');
-        
-        // Get monitor details for the message
-        const { prisma } = await import('db/client');
-        const monitor = await prisma.monitor.findUnique({
-            where: { id: monitorId },
-            select: { name: true, url: true, userId: true }
-        });
-
-        if (!monitor) {
-            throw new Error(`Monitor ${monitorId} not found`);
-        }
-
-        // Create incident message
-        const incidentMessage = createIncidentMessage({
-            title,
-            monitorName: monitor.name,
-            monitorUrl: monitor.url,
-            status: 'ONGOING',
-            createdAt: new Date()
-        });
-
-        // Send to each configured channel
-        for (const channel of slackChannels) {
-            try {
-                // Update message with specific channel
-                const channelMessage = {
-                    ...incidentMessage,
-                    channel: channel.channelId
-                };
-
-                const success = await sendSlackNotification(monitor.userId, channelMessage);
-                if (success) {
-                    console.log(`✅ Sent Slack notification to ${channel.teamName}#${channel.channelName}`);
-                } else {
-                    console.error(`❌ Failed to send Slack notification to ${channel.teamName}#${channel.channelName}`);
-                }
-            } catch (error) {
-                console.error(`Error sending to channel ${channel.channelName}:`, error);
+    // Get user's active Slack integrations with default channels
+    const integrations = await prisma.slackIntegration.findMany({
+        where: {
+            userId: monitor.userId,
+            isActive: true,
+            defaultChannelId: {
+                not: null
             }
-        }
-    } else {
+        },
+    });
+
+    if (integrations.length === 0) {
+        console.log(`💬 No Slack integrations with default channels found for user ${monitor.userId}`);
         // Fallback to legacy behavior (logging only)
         console.log(`💬 Title: ${title}`);
         console.log(`💬 Message: ${message}`);
         console.log(`💬 Channels/Users: ${contacts.join(', ')}`);
-        console.log(`✅ Slack escalation logged (no channels configured)`);
+        console.log(`✅ Slack escalation logged (no integrations with default channels)`);
+        return;
+    }
+
+    // Use actual Slack integration
+    const { sendSlackNotification, createIncidentMessage } = await import('./slack');
+
+    // Create incident message
+    const incidentMessage = createIncidentMessage({
+        title,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        status: 'ONGOING',
+        createdAt: new Date()
+    });
+
+    // Send to each integration's default channel
+    for (const integration of integrations) {
+        try {
+            // Update message with specific channel
+            const channelMessage = {
+                ...incidentMessage,
+                channel: integration.defaultChannelId!
+            };
+
+            const success = await sendSlackNotification(monitor.userId, channelMessage);
+            if (success) {
+                console.log(`✅ Sent Slack notification to ${integration.teamName}#${integration.defaultChannelName}`);
+            } else {
+                console.error(`❌ Failed to send Slack notification to ${integration.teamName}#${integration.defaultChannelName}`);
+            }
+        } catch (error) {
+            console.error(`Error sending to channel ${integration.defaultChannelName}:`, error);
+        }
     }
 }
 
