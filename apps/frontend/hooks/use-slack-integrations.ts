@@ -12,6 +12,7 @@ interface SlackIntegration {
   isActive: boolean;
   defaultChannelId?: string;
   defaultChannelName?: string;
+  webhookUrl?: string;
 }
 
 interface SlackIntegrationsResponse {
@@ -41,6 +42,29 @@ export function useDeleteSlackIntegration() {
       });
       if (!response.ok) {
         throw new Error("Failed to delete Slack integration");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["slack-integrations"] });
+    },
+  });
+}
+
+export function useUpdateSlackIntegration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, webhookUrl }: { id: string; webhookUrl: string | null }) => {
+      const response = await fetch(`/api/slack/integrations/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ webhookUrl }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update Slack integration");
       }
       return response.json();
     },
