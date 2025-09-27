@@ -389,14 +389,14 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
               </div>
             ) : (
               <Select
-                value={watch("escalationPolicyId") || ""}
-                onValueChange={(value) => setValue("escalationPolicyId", value === "" ? null : value)}
+                value={watch("escalationPolicyId") || "none"}
+                onValueChange={(value) => setValue("escalationPolicyId", value === "none" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an escalation policy (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
+                  <SelectItem value="none">
                     <span className="text-muted-foreground">No escalation policy</span>
                   </SelectItem>
                   {escalationPolicies?.escalationPolicies?.map((policy) => (
