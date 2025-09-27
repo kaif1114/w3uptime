@@ -214,3 +214,158 @@ export function createTestMessage(): SlackMessage {
     ],
   };
 }
+
+/**
+ * SlackWebhookAPI - Sends messages using Slack Incoming Webhooks
+ * Based on: https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks
+ */
+export class SlackWebhookAPI {
+  private webhookUrl: string;
+
+  constructor(webhookUrl: string) {
+    this.webhookUrl = webhookUrl;
+  }
+
+  /**
+   * Send a message using the incoming webhook
+   */
+  async sendMessage(message: SlackMessage): Promise<boolean> {
+    try {
+      const payload = {
+        text: message.text,
+        attachments: message.attachments,
+        blocks: message.blocks,
+      };
+
+      const response = await fetch(this.webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // Slack webhook responds with 200 and "ok" for success
+      if (response.ok) {
+        const responseText = await response.text();
+        return responseText === "ok";
+      }
+
+      console.error("Slack webhook error:", response.status, response.statusText);
+      return false;
+    } catch (error) {
+      console.error("Error sending Slack webhook message:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Test the webhook URL by sending a simple message
+   */
+  async testWebhook(): Promise<boolean> {
+    const testMessage: SlackMessage = {
+      text: "🧪 Webhook test from W3Uptime",
+      attachments: [
+        {
+          color: "good",
+          title: "Webhook Test",
+          text: "Your Slack webhook is working correctly!",
+          footer: "W3Uptime",
+          ts: Math.floor(Date.now() / 1000),
+        },
+      ],
+    };
+
+    return this.sendMessage(testMessage);
+  }
+}
+
+/**
+ * Send notification using webhook URLs from Slack integrations
+ */
+export async function sendSlackWebhookNotification(
+  userId: string,
+  message: SlackMessage
+): Promise<boolean> {
+  try {
+    const integrations = await prisma.slackIntegration.findMany({
+      where: {
+        userId,
+        isActive: true,
+        webhookUrl: {
+          not: null,
+        },
+      },
+    });
+
+    if (integrations.length === 0) {
+      console.log("No active Slack webhook integrations found for user:", userId);
+      return false;
+    }
+
+    const results = await Promise.allSettled(
+      integrations.map(async (integration) => {
+        if (!integration.webhookUrl) return false;
+        
+        const webhook = new SlackWebhookAPI(integration.webhookUrl);
+        return webhook.sendMessage(message);
+      })
+    );
+
+    const successCount = results.filter(
+      (result) => result.status === "fulfilled" && result.value === true
+    ).length;
+
+    return successCount > 0;
+  } catch (error) {
+    console.error("Error sending Slack webhook notifications:", error);
+    return false;
+  }
+}
+
+/**
+ * Create escalation message specifically formatted for webhooks
+ */
+export function createEscalationMessage(escalation: {
+  title: string;
+  monitorName: string;
+  monitorUrl: string;
+  level: number;
+  message?: string;
+  createdAt: Date;
+}): SlackMessage {
+  return {
+    text: `🚨 Escalation Level ${escalation.level}: ${escalation.title}`,
+    attachments: [
+      {
+        color: "danger",
+        title: `🚨 Escalation Level ${escalation.level}`,
+        text: escalation.message || `Monitor "${escalation.monitorName}" requires attention`,
+        fields: [
+          {
+            title: "Monitor",
+            value: escalation.monitorName,
+            short: true,
+          },
+          {
+            title: "URL",
+            value: escalation.monitorUrl,
+            short: true,
+          },
+          {
+            title: "Escalation Level",
+            value: escalation.level.toString(),
+            short: true,
+          },
+          {
+            title: "Time",
+            value: escalation.createdAt.toLocaleString(),
+            short: true,
+          },
+        ],
+        footer: "W3Uptime - Escalation Alert",
+        ts: Math.floor(escalation.createdAt.getTime() / 1000),
+      },
+    ],
+  };
+}
