@@ -16,7 +16,6 @@ interface EscalationData {
   escalationLevelId: string;
   acknowledgedAt: Date | null;
   acknowledgedBy: string | null;
-  createdAt: Date;
   Alert: {
     id: string;
     title: string;
