@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMonitor, useUpdateMonitor } from "@/hooks/useMonitors";
+import { useEscalationPolicies } from "@/hooks/useEscalationPolicies";
 import { Monitor } from "@/types/monitor";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Loader2, Plus, Save, TestTube, X } from "lucide-react";
@@ -34,6 +35,7 @@ const editMonitorSchema = z.object({
   checkInterval: z.number().int().min(60).max(3600),
   status: z.enum(["ACTIVE", "PAUSED"]),
   expectedStatusCodes: z.array(z.number().int().min(100).max(599)).min(1, "At least one status code is required"),
+  escalationPolicyId: z.string().nullable().optional(),
 });
 
 type EditMonitorFormData = z.infer<typeof editMonitorSchema>;
@@ -85,6 +87,7 @@ export function EditMonitorForm({ monitorId }: EditMonitorFormProps) {
 function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
   const router = useRouter();
   const updateMonitor = useUpdateMonitor();
+  const { data: escalationPolicies, isLoading: loadingPolicies } = useEscalationPolicies();
   const [statusCodes, setStatusCodes] = useState<number[]>(monitor.expectedStatusCodes);
   const [newStatusCode, setNewStatusCode] = useState("");
   const [isTestingUrl, setIsTestingUrl] = useState(false);
@@ -105,6 +108,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
       checkInterval: monitor.checkInterval,
       status: monitor.status === "DOWN" || monitor.status === "RECOVERING" ? "PAUSED" : (monitor.status === "ACTIVE" ? "ACTIVE" : "PAUSED"),
       expectedStatusCodes: monitor.expectedStatusCodes,
+      escalationPolicyId: monitor.escalationPolicyId,
     },
   });
 
@@ -362,6 +366,77 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
             
             {errors.expectedStatusCodes && (
               <p className="text-sm text-destructive">{errors.expectedStatusCodes.message}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Escalation Policy */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Escalation Policy</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Select an escalation policy to handle alerts when this monitor fails
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="escalationPolicy">Escalation Policy</Label>
+            {loadingPolicies ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading escalation policies...</span>
+              </div>
+            ) : (
+              <Select
+                value={watch("escalationPolicyId") || ""}
+                onValueChange={(value) => setValue("escalationPolicyId", value === "" ? null : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an escalation policy (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">
+                    <span className="text-muted-foreground">No escalation policy</span>
+                  </SelectItem>
+                  {escalationPolicies?.escalationPolicies?.map((policy) => (
+                    <SelectItem key={policy.id} value={policy.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{policy.name}</span>
+                        <Badge variant="outline" className="ml-2">
+                          {policy.levels?.length || 0} levels
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Show current escalation policy info */}
+            {watch("escalationPolicyId") && escalationPolicies?.escalationPolicies && (
+              <div className="mt-2 p-3 bg-muted rounded-lg">
+                {(() => {
+                  const selectedPolicy = escalationPolicies.escalationPolicies.find(
+                    (p) => p.id === watch("escalationPolicyId")
+                  );
+                  if (!selectedPolicy) return null;
+                  
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{selectedPolicy.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedPolicy.levels?.length || 0} escalation levels configured
+                      </p>
+                      {selectedPolicy.levels && selectedPolicy.levels.length > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          First level: {selectedPolicy.levels[0]?.method} after {selectedPolicy.levels[0]?.waitTimeMinutes} minutes
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
             )}
           </div>
         </CardContent>
