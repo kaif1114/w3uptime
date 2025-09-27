@@ -81,36 +81,77 @@ export async function sendEscalationSlack(
         throw new Error(`Monitor ${monitorId} not found`);
     }
 
-    // Use actual Slack integration
-    const { sendSlackNotification, createIncidentMessage } = await import('./slack');
+    // Use actual Slack integration - try both Bot API and Webhooks
+    const { 
+        sendSlackNotification, 
+        sendSlackWebhookNotification, 
+        createIncidentMessage, 
+        createEscalationMessage 
+    } = await import('./slack');
 
-    // Create incident message
-    const incidentMessage = createIncidentMessage({
+    // Get escalation level for context
+    const escalationLevel = await prisma.escalationLevel.findFirst({
+        where: { contacts: { has: contacts[0] } },
+        select: { levelOrder: true }
+    });
+
+    // Create escalation message (more specific than incident message)
+    const escalationMsg = createEscalationMessage({
         title,
         monitorName: monitor.name,
         monitorUrl: monitor.url,
-        status: 'ONGOING',
+        level: escalationLevel?.levelOrder || 1,
+        message,
         createdAt: new Date()
     });
 
-    // Send to each selected workspace
-    for (const workspace of slackWorkspaces) {
-        try {
-            // Update message with specific channel
-            const channelMessage = {
-                ...incidentMessage,
-                channel: workspace.defaultChannelId
-            };
-
-            const success = await sendSlackNotification(monitor.userId, channelMessage);
-            if (success) {
-                console.log(`✅ Sent Slack notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
-            } else {
-                console.error(`❌ Failed to send Slack notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
-            }
-        } catch (error) {
-            console.error(`Error sending to workspace ${workspace.teamName}:`, error);
+    // First try webhook approach (simpler, more reliable)
+    let webhookSuccess = false;
+    try {
+        webhookSuccess = await sendSlackWebhookNotification(monitor.userId, escalationMsg);
+        if (webhookSuccess) {
+            console.log(`✅ Sent Slack webhook escalation for monitor ${monitorId}`);
         }
+    } catch (error) {
+        console.error('Error sending webhook escalation:', error);
+    }
+
+    // If webhook fails or not configured, fall back to Bot API with workspace targeting
+    if (!webhookSuccess && slackWorkspaces.length > 0) {
+        // Create incident message for Bot API (includes channel targeting)
+        const incidentMessage = createIncidentMessage({
+            title,
+            monitorName: monitor.name,
+            monitorUrl: monitor.url,
+            status: 'ONGOING',
+            createdAt: new Date()
+        });
+
+        // Send to each selected workspace
+        for (const workspace of slackWorkspaces) {
+            try {
+                // Update message with specific channel
+                const channelMessage = {
+                    ...incidentMessage,
+                    channel: workspace.defaultChannelId
+                };
+
+                const success = await sendSlackNotification(monitor.userId, channelMessage);
+                if (success) {
+                    console.log(`✅ Sent Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    webhookSuccess = true; // Mark as successful
+                } else {
+                    console.error(`❌ Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                }
+            } catch (error) {
+                console.error(`Error sending to workspace ${workspace.teamName}:`, error);
+            }
+        }
+    }
+
+    // If neither method worked, throw error
+    if (!webhookSuccess && slackWorkspaces.length === 0) {
+        console.log(`💬 No Slack integration methods available (no webhook URLs or selected workspaces)`);
     }
 }
 
