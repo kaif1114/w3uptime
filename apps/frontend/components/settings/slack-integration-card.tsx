@@ -77,6 +77,11 @@ export default function SlackIntegrationCard() {
                       <p className="text-sm text-muted-foreground">
                         Connected {new Date(integration.createdAt).toLocaleDateString()}
                       </p>
+                      {integration.defaultChannelName && (
+                        <p className="text-xs text-muted-foreground">
+                          Default channel: #{integration.defaultChannelName}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

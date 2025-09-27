@@ -33,7 +33,6 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import SlackChannelSelector, { SelectedSlackChannel } from "@/components/slack-channel-selector";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
