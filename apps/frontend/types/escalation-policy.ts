@@ -4,13 +4,7 @@ export interface EscalationLevel {
   id: string;
   order: number;
   method: EscalationMethod;
-  target: string; // email address, slack channel, or webhook URL
-  slackChannels?: Array<{
-    teamId: string;
-    teamName: string;
-    channelId: string;
-    channelName: string;
-  }>;
+  target: string; // email address, webhook URL, or automatically uses authorized Slack channels
   waitTimeMinutes: number;
 }
 
