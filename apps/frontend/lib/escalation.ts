@@ -82,10 +82,9 @@ export async function sendEscalationEmail(
         // Create timeline event for successful email escalation
         if (currentIncidentId) {
             const validEmails = contacts.filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
-            const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `📧 Email alert sent${levelText}: ${validEmails.join(', ')}`
+                `📧 Email alert sent to: ${validEmails.join(', ')}`
             );
         }
         
@@ -114,10 +113,9 @@ export async function sendEscalationEmail(
             }
 
             if (currentIncidentId) {
-                const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `❌ Failed to send email alert${levelText}: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
+                    `❌ Failed to send email alert to: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
                 );
             }
         }
@@ -160,7 +158,6 @@ export async function sendEscalationSlack(
         where: { contacts: { has: contacts[0] } },
         select: { levelOrder: true }
     });
-    const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
     
     // Parse slack workspaces data
     let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
@@ -184,7 +181,7 @@ export async function sendEscalationSlack(
         if (currentIncidentId) {
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `💬 Slack alert attempted${levelText} but no workspaces configured: ${contacts.join(', ')}`
+                `💬 Slack alert attempted but no workspaces configured: ${contacts.join(', ')}`
             );
         }
         return;
@@ -235,7 +232,7 @@ export async function sendEscalationSlack(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `💬 Slack webhook alert sent${levelText}`
+                    `💬 Slack webhook alert sent`
                 );
             }
         }
@@ -272,7 +269,7 @@ export async function sendEscalationSlack(
                     if (currentIncidentId) {
                         await createEscalationTimelineEvent(
                             currentIncidentId,
-                            `💬 Slack alert sent${levelText} to ${workspace.teamName}#${workspace.defaultChannelName}`
+                            `💬 Slack alert sent to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
                 } else {
@@ -282,7 +279,7 @@ export async function sendEscalationSlack(
                     if (currentIncidentId) {
                         await createEscalationTimelineEvent(
                             currentIncidentId,
-                            `❌ Failed to send Slack alert${levelText} to ${workspace.teamName}#${workspace.defaultChannelName}`
+                            `❌ Failed to send Slack alert to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
                 }
@@ -293,7 +290,7 @@ export async function sendEscalationSlack(
                 if (currentIncidentId) {
                     await createEscalationTimelineEvent(
                         currentIncidentId,
-                        `❌ Error sending Slack alert${levelText} to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        `❌ Error sending Slack alert to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
                     );
                 }
             }
@@ -339,7 +336,6 @@ export async function sendEscalationWebhook(
         where: { contacts: { has: contacts[0] } },
         select: { levelOrder: true }
     });
-    const levelText = escalationLevel?.levelOrder ? ` (Level ${escalationLevel.levelOrder})` : '';
     
     // Validate webhook URLs
     const validWebhooks = contacts.filter(url => {
@@ -356,7 +352,7 @@ export async function sendEscalationWebhook(
         if (currentIncidentId) {
             await createEscalationTimelineEvent(
                 currentIncidentId,
-                `🔗 Webhook alert attempted${levelText} but no valid URLs: ${contacts.join(', ')}`
+                `🔗 Webhook alert attempted but no valid URLs: ${contacts.join(', ')}`
             );
         }
         return;
@@ -395,7 +391,7 @@ export async function sendEscalationWebhook(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `🔗 Webhook alert sent${levelText} to ${webhookUrl}`
+                    `🔗 Webhook alert sent to ${webhookUrl}`
                 );
             }
             
@@ -407,7 +403,7 @@ export async function sendEscalationWebhook(
             if (currentIncidentId) {
                 await createEscalationTimelineEvent(
                     currentIncidentId,
-                    `❌ Failed to send webhook alert${levelText} to ${webhookUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    `❌ Failed to send webhook alert to ${webhookUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
                 );
             }
             
