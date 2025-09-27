@@ -107,7 +107,8 @@ Time: ${new Date().toLocaleString()}
               `${monitor.name} - Alert`,
              alert.message,
               monitor.id,
-              incident.id
+              incident.id,
+              escalationLog.id
             );
             console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
@@ -120,7 +121,8 @@ Time: ${new Date().toLocaleString()}
               alert.message,
               monitor.id,
               escalationLevel.slackChannels as string | null,
-              incident.id
+              incident.id,
+              escalationLog.id
             );
             const workspaceInfo: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
@@ -158,7 +160,7 @@ Time: ${new Date().toLocaleString()}
       }
 
       // Log the escalation attempt
-      await prisma.escalationLog.create({
+      const escalationLog = await prisma.escalationLog.create({
         data: {
           alertId: alert.id,
           escalationLevelId,

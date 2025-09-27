@@ -23,7 +23,8 @@ const createEscalationEmailTemplate = (
   message: string,
   monitorId: string,
   incidentId?: string,
-  recipientEmail?: string
+  recipientEmail?: string,
+  escalationLogId?: string
 ) => {
   const html = `
     <!DOCTYPE html>
@@ -62,8 +63,8 @@ const createEscalationEmailTemplate = (
                 </div>
                 <p>This alert has been escalated and requires your immediate attention.</p>
                 <div class="actions">
-                    ${incidentId ? `<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${incidentId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
-                        ✓ Acknowledge Incident
+                    ${escalationLogId ? `<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/${escalationLogId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
+                        ✓ Acknowledge Alert
                     </a>` : ''}
                     <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
                         View Monitor Details
@@ -91,7 +92,7 @@ Alert Details:
 
 This alert has been escalated and requires your immediate attention.
 
-${incidentId ? `ACKNOWLEDGE INCIDENT: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${incidentId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}
+${escalationLogId ? `ACKNOWLEDGE ALERT: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/${escalationLogId}/acknowledge?via=email&contact=${encodeURIComponent(recipientEmail || '')}
 
 ` : ''}View monitor details: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}
 
@@ -108,7 +109,8 @@ export async function sendEscalationEmail(
   title: string,
   message: string,
   monitorId: string,
-  incidentId?: string
+  incidentId?: string,
+  escalationLogId?: string
 ): Promise<void> {
   try {
     // Validate email addresses
@@ -129,7 +131,7 @@ export async function sendEscalationEmail(
     // Send email to each contact
     const emailPromises = validEmails.map(async (email) => {
       // Generate personalized email template for each recipient
-      const { html, text } = createEscalationEmailTemplate(title, message, monitorId, incidentId, email);
+      const { html, text } = createEscalationEmailTemplate(title, message, monitorId, incidentId, email, escalationLogId);
       
       const mailOptions = {
         from: {

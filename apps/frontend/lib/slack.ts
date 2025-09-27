@@ -342,6 +342,7 @@ export function createEscalationMessage(escalation: {
   message?: string;
   createdAt: Date;
   incidentId?: string;
+  escalationLogId?: string;
 }): SlackMessage {
   const blocks: SlackBlock[] = [
     {
@@ -377,8 +378,8 @@ export function createEscalationMessage(escalation: {
     }
   ];
 
-  // Add actions block if incident ID is provided
-  if (escalation.incidentId) {
+  // Add actions block if escalation log ID is provided
+  if (escalation.escalationLogId) {
     blocks.push({
       type: "actions",
       elements: [
@@ -386,18 +387,18 @@ export function createEscalationMessage(escalation: {
           type: "button",
           text: {
             type: "plain_text",
-            text: "✓ Acknowledge Incident"
+            text: "✓ Acknowledge Alert"
           },
           style: "primary",
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incident/${escalation.incidentId}/acknowledge?via=slack`
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/${escalation.escalationLogId}/acknowledge?via=slack`
         },
         {
           type: "button", 
           text: {
             type: "plain_text",
-            text: "View Details"
+            text: "View Dashboard"
           },
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/incidents/${escalation.incidentId}`
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}`
         }
       ]
     });

@@ -47,7 +47,8 @@ export async function sendEscalationEmail(
     title: string, 
     message: string, 
     monitorId: string,
-    incidentId: string
+    incidentId: string,
+    escalationLogId?: string
 ): Promise<void> {
     console.log(`Sending escalation email for monitor ${monitorId}`);
     console.log(`Recipients: ${contacts.join(', ')}`);
@@ -57,7 +58,7 @@ export async function sendEscalationEmail(
     
     try {
         // Send the actual email
-        await sendEmail(contacts, title, message, monitorId, incidentId);
+        await sendEmail(contacts, title, message, monitorId, incidentId, escalationLogId);
         
         // Create timeline event for successful email escalation
         if (incidentId) {
@@ -95,7 +96,8 @@ export async function sendEscalationSlack(
     message: string, 
     monitorId: string,
     slackWorkspacesData?: string | null,
-    incidentId?: string
+    incidentId?: string,
+    escalationLogId?: string
 ): Promise<void> {
     console.log(`Sending escalation Slack message for monitor ${monitorId}`);
     
@@ -154,7 +156,8 @@ export async function sendEscalationSlack(
         monitorUrl: monitor.url,
         message,
         createdAt: new Date(),
-        incidentId
+        incidentId,
+        escalationLogId
     });
 
     // First try webhook approach (simpler, more reliable)
