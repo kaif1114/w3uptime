@@ -171,6 +171,8 @@ model EscalationLog {
   alertId           String
   wasAcknowledged   Boolean         @default(false)
   acknowledgedAt    DateTime?
+  acknowledgedBy    String?
+  acknowledgedVia   EscalationChannel?
   escalationLevelId String
   Alert             Alert           @relation(fields: [alertId], references: [id])
   escalationLevel   EscalationLevel @relation(fields: [escalationLevelId], references: [id])
