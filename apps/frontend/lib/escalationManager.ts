@@ -34,14 +34,14 @@ export class EscalationManager {
       }
 
       if (!monitor.escalationPolicy || !monitor.escalationPolicy.enabled) {
-        console.log(`⚠️ No active escalation policy for monitor ${monitorId}`);
+        console.log(`No active escalation policy for monitor ${monitorId}`);
         return;
       }
 
       const { escalationPolicy } = monitor;
       
       if (!escalationPolicy.levels || escalationPolicy.levels.length === 0) {
-        console.log(`⚠️ No escalation levels defined for policy ${escalationPolicy.id}`);
+        console.log(`No escalation levels defined for policy ${escalationPolicy.id}`);
         return;
       }
 
@@ -64,14 +64,20 @@ export class EscalationManager {
         cumulativeDelay += level.waitMinutes * 60 * 1000; // Convert minutes to milliseconds
 
         const jobData: EscalationJobData = {
-          monitorId,
-          incidentId,
+          monitor: {
+            id: monitorId,
+            name: monitor.name,
+            url: monitor.url,
+            status: monitor.status,
+          },
+          incident: {
+            id: incidentId,
+            title: incident.title,
+          },
           escalationLevelId: level.id,
           levelOrder: level.levelOrder,
           method: level.channel,
           contacts: level.contacts,
-          message: level.message || `Alert escalated for incident: ${incident.title}`,
-          title: incident.title
         };
 
         const jobName = getJobName(incidentId, level.levelOrder);
@@ -102,7 +108,7 @@ export class EscalationManager {
    */
   static async stopEscalation(monitorId: string, incidentId: string): Promise<void> {
     try {
-      console.log(`🛑 Stopping escalation for monitor ${monitorId}, incident ${incidentId}`);
+      console.log(`Stopping escalation for monitor ${monitorId}, incident ${incidentId}`);
 
       // Get all jobs for this monitor-incident combination
       const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
@@ -114,11 +120,11 @@ export class EscalationManager {
       });
 
       if (jobsToCancel.length === 0) {
-        console.log(`ℹ️ No pending escalation jobs found for monitor ${monitorId}, incident ${incidentId}`);
+        console.log(`No pending escalation jobs found for monitor ${monitorId}, incident ${incidentId}`);
         return;
       }
 
-      console.log(`🗑️ Found ${jobsToCancel.length} escalation jobs to cancel`);
+      console.log(`Found ${jobsToCancel.length} escalation jobs to cancel`);
 
       // Cancel all matching jobs
       const cancelPromises = jobsToCancel.map(async (job) => {
@@ -138,33 +144,7 @@ export class EscalationManager {
     }
   }
 
-  /**
-   * Get active escalation jobs for a monitor
-   */
-  static async getActiveEscalations(monitorId: string, incidentId?: string): Promise<Job[]> {
-    try {
-      const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
-      
-      const pattern = incidentId 
-        ? getJobPattern(incidentId)
-        : `escalation-${monitorId}-*`;
-      
-      const regex = new RegExp(pattern.replace(/\*/g, '[^-]+'));
-      
-      return jobs.filter(job => job.name && regex.test(job.name))
-        .map(job => ({
-          id: job.id,
-          name: job.name,
-          data: job.data,
-          delay: job.opts.delay,
-          processedOn: job.processedOn,
-          finishedOn: job.finishedOn,
-        }));
-    } catch (error) {
-      console.error('Error getting active escalations:', error);
-      return [];
-    }
-  }
+ 
 
   /**
    * Clean up old completed/failed jobs (for maintenance)

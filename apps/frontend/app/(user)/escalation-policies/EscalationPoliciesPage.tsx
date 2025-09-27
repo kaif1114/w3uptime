@@ -72,7 +72,7 @@ const toast = {
     alert(`${message}`);
   },
   warning: (message: string) => {
-    alert(`⚠️ ${message}`);
+    alert(`${message}`);
   },
 };
 

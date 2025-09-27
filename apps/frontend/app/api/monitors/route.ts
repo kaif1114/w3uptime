@@ -82,8 +82,6 @@ export const POST = withAuth(async (req: NextRequest, user) => {
                 waitMinutes: level.waitTimeMinutes,
                 contacts: [level.target],
                 channel: level.method,
-                name: `Level ${index + 1}`,
-                message: `Alert escalation for ${escalationPolicy.name}`,
               },
             })
           )

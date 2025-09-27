@@ -110,7 +110,7 @@ export class ValidatorService extends EventEmitter {
     }
 
     this.shutdownInProgress = true;
-    console.log(chalk.yellow('🛑 Stopping validator service...'));
+    console.log(chalk.yellow('Stopping validator service...'));
 
     try {
       // Disconnect WebSocket
@@ -303,13 +303,13 @@ export class ValidatorService extends EventEmitter {
    */
   private setupGracefulShutdown(): void {
     process.on('SIGINT', async () => {
-      chalk.yellow('\n🛑 Received SIGINT, shutting down gracefully...');
+      chalk.yellow('\nReceived SIGINT, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-        chalk.yellow('\n🛑 Received SIGTERM, shutting down gracefully...');
+        chalk.yellow('\nReceived SIGTERM, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });

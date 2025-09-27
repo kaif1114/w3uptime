@@ -23,35 +23,33 @@ export class EscalationWorker {
    */
   private async processJob(job: Job<EscalationJobData>): Promise<void> {
     const {
-      monitorId,
-      incidentId,
+      monitor,
+      incident,
       escalationLevelId,
       method,
       contacts,
-      message,
-      title,
     } = job.data;
 
     console.log(`Processing escalation job: ${job.name}`);
 
     try {
       // Check if incident is still ongoing (not acknowledged or resolved)
-      const incident = await prisma.incident.findUnique({
-        where: { id: incidentId },
+      const incidentData = await prisma.incident.findUnique({
+        where: { id: incident.id },
         select: { status: true, title: true },
       });
 
-      if (!incident) {
-        console.log(`Incident ${incidentId} not found, skipping escalation`);
+      if (!incidentData) {
+        console.log(`Incident ${incident.id} not found, skipping escalation`);
         return;
       }
 
       if (
-        incident.status === "ACKNOWLEDGED" ||
-        incident.status === "RESOLVED"
+        incidentData.status === "ACKNOWLEDGED" ||
+        incidentData.status === "RESOLVED"
       ) {
         console.log(
-          `Incident ${incidentId} is ${incident.status.toLowerCase()}, skipping escalation`
+          `Incident ${incident.id} is ${incidentData.status.toLowerCase()}, skipping escalation`
         );
         return;
       }
@@ -71,13 +69,28 @@ export class EscalationWorker {
         throw new Error(`Escalation level not found: ${escalationLevelId}`);
       }
 
+    
+      // Create a more meaningful alert message
+      const alertMessage = `ALERT!
+
+Monitor: ${monitor.name}
+URL: ${monitor.url}
+Status: ${monitor.status}
+Incident: ${incident.title}
+
+The incident has been ongoing and requires immediate attention.
+
+Time: ${new Date().toLocaleString()}
+`;
+
+
       // Create alert record for this escalation attempt
       const alert = await prisma.alert.create({
         data: {
-          title: title || "Monitor Alert",
+          title: `${monitor.name} - Monitor Alert`,
           type: "URL_UNAVAILABLE",
-          message: message || `Alert triggered for incident: ${title}`,
-          monitorId,
+          message: alertMessage,
+          monitorId: monitor.id,
           triggeredAt: new Date(),
         },
       });
@@ -91,10 +104,10 @@ export class EscalationWorker {
           case "EMAIL":
             await sendEscalationEmail(
               contacts,
-              title,
-              message || "",
-              monitorId,
-              incidentId
+              `${monitor.name} - Alert`,
+             alert.message,
+              monitor.id,
+              incident.id
             );
             console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
@@ -103,11 +116,11 @@ export class EscalationWorker {
           case "SLACK":
             await sendEscalationSlack(
               contacts,
-              title,
-              message || "",
-              monitorId,
+              `${monitor.name} - Alert`,
+              alert.message,
+              monitor.id,
               escalationLevel.slackChannels as string | null,
-              incidentId
+              incident.id
             );
             const workspaceInfo: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
@@ -122,9 +135,9 @@ export class EscalationWorker {
           case "WEBHOOK":
             await sendEscalationWebhook(
               contacts,
-              title,
-              message || "",
-              monitorId
+              `${monitor.name} - Alert`,
+              alert.message,
+              monitor.id
             );
             console.log(`Sent WEBHOOK escalation to: ${contacts.join(", ")}`);
             success = true;

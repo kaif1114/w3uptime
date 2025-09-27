@@ -32,14 +32,20 @@ export const escalationQueue = new Queue('escalation', queueOptions);
 
 // Job data interfaces
 export interface EscalationJobData {
-  monitorId: string;
-  incidentId: string;
+  monitor: {
+    id: string;
+    name: string;
+    url: string;
+    status: string;
+  };
+  incident: {
+    id: string;
+    title: string;
+  };
   escalationLevelId: string;
   levelOrder: number;
   method: 'EMAIL' | 'SLACK' | 'WEBHOOK';
   contacts: string[];
-  message?: string;
-  title: string;
 }
 
 // Job naming patterns

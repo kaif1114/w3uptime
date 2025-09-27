@@ -113,8 +113,6 @@ model EscalationLevel {
   waitMinutes     Int
   contacts        String[]
   channel         EscalationChannel @default(EMAIL)
-  name            String?
-  message         String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   slackChannels Json?
