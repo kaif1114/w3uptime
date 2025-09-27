@@ -74,13 +74,11 @@ export class EscalationWorker {
       const alertMessage = `ALERT!
 
 Monitor: ${monitor.name}
-URL: ${monitor.url}
 Status: ${monitor.status}
 Incident: ${incident.title}
 
 The incident has been ongoing and requires immediate attention.
 
-Time: ${new Date().toLocaleString()}
 `;
 
 

@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 import { prisma } from "db/client";
 
+interface SlackApiChannel {
+  id: string;
+  name: string;
+  is_archived: boolean;
+  is_private?: boolean;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getSessionOnServer();
@@ -63,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       if (channelsData.ok && channelsData.channels) {
         // Try to find #general first
-        const generalChannel = channelsData.channels.find((ch: any) => 
+        const generalChannel = channelsData.channels.find((ch: SlackApiChannel) => 
           ch.name === "general" && !ch.is_archived
         );
 
@@ -72,7 +79,7 @@ export async function POST(request: NextRequest) {
           defaultChannelName = generalChannel.name;
         } else {
           // Fallback to first available public channel
-          const firstChannel = channelsData.channels.find((ch: any) => 
+          const firstChannel = channelsData.channels.find((ch: SlackApiChannel) => 
             !ch.is_private && !ch.is_archived
           );
           

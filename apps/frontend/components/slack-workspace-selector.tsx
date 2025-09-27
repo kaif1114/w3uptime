@@ -20,6 +20,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useSlackIntegrations } from "@/hooks/use-slack-integrations";
 
+interface SlackIntegration {
+  id: string;
+  teamId: string;
+  teamName: string;
+  scope: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  defaultChannelId?: string;
+  defaultChannelName?: string;
+  webhookUrl?: string;
+}
+
 export interface SelectedSlackWorkspace {
   teamId: string;
   teamName: string;
@@ -41,7 +54,7 @@ export default function SlackWorkspaceSelector({
   const [open, setOpen] = useState(false);
   const { data, isLoading, error } = useSlackIntegrations();
 
-  const handleWorkspaceSelect = (integration: any) => {
+  const handleWorkspaceSelect = (integration: SlackIntegration) => {
     const existingIndex = selectedWorkspaces.findIndex(
       (sw) => sw.teamId === integration.teamId
     );

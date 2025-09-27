@@ -8,6 +8,13 @@ interface SlackChannel {
   isPrivate: boolean;
 }
 
+interface SlackApiChannel {
+  id: string;
+  name: string;
+  is_archived: boolean;
+  is_private?: boolean;
+}
+
 interface WorkspaceChannels {
   teamId: string;
   teamName: string;
@@ -50,8 +57,8 @@ export async function GET() {
 
         if (data.ok && data.channels) {
           const channels: SlackChannel[] = data.channels
-            .filter((channel: any) => !channel.is_archived) // Only active channels
-            .map((channel: any) => ({
+            .filter((channel: SlackApiChannel) => !channel.is_archived) // Only active channels
+            .map((channel: SlackApiChannel) => ({
               id: channel.id,
               name: channel.name,
               isPrivate: channel.is_private || false,
