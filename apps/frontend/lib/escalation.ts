@@ -17,8 +17,8 @@ export async function stopEscalation(monitorId: string, incidentId: string): Pro
 }
 
 /**
- * Send escalation via email (dummy implementation)
- * This function simulates sending an escalation email
+ * Send escalation via email
+ * This function sends actual escalation emails using Nodemailer
  */
 export async function sendEscalationEmail(
     contacts: string[], 
@@ -27,14 +27,28 @@ export async function sendEscalationEmail(
     monitorId: string
 ): Promise<void> {
     console.log(`📧 Sending escalation email for monitor ${monitorId}`);
-    console.log(`📧 Title: ${title}`);
-    console.log(`📧 Message: ${message}`);
     console.log(`📧 Recipients: ${contacts.join(', ')}`);
     
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Import the actual email sending function
+    const { sendEscalationEmail: sendEmail } = await import('./email');
     
-    console.log(`✅ Email escalation sent successfully`);
+    try {
+        // Get escalation level for context
+        const { prisma } = await import('db/client');
+        const escalationLevel = await prisma.escalationLevel.findFirst({
+            where: { contacts: { has: contacts[0] } },
+            select: { levelOrder: true }
+        });
+
+        // Send the actual email
+        await sendEmail(contacts, title, message, monitorId, escalationLevel?.levelOrder);
+        
+        console.log(`✅ Email escalation sent successfully`);
+    } catch (error) {
+        console.error(`❌ Failed to send escalation email:`, error);
+        // Re-throw to ensure the escalation system knows about the failure
+        throw error;
+    }
 }
 
 /**
