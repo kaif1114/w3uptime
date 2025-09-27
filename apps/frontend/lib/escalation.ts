@@ -46,7 +46,8 @@ export async function sendEscalationEmail(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string
+    monitorId: string,
+    incidentId: string
 ): Promise<void> {
     console.log(`Sending escalation email for monitor ${monitorId}`);
     console.log(`Recipients: ${contacts.join(', ')}`);
@@ -54,31 +55,15 @@ export async function sendEscalationEmail(
     // Import the actual email sending function
     const { sendEscalationEmail: sendEmail } = await import('./email');
     
-    // Get incident ID if not provided
-    const { prisma } = await import('db/client');
-
-    // Get incident ID if not provided
-    let currentIncidentId = incidentId;
-    if (!currentIncidentId) {
-        const incident = await prisma.incident.findFirst({
-            where: {
-                monitorId,
-                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
-            },
-            select: { id: true }
-        });
-        currentIncidentId = incident?.id;
-    }
-    
     try {
         // Send the actual email
         await sendEmail(contacts, title, message, monitorId);
         
         // Create timeline event for successful email escalation
-        if (currentIncidentId) {
+        if (incidentId) {
             const validEmails = contacts.filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
             await createEscalationTimelineEvent(
-                currentIncidentId,
+                incidentId,
                 `Email alert sent to: ${validEmails.join(', ')}`
             );
         }
@@ -88,10 +73,10 @@ export async function sendEscalationEmail(
         console.error(`Failed to send escalation email:`, error);
         
         // Create timeline event for failed email escalation
-        if (currentIncidentId) {
+        if (incidentId) {
             await createEscalationTimelineEvent(
-                currentIncidentId,
-                `❌ Failed to send email alert to: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
+                incidentId,
+                `Failed to send email alert to: ${contacts.join(', ')} - ${error instanceof Error ? error.message : 'Unknown error'}`
             );
         }
         
@@ -109,25 +94,13 @@ export async function sendEscalationSlack(
     title: string, 
     message: string, 
     monitorId: string,
-    slackWorkspacesData?: string | null
+    slackWorkspacesData?: string | null,
+    incidentId?: string
 ): Promise<void> {
     console.log(`Sending escalation Slack message for monitor ${monitorId}`);
     
     // Get incident ID if not provided
     const { prisma } = await import('db/client');
-    let currentIncidentId = incidentId;
-    if (!currentIncidentId) {
-        const incident = await prisma.incident.findFirst({
-            where: {
-                monitorId,
-                status: { in: ["ONGOING", "ACKNOWLEDGED"] }
-            },
-            select: { id: true }
-        });
-        currentIncidentId = incident?.id;
-    }
-
-    
     // Parse slack workspaces data
     let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
     if (slackWorkspacesData) {
@@ -147,9 +120,9 @@ export async function sendEscalationSlack(
         console.log(`Slack escalation logged (no workspaces configured)`);
         
         // Create timeline event for no Slack configuration
-        if (currentIncidentId) {
+        if (incidentId) {
             await createEscalationTimelineEvent(
-                currentIncidentId,
+                incidentId,
                 `Slack alert attempted but no workspaces configured for contacts: ${contacts.join(', ')}`
             );
         }
@@ -191,9 +164,9 @@ export async function sendEscalationSlack(
             console.log(`Sent Slack webhook escalation for monitor ${monitorId}`);
             
             // Create timeline event for successful webhook notification
-            if (currentIncidentId) {
+            if (incidentId) {
                 await createEscalationTimelineEvent(
-                    currentIncidentId,
+                    incidentId,
                     `Slack webhook alert sent`
                 );
             }
@@ -228,9 +201,9 @@ export async function sendEscalationSlack(
                     webhookSuccess = true; // Mark as successful
                     
                     // Create timeline event for successful Bot API notification
-                    if (currentIncidentId) {
+                    if (incidentId) {
                         await createEscalationTimelineEvent(
-                            currentIncidentId,
+                            incidentId,
                             `Slack alert sent to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
@@ -238,9 +211,9 @@ export async function sendEscalationSlack(
                     console.error(`Failed to send Slack Bot API notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
                     
                     // Create timeline event for failed Bot API notification
-                    if (currentIncidentId) {
+                    if (incidentId) {
                         await createEscalationTimelineEvent(
-                            currentIncidentId,
+                            incidentId,
                             `Failed to send Slack alert to ${workspace.teamName}#${workspace.defaultChannelName}`
                         );
                     }
@@ -249,9 +222,9 @@ export async function sendEscalationSlack(
                 console.error(`Error sending to workspace ${workspace.teamName}:`, error);
                 
                 // Create timeline event for workspace error
-                if (currentIncidentId) {
+                if (incidentId) {
                     await createEscalationTimelineEvent(
-                        currentIncidentId,
+                        incidentId,
                         `Error sending Slack alert to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
                     );
                 }

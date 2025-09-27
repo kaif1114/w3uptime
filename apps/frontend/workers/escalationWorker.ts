@@ -16,7 +16,6 @@ export class EscalationWorker {
       concurrency: 5,
     });
 
-    this.setupEventListeners();
   }
 
   /**
@@ -94,7 +93,8 @@ export class EscalationWorker {
               contacts,
               title,
               message || "",
-              monitorId
+              monitorId,
+              incidentId
             );
             console.log(` Sent EMAIL escalation to: ${contacts.join(", ")}`);
             success = true;
@@ -106,7 +106,8 @@ export class EscalationWorker {
               title,
               message || "",
               monitorId,
-              escalationLevel.slackChannels as string | null
+              escalationLevel.slackChannels as string | null,
+              incidentId
             );
             const workspaceInfo: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = escalationLevel.slackChannels 
               ? JSON.parse(escalationLevel.slackChannels as string)
@@ -125,7 +126,7 @@ export class EscalationWorker {
               message || "",
               monitorId
             );
-            console.log(`= Sent WEBHOOK escalation to: ${contacts.join(", ")}`);
+            console.log(`Sent WEBHOOK escalation to: ${contacts.join(", ")}`);
             success = true;
             break;
 
@@ -152,48 +153,16 @@ export class EscalationWorker {
         },
       });
 
-      // Create timeline event for this escalation
-      await prisma.timelineEvent.create({
-        data: {
-          description: success
-            ? `Alert sent via ${method} to ${contacts.join(", ")}`
-            : `Failed to send alert via ${method} to ${contacts.join(", ")}: ${error}`,
-          incidentId,
-          type: "ESCALATION",
-          createdAt: new Date(),
-        },
-      });
 
       if (!success && error) {
         throw new Error(error);
       }
 
-      console.log(` Successfully processed escalation job: ${job.name}`);
+      console.log(`Successfully processed escalation job: ${job.name}`);
     } catch (error) {
       console.error(`L Error processing escalation job ${job.name}:`, error);
       throw error; // Re-throw to trigger retry mechanism
     }
-  }
-
-  /**
-   * Setup event listeners for the worker
-   */
-  private setupEventListeners(): void {
-    this.worker.on("completed", (job) => {
-      console.log(` Escalation job completed: ${job.name}`);
-    });
-
-    this.worker.on("failed", (job, err) => {
-      console.error(`L Escalation job failed: ${job?.name}`, err);
-    });
-
-    this.worker.on("error", (err) => {
-      console.error("L Worker error:", err);
-    });
-
-    this.worker.on("stalled", (jobId) => {
-      console.warn(`� Escalation job stalled: ${jobId}`);
-    });
   }
 
   /**
@@ -210,7 +179,7 @@ export class EscalationWorker {
   async stop(): Promise<void> {
     console.log(" Stopping escalation worker...");
     await this.worker.close();
-    console.log(" Escalation worker stopped");
+    console.log("Escalation worker stopped");
   }
 
   /**

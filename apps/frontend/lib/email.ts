@@ -136,7 +136,7 @@ export async function sendEscalationEmail(
     // Wait for all emails to be sent
     await Promise.all(emailPromises);
 
-    console.log(` Escalation emails sent successfully to: ${validEmails.join(', ')}`);
+    console.log(`Escalation emails sent successfully to: ${validEmails.join(', ')}`);
   } catch (error) {
     console.error(`L Failed to send escalation emails:`, error);
     throw new Error(`Email sending failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -148,7 +148,7 @@ export async function testEmailConfiguration(): Promise<boolean> {
   try {
     const transporter = createTransporter();
     await transporter.verify();
-    console.log(' Email configuration is valid');
+    console.log('Email configuration is valid');
     return true;
   } catch (error) {
     console.error('L Email configuration failed:', error);
