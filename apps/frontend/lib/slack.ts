@@ -390,7 +390,7 @@ export function createEscalationMessage(escalation: {
             text: "✓ Acknowledge Alert"
           },
           style: "primary",
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/acknowledge/${escalation.escalationLogId}?via=slack`
+          url: `${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/acknowledge/${escalation.escalationLogId}?via=slack`
         },
         {
           type: "button", 
@@ -398,7 +398,7 @@ export function createEscalationMessage(escalation: {
             type: "plain_text",
             text: "View Dashboard"
           },
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}`
+          url: `${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}`
         }
       ]
     });

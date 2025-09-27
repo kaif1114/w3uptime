@@ -63,10 +63,10 @@ const createEscalationEmailTemplate = (
                 </div>
                 <p>This alert has been escalated and requires your immediate attention.</p>
                 <div class="actions">
-                    ${escalationLogId ? `<a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/acknowledge/${escalationLogId}?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
+                    ${escalationLogId ? `<a href="${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/acknowledge/${escalationLogId}?via=email&contact=${encodeURIComponent(recipientEmail || '')}" class="btn btn-acknowledge">
                         ✓ Acknowledge Alert
                     </a>` : ''}
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
+                    <a href="${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}" class="btn">
                         View Monitor Details
                     </a>
                 </div>
@@ -92,9 +92,9 @@ Alert Details:
 
 This alert has been escalated and requires your immediate attention.
 
-${escalationLogId ? `ACKNOWLEDGE ALERT: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/acknowledge/${escalationLogId}?via=email&contact=${encodeURIComponent(recipientEmail || '')}
+${escalationLogId ? `ACKNOWLEDGE ALERT: ${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/acknowledge/${escalationLogId}?via=email&contact=${encodeURIComponent(recipientEmail || '')}
 
-` : ''}View monitor details: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}
+` : ''}View monitor details: ${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/monitors/${monitorId}
 
 ---
 This is an automated message from W3Uptime monitoring service.
