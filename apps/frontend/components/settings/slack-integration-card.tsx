@@ -3,12 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useSlackIntegrations, useDeleteSlackIntegration, useUpdateSlackIntegration } from "@/hooks/use-slack-integrations";
-import { Trash2, ExternalLink, Slack, Plus, Edit3, Check, X, TestTube2 } from "lucide-react";
+import { useSlackIntegrations, useDeleteSlackIntegration } from "@/hooks/use-slack-integrations";
+import { Trash2, ExternalLink, Slack, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +21,6 @@ import {
 export default function SlackIntegrationCard() {
   const { data, isLoading, error } = useSlackIntegrations();
   const deleteIntegration = useDeleteSlackIntegration();
-  const updateIntegration = useUpdateSlackIntegration();
-  
-  const [editingWebhook, setEditingWebhook] = useState<string | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState<string>("");
-  const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
 
   const handleDelete = async (integrationId: string, teamName: string) => {
     try {
@@ -36,57 +28,6 @@ export default function SlackIntegrationCard() {
       toast.success(`Disconnected from ${teamName}`);
     } catch (error) {
       toast.error("Failed to disconnect Slack integration");
-    }
-  };
-
-  const handleEditWebhook = (integrationId: string, currentUrl: string) => {
-    setEditingWebhook(integrationId);
-    setWebhookUrl(currentUrl || "");
-  };
-
-  const handleSaveWebhook = async (integrationId: string) => {
-    try {
-      await updateIntegration.mutateAsync({
-        id: integrationId,
-        webhookUrl: webhookUrl.trim() || null,
-      });
-      toast.success("Webhook URL updated successfully");
-      setEditingWebhook(null);
-      setWebhookUrl("");
-    } catch (error) {
-      toast.error("Failed to update webhook URL");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingWebhook(null);
-    setWebhookUrl("");
-  };
-
-  const handleTestWebhook = async (webhookUrl: string, integrationId: string) => {
-    if (!webhookUrl) {
-      toast.error("No webhook URL configured");
-      return;
-    }
-
-    setTestingWebhook(integrationId);
-    try {
-      const response = await fetch("/api/slack/test-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookUrl }),
-      });
-
-      if (response.ok) {
-        toast.success("Test message sent successfully! Check your Slack channel.");
-      } else {
-        const errorData = await response.json();
-        toast.error(`Test failed: ${errorData.error || "Unknown error"}`);
-      }
-    } catch (error) {
-      toast.error("Failed to test webhook");
-    } finally {
-      setTestingWebhook(null);
     }
   };
 
@@ -125,138 +66,62 @@ export default function SlackIntegrationCard() {
               {data.integrations.map((integration) => (
                 <div
                   key={integration.id}
-                  className="p-4 border rounded-lg space-y-3"
+                  className="flex items-center justify-between p-3 border rounded-lg"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-slack-green">
-                        <Slack className="h-4 w-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{integration.teamName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Connected {new Date(integration.createdAt).toLocaleDateString()}
-                        </p>
-                        {integration.defaultChannelName && (
-                          <p className="text-xs text-muted-foreground">
-                            Default channel: #{integration.defaultChannelName}
-                          </p>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded bg-slack-green">
+                      <Slack className="h-4 w-4 text-white" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        Active
-                      </Badge>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={deleteIntegration.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Disconnect Slack Integration</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to disconnect from {integration.teamName}? 
-                              You will no longer receive notifications in this Slack workspace.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(integration.id, integration.teamName)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Disconnect
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    <div>
+                      <p className="font-medium">{integration.teamName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Connected {new Date(integration.createdAt).toLocaleDateString()}
+                      </p>
+                      {integration.defaultChannelName && (
+                        <p className="text-xs text-muted-foreground">
+                          Default channel: #{integration.defaultChannelName}
+                        </p>
+                      )}
+                      {integration.webhookUrl && (
+                        <p className="text-xs text-green-600">
+                          ✓ Webhook configured for escalations
+                        </p>
+                      )}
                     </div>
                   </div>
-
-                  {/* Webhook URL Management */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Webhook URL (Optional)</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Add an incoming webhook URL for more reliable message delivery. 
-                      <a 
-                        href="https://api.slack.com/messaging/webhooks" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline ml-1"
-                      >
-                        Learn how to create one →
-                      </a>
-                    </p>
-                    
-                    {editingWebhook === integration.id ? (
-                      <div className="flex gap-2">
-                        <Input
-                          value={webhookUrl}
-                          onChange={(e) => setWebhookUrl(e.target.value)}
-                          placeholder="https://hooks.slack.com/services/..."
-                          className="flex-1"
-                        />
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      Active
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
                         <Button
-                          size="sm"
-                          onClick={() => handleSaveWebhook(integration.id)}
-                          disabled={updateIntegration.isPending}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
                           variant="outline"
-                          onClick={handleCancelEdit}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          {integration.webhookUrl ? (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                Webhook Configured
-                              </Badge>
-                              <code className="text-xs bg-muted px-2 py-1 rounded">
-                                {integration.webhookUrl.substring(0, 50)}...
-                              </code>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">No webhook URL configured</span>
-                          )}
-                        </div>
-                        <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => handleEditWebhook(integration.id, integration.webhookUrl || "")}
+                          disabled={deleteIntegration.isPending}
                         >
-                          <Edit3 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        {integration.webhookUrl && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleTestWebhook(integration.webhookUrl!, integration.id)}
-                            disabled={testingWebhook === integration.id}
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disconnect Slack Integration</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to disconnect from {integration.teamName}? 
+                            You will no longer receive notifications in this Slack workspace.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(integration.id, integration.teamName)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {testingWebhook === integration.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
-                            ) : (
-                              <TestTube2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                            Disconnect
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
