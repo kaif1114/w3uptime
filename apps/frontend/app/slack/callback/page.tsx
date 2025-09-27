@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
-export default function SlackCallbackPage() {
+function SlackCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,13 +18,11 @@ export default function SlackCallbackPage() {
 
       if (errorParam) {
         setError(`OAuth Error: ${errorParam}`);
-        setIsProcessing(false);
         return;
       }
 
       if (!code) {
         setError("No authorization code received");
-        setIsProcessing(false);
         return;
       }
 
@@ -99,5 +96,25 @@ export default function SlackCallbackPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SlackCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading
+            </CardTitle>
+            <CardDescription>Setting up your Slack integration...</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    }>
+      <SlackCallbackContent />
+    </Suspense>
   );
 }

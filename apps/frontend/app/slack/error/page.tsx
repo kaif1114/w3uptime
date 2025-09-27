@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function SlackErrorPage() {
+function SlackErrorContent() {
   const searchParams = useSearchParams();
   const errorMessage = searchParams.get("message") || "An unknown error occurred during the integration process.";
 
@@ -53,5 +54,24 @@ export default function SlackErrorPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SlackErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="h-6 w-6 text-red-600" />
+            </div>
+            <CardTitle>Loading...</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+    }>
+      <SlackErrorContent />
+    </Suspense>
   );
 }
