@@ -45,8 +45,7 @@ export async function sendEscalationSlack(
     contacts: string[], 
     title: string, 
     message: string, 
-    monitorId: string,
-    slackChannelsData?: string | null
+    monitorId: string
 ): Promise<void> {
     console.log(`💬 Sending escalation Slack message for monitor ${monitorId}`);
     

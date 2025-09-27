@@ -33,7 +33,6 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { useSlackIntegrations } from "@/hooks/use-slack-integrations";
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
