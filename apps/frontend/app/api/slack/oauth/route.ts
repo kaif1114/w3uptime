@@ -39,6 +39,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get default channel (try #general first, then first available channel)
+    let defaultChannelId: string | null = null;
+    let defaultChannelName: string | null = null;
+
+    try {
+      const channelsResponse = await fetch("https://slack.com/api/conversations.list", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${tokenData.access_token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const channelsData = await channelsResponse.json();
+
+      if (channelsData.ok && channelsData.channels) {
+        // Try to find #general first
+        const generalChannel = channelsData.channels.find((ch: any) => 
+          ch.name === "general" && !ch.is_archived
+        );
+
+        if (generalChannel) {
+          defaultChannelId = generalChannel.id;
+          defaultChannelName = generalChannel.name;
+        } else {
+          // Fallback to first available public channel
+          const firstChannel = channelsData.channels.find((ch: any) => 
+            !ch.is_private && !ch.is_archived
+          );
+          
+          if (firstChannel) {
+            defaultChannelId = firstChannel.id;
+            defaultChannelName = firstChannel.name;
+          }
+        }
+      }
+    } catch (channelError) {
+      console.error("Error fetching default channel:", channelError);
+      // Continue without default channel - user can set it later
+    }
+
     // Check if integration already exists for this team
     const existingIntegration = await prisma.slackIntegration.findUnique({
       where: { teamId: tokenData.team.id },
@@ -53,6 +94,8 @@ export async function POST(request: NextRequest) {
           accessToken: tokenData.access_token,
           botUserId: tokenData.bot_user_id,
           scope: tokenData.scope,
+          defaultChannelId,
+          defaultChannelName,
           isActive: true,
           updatedAt: new Date(),
         },
@@ -67,6 +110,8 @@ export async function POST(request: NextRequest) {
           accessToken: tokenData.access_token,
           botUserId: tokenData.bot_user_id,
           scope: tokenData.scope,
+          defaultChannelId,
+          defaultChannelName,
           isActive: true,
         },
       });
@@ -78,6 +123,10 @@ export async function POST(request: NextRequest) {
         id: tokenData.team.id,
         name: tokenData.team.name,
       },
+      defaultChannel: defaultChannelId ? {
+        id: defaultChannelId,
+        name: defaultChannelName,
+      } : null,
     });
   } catch (error) {
     console.error("Slack OAuth error:", error);
