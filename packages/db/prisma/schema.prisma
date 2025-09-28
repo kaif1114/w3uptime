@@ -131,8 +131,10 @@ model Alert {
   expectedStatusCode Int?
   triggeredAt        DateTime        @default(now())
   monitorId          String
+  incidentId         String?
   type               IncidentType    @default(URL_UNAVAILABLE)
   monitor            Monitor         @relation(fields: [monitorId], references: [id])
+  incident           Incident?       @relation(fields: [incidentId], references: [id])
   EscalationLog      EscalationLog[]
 }
 
@@ -148,6 +150,7 @@ model Incident {
   cause          IncidentType    @default(URL_UNAVAILABLE)
   Monitor        Monitor         @relation(fields: [monitorId], references: [id])
   timelineEvents TimelineEvent[]
+  alerts         Alert[]
 
   @@index([monitorId])
   @@index([monitorId, status])

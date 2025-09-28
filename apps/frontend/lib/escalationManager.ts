@@ -152,7 +152,7 @@ export class EscalationManager {
   static async cleanup(): Promise<void> {
     try {
       await escalationQueue.clean(24 * 60 * 60 * 1000, 100); // Clean jobs older than 24 hours, keep last 100
-      console.log('🧹 Escalation queue cleanup completed');
+      console.log('Escalation queue cleanup completed');
     } catch (error) {
       console.error('Error during escalation queue cleanup:', error);
     }
