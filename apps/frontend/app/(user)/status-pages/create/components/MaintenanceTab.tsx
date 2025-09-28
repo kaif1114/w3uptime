@@ -260,7 +260,7 @@ export function MaintenanceTab({
                                 (m: Monitor) => m.id === r.monitorId
                               )?.name;
                             const displayName =
-                              r.publicName || monitorName || "Resource";
+                              monitorName || "Resource";
                             return (
                               <label
                                 key={r.id}

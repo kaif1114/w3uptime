@@ -62,12 +62,10 @@ export const GET = withAuth(async (
             escalationLevel: {
               select: {
                 id: true,
-                name: true,
                 levelOrder: true,
                 waitMinutes: true,
                 channel: true,
                 contacts: true,
-                message: true,
               },
             },
           },

@@ -1,6 +1,18 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+
+type SlackChannelData = {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+} | {
+  teamId: string;
+  teamName: string;
+  channelId: string;
+  channelName: string;
+};
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,12 +84,24 @@ const escalationPolicySchema = z.object({
         id: z.string().optional(),
         order: z.number(),
         method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
-        target: z.string().min(1, "Target is required"),
+        target: z.string(),
+        slackChannels: z.array(z.object({
+          teamId: z.string(),
+          teamName: z.string(),
+          channelId: z.string(),
+          channelName: z.string(),
+        })).optional(),
         waitTimeMinutes: z
           .number()
           .min(0, "Wait time cannot be negative")
           .max(1440, "Wait time cannot exceed 24 hours"),
       })
+      .refine((level) => {
+        if (level.method === "SLACK") {
+          return level.slackChannels && level.slackChannels.length > 0;
+        }
+        return level.target && level.target.trim().length > 0;
+      }, "Target or Slack channels are required")
     )
     .min(1, "At least one escalation level is required")
     .max(10, "Cannot have more than 10 escalation levels"),
@@ -121,7 +145,8 @@ export function EscalationPolicyDetailPage({
           id: level.id,
           order: level.order,
           method: level.method as "EMAIL" | "SLACK" | "WEBHOOK",
-          target: level.target,
+          target: level.target || "",
+          slackChannels: level.slackChannels || [],
           waitTimeMinutes: level.waitTimeMinutes,
         })),
       };
@@ -143,7 +168,8 @@ export function EscalationPolicyDetailPage({
           id: level.id,
           order: level.order,
           method: level.method as "EMAIL" | "SLACK" | "WEBHOOK",
-          target: level.target,
+          target: level.target || "",
+          slackChannels: level.slackChannels || [],
           waitTimeMinutes: level.waitTimeMinutes,
         })),
       };
@@ -190,6 +216,7 @@ export function EscalationPolicyDetailPage({
       order: newOrder,
       method: "EMAIL",
       target: "",
+      slackChannels: [],
       waitTimeMinutes: 30,
     });
   };
@@ -484,20 +511,59 @@ export function EscalationPolicyDetailPage({
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label>Target</Label>
-                                    <Input
-                                      {...form.register(
-                                        `levels.${index}.target`
-                                      )}
-                                      placeholder="Email, channel, or webhook URL"
-                                      onChange={(e) => {
-                                        form.setValue(
-                                          `levels.${index}.target`,
-                                          e.target.value
-                                        );
-                                        form.trigger(`levels.${index}.target`);
-                                      }}
-                                    />
+                                    <Label>
+                                      {currentLevel?.method === "SLACK" 
+                                        ? "Slack Channels" 
+                                        : "Target"}
+                                    </Label>
+                                    {currentLevel?.method === "SLACK" ? (
+                                      <div className="space-y-2">
+                                        {currentLevel?.slackChannels && currentLevel.slackChannels.length > 0 ? (
+                                          <div className="space-y-2">
+                                            <div className="text-sm text-muted-foreground">
+                                              Configured Slack workspaces:
+                                            </div>
+                                            <div className="space-y-1">
+                                              {currentLevel.slackChannels.map((workspace: SlackChannelData) => (
+                                                <div
+                                                  key={workspace.teamId}
+                                                  className="flex items-center gap-2 p-2 bg-muted rounded-md"
+                                                >
+                                                  <MessageSquare className="h-4 w-4 text-blue-600" />
+                                                  <span className="text-sm">
+                                                    {workspace.teamName} - #{('defaultChannelName' in workspace) ? workspace.defaultChannelName : workspace.channelName}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                                              No Slack workspaces configured for this escalation level.
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <Input
+                                        {...form.register(
+                                          `levels.${index}.target`
+                                        )}
+                                        placeholder={
+                                          currentLevel?.method === "EMAIL" 
+                                            ? "Email address" 
+                                            : "Webhook URL"
+                                        }
+                                        onChange={(e) => {
+                                          form.setValue(
+                                            `levels.${index}.target`,
+                                            e.target.value
+                                          );
+                                          form.trigger(`levels.${index}.target`);
+                                        }}
+                                      />
+                                    )}
                                   </div>
 
                                   <div className="space-y-2">
@@ -577,7 +643,19 @@ export function EscalationPolicyDetailPage({
                               Wait {level.waitTimeMinutes} minutes
                             </span>
                           </div>
-                          <p className="text-sm font-medium">{level.target}</p>
+                          {level.method === "SLACK" && level.slackChannels && level.slackChannels.length > 0 ? (
+                            <div className="space-y-1">
+                              {level.slackChannels.map((channel: SlackChannelData, idx: number) => (
+                                <div key={idx} className="text-sm font-medium">
+                                  <span className="text-muted-foreground">{channel.teamName}</span>
+                                  <span className="mx-1">•</span>
+                                  <span>#{('defaultChannelName' in channel) ? channel.defaultChannelName : channel.channelName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm font-medium">{level.target}</p>
+                          )}
                         </div>
                       </div>
                     </div>

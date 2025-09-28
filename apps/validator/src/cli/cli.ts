@@ -34,7 +34,7 @@ program
       
       // Private key is required
       if (!options.privateKey) {
-        console.error(chalk.red('❌ Private key is required. Use --private-key option to provide your existing wallet private key.'));
+        console.error(chalk.red('Private key is required. Use --private-key option to provide your existing wallet private key.'));
         process.exit(1);
       }
       
@@ -52,7 +52,7 @@ program
       const confirmPassword = await promptPassword('Confirm password:');
       
       if (password !== confirmPassword) {
-        console.error(chalk.red('❌ Passwords do not match'));
+        console.error(chalk.red('Passwords do not match'));
         process.exit(1);
       }
       
@@ -62,7 +62,7 @@ program
         options.walletName
       );
       
-      console.log(chalk.green('✅ Wallet imported successfully'));
+      console.log(chalk.green('Wallet imported successfully'));
       
       // Set as default wallet
       const walletName = path.basename(walletResult.keystorePath, '.json');
@@ -71,13 +71,13 @@ program
       // Save configuration
       await configManager.saveConfig();
       
-      console.log(chalk.cyan(`📋 Wallet Address: ${walletResult.address}`));
+      console.log(chalk.cyan(`Wallet Address: ${walletResult.address}`));
       console.log(chalk.cyan(`📁 Keystore Path: ${walletResult.keystorePath}`));
       console.log(chalk.cyan(`⚙️  Config Path: ${configManager.getConfigPath()}`));
       console.log(chalk.yellow('🔐 Keep your password safe - it cannot be recovered!'));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Initialization failed: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -105,7 +105,7 @@ program
       // Determine wallet to use
       const walletName = options.wallet || config.validator.defaultWallet;
       if (!walletName) {
-        console.error(chalk.red('❌ No wallet specified. Use --wallet or set default wallet with config command'));
+        console.error(chalk.red('No wallet specified. Use --wallet or set default wallet with config command'));
         process.exit(1);
       }
       
@@ -114,7 +114,7 @@ program
       await validatorService.start(walletName);
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to start validator: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to start validator: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -158,7 +158,7 @@ program
       console.log('  Status: Not running (use "start" command)');
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to get status: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to get status: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -198,7 +198,7 @@ walletCmd
       });
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to list wallets: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to list wallets: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -215,7 +215,7 @@ walletCmd
       
       // Check if wallet already exists
       if (keystoreManager.keystoreExists(name)) {
-        console.error(chalk.red(`❌ Wallet "${name}" already exists`));
+        console.error(chalk.red(`Wallet "${name}" already exists`));
         process.exit(1);
       }
       
@@ -224,18 +224,18 @@ walletCmd
       const confirmPassword = await promptPassword('Confirm password:');
       
       if (password !== confirmPassword) {
-        console.error(chalk.red('❌ Passwords do not match'));
+        console.error(chalk.red('Passwords do not match'));
         process.exit(1);
       }
       
       const result = await keystoreManager.importWallet(privateKey, password, name);
       
-      console.log(chalk.green('✅ Wallet imported successfully'));
-      console.log(chalk.cyan(`📋 Address: ${result.address}`));
+      console.log(chalk.green('Wallet imported successfully'));
+      console.log(chalk.cyan(`Address: ${result.address}`));
       console.log(chalk.cyan(`📁 Path: ${result.keystorePath}`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to import wallet: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to import wallet: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -259,7 +259,7 @@ configCmd
       console.log(JSON.stringify(config, null, 2));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to show config: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to show config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -288,10 +288,10 @@ configCmd
       configManager.updateConfig(config);
       await configManager.saveConfig();
       
-      console.log(chalk.green(`✅ Configuration updated: ${key} = ${value}`));
+      console.log(chalk.green(`Configuration updated: ${key} = ${value}`));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to set config: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to set config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -319,10 +319,10 @@ configCmd
       configManager.resetToDefaults();
       await configManager.saveConfig();
       
-      console.log(chalk.green('✅ Configuration reset to defaults'));
+      console.log(chalk.green('Configuration reset to defaults'));
       
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to reset config: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Failed to reset config: ${error instanceof Error ? error.message : String(error)}`));
       process.exit(1);
     }
   });
@@ -361,12 +361,12 @@ async function promptPrivateKey(message: string): Promise<string> {
 
 // Global error handler
 process.on('uncaughtException', (error) => {
-  console.error(chalk.red('❌ Uncaught Exception:'), error);
+  console.error(chalk.red('Uncaught Exception:'), error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error(chalk.red('❌ Unhandled Rejection at:'), promise, 'reason:', reason);
+  console.error(chalk.red('Unhandled Rejection at:'), promise, 'reason:', reason);
   process.exit(1);
 });
 

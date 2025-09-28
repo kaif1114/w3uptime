@@ -95,13 +95,13 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
-      console.error("❌ Validation error:", parsed.error);
+      console.error("Validation error:", parsed.error);
       return NextResponse.json(
         { error: parsed.error.message },
         { status: 400 }
       );
     }
-    console.log("✅ Validation passed:", parsed.data);
+    console.log("Validation passed:", parsed.data);
 
     // Create the status page in the database
     const statusPage = await prisma.statusPage.create({
@@ -160,14 +160,14 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       updatedAt: statusPage.updatedAt.toISOString(),
     };
 
-    console.log("✅ Status page created successfully:", response);
+    console.log("Status page created successfully:", response);
     return NextResponse.json(
       { message: "Status page created", statusPage: response },
       { status: 201 }
     );
   } catch (error) {
-    console.error("❌ Error creating status page:", error);
-    console.error("❌ Error stack:", (error as Error).stack);
+    console.error("Error creating status page:", error);
+    console.error("Error stack:", (error as Error).stack);
     return NextResponse.json(
       { error: "Internal server error", details: (error as Error).message },
       { status: 500 }

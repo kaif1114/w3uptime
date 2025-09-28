@@ -18,17 +18,17 @@ model User {
   type               UserType           @default(USER)
   publicKey          String?            @unique
   geoLocationId      String?            @unique
-  timelineEvents     TimelineEvent[]
   escalationPolicies EscalationPolicy[]
   monitors           Monitor[]
   monitorTicks       MonitorTick[]
-  sessions           Session[]
-  customPage         StatusPage[]
-  geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
-  // Community governance relations
   proposals          Proposal[]
   proposalComments   ProposalComment[]
   proposalVotes      ProposalVote[]
+  sessions           Session[]
+  slackIntegrations  SlackIntegration[]
+  customPage         StatusPage[]
+  timelineEvents     TimelineEvent[]
+  geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
 }
 
 model GeoLocation {
@@ -107,18 +107,17 @@ model EscalationPolicy {
 }
 
 model EscalationLevel {
-  id             String            @id @default(uuid())
-  escalationId   String
-  levelOrder     Int
-  waitMinutes    Int
-  contacts       String[]
-  channel        EscalationChannel @default(EMAIL)
-  name           String?
-  message        String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  escalation     EscalationPolicy  @relation(fields: [escalationId], references: [id])
-  escalationLogs EscalationLog[]
+  id              String            @id @default(uuid())
+  escalationId    String
+  levelOrder      Int
+  waitMinutes     Int
+  contacts        String[]
+  channel         EscalationChannel @default(EMAIL)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  slackChannels Json?
+  escalation      EscalationPolicy  @relation(fields: [escalationId], references: [id])
+  escalationLogs  EscalationLog[]
 
   @@unique([escalationId, levelOrder])
   @@index([escalationId, levelOrder])
@@ -127,30 +126,33 @@ model EscalationLevel {
 model Alert {
   id                 String          @id @default(uuid())
   title              String
-  type               IncidentType    @default(URL_UNAVAILABLE)
   message            String
   triggerStatusCode  Int?
   expectedStatusCode Int?
   triggeredAt        DateTime        @default(now())
   monitorId          String
+  incidentId         String?
+  type               IncidentType    @default(URL_UNAVAILABLE)
   monitor            Monitor         @relation(fields: [monitorId], references: [id])
+  incident           Incident?       @relation(fields: [incidentId], references: [id])
   EscalationLog      EscalationLog[]
 }
 
 model Incident {
   id             String          @id @default(uuid())
   title          String
-  cause          IncidentType    @default(URL_UNAVAILABLE)
   status         IncidentStatus  @default(ONGOING)
   monitorId      String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime?       @updatedAt
   resolvedAt     DateTime?
   downtime       Int?
-  timelineEvents TimelineEvent[]
+  cause          IncidentType    @default(URL_UNAVAILABLE)
   Monitor        Monitor         @relation(fields: [monitorId], references: [id])
+  timelineEvents TimelineEvent[]
+  alerts         Alert[]
 
-  @@index(monitorId)
+  @@index([monitorId])
   @@index([monitorId, status])
 }
 
@@ -162,20 +164,22 @@ model TimelineEvent {
   userId          String?
   escalationLogId String?           @unique
   createdAt       DateTime          @default(now())
+  escalationLog   EscalationLog?    @relation(fields: [escalationLogId], references: [id])
   incident        Incident          @relation(fields: [incidentId], references: [id])
   user            User?             @relation(fields: [userId], references: [id])
-  escalationLog   EscalationLog?    @relation(fields: [escalationLogId], references: [id])
 }
 
 model EscalationLog {
   id                String          @id @default(uuid())
   alertId           String
-  escalationLevelId String
   wasAcknowledged   Boolean         @default(false)
   acknowledgedAt    DateTime?
-  timelineEvent     TimelineEvent?
+  acknowledgedBy    String?
+  acknowledgedVia   EscalationChannel?
+  escalationLevelId String
   Alert             Alert           @relation(fields: [alertId], references: [id])
   escalationLevel   EscalationLevel @relation(fields: [escalationLevelId], references: [id])
+  timelineEvent     TimelineEvent?
 
   @@index([alertId])
   @@index([escalationLevelId])
@@ -195,6 +199,26 @@ model Session {
   @@index([sessionId])
   @@index([userId])
   @@index([walletAddress])
+}
+
+model SlackIntegration {
+  id                 String   @id @default(uuid())
+  userId             String
+  teamId             String   @unique
+  teamName           String
+  accessToken        String
+  botUserId          String
+  scope              String
+  defaultChannelId   String?
+  defaultChannelName String?
+  webhookUrl         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isActive           Boolean  @default(true)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
 }
 
 model StatusPage {
@@ -228,7 +252,6 @@ model StatusPageSection {
   monitor          Monitor               @relation(fields: [monitorId], references: [id])
   statusPage       StatusPage            @relation(fields: [statusPageId], references: [id])
 }
-//status page section doesnt contain a maintenance id for now, it fetches the data on the behalf of the status pageid and monitorid
 
 model Update {
   id               String             @id @default(uuid())
@@ -262,16 +285,16 @@ model Maintenance {
 
 /// Community governance models
 model Proposal {
-  id          String           @id @default(uuid())
+  id          String            @id @default(uuid())
   title       String
   description String
   type        ProposalType
-  status      ProposalStatus   @default(SUBMITTED)
+  status      ProposalStatus    @default(SUBMITTED)
   tags        String[]
   userId      String
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  user        User             @relation(fields: [userId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  user        User              @relation(fields: [userId], references: [id])
   comments    ProposalComment[]
   votes       ProposalVote[]
 
@@ -293,13 +316,13 @@ model ProposalComment {
 }
 
 model ProposalVote {
-  id         String      @id @default(uuid())
+  id         String   @id @default(uuid())
   proposalId String
   userId     String
   vote       VoteType
-  createdAt  DateTime    @default(now())
-  proposal   Proposal    @relation(fields: [proposalId], references: [id])
-  user       User        @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([proposalId, userId])
   @@index([proposalId])

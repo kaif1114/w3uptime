@@ -70,13 +70,14 @@ export const GET = async (
     }
 
     if (startDate || endDate) {
-      whereClause.createdAt = {};
+      const dateFilter: { gte?: Date; lte?: Date } = {};
       if (startDate) {
-        whereClause.createdAt.gte = new Date(startDate);
+        dateFilter.gte = new Date(startDate);
       }
       if (endDate) {
-        whereClause.createdAt.lte = new Date(endDate);
+        dateFilter.lte = new Date(endDate);
       }
+      whereClause.createdAt = dateFilter;
     }
 
     // Build orderBy clause

@@ -691,7 +691,7 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                   </h4>
                   <div className="space-y-1 text-xs mb-3">
                     <p>📍 {selectedCountryData.validators.length} validators</p>
-                    <p>✅ {selectedCountryData.onlineCount} online</p>
+                    <p>{selectedCountryData.onlineCount} online</p>
                   </div>
                   {/* City breakdown */}
                   <div className="border-t border-white/20 pt-2">

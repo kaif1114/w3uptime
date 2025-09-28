@@ -26,6 +26,7 @@ import {
   Globe,
   BarChart3,
   Lightbulb,
+  Settings,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -65,6 +66,11 @@ const items = [
     title: "Community",
     url: "/community",
     icon: Lightbulb,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
   },
 ];
 

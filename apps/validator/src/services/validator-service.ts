@@ -70,13 +70,13 @@ export class ValidatorService extends EventEmitter {
       // Authenticate with wallet
       await this.authenticateWallet(walletName);
       
-      console.log(chalk.green('✅ Authentication successful'));
+      console.log(chalk.green('Authentication successful'));
       console.log(chalk.blue('🌐 Connecting to hub...'));
       
       // Create and start WebSocket connection
       await this.initializeWebSocketClient();
       
-      console.log(chalk.green('✅ Connected to hub'))
+      console.log(chalk.green('Connected to hub'))
       console.log(chalk.blue('📝 Registering as validator...'));
       
       // Register with hub
@@ -110,7 +110,7 @@ export class ValidatorService extends EventEmitter {
     }
 
     this.shutdownInProgress = true;
-    console.log(chalk.yellow('🛑 Stopping validator service...'));
+    console.log(chalk.yellow('Stopping validator service...'));
 
     try {
       // Disconnect WebSocket
@@ -127,12 +127,12 @@ export class ValidatorService extends EventEmitter {
       this.monitor.destroy();
 
       this.isRunning = false;
-      console.log(chalk.green('✅ Validator service stopped'));
+      console.log(chalk.green('Validator service stopped'));
       
       this.emit('stopped');
       
     } catch (error) {
-      console.error(chalk.red(`❌ Error during shutdown: ${error instanceof Error ? error.message : String(error)}`));
+      console.error(chalk.red(`Error during shutdown: ${error instanceof Error ? error.message : String(error)}`));
     } finally {
       this.shutdownInProgress = false;
     }
@@ -196,7 +196,7 @@ export class ValidatorService extends EventEmitter {
     
     // Setup WebSocket event handlers
     this.websocketClient.on('connected', () => {
-      console.log(chalk.green('🔗 Connected to hub'));
+      console.log(chalk.green('Connected to hub'));
     });
 
     this.websocketClient.on('disconnected', () => {
@@ -209,7 +209,7 @@ export class ValidatorService extends EventEmitter {
     });
 
     this.websocketClient.on('registered', (data: { validatorId: string }) => {
-      console.log(chalk.green(`✅ Registered as validator: ${data.validatorId}`));
+      console.log(chalk.green(`Registered as validator: ${data.validatorId}`));
     });
 
     this.websocketClient.on('validationRequest', async (data: { url: string; callbackId: string; monitorId?: string }) => {
@@ -217,11 +217,11 @@ export class ValidatorService extends EventEmitter {
     });
 
     this.websocketClient.on('hubError', (error: { message: string }) => {
-      console.log(chalk.red(`❌ Hub error: ${error.message}`));
+      console.log(chalk.red(`Hub error: ${error.message}`));
     });
 
     this.websocketClient.on('error', (error: Error) => {
-      console.log(chalk.red(`❌ WebSocket error: ${error.message}`));
+      console.log(chalk.red(`WebSocket error: ${error.message}`));
     });
 
     // Connect to hub
@@ -257,7 +257,7 @@ export class ValidatorService extends EventEmitter {
         console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
       
     } catch (error) {
-      console.log(chalk.red(`❌ Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
+      console.log(chalk.red(`Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
       
       // Send error result
       try {
@@ -268,7 +268,7 @@ export class ValidatorService extends EventEmitter {
           monitorId: data.monitorId || 'unknown'
         });
       } catch (sendError) {
-        console.log(chalk.red(`❌ Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`) );
+        console.log(chalk.red(`Failed to send error result: ${sendError instanceof Error ? sendError.message : String(sendError)}`) );
       }
       
       this.stats.failedValidations++;
@@ -303,13 +303,13 @@ export class ValidatorService extends EventEmitter {
    */
   private setupGracefulShutdown(): void {
     process.on('SIGINT', async () => {
-      chalk.yellow('\n🛑 Received SIGINT, shutting down gracefully...');
+      chalk.yellow('\nReceived SIGINT, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-        chalk.yellow('\n🛑 Received SIGTERM, shutting down gracefully...');
+        chalk.yellow('\nReceived SIGTERM, shutting down gracefully...');
       await this.stop();
       process.exit(0);
     });

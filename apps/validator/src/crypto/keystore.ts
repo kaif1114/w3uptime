@@ -64,7 +64,7 @@ export class KeystoreManager {
       // Derive public key from private key
       const derivedPublicKey = wallet.signingKey.publicKey;
       
-      console.log(chalk.green(`✅ Derived public key from private key`));
+      console.log(chalk.green(`Derived public key from private key`));
       console.log(chalk.gray(`   Address: ${wallet.address}`));
       console.log(chalk.gray(`   Public Key: ${derivedPublicKey}`));
       

@@ -51,11 +51,10 @@ export const initializeNotificationHandler = () => {
         if(payload.status === 'BAD') {
           const incidentTime = new Date(payload.checkedAt);
           createIncident(payload.monitorId, 'Monitor is down', incidentTime);
-          // Start escalation process
+      
         }
         else if(payload.status === 'GOOD') {
           resolveIncident(payload.monitorId, new Date(payload.checkedAt));
-          // Stop escalation process, if there is any started for this incident
         }
       }
     } catch (error) {

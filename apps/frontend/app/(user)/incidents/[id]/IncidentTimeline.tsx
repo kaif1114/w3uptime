@@ -80,7 +80,7 @@ export default function IncidentTimeline({
       case "POSTMORTEM":
         return "Postmortem";
       case "ESCALATION":
-        return event?.escalationLog?.Alert?.title || "Escalation triggered";
+        return event?.description|| "Escalation triggered";
       default:
         return "Timeline event";
     }

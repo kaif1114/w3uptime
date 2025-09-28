@@ -5,6 +5,21 @@ import { z } from "zod";
 import { PrismaTransaction } from "@/types/database-operations";
 import { EscalationMethod } from "@/types/escalation-policy";
 
+interface SlackChannelConfig {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+}
+
+interface EscalationLevelUpdateInput {
+  id?: string;
+  method: EscalationMethod;
+  target: string;
+  slackChannels?: SlackChannelConfig[];
+  waitTimeMinutes: number;
+}
+
 // Validation schema for updating escalation policy
 const updateEscalationPolicySchema = z.object({
   name: z
@@ -15,14 +30,25 @@ const updateEscalationPolicySchema = z.object({
     .array(
       z.object({
         id: z.string().optional(),
-        order: z.number(),
         method: z.enum(["EMAIL", "SLACK", "WEBHOOK"]),
-        target: z.string().min(1, "Target is required"),
+        target: z.string(),
+        slackChannels: z.array(z.object({
+          teamId: z.string(),
+          teamName: z.string(),
+          defaultChannelId: z.string(),
+          defaultChannelName: z.string(),
+        })).optional(),
         waitTimeMinutes: z
           .number()
           .min(0, "Wait time cannot be negative")
           .max(1440, "Wait time cannot exceed 24 hours"),
       })
+      .refine((level) => {
+        if (level.method === "SLACK") {
+          return level.slackChannels && level.slackChannels.length > 0;
+        }
+        return level.target && level.target.trim().length > 0;
+      }, "Target or Slack channels are required")
     )
     .min(1, "At least one escalation level is required")
     .max(10, "Cannot have more than 10 escalation levels"),
@@ -77,6 +103,7 @@ export const GET = withAuth(
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
           target: level.contacts[0] || "",
+          slackChannels: level.slackChannels ? JSON.parse(level.slackChannels as string) : [],
           waitTimeMinutes: level.waitMinutes,
         })),
         createdAt: escalationPolicy.createdAt,
@@ -135,7 +162,7 @@ export const PUT = withAuth(
           userId: user.id, // Direct userId lookup
         },
         include: {
-          monitors: true,
+          levels: true, // Include existing levels for comparison
         },
       });
 
@@ -146,19 +173,8 @@ export const PUT = withAuth(
         );
       }
 
-      // Check if policy is in use by any monitors
-      if (existingPolicy.monitors.length > 0) {
-        return NextResponse.json(
-          {
-            error: "Cannot update escalation policy that is in use by monitors",
-            monitors: existingPolicy.monitors.map((m) => ({
-              id: m.id,
-              name: m.name,
-            })),
-          },
-          { status: 400 }
-        );
-      }
+      // Allow updates even when policy is in use by monitors
+      // Removed restriction to enable escalation policy updates
 
       // Update policy and levels in a transaction
       const updatedPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {
@@ -171,31 +187,58 @@ export const PUT = withAuth(
           },
         });
 
-        // Delete existing levels
-        await tx.escalationLevel.deleteMany({
-          where: { escalationId: id },
-        });
+        const existingLevelIds = existingPolicy.levels.map(level => level.id);
+        const incomingLevelIds = levels.filter(level => level.id).map(level => level.id);
+        
+        // Delete levels that are no longer present
+        const levelsToDelete = existingLevelIds.filter(existingId => 
+          !incomingLevelIds.includes(existingId)
+        );
+        
+        if (levelsToDelete.length > 0) {
+          // First delete associated escalation logs to avoid foreign key constraint violation
+          await tx.escalationLog.deleteMany({
+            where: { escalationLevelId: { in: levelsToDelete } },
+          });
+          
+          // Then delete the escalation levels
+          await tx.escalationLevel.deleteMany({
+            where: { id: { in: levelsToDelete } },
+          });
+        }
 
-        // Create new levels
-        const createdLevels = await Promise.all(
-          levels.map((level: { order: number; method: EscalationMethod; target: string; waitTimeMinutes: number }) =>
-            tx.escalationLevel.create({
-              data: {
-                escalationId: id,
-                levelOrder: level.order,
-                waitMinutes: level.waitTimeMinutes,
-                contacts: [level.target], // Store as array
-                channel: level.method,
-                name: `Level ${level.order}`,
-                message: `Escalation level ${level.order} for ${name}`,
-              },
-            })
-          )
+        // Process each level (update existing or create new)
+        const processedLevels = await Promise.all(
+          levels.map(async (level: EscalationLevelUpdateInput, index: number) => {
+            const levelData = {
+              levelOrder: index + 1,
+              waitMinutes: level.waitTimeMinutes,
+              contacts: [level.target],
+              channel: level.method,
+              slackChannels: level.slackChannels ? JSON.stringify(level.slackChannels) : undefined,
+            };
+
+            if (level.id && existingLevelIds.includes(level.id)) {
+              // Update existing level
+              return await tx.escalationLevel.update({
+                where: { id: level.id },
+                data: levelData,
+              });
+            } else {
+              // Create new level
+              return await tx.escalationLevel.create({
+                data: {
+                  escalationId: id,
+                  ...levelData,
+                },
+              });
+            }
+          })
         );
 
         return {
           ...policy,
-          levels: createdLevels,
+          levels: processedLevels,
         };
       });
 
@@ -209,6 +252,7 @@ export const PUT = withAuth(
           order: level.levelOrder,
           method: level.channel.toUpperCase(),
           target: level.contacts[0] || "",
+          slackChannels: level.slackChannels ? JSON.parse(level.slackChannels as string) : [],
           waitTimeMinutes: level.waitMinutes,
         })),
         createdAt: updatedPolicy.createdAt,

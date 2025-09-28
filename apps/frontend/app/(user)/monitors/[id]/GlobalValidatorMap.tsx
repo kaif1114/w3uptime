@@ -352,7 +352,7 @@ export function GlobalValidatorMap({ validators }: GlobalValidatorMapProps) {
                   <h4 className="font-semibold mb-2">{selectedCountryData.name}</h4>
                   <div className="space-y-1 text-xs">
                     <p>📍 {selectedCountryData.validators.length} validators</p>
-                    <p>✅ {selectedCountryData.onlineCount} online</p>
+                    <p>{selectedCountryData.onlineCount} online</p>
                     <p>⚡ {selectedCountryData.avgLatency}ms avg</p>
                   </div>
                 </div>

@@ -42,11 +42,24 @@ services:
       - app-network
     depends_on:
       - timescaledb
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   timescaledb_data:
   pgadmin_data:
-
+  redis_data:
 networks:
   app-network:
     driver: bridge
