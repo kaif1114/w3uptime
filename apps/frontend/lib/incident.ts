@@ -70,17 +70,7 @@ export async function resolveIncident(monitorId: string, time: Date) {
             const escalationLogs = await prisma.escalationLog.findMany({
                 where: {
                     Alert: {
-                        OR: [
-                            { incidentId: incident.id },                    // New alerts with incident link
-                            { 
-                                incidentId: null,                           // Legacy alerts without incident link
-                                monitorId: monitorId,
-                                triggeredAt: {
-                                    gte: incident.createdAt,                // Time-based fallback
-                                    lte: time                               // Before resolution time
-                                }
-                            }
-                        ]
+                        incidentId: incident.id
                     }
                 },
                 include: {
