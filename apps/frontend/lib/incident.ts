@@ -66,11 +66,21 @@ export async function resolveIncident(monitorId: string, time: Date) {
             // Calculate downtime duration
             const downtime = time.getTime() - incident.createdAt.getTime();
             
-            // Find all escalation logs for alerts related to this monitor to notify previous recipients
+            // Find escalation logs for alerts related to this specific incident
             const escalationLogs = await prisma.escalationLog.findMany({
                 where: {
                     Alert: {
-                        monitorId: monitorId
+                        OR: [
+                            { incidentId: incident.id },                    // New alerts with incident link
+                            { 
+                                incidentId: null,                           // Legacy alerts without incident link
+                                monitorId: monitorId,
+                                triggeredAt: {
+                                    gte: incident.createdAt,                // Time-based fallback
+                                    lte: time                               // Before resolution time
+                                }
+                            }
+                        ]
                     }
                 },
                 include: {
@@ -79,7 +89,7 @@ export async function resolveIncident(monitorId: string, time: Date) {
                 }
             });
 
-            console.log(`Found ${escalationLogs.length} escalation logs for resolution notifications`);
+            console.log(`Found ${escalationLogs.length} escalation logs for incident ${incident.id} resolution notifications`);
 
             // Group recipients by channel type for efficient sending
             const emailRecipients = new Set<string>();

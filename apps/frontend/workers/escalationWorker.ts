@@ -89,6 +89,7 @@ The incident has been ongoing and requires immediate attention.
           type: "URL_UNAVAILABLE",
           message: alertMessage,
           monitorId: monitor.id,
+          incidentId: incident.id,
           triggeredAt: new Date(),
         },
       });
