@@ -115,17 +115,21 @@ export async function resolveIncident(monitorId: string, time: Date) {
                         time,
                         incident.id,
                         downtime
-                    ).catch(error => {
+                    ).catch(async (error) => {
                         console.error('Failed to send resolution emails:', error);
                         // Create timeline event for failed email notifications
-                        return prisma.timelineEvent.create({
-                            data: {
-                                description: `Failed to send resolution emails: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                                incidentId: incident.id,
-                                type: "RESOLUTION",
-                                createdAt: time,
-                            },
-                        }).catch(console.error);
+                        try {
+                            await prisma.timelineEvent.create({
+                                data: {
+                                    description: `Failed to send resolution emails: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                                    incidentId: incident.id,
+                                    type: "RESOLUTION",
+                                    createdAt: time,
+                                },
+                            });
+                        } catch (timelineError) {
+                            console.error('Failed to create timeline event:', timelineError);
+                        }
                     })
                 );
             }
@@ -144,17 +148,21 @@ export async function resolveIncident(monitorId: string, time: Date) {
                         slackWorkspaces,
                         incident.id,
                         downtime
-                    ).catch(error => {
+                    ).catch(async (error) => {
                         console.error('Failed to send resolution Slack notifications:', error);
                         // Create timeline event for failed Slack notifications
-                        return prisma.timelineEvent.create({
-                            data: {
-                                description: `Failed to send resolution Slack notifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                                incidentId: incident.id,
-                                type: "RESOLUTION",
-                                createdAt: time,
-                            },
-                        }).catch(console.error);
+                        try {
+                            await prisma.timelineEvent.create({
+                                data: {
+                                    description: `Failed to send resolution Slack notifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                                    incidentId: incident.id,
+                                    type: "RESOLUTION",
+                                    createdAt: time,
+                                },
+                            });
+                        } catch (timelineError) {
+                            console.error('Failed to create timeline event:', timelineError);
+                        }
                     })
                 );
             }
