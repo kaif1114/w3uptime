@@ -437,3 +437,104 @@ export function createEscalationMessage(escalation: {
     ],
   };
 }
+
+/**
+ * Create resolution message for resolved incidents
+ */
+export function createResolutionMessage(resolution: {
+  title: string;
+  monitorName: string;
+  monitorUrl: string;
+  resolvedAt: Date;
+  downtime?: number;
+  incidentId?: string;
+}): SlackMessage {
+  const downtimeText = resolution.downtime ? `${Math.round(resolution.downtime / 1000 / 60)} minutes` : 'Unknown duration';
+
+  const blocks: SlackBlock[] = [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "✅ Incident Resolved"
+      }
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${resolution.title}* - Resolved\n\nThe incident has been resolved and the monitor is functioning normally again.`
+      }
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*Monitor:*\n${resolution.monitorName}`
+        },
+        {
+          type: "mrkdwn", 
+          text: `*URL:*\n${resolution.monitorUrl}`
+        },
+        {
+          type: "mrkdwn",
+          text: `*Resolved At:*\n${resolution.resolvedAt.toLocaleString()}`
+        },
+        {
+          type: "mrkdwn",
+          text: `*Total Downtime:*\n${downtimeText}`
+        }
+      ]
+    },
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button", 
+          text: {
+            type: "plain_text",
+            text: "View All Monitors"
+          },
+          url: `${process.env.NEXT_PUBLIC_URL || 'https://app.w3uptime.com'}/monitors`
+        }
+      ]
+    }
+  ];
+
+  return {
+    text: `Incident Resolved: ${resolution.title}`,
+    blocks,
+    attachments: [
+      {
+        color: "good",
+        title: "Incident Resolved",
+        text: `${resolution.title} - The monitor is functioning normally again`,
+        fields: [
+          {
+            title: "Monitor",
+            value: resolution.monitorName,
+            short: true,
+          },
+          {
+            title: "URL",
+            value: resolution.monitorUrl,
+            short: true,
+          },
+          {
+            title: "Resolved At",
+            value: resolution.resolvedAt.toLocaleString(),
+            short: true,
+          },
+          {
+            title: "Total Downtime",
+            value: downtimeText,
+            short: true,
+          },
+        ],
+        footer: "W3Uptime - Incident Resolved",
+        ts: Math.floor(resolution.resolvedAt.getTime() / 1000),
+      },
+    ],
+  };
+}

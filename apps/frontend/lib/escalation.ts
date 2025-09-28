@@ -347,3 +347,159 @@ export async function sendEscalationWebhook(
     
     console.log(`Webhook escalation completed: ${successCount}/${validWebhooks.length} successful`);
 }
+
+/**
+ * Send resolution notification via Slack to previously alerted recipients
+ */
+export async function sendResolutionSlack(
+    contacts: string[], 
+    title: string, 
+    monitorName: string,
+    monitorUrl: string,
+    resolvedAt: Date,
+    monitorId: string,
+    slackWorkspacesData?: string | null,
+    incidentId?: string,
+    downtime?: number
+): Promise<void> {
+    console.log(`Sending resolution Slack message for monitor ${monitorId}`);
+    
+    // Get incident ID if not provided
+    const { prisma } = await import('db/client');
+    // Parse slack workspaces data
+    let slackWorkspaces: { teamId: string; teamName: string; defaultChannelId: string; defaultChannelName: string; }[] = [];
+    if (slackWorkspacesData) {
+        try {
+            slackWorkspaces = JSON.parse(slackWorkspacesData);
+        } catch (error) {
+            console.error('Error parsing slack workspaces data:', error);
+        }
+    }
+
+    if (slackWorkspaces.length === 0) {
+        console.log(`No Slack workspaces configured for this resolution notification`);
+        // Fallback to legacy behavior (logging only)
+        console.log(`Title: ${title} - Resolved`);
+        console.log(`Monitor: ${monitorName}`);
+        console.log(`Channels/Users: ${contacts.join(', ')}`);
+        console.log(`Slack resolution notification logged (no workspaces configured)`);
+        
+        // Create timeline event for no Slack configuration
+        if (incidentId) {
+            await createEscalationTimelineEvent(
+                incidentId,
+                `Slack resolution notification attempted but no workspaces configured for contacts: ${contacts.join(', ')}`
+            );
+        }
+        return;
+    }
+
+    // Get monitor details for the message
+    const monitor = await prisma.monitor.findUnique({
+        where: { id: monitorId },
+        select: { name: true, url: true, userId: true }
+    });
+
+    if (!monitor) {
+        throw new Error(`Monitor ${monitorId} not found`);
+    }
+
+    // Use actual Slack integration - try both Bot API and Webhooks
+    const { 
+        sendSlackNotification, 
+        sendSlackWebhookNotification, 
+        createIncidentMessage, 
+        createResolutionMessage 
+    } = await import('./slack');
+
+    // Create resolution message
+    const resolutionMsg = createResolutionMessage({
+        title,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        resolvedAt,
+        downtime,
+        incidentId
+    });
+
+    // First try webhook approach (simpler, more reliable)
+    let webhookSuccess = false;
+    try {
+        webhookSuccess = await sendSlackWebhookNotification(monitor.userId, resolutionMsg);
+        if (webhookSuccess) {
+            console.log(`Sent Slack webhook resolution notification for monitor ${monitorId}`);
+            
+            // Create timeline event for successful webhook notification
+            if (incidentId) {
+                await createEscalationTimelineEvent(
+                    incidentId,
+                    `Slack webhook resolution notification sent`
+                );
+            }
+        }
+    } catch (error) {
+        console.error('Error sending webhook resolution notification:', error);
+    }
+
+    // If webhook fails or not configured, fall back to Bot API with workspace targeting
+    if (!webhookSuccess && slackWorkspaces.length > 0) {
+        // Create incident message for Bot API (includes channel targeting)
+        const incidentMessage = createIncidentMessage({
+            title: `${title} - Resolved`,
+            monitorName: monitor.name,
+            monitorUrl: monitor.url,
+            status: 'RESOLVED',
+            createdAt: resolvedAt
+        });
+
+        // Send to each selected workspace
+        for (const workspace of slackWorkspaces) {
+            try {
+                // Update message with specific channel
+                const channelMessage = {
+                    ...incidentMessage,
+                    channel: workspace.defaultChannelId
+                };
+
+                const success = await sendSlackNotification(monitor.userId, channelMessage);
+                if (success) {
+                    console.log(`Sent Slack Bot API resolution notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    webhookSuccess = true; // Mark as successful
+                    
+                    // Create timeline event for successful Bot API notification
+                    if (incidentId) {
+                        await createEscalationTimelineEvent(
+                            incidentId,
+                            `Slack resolution notification sent to ${workspace.teamName}#${workspace.defaultChannelName}`
+                        );
+                    }
+                } else {
+                    console.error(`Failed to send Slack Bot API resolution notification to ${workspace.teamName}#${workspace.defaultChannelName}`);
+                    
+                    // Create timeline event for failed Bot API notification
+                    if (incidentId) {
+                        await createEscalationTimelineEvent(
+                            incidentId,
+                            `Failed to send Slack resolution notification to ${workspace.teamName}#${workspace.defaultChannelName}`
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error(`Error sending resolution notification to workspace ${workspace.teamName}:`, error);
+                
+                // Create timeline event for workspace error
+                if (incidentId) {
+                    await createEscalationTimelineEvent(
+                        incidentId,
+                        `Error sending Slack resolution notification to ${workspace.teamName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    );
+                }
+            }
+        }
+    }
+
+    // If neither method worked, log it
+    if (!webhookSuccess && slackWorkspaces.length === 0) {
+        console.log(`No Slack integration methods available for resolution notification (no webhook URLs or selected workspaces)`);
+    }
+}
