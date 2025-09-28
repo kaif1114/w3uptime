@@ -1,5 +1,6 @@
 import { prisma } from "db/client";
-import { startEscalation, stopEscalation } from "./escalation";
+import { startEscalation, stopEscalation, sendResolutionSlack } from "./escalation";
+import { sendResolutionEmail } from "./email";
 
 export async function createIncident(monitorId: string, title: string, time: Date) {
   try {
@@ -49,13 +50,129 @@ export async function resolveIncident(monitorId: string, time: Date) {
                     in: ["ONGOING", "ACKNOWLEDGED"]
                 }
             },
+            include: {
+                Monitor: {
+                    select: {
+                        name: true,
+                        url: true
+                    }
+                }
+            }
         })
+        
         if(incident) {
+            console.log(`Resolving incident ${incident.id} for monitor ${monitorId}`);
+            
+            // Calculate downtime duration
+            const downtime = time.getTime() - incident.createdAt.getTime();
+            
+            // Find all escalation logs for alerts related to this monitor to notify previous recipients
+            const escalationLogs = await prisma.escalationLog.findMany({
+                where: {
+                    Alert: {
+                        monitorId: monitorId
+                    }
+                },
+                include: {
+                    escalationLevel: true,
+                    Alert: true
+                }
+            });
+
+            console.log(`Found ${escalationLogs.length} escalation logs for resolution notifications`);
+
+            // Group recipients by channel type for efficient sending
+            const emailRecipients = new Set<string>();
+            const slackRecipients = new Set<string>();
+            let slackWorkspaces: string | null = null;
+
+            for (const log of escalationLogs) {
+                const { escalationLevel } = log;
+                
+                if (escalationLevel.channel === 'EMAIL') {
+                    escalationLevel.contacts.forEach(contact => emailRecipients.add(contact));
+                } else if (escalationLevel.channel === 'SLACK') {
+                    escalationLevel.contacts.forEach(contact => slackRecipients.add(contact));
+                    // Use the slack workspaces data from the escalation level if available
+                    if (escalationLevel.slackChannels && !slackWorkspaces) {
+                        slackWorkspaces = JSON.stringify(escalationLevel.slackChannels);
+                    }
+                }
+            }
+
+            // Send resolution notifications to previous alert recipients
+            const notificationPromises: Promise<void>[] = [];
+
+            // Send email notifications
+            if (emailRecipients.size > 0) {
+                console.log(`Sending resolution emails to: ${Array.from(emailRecipients).join(', ')}`);
+                notificationPromises.push(
+                    sendResolutionEmail(
+                        Array.from(emailRecipients),
+                        incident.title,
+                        incident.Monitor.name,
+                        incident.Monitor.url,
+                        time,
+                        incident.id,
+                        downtime
+                    ).catch(error => {
+                        console.error('Failed to send resolution emails:', error);
+                        // Create timeline event for failed email notifications
+                        return prisma.timelineEvent.create({
+                            data: {
+                                description: `Failed to send resolution emails: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                                incidentId: incident.id,
+                                type: "RESOLUTION",
+                                createdAt: time,
+                            },
+                        }).catch(console.error);
+                    })
+                );
+            }
+
+            // Send Slack notifications
+            if (slackRecipients.size > 0) {
+                console.log(`Sending resolution Slack notifications to: ${Array.from(slackRecipients).join(', ')}`);
+                notificationPromises.push(
+                    sendResolutionSlack(
+                        Array.from(slackRecipients),
+                        incident.title,
+                        incident.Monitor.name,
+                        incident.Monitor.url,
+                        time,
+                        monitorId,
+                        slackWorkspaces,
+                        incident.id,
+                        downtime
+                    ).catch(error => {
+                        console.error('Failed to send resolution Slack notifications:', error);
+                        // Create timeline event for failed Slack notifications
+                        return prisma.timelineEvent.create({
+                            data: {
+                                description: `Failed to send resolution Slack notifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                                incidentId: incident.id,
+                                type: "RESOLUTION",
+                                createdAt: time,
+                            },
+                        }).catch(console.error);
+                    })
+                );
+            }
+
+            // Wait for all notifications to be sent (or fail)
+            await Promise.allSettled(notificationPromises);
+
+            // Update incident status to resolved
             await prisma.incident.update({
                 where: { id: incident.id },
-                data: { status: "RESOLVED", resolvedAt: time }
+                data: { 
+                    status: "RESOLVED", 
+                    resolvedAt: time,
+                    downtime: Math.round(downtime / 1000) // Store downtime in seconds
+                }
             })
 
+            // Create resolution timeline event
             await prisma.timelineEvent.create({
                 data: {
                     description: `Incident resolved: ${incident.title}`,
@@ -64,7 +181,11 @@ export async function resolveIncident(monitorId: string, time: Date) {
                     createdAt: time,
                 },
             });
+
+            // Stop any pending escalations
             stopEscalation(monitorId, incident.id);
+            
+            console.log(`Successfully resolved incident ${incident.id} with ${emailRecipients.size} email and ${slackRecipients.size} Slack notifications sent`);
         }
     } catch (error) {
         console.error("Error resolving incident:", error);
