@@ -20,5 +20,16 @@ export async function register() {
     } catch (error) {
       console.error("Failed to initialize escalation workers:", error);
     }
+
+    // Initialize blockchain listener
+    try {
+      console.log("Initializing blockchain listener...");
+      const { startBlockchainListener } = await import("@/lib/blockchain-listener");
+      
+      startBlockchainListener();
+      console.log("Blockchain listener initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize blockchain listener:", error);
+    }
   }
 }

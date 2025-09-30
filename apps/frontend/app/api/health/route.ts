@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBlockchainListenerStatus, startBlockchainListener } from '@/lib/blockchain-listener';
+import { getBlockchainListenerStatus } from '@/lib/blockchain-listener';
 
 export async function GET(request: NextRequest) {
   try {
-    // Initialize blockchain listener if not running
-    let status = getBlockchainListenerStatus();
-    
-    if (!status.isListening) {
-      console.log('Starting blockchain listener from health check...');
-      startBlockchainListener();
-      status = getBlockchainListenerStatus();
-    }
+    const status = getBlockchainListenerStatus();
 
     return NextResponse.json({
       success: true,
@@ -18,7 +11,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       services: {
         database: 'operational', // We can add actual DB health check later
-        blockchainListener: status.isListening ? 'operational' : 'starting',
+        blockchainListener: status.isListening ? 'operational' : 'stopped',
         blockchainStatus: status
       }
     });
