@@ -47,6 +47,45 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
     }
   });
 
+  const switchToSepolia = async () => {
+    if (!window.ethereum) return false;
+
+    try {
+      // Try to switch to Sepolia
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }], // Sepolia chain ID
+      });
+      return true;
+    } catch (switchError: any) {
+      // If Sepolia is not added, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xaa36a7',
+              chainName: 'Sepolia Testnet',
+              nativeCurrency: {
+                name: 'SepoliaETH',
+                symbol: 'SEP',
+                decimals: 18,
+              },
+              rpcUrls: ['https://rpc.sepolia.org'],
+              blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+            }],
+          });
+          return true;
+        } catch (addError) {
+          console.error('Failed to add Sepolia network:', addError);
+          return false;
+        }
+      }
+      console.error('Failed to switch to Sepolia:', switchError);
+      return false;
+    }
+  };
+
   const connectWallet = async () => {
     if (!window.ethereum) {
       setError('MetaMask is not installed. Please install MetaMask to continue.');
@@ -57,6 +96,13 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
     setError(null);
 
     try {
+      // First, switch to Sepolia network
+      const switchSuccess = await switchToSepolia();
+      if (!switchSuccess) {
+        setError('Please switch to Sepolia testnet to continue');
+        return;
+      }
+
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
@@ -90,6 +136,14 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      
+      // Verify we're on Sepolia (chain ID 11155111)
+      if (network.chainId !== 11155111n) {
+        setError('Please switch to Sepolia testnet before depositing');
+        return;
+      }
+
       const signer = await provider.getSigner();
 
       const contract = createContractInstanceWithSigner(signer);
@@ -124,10 +178,10 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />
-          Deposit ETH
+          Deposit SepoliaETH
         </CardTitle>
         <CardDescription>
-          Deposit ETH to your W3Uptime account to monitor websites
+          Deposit SepoliaETH (testnet) to your W3Uptime account to monitor websites
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -166,7 +220,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (ETH)</FormLabel>
+                      <FormLabel>Amount (SepoliaETH)</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="0.01"
@@ -178,7 +232,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        Minimum: 0.001 ETH, Maximum: 10 ETH
+                        Minimum: 0.001 SepoliaETH, Maximum: 10 SepoliaETH
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -197,7 +251,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
                       Processing...
                     </>
                   ) : (
-                    'Deposit ETH'
+                    'Deposit SepoliaETH'
                   )}
                 </Button>
               </form>

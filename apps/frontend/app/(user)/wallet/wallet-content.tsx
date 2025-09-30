@@ -63,7 +63,7 @@ export function WalletContent() {
   }
 
   const userBalance = balanceData || session.user?.balance || 0;
-  const balanceInEth = userBalance / 1000; // Convert from stored balance (1000 = 1 ETH)
+  const balanceInEth = userBalance / 1000; // Convert from stored balance (1000 = 1 SepoliaETH)
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -85,7 +85,7 @@ export function WalletContent() {
               {balanceLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                `${balanceInEth.toFixed(4)} ETH`
+                `${balanceInEth.toFixed(4)} SepoliaETH`
               )}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -102,7 +102,7 @@ export function WalletContent() {
             <div>
               <CardTitle>Deposit History</CardTitle>
               <CardDescription>
-                Your recent ETH deposits
+                Your recent SepoliaETH deposits
               </CardDescription>
             </div>
             <Button
@@ -149,7 +149,7 @@ export function WalletContent() {
                       <TableRow key={deposit.id}>
                         <TableCell className="font-medium">
                           <Badge variant="secondary">
-                            {formatDepositAmount(BigInt(deposit.amount))} ETH
+                            {formatDepositAmount(BigInt(deposit.amount))} SepoliaETH
                           </Badge>
                         </TableCell>
                         <TableCell>
