@@ -28,9 +28,8 @@ class BlockchainListener {
       const network = await this.provider.getNetwork();
       console.log(`Connected to Ethereum network: ${network.name} (${network.chainId})`);
 
-      // Listen for FundsDeposited events with specific filter
-      const filter = this.contract.filters.FundsDeposited();
-      this.contract.on(filter, this.handleDepositEvent.bind(this));
+      // Listen for FundsDeposited events
+      this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
 
       // Handle provider errors
       this.provider.on("error", this.handleProviderError.bind(this));
@@ -90,7 +89,7 @@ class BlockchainListener {
     }
   }
 
-  private async handleDepositEvent(from: string, amount: bigint, timestamp: bigint, event: ethers.Log) {
+  private async handleDepositEvent(_from: string, _amount: bigint, _timestamp: bigint, event: ethers.Log) {
     await this.processDepositEvent(event);
   }
 
@@ -121,16 +120,26 @@ class BlockchainListener {
       // Parse the event data with error handling
       let parsedEvent;
       try {
+        // Ensure topics is properly formatted
+        const topics = Array.isArray(event.topics) ? event.topics : [];
+        if (topics.length === 0) {
+          console.warn('Event has no topics, cannot parse');
+          return;
+        }
+
         parsedEvent = this.contract.interface.parseLog({
-          topics: event.topics as string[],
-          data: event.data
+          topics: topics,
+          data: event.data || '0x'
         });
       } catch (parseError) {
         console.error('Failed to parse event log:', parseError);
         console.log('Event details:', {
           topics: event.topics,
+          topicsType: typeof event.topics,
+          topicsLength: Array.isArray(event.topics) ? event.topics.length : 'not array',
           data: event.data,
-          address: event.address
+          address: event.address,
+          eventKeys: Object.keys(event)
         });
         return;
       }
