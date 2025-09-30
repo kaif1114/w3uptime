@@ -80,7 +80,7 @@ class BlockchainListener {
       }
 
       for (const event of allEvents) {
-        await this.processDepositEvent(event);
+        await this.processDepositEvent(event, undefined);
       }
 
       console.log(`Processed ${allEvents.length} past deposit events from ${blocksToCheck} blocks`);
@@ -89,19 +89,22 @@ class BlockchainListener {
     }
   }
 
-  private async handleDepositEvent(_from: string, _amount: bigint, _timestamp: bigint, event: ethers.Log) {
-    await this.processDepositEvent(event);
+  private async handleDepositEvent(_from: string, _amount: bigint, _timestamp: bigint, event: any) {
+    // The event parameter is actually a ContractEventPayload, extract the log
+    const log = event.log || event;
+    await this.processDepositEvent(log, event.args);
   }
 
-  private async processDepositEvent(event: ethers.Log) {
+  private async processDepositEvent(event: ethers.Log, precomputedArgs?: any[]) {
     try {
       if (!this.contract) return;
 
-      // Validate event structure
-      if (!event.topics || event.topics.length === 0) {
-        console.warn('Event has no topics, skipping:', event);
-        return;
-      }
+      console.log('Processing deposit event:', {
+        address: event.address,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash,
+        hasPrecomputedArgs: !!precomputedArgs
+      });
 
       // Validate this is from our contract
       if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
@@ -109,57 +112,44 @@ class BlockchainListener {
         return;
       }
 
-      console.log('Raw event data:', {
-        address: event.address,
-        topics: event.topics,
-        data: event.data,
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
-      });
-
-      // Parse the event data with error handling
-      let parsedEvent;
-      try {
-        // Ensure topics is properly formatted
-        const topics = Array.isArray(event.topics) ? event.topics : [];
-        if (topics.length === 0) {
+      // Use precomputed args if available (from ContractEventPayload), otherwise parse
+      let from: string, amount: bigint, timestamp: bigint;
+      
+      if (precomputedArgs && precomputedArgs.length >= 3) {
+        [from, amount, timestamp] = precomputedArgs;
+        console.log('Using precomputed args from ContractEventPayload');
+      } else {
+        // Fallback to parsing the log manually
+        console.log('Parsing log manually');
+        
+        if (!event.topics || event.topics.length === 0) {
           console.warn('Event has no topics, cannot parse');
           return;
         }
 
-        parsedEvent = this.contract.interface.parseLog({
-          topics: topics,
-          data: event.data || '0x'
-        });
-      } catch (parseError) {
-        console.error('Failed to parse event log:', parseError);
-        console.log('Event details:', {
-          topics: event.topics,
-          topicsType: typeof event.topics,
-          topicsLength: Array.isArray(event.topics) ? event.topics.length : 'not array',
-          data: event.data,
-          address: event.address,
-          eventKeys: Object.keys(event)
-        });
-        return;
-      }
+        let parsedEvent;
+        try {
+          parsedEvent = this.contract.interface.parseLog({
+            topics: event.topics,
+            data: event.data || '0x'
+          });
+        } catch (parseError) {
+          console.error('Failed to parse event log:', parseError);
+          return;
+        }
 
-      if (!parsedEvent) {
-        console.warn('No parsed event returned');
-        return;
-      }
+        if (!parsedEvent || parsedEvent.name !== "FundsDeposited") {
+          console.log('Not a FundsDeposited event or parsing failed');
+          return;
+        }
 
-      if (parsedEvent.name !== "FundsDeposited") {
-        console.log('Not a FundsDeposited event:', parsedEvent.name);
-        return;
-      }
+        if (!parsedEvent.args || parsedEvent.args.length < 3) {
+          console.error('Parsed event missing required arguments:', parsedEvent.args);
+          return;
+        }
 
-      if (!parsedEvent.args || parsedEvent.args.length < 3) {
-        console.error('Parsed event missing required arguments:', parsedEvent.args);
-        return;
+        [from, amount, timestamp] = parsedEvent.args;
       }
-
-      const [from, amount, timestamp] = parsedEvent.args;
 
       console.log("Processing deposit event:", {
         from,
