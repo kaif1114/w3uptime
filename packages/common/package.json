@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "exports": {
-    "./types": "./types.ts"
+    "./types": "./types.ts",
+    "./contract": "./contract.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

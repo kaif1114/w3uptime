@@ -1,10 +1,10 @@
 import { ethers } from "ethers";
-import { createContractInstance, CONTRACT_ADDRESS } from "common/contract";
+import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
 
 class BlockchainListener {
   private provider: ethers.Provider | null = null;
-  private contract: ethers.Contract | null = null;
+  private contract: ContractInstance | null = null;
   private isListening = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -52,18 +52,37 @@ class BlockchainListener {
 
     try {
       const currentBlock = await this.provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 100); // Last 100 blocks
+      const blocksToCheck = 50; // Reduced from 100 to be more conservative
+      const chunkSize = 10; // Max blocks per request for free tier
+      const fromBlock = Math.max(0, currentBlock - blocksToCheck);
 
-      console.log(`Checking for past FundsDeposited events from block ${fromBlock} to ${currentBlock}`);
+      console.log(`Checking for past FundsDeposited events from block ${fromBlock} to ${currentBlock} in chunks of ${chunkSize}`);
 
       const filter = this.contract.filters.FundsDeposited();
-      const events = await this.contract.queryFilter(filter, fromBlock, currentBlock);
+      let allEvents: ethers.Log[] = [];
 
-      for (const event of events) {
+      // Process in chunks to avoid rate limits
+      for (let start = fromBlock; start <= currentBlock; start += chunkSize) {
+        const end = Math.min(start + chunkSize - 1, currentBlock);
+        
+        try {
+          console.log(`Querying events from block ${start} to ${end}`);
+          const chunkEvents = await this.contract.queryFilter(filter, start, end);
+          allEvents = allEvents.concat(chunkEvents);
+          
+          // Small delay to avoid hitting rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (chunkError) {
+          console.error(`Error querying events for blocks ${start}-${end}:`, chunkError);
+          // Continue with next chunk even if one fails
+        }
+      }
+
+      for (const event of allEvents) {
         await this.processDepositEvent(event);
       }
 
-      console.log(`Processed ${events.length} past deposit events`);
+      console.log(`Processed ${allEvents.length} past deposit events from ${blocksToCheck} blocks`);
     } catch (error) {
       console.error("Error processing past events:", error);
     }
