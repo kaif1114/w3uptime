@@ -1,0 +1,247 @@
+import { ethers } from "ethers";
+import { createContractInstance, CONTRACT_ADDRESS } from "common/contract";
+import { prisma } from "db/client";
+
+class BlockchainListener {
+  private provider: ethers.Provider | null = null;
+  private contract: ethers.Contract | null = null;
+  private isListening = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+
+  async startListening() {
+    if (this.isListening) {
+      console.log("Blockchain listener is already running");
+      return;
+    }
+
+    try {
+      const rpcUrl = process.env.ETHEREUM_RPC_URL;
+      if (!rpcUrl) {
+        throw new Error("ETHEREUM_RPC_URL environment variable is required");
+      }
+
+      this.provider = new ethers.JsonRpcProvider(rpcUrl);
+      this.contract = createContractInstance(this.provider);
+
+      // Test connection
+      const network = await this.provider.getNetwork();
+      console.log(`Connected to Ethereum network: ${network.name} (${network.chainId})`);
+
+      // Listen for FundsDeposited events
+      this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
+
+      // Handle provider errors
+      this.provider.on("error", this.handleProviderError.bind(this));
+
+      this.isListening = true;
+      this.reconnectAttempts = 0;
+      console.log(`Listening for FundsDeposited events on contract: ${CONTRACT_ADDRESS}`);
+
+      // Process past events (last 100 blocks)
+      await this.processPastEvents();
+
+    } catch (error) {
+      console.error("Failed to start blockchain listener:", error);
+      await this.handleReconnect();
+    }
+  }
+
+  private async processPastEvents() {
+    if (!this.contract || !this.provider) return;
+
+    try {
+      const currentBlock = await this.provider.getBlockNumber();
+      const fromBlock = Math.max(0, currentBlock - 100); // Last 100 blocks
+
+      console.log(`Checking for past FundsDeposited events from block ${fromBlock} to ${currentBlock}`);
+
+      const filter = this.contract.filters.FundsDeposited();
+      const events = await this.contract.queryFilter(filter, fromBlock, currentBlock);
+
+      for (const event of events) {
+        await this.processDepositEvent(event);
+      }
+
+      console.log(`Processed ${events.length} past deposit events`);
+    } catch (error) {
+      console.error("Error processing past events:", error);
+    }
+  }
+
+  private async handleDepositEvent(from: string, amount: bigint, timestamp: bigint, event: ethers.Log) {
+    await this.processDepositEvent(event);
+  }
+
+  private async processDepositEvent(event: ethers.Log) {
+    try {
+      if (!this.contract) return;
+
+      // Parse the event data
+      const parsedEvent = this.contract.interface.parseLog({
+        topics: event.topics as string[],
+        data: event.data
+      });
+
+      if (!parsedEvent || parsedEvent.name !== "FundsDeposited") return;
+
+      const [from, amount, timestamp] = parsedEvent.args;
+
+      console.log("Processing deposit event:", {
+        from,
+        amount: ethers.formatEther(amount),
+        timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+        txHash: event.transactionHash,
+        blockNumber: event.blockNumber
+      });
+
+      // Check if transaction already exists
+      const existingTransaction = await prisma.transaction.findUnique({
+        where: { transactionHash: event.transactionHash }
+      });
+
+      if (existingTransaction) {
+        console.log("Transaction already processed:", event.transactionHash);
+        return;
+      }
+
+      const normalizedAddress = from.toLowerCase();
+
+      // Find or create user
+      let user = await prisma.user.findUnique({
+        where: { walletAddress: normalizedAddress }
+      });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            walletAddress: normalizedAddress,
+            balance: 0,
+            type: 'USER'
+          }
+        });
+      }
+
+      // Process the deposit in a transaction
+      await prisma.$transaction(async (tx) => {
+        await tx.transaction.create({
+          data: {
+            type: 'DEPOSIT',
+            fromAddress: normalizedAddress,
+            amount: amount.toString(),
+            transactionHash: event.transactionHash,
+            blockNumber: event.blockNumber,
+            status: 'CONFIRMED',
+            createdAt: new Date(Number(timestamp) * 1000),
+            processedAt: new Date(),
+            userId: user!.id
+          }
+        });
+
+        // Update user balance
+        const amountWei = BigInt(amount.toString());
+        const amountEth = Number(amountWei) / Math.pow(10, 18);
+        const balanceIncrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+
+        await tx.user.update({
+          where: { walletAddress: normalizedAddress },
+          data: {
+            balance: {
+              increment: balanceIncrement
+            }
+          }
+        });
+      });
+
+      console.log(`Deposit processed successfully for user ${normalizedAddress}: ${ethers.formatEther(amount)} ETH`);
+
+    } catch (error) {
+      console.error("Error processing deposit event:", error);
+    }
+  }
+
+  private async handleProviderError(error: any) {
+    console.error("Provider error:", error);
+    this.isListening = false;
+    await this.handleReconnect();
+  }
+
+  private async handleReconnect() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("Max reconnection attempts reached. Stopping blockchain listener.");
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000); // Exponential backoff, max 30s
+
+    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
+    setTimeout(async () => {
+      await this.stopListening();
+      await this.startListening();
+    }, delay);
+  }
+
+  async stopListening() {
+    if (!this.isListening) return;
+
+    if (this.contract) {
+      this.contract.removeAllListeners("FundsDeposited");
+      this.contract = null;
+    }
+
+    if (this.provider) {
+      this.provider.removeAllListeners("error");
+      this.provider = null;
+    }
+
+    this.isListening = false;
+    console.log("Stopped blockchain listener");
+  }
+
+  getStatus() {
+    return {
+      isListening: this.isListening,
+      contractAddress: CONTRACT_ADDRESS,
+      hasProvider: !!this.provider,
+      hasContract: !!this.contract,
+      reconnectAttempts: this.reconnectAttempts
+    };
+  }
+}
+
+// Global instance
+let blockchainListener: BlockchainListener | null = null;
+
+export function startBlockchainListener() {
+  if (blockchainListener) {
+    console.log("Blockchain listener already exists");
+    return blockchainListener;
+  }
+
+  blockchainListener = new BlockchainListener();
+  
+  blockchainListener.startListening().catch((error) => {
+    console.error("Failed to start blockchain listener:", error);
+  });
+
+  return blockchainListener;
+}
+
+export function stopBlockchainListener() {
+  if (blockchainListener) {
+    blockchainListener.stopListening();
+    blockchainListener = null;
+  }
+}
+
+export function getBlockchainListenerStatus() {
+  return blockchainListener?.getStatus() || {
+    isListening: false,
+    contractAddress: CONTRACT_ADDRESS,
+    hasProvider: false,
+    hasContract: false,
+    reconnectAttempts: 0
+  };
+}

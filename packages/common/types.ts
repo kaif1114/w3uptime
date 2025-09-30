@@ -103,12 +103,25 @@ export interface DepositEvent {
   blockNumber: number;
 }
 
+export interface TransactionHistoryItem {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
+  fromAddress: string | null;
+  toAddress: string | null;
+  amount: string;
+  transactionHash: string;
+  blockNumber: number;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  createdAt: Date;
+}
+
 export interface DepositHistoryItem {
   id: string;
   fromAddress: string;
   amount: string;
   transactionHash: string;
   blockNumber: number;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
   createdAt: Date;
 }
 

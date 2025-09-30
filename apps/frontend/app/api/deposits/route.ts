@@ -53,8 +53,9 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
     const offset = (page - 1) * limit;
 
-    const deposits = await prisma.deposit.findMany({
+    const deposits = await prisma.transaction.findMany({
       where: {
+        type: 'DEPOSIT',
         fromAddress: {
           equals: session.user.walletAddress,
           mode: 'insensitive'
@@ -71,12 +72,14 @@ export async function GET(request: NextRequest) {
         amount: true,
         transactionHash: true,
         blockNumber: true,
+        status: true,
         createdAt: true
       }
     });
 
-    const totalCount = await prisma.deposit.count({
+    const totalCount = await prisma.transaction.count({
       where: {
+        type: 'DEPOSIT',
         fromAddress: {
           equals: session.user.walletAddress,
           mode: 'insensitive'
@@ -123,14 +126,14 @@ export async function POST(request: NextRequest) {
 
     const normalizedAddress = fromAddress.toLowerCase();
 
-    const existingDeposit = await prisma.deposit.findUnique({
+    const existingTransaction = await prisma.transaction.findUnique({
       where: { transactionHash }
     });
 
-    if (existingDeposit) {
+    if (existingTransaction) {
       return NextResponse.json({
         success: true,
-        message: 'Deposit already processed'
+        message: 'Transaction already processed'
       });
     }
 
@@ -149,13 +152,16 @@ export async function POST(request: NextRequest) {
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.deposit.create({
+      await tx.transaction.create({
         data: {
+          type: 'DEPOSIT',
           fromAddress: normalizedAddress,
           amount,
           transactionHash,
           blockNumber,
+          status: 'CONFIRMED',
           createdAt: new Date(parseInt(timestamp) * 1000),
+          processedAt: new Date(),
           userId: user!.id
         }
       });
