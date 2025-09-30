@@ -29,6 +29,7 @@ model User {
   customPage         StatusPage[]
   timelineEvents     TimelineEvent[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
+  deposits           Deposit[]
 }
 
 model GeoLocation {
@@ -400,4 +401,19 @@ enum ProposalStatus {
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+model Deposit {
+  id              String   @id @default(uuid())
+  fromAddress     String
+  amount          String
+  transactionHash String   @unique
+  blockNumber     Int
+  createdAt       DateTime @default(now())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([fromAddress, createdAt])
+  @@index([transactionHash])
+  @@index([userId, createdAt])
 }
