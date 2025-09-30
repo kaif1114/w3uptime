@@ -28,8 +28,9 @@ class BlockchainListener {
       const network = await this.provider.getNetwork();
       console.log(`Connected to Ethereum network: ${network.name} (${network.chainId})`);
 
-      // Listen for FundsDeposited events
-      this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
+      // Listen for FundsDeposited events with specific filter
+      const filter = this.contract.filters.FundsDeposited();
+      this.contract.on(filter, this.handleDepositEvent.bind(this));
 
       // Handle provider errors
       this.provider.on("error", this.handleProviderError.bind(this));
@@ -68,6 +69,7 @@ class BlockchainListener {
         try {
           console.log(`Querying events from block ${start} to ${end}`);
           const chunkEvents = await this.contract.queryFilter(filter, start, end);
+          console.log(`Found ${chunkEvents.length} events in blocks ${start}-${end}`);
           allEvents = allEvents.concat(chunkEvents);
           
           // Small delay to avoid hitting rate limits
@@ -96,13 +98,57 @@ class BlockchainListener {
     try {
       if (!this.contract) return;
 
-      // Parse the event data
-      const parsedEvent = this.contract.interface.parseLog({
-        topics: event.topics as string[],
-        data: event.data
+      // Validate event structure
+      if (!event.topics || event.topics.length === 0) {
+        console.warn('Event has no topics, skipping:', event);
+        return;
+      }
+
+      // Validate this is from our contract
+      if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
+        console.warn('Event not from our contract, skipping:', event.address);
+        return;
+      }
+
+      console.log('Raw event data:', {
+        address: event.address,
+        topics: event.topics,
+        data: event.data,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
       });
 
-      if (!parsedEvent || parsedEvent.name !== "FundsDeposited") return;
+      // Parse the event data with error handling
+      let parsedEvent;
+      try {
+        parsedEvent = this.contract.interface.parseLog({
+          topics: event.topics as string[],
+          data: event.data
+        });
+      } catch (parseError) {
+        console.error('Failed to parse event log:', parseError);
+        console.log('Event details:', {
+          topics: event.topics,
+          data: event.data,
+          address: event.address
+        });
+        return;
+      }
+
+      if (!parsedEvent) {
+        console.warn('No parsed event returned');
+        return;
+      }
+
+      if (parsedEvent.name !== "FundsDeposited") {
+        console.log('Not a FundsDeposited event:', parsedEvent.name);
+        return;
+      }
+
+      if (!parsedEvent.args || parsedEvent.args.length < 3) {
+        console.error('Parsed event missing required arguments:', parsedEvent.args);
+        return;
+      }
 
       const [from, amount, timestamp] = parsedEvent.args;
 
@@ -206,7 +252,8 @@ class BlockchainListener {
     if (!this.isListening) return;
 
     if (this.contract) {
-      this.contract.removeAllListeners("FundsDeposited");
+      // Remove all listeners for FundsDeposited events
+      this.contract.removeAllListeners();
       this.contract = null;
     }
 
