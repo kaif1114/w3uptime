@@ -10,7 +10,7 @@ interface RouteParams {
   }>;
 }
 
-export const POST = withAuth(async (request: NextRequest, user, session, { params }: RouteParams) => {
+export const POST = withAuth(async (_request: NextRequest, user, _session, { params }: RouteParams) => {
   try {
     // Get user with balance and wallet address
     const userWithBalance = await prisma.user.findUnique({
@@ -95,4 +95,4 @@ export const POST = withAuth(async (request: NextRequest, user, session, { param
       error: 'Failed to generate withdrawal signature'
     }, { status: 500 });
   }
-}
+});
