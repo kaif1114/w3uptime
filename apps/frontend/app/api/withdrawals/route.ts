@@ -75,7 +75,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       error: 'Failed to fetch withdrawal history'
     }, { status: 500 });
   }
-}
+});
 
 export const POST = withAuth(async (request: NextRequest, user) => {
   try {
@@ -154,4 +154,4 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       error: 'Failed to create withdrawal request'
     }, { status: 500 });
   }
-}
+});
