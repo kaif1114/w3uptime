@@ -1,56 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import { ValidatorDashboardData, WithdrawalRequest } from "@/types/validator";
-import { useWithdrawalRequest } from "@/hooks/useValidatorDashboard";
+import { useValidatorDashboard } from "@/hooks/useValidatorDashboard";
 import BalanceOverview from "./BalanceOverview";
 import ValidationsSummary from "./ValidationsSummary";
 import WithdrawalsSection from "./WithdrawalsSection";
 import TransactionsList from "./TransactionsList";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-interface ValidatorDashboardClientProps {
-  initialData: ValidatorDashboardData;
-}
+export default function ValidatorDashboardClient() {
+  const { data: dashboardData, isLoading, error } = useValidatorDashboard();
 
-export default function ValidatorDashboardClient({
-  initialData,
-}: ValidatorDashboardClientProps) {
-  const [dashboardData, setDashboardData] =
-    useState<ValidatorDashboardData>(initialData);
-  const withdrawalRequestMutation = useWithdrawalRequest();
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            Loading dashboard data...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const handleWithdrawalRequest = async (amount: number) => {
-    try {
-      const newWithdrawal = await withdrawalRequestMutation.mutateAsync(amount);
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            Failed to load dashboard data. Please try refreshing the page.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-      // Update local state with new withdrawal
-      setDashboardData((prev) => ({
-        ...prev,
-        recentWithdrawals: [newWithdrawal, ...prev.recentWithdrawals],
-        balance: {
-          ...prev.balance,
-          availableBalance: prev.balance.availableBalance - amount,
-          pendingWithdrawals: prev.balance.pendingWithdrawals + amount,
-        },
-      }));
-    } catch (error) {
-      console.error("Withdrawal request failed:", error);
-    }
-  };
+  if (!dashboardData) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
       {/* Balance Overview */}
       <BalanceOverview balance={dashboardData.balance} />
 
-      {/* Validations Summary */}
-      <ValidationsSummary validationSummary={dashboardData.validationSummary} />
+      {/* Only show validation summary if there's actual validation data */}
+      {dashboardData.validationSummary.totalValidations > 0 && (
+        <ValidationsSummary validationSummary={dashboardData.validationSummary} />
+      )}
 
       {/* Withdrawals & Payments Section */}
       <WithdrawalsSection />
 
-      {/* Transaction History Section */}
-      <TransactionsList transactions={dashboardData.recentTransactions} />
+      {/* Transaction History Section - only show if there are transactions */}
+      {dashboardData.recentTransactions.length > 0 && (
+        <TransactionsList transactions={dashboardData.recentTransactions} />
+      )}
     </div>
   );
 }
