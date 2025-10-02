@@ -346,6 +346,13 @@ class BlockchainListener {
         where: { transactionHash: event.transactionHash }
       });
 
+      console.log("Existing transaction check result:", existingTransaction ? {
+        id: existingTransaction.id,
+        status: existingTransaction.status,
+        amount: existingTransaction.amount,
+        transactionHash: existingTransaction.transactionHash
+      } : "None found");
+
       if (existingTransaction) {
         console.log("Transaction already processed:", event.transactionHash);
         // If it exists but is still pending, update it to confirmed
@@ -377,10 +384,13 @@ class BlockchainListener {
       }
 
       // Look for any pending withdrawal for this user with matching amount (regardless of transaction hash)
+      const amountString = amount.toString();
       console.log("Looking for pending withdrawal with criteria:", {
         type: 'WITHDRAWAL',
         toAddress: normalizedAddress,
-        amount: amount.toString(),
+        amount: amountString,
+        amountWei: amount.toString(),
+        amountEth: ethers.formatEther(amount),
         status: 'PENDING',
         userId: existingUser.id
       });
@@ -389,7 +399,7 @@ class BlockchainListener {
         where: {
           type: 'WITHDRAWAL',
           toAddress: normalizedAddress,
-          amount: amount.toString(),
+          amount: amountString,
           status: 'PENDING',
           userId: existingUser.id
         },
@@ -406,11 +416,18 @@ class BlockchainListener {
       } : "None");
 
       // Process the withdrawal in a transaction
+      console.log("Starting database transaction for withdrawal processing");
       await prisma.$transaction(async (tx) => {
         if (pendingWithdrawal) {
           // Update existing pending withdrawal
-          console.log("Updating existing pending withdrawal:", pendingWithdrawal.id);
-          await tx.transaction.update({
+          console.log("UPDATING existing pending withdrawal:", {
+            id: pendingWithdrawal.id,
+            currentHash: pendingWithdrawal.transactionHash,
+            newHash: event.transactionHash,
+            currentStatus: pendingWithdrawal.status
+          });
+          
+          const updatedTransaction = await tx.transaction.update({
             where: { id: pendingWithdrawal.id },
             data: {
               transactionHash: event.transactionHash,
@@ -419,10 +436,12 @@ class BlockchainListener {
               processedAt: new Date()
             }
           });
+          
+          console.log("Successfully updated transaction:", updatedTransaction.id);
         } else {
           // Create new withdrawal record (this shouldn't normally happen if frontend is used)
-          console.log("Creating new withdrawal record for blockchain event");
-          await tx.transaction.create({
+          console.log("CREATING new withdrawal record for blockchain event - no pending withdrawal found");
+          const newTransaction = await tx.transaction.create({
             data: {
               type: 'WITHDRAWAL',
               toAddress: normalizedAddress,
@@ -435,6 +454,8 @@ class BlockchainListener {
               userId: existingUser.id
             }
           });
+          
+          console.log("Successfully created new transaction:", newTransaction.id);
         }
 
         // Update user balance (decrement for confirmed withdrawal)
