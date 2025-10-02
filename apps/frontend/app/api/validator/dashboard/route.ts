@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { withAuth } from '@/lib/auth';
 
-export const GET = withAuth(async (request: NextRequest, user) => {
+export const GET = withAuth(async (_request: NextRequest, user) => {
   try {
     const userId = user.id;
     
@@ -37,10 +37,6 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       .filter(tx => tx.type === 'DEPOSIT')
       .reduce((sum, tx) => sum + BigInt(tx.amount), BigInt(0));
 
-    const confirmedWithdrawals = allTransactions
-      .filter(tx => tx.type === 'WITHDRAWAL')
-      .reduce((sum, tx) => sum + BigInt(tx.amount), BigInt(0));
-
     // Get pending withdrawals
     const pendingWithdrawals = await prisma.transaction.findMany({
       where: {
@@ -55,7 +51,6 @@ export const GET = withAuth(async (request: NextRequest, user) => {
 
     // Convert amounts from Wei to ETH
     const totalDepositsEth = Number(confirmedDeposits) / Math.pow(10, 18);
-    const totalWithdrawalsEth = Number(confirmedWithdrawals) / Math.pow(10, 18);
     const pendingWithdrawalsEth = Number(pendingWithdrawalAmount) / Math.pow(10, 18);
     const availableBalanceEth = userBalance / 1000; // Convert internal units to ETH
 
@@ -110,4 +105,4 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       error: 'Failed to fetch dashboard data'
     }, { status: 500 });
   }
-}
+});
