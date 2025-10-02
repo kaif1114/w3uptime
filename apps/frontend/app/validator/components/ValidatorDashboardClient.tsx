@@ -47,11 +47,7 @@ export default function ValidatorDashboardClient({
       <ValidationsSummary validationSummary={dashboardData.validationSummary} />
 
       {/* Withdrawals & Payments Section */}
-      <WithdrawalsSection
-        withdrawals={dashboardData.recentWithdrawals}
-        onWithdrawalRequest={handleWithdrawalRequest}
-        isLoading={withdrawalRequestMutation.isPending}
-      />
+      <WithdrawalsSection />
 
       {/* Transaction History Section */}
       <TransactionsList transactions={dashboardData.recentTransactions} />

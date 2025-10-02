@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
-import { useQueryClient } from "@tanstack/react-query";
 
 
 class BlockchainListener {
@@ -101,21 +100,21 @@ class BlockchainListener {
     }
   }
 
-  private async handleDepositEvent(_from: string, _amount: bigint, _timestamp: bigint, event: any) {
-   
-    // The event parameter is actually a ContractEventPayload, extract the log
+  private async handleDepositEvent(...args: any[]) {
+    // Last argument is the event
+    const event = args[args.length - 1];
     const log = event.log || event;
     await this.processDepositEvent(log, event.args);
   }
 
-  private async handleWithdrawalEvent(_user: string, _amount: bigint, _nonce: bigint, _timestamp: bigint, event: any) {
-   
-    // The event parameter is actually a ContractEventPayload, extract the log
+  private async handleWithdrawalEvent(...args: any[]) {
+    // Last argument is the event  
+    const event = args[args.length - 1];
     const log = event.log || event;
     await this.processWithdrawalEvent(log, event.args);
   }
 
-  private async processEvent(event: ethers.Log, precomputedArgs?: any[]) {
+  private async processEvent(event: ethers.Log, precomputedArgs?: unknown[]) {
     try {
       if (!this.contract) return;
 
@@ -141,7 +140,7 @@ class BlockchainListener {
     }
   }
 
-  private async processDepositEvent(event: ethers.Log, precomputedArgs?: any[]) {
+  private async processDepositEvent(event: ethers.Log, precomputedArgs?: unknown[]) {
     try {
       if (!this.contract) return;
 
@@ -162,7 +161,9 @@ class BlockchainListener {
       let from: string, amount: bigint, timestamp: bigint;
       
       if (precomputedArgs && precomputedArgs.length >= 3) {
-        [from, amount, timestamp] = precomputedArgs;
+        from = precomputedArgs[0] as string;
+        amount = precomputedArgs[1] as bigint;
+        timestamp = precomputedArgs[2] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
         // Fallback to parsing the log manually
@@ -272,7 +273,7 @@ class BlockchainListener {
     }
   }
 
-  private async processWithdrawalEvent(event: ethers.Log, precomputedArgs?: any[]) {
+  private async processWithdrawalEvent(event: ethers.Log, precomputedArgs?: unknown[]) {
     try {
       if (!this.contract) return;
 
@@ -293,7 +294,10 @@ class BlockchainListener {
       let user: string, amount: bigint, nonce: bigint, timestamp: bigint;
       
       if (precomputedArgs && precomputedArgs.length >= 4) {
-        [user, amount, nonce, timestamp] = precomputedArgs;
+        user = precomputedArgs[0] as string;
+        amount = precomputedArgs[1] as bigint;
+        nonce = precomputedArgs[2] as bigint;
+        timestamp = precomputedArgs[3] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
         // Fallback to parsing the log manually
@@ -398,7 +402,7 @@ class BlockchainListener {
     }
   }
 
-  private async handleProviderError(error: any) {
+  private async handleProviderError(error: unknown) {
     console.error("Provider error:", error);
     this.isListening = false;
     await this.handleReconnect();

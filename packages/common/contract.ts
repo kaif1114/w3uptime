@@ -620,14 +620,14 @@ export interface WithdrawalEvent {
 }
 
 export interface ContractInstance extends ethers.Contract {
-  on(event: "FundsDeposited", listener: (from: string, amount: bigint, timestamp: bigint, event: ethers.Log) => void): this;
-  off(event: "FundsDeposited", listener: (from: string, amount: bigint, timestamp: bigint, event: ethers.Log) => void): this;
-  on(event: "Withdrawal", listener: (user: string, amount: bigint, nonce: bigint, timestamp: bigint, event: ethers.Log) => void): this;
-  off(event: "Withdrawal", listener: (user: string, amount: bigint, nonce: bigint, timestamp: bigint, event: ethers.Log) => void): this;
+  on(event: "FundsDeposited", listener: (...args: any[]) => void): this;
+  off(event: "FundsDeposited", listener: (...args: any[]) => void): this;
+  on(event: "Withdrawal", listener: (...args: any[]) => void): this;
+  off(event: "Withdrawal", listener: (...args: any[]) => void): this;
   
   getContractBalance(): Promise<bigint>;
   paused(): Promise<boolean>;
-  withdraw(amount: bigint, nonce: bigint, expiry: bigint, signature: string): Promise<ethers.ContractTransaction>;
+  withdraw(amount: bigint, nonce: bigint, expiry: bigint, signature: string): Promise<ethers.ContractTransactionResponse>;
   getMessageHash(user: string, amount: bigint, nonce: bigint, expiry: bigint): Promise<string>;
   verifySignature(user: string, amount: bigint, nonce: bigint, expiry: bigint, signature: string): Promise<boolean>;
   isNonceUsed(nonce: bigint): Promise<boolean>;

@@ -48,12 +48,10 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-interface WithdrawalsSectionProps {}
-
 export default function WithdrawalsSection() {
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [executingWithdrawalId, setExecutingWithdrawalId] = useState<string | null>(null);
   const [executionProgress, setExecutionProgress] = useState<string>("");
 
@@ -89,21 +87,11 @@ export default function WithdrawalsSection() {
             Pending
           </Badge>
         );
-      case "approved":
-        return (
-          <Badge
-            variant="default"
-            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Approved
-          </Badge>
-        );
-      case "rejected":
+      case "failed":
         return (
           <Badge variant="destructive">
             <XCircle className="h-3 w-3 mr-1" />
-            Rejected
+            Failed
           </Badge>
         );
       default:
@@ -124,8 +112,9 @@ export default function WithdrawalsSection() {
         setTimeout(() => {
           handleExecuteWithdrawal(result.withdrawalId);
         }, 1000);
-      } catch (error: any) {
-        toast.error(error.message || "Failed to create withdrawal request");
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to create withdrawal request";
+        toast.error(errorMessage);
       }
     }
   };
@@ -140,7 +129,7 @@ export default function WithdrawalsSection() {
       
       // Execute withdrawal on blockchain
       setExecutionProgress("Executing withdrawal...");
-      const result = await executeWithdrawalMutation.mutateAsync({
+      await executeWithdrawalMutation.mutateAsync({
         signature,
         onProgress: setExecutionProgress
       });
@@ -148,8 +137,9 @@ export default function WithdrawalsSection() {
       toast.success("Withdrawal executed successfully!");
       setExecutingWithdrawalId(null);
       setExecutionProgress("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to execute withdrawal");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to execute withdrawal";
+      toast.error(errorMessage);
       setExecutingWithdrawalId(null);
       setExecutionProgress("");
     }

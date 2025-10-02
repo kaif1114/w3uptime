@@ -57,7 +57,7 @@ export function useExecuteWithdrawal() {
         onProgress?.('Waiting for confirmation...');
 
         // Wait for transaction to be mined
-        const receipt = await tx.wait();
+        const receipt = await tx.wait(1);
 
         if (!receipt) {
           throw new Error('Transaction receipt not available');
@@ -68,29 +68,36 @@ export function useExecuteWithdrawal() {
           blockNumber: receipt.blockNumber
         };
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Withdrawal execution error:', error);
         
         // Handle specific error cases
-        if (error.code === 4001) {
+        const errorObj = error as { code?: number; message?: string };
+        const errorMessage = errorObj.message || '';
+        
+        if (errorObj.code === 4001) {
           throw new Error('Transaction rejected by user');
-        } else if (error.message?.includes('insufficient funds')) {
+        } else if (errorMessage.includes('insufficient funds')) {
           throw new Error('Insufficient funds for transaction');
-        } else if (error.message?.includes('AuthorizationExpired')) {
+        } else if (errorMessage.includes('AuthorizationExpired')) {
           throw new Error('Withdrawal authorization has expired. Please request a new withdrawal.');
-        } else if (error.message?.includes('NonceAlreadyUsed')) {
+        } else if (errorMessage.includes('NonceAlreadyUsed')) {
           throw new Error('This withdrawal has already been processed');
-        } else if (error.message?.includes('InvalidSignature')) {
+        } else if (errorMessage.includes('InvalidSignature')) {
           throw new Error('Invalid withdrawal signature');
-        } else if (error.message?.includes('AmountBelowMinimum')) {
+        } else if (errorMessage.includes('AmountBelowMinimum')) {
           throw new Error('Withdrawal amount is below minimum');
-        } else if (error.message?.includes('AmountAboveMaximum')) {
+        } else if (errorMessage.includes('AmountAboveMaximum')) {
           throw new Error('Withdrawal amount is above maximum');
-        } else if (error.message?.includes('InsufficientContractBalance')) {
+        } else if (errorMessage.includes('InsufficientContractBalance')) {
           throw new Error('Contract has insufficient balance for withdrawal');
         }
         
-        throw error;
+        if (error instanceof Error) {
+          throw error;
+        }
+        
+        throw new Error('Unknown error occurred during withdrawal');
       }
     },
     onSuccess: (result) => {
