@@ -341,13 +341,25 @@ class BlockchainListener {
         blockNumber: event.blockNumber
       });
 
-      // Check if transaction already exists
+      // Check if transaction already exists with this hash
       const existingTransaction = await prisma.transaction.findUnique({
         where: { transactionHash: event.transactionHash }
       });
 
       if (existingTransaction) {
         console.log("Transaction already processed:", event.transactionHash);
+        // If it exists but is still pending, update it to confirmed
+        if (existingTransaction.status === 'PENDING') {
+          console.log("Updating existing transaction to CONFIRMED status");
+          await prisma.transaction.update({
+            where: { id: existingTransaction.id },
+            data: {
+              status: 'CONFIRMED',
+              blockNumber: event.blockNumber,
+              processedAt: new Date()
+            }
+          });
+        }
         return;
       }
 
@@ -364,22 +376,34 @@ class BlockchainListener {
         return;
       }
 
-      // Check if there's a pending withdrawal for this user with the same amount
+      // Look for any pending withdrawal for this user with matching amount (regardless of transaction hash)
+      console.log("Looking for pending withdrawal with criteria:", {
+        type: 'WITHDRAWAL',
+        toAddress: normalizedAddress,
+        amount: amount.toString(),
+        status: 'PENDING',
+        userId: existingUser.id
+      });
+
       const pendingWithdrawal = await prisma.transaction.findFirst({
         where: {
           type: 'WITHDRAWAL',
           toAddress: normalizedAddress,
           amount: amount.toString(),
           status: 'PENDING',
-          userId: existingUser.id,
-          transactionHash: {
-            startsWith: 'pending_'
-          }
+          userId: existingUser.id
         },
         orderBy: {
           createdAt: 'desc'
         }
       });
+
+      console.log("Found pending withdrawal:", pendingWithdrawal ? {
+        id: pendingWithdrawal.id,
+        transactionHash: pendingWithdrawal.transactionHash,
+        status: pendingWithdrawal.status,
+        amount: pendingWithdrawal.amount
+      } : "None");
 
       // Process the withdrawal in a transaction
       await prisma.$transaction(async (tx) => {
@@ -413,21 +437,20 @@ class BlockchainListener {
           });
         }
 
-        // Update user balance (decrement for withdrawal) - only if not already processed
-        if (!pendingWithdrawal || pendingWithdrawal.status === 'PENDING') {
-          const amountWei = BigInt(amount.toString());
-          const amountEth = Number(amountWei) / Math.pow(10, 18);
-          const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+        // Update user balance (decrement for confirmed withdrawal)
+        console.log("Decrementing user balance for confirmed withdrawal");
+        const amountWei = BigInt(amount.toString());
+        const amountEth = Number(amountWei) / Math.pow(10, 18);
+        const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
 
-          await tx.user.update({
-            where: { walletAddress: normalizedAddress },
-            data: {
-              balance: {
-                decrement: balanceDecrement
-              }
+        await tx.user.update({
+          where: { walletAddress: normalizedAddress },
+          data: {
+            balance: {
+              decrement: balanceDecrement
             }
-          });
-        }
+          }
+        });
       });
 
       console.log(`Withdrawal processed successfully for user ${normalizedAddress}: ${ethers.formatEther(amount)} ETH`);
