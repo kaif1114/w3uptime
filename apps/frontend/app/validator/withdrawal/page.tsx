@@ -40,10 +40,6 @@ export default async function WithdrawalPage() {
 
       <WithdrawalsSection
         withdrawals={mockWithdrawals}
-        onWithdrawalRequest={async (amount: number) => {
-          // This would be handled by the client component
-          console.log("Withdrawal request:", amount);
-        }}
         isLoading={false}
       />
     </div>

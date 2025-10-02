@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 class BlockchainListener {
   private provider: ethers.Provider | null = null;
@@ -90,6 +92,7 @@ class BlockchainListener {
   }
 
   private async handleDepositEvent(_from: string, _amount: bigint, _timestamp: bigint, event: any) {
+   
     // The event parameter is actually a ContractEventPayload, extract the log
     const log = event.log || event;
     await this.processDepositEvent(log, event.args);
@@ -170,6 +173,8 @@ class BlockchainListener {
       }
 
       const normalizedAddress = from.toLowerCase();
+
+      console.log("Normalized address:", normalizedAddress);
 
       // Find or create user
       let user = await prisma.user.findUnique({

@@ -43,13 +43,11 @@ import { format } from "date-fns";
 
 interface WithdrawalsSectionProps {
   withdrawals: WithdrawalRequest[];
-  onWithdrawalRequest: (amount: number) => void;
   isLoading?: boolean;
 }
 
 export default function WithdrawalsSection({
   withdrawals,
-  onWithdrawalRequest,
   isLoading = false,
 }: WithdrawalsSectionProps) {
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
@@ -99,12 +97,17 @@ export default function WithdrawalsSection({
     }
   };
 
-  const handleWithdrawalRequest = () => {
+  const handleWithdrawalRequest = async () => {
     const amount = parseFloat(withdrawalAmount);
     if (amount > 0) {
-      onWithdrawalRequest(amount);
-      setWithdrawalAmount("");
-      setIsWithdrawalDialogOpen(false);
+      try {
+        // TODO: Implement actual withdrawal API call here
+        console.log("Withdrawal request:", amount);
+        setWithdrawalAmount("");
+        setIsWithdrawalDialogOpen(false);
+      } catch (error) {
+        console.error("Withdrawal request failed:", error);
+      }
     }
   };
 

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 async function fetchSession(): Promise<any> {
   const res = await fetch("/api/auth/session", {
     credentials: "include",
-    headers: { "cache-control": "no-store" },
   });
   if (!res.ok) {
     const error: any = new Error("Failed to fetch session");

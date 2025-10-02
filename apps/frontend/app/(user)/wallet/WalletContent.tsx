@@ -9,14 +9,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, ExternalLink, Wallet, Clock, Hash } from 'lucide-react';
 import { DepositForm } from '@/components/deposit-form';
-import { useDepositHistory, useUserBalance, useRefreshDeposits } from '@/hooks/useDeposits';
+import { useDepositHistory, useRefreshDeposits } from '@/hooks/useDeposits';
 import { useSession } from '@/hooks/useSession';
 import { formatDepositAmount } from 'common/contract';
 import { format } from 'date-fns';
 
 export function WalletContent() {
   const { data: session, isLoading: sessionLoading } = useSession();
-  const { data: balanceData, isLoading: balanceLoading } = useUserBalance();
   const { 
     data: historyData, 
     isLoading: historyLoading, 
@@ -62,7 +61,7 @@ export function WalletContent() {
     );
   }
 
-  const userBalance = balanceData || session.user?.balance || 0;
+  const userBalance = session.user?.balance || 0;
   const balanceInEth = userBalance / 1000; // Convert from stored balance (1000 = 1 SepoliaETH)
 
   return (
@@ -82,7 +81,7 @@ export function WalletContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {balanceLoading ? (
+              {sessionLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
                 `${balanceInEth.toFixed(4)} SepoliaETH`

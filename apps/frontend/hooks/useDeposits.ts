@@ -75,26 +75,6 @@ export function useProcessDepositEvent() {
   });
 }
 
-export function useUserBalance() {
-  return useQuery({
-    queryKey: ['user', 'balance'],
-    queryFn: async () => {
-      const response = await fetch('/api/auth/session', {
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user balance');
-      }
-
-      const data = await response.json();
-      return data.user?.balance || 0;
-    },
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 5 // 5 minutes
-  });
-}
-
 export function useRefreshDeposits() {
   const queryClient = useQueryClient();
 
