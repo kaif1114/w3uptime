@@ -74,7 +74,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       error: 'Failed to fetch deposit history'
     }, { status: 500 });
   }
-}
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
 

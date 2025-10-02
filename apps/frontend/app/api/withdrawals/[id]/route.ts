@@ -3,15 +3,15 @@ import { prisma } from 'db/client';
 import { withAuth } from '@/lib/auth';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export const GET = withAuth(async (request: NextRequest, user, session, { params }: RouteParams) => {
   try {
 
-    const { id } = params;
+    const { id } = await params;
 
     const withdrawal = await prisma.transaction.findFirst({
       where: {
@@ -60,4 +60,4 @@ export const GET = withAuth(async (request: NextRequest, user, session, { params
       error: 'Failed to fetch withdrawal details'
     }, { status: 500 });
   }
-}
+});

@@ -57,9 +57,9 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
         params: [{ chainId: '0xaa36a7' }], // Sepolia chain ID
       });
       return true;
-    } catch (switchError: any) {
+    } catch (switchError: unknown) {
       // If Sepolia is not added, add it
-      if (switchError.code === 4902) {
+      if (switchError && typeof switchError === 'object' && 'code' in switchError && switchError.code === 4902) {
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -112,9 +112,10 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       } else {
         setError('No accounts found. Please connect your wallet.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet');
-      onError?.(err.message || 'Failed to connect wallet');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
+      setError(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setIsConnecting(false);
     }
@@ -139,7 +140,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       const network = await provider.getNetwork();
       
       // Verify we're on Sepolia (chain ID 11155111)
-      if (network.chainId !== 11155111n) {
+      if (network.chainId !== BigInt(11155111)) {
         setError('Please switch to Sepolia testnet before depositing');
         return;
       }
@@ -153,7 +154,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       const transaction = await signer.sendTransaction({
         to: CONTRACT_ADDRESS,
         value: amountInWei,
-        gasLimit: 100000n
+        gasLimit: BigInt(100000)
       });
 
       setTransactionHash(transaction.hash);
@@ -163,9 +164,11 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       onSuccess?.(transaction.hash);
       form.reset();
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Deposit error:', err);
-      const errorMessage = err.reason || err.message || 'Transaction failed';
+      const errorMessage = err instanceof Error ? err.message : 
+                          (err && typeof err === 'object' && 'reason' in err && typeof err.reason === 'string') ? err.reason :
+                          'Transaction failed';
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {

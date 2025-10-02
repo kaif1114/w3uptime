@@ -100,16 +100,16 @@ class BlockchainListener {
     }
   }
 
-  private async handleDepositEvent(...args: any[]) {
+  private async handleDepositEvent(...args: unknown[]) {
     // Last argument is the event
-    const event = args[args.length - 1];
+    const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
     const log = event.log || event;
     await this.processDepositEvent(log, event.args);
   }
 
-  private async handleWithdrawalEvent(...args: any[]) {
+  private async handleWithdrawalEvent(...args: unknown[]) {
     // Last argument is the event  
-    const event = args[args.length - 1];
+    const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
     const log = event.log || event;
     await this.processWithdrawalEvent(log, event.args);
   }

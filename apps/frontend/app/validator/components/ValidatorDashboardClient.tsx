@@ -4,7 +4,6 @@ import { useValidatorDashboard } from "@/hooks/useValidatorDashboard";
 import BalanceOverview from "./BalanceOverview";
 import ValidationsSummary from "./ValidationsSummary";
 import WithdrawalsSection from "./WithdrawalsSection";
-import TransactionsList from "./TransactionsList";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
