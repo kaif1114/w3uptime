@@ -130,6 +130,7 @@ export default function WithdrawalsSection() {
       // Execute withdrawal on blockchain
       setExecutionProgress("Executing withdrawal...");
       await executeWithdrawalMutation.mutateAsync({
+        withdrawalId,
         signature,
         onProgress: setExecutionProgress
       });

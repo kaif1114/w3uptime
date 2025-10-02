@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
       requestedAt: withdrawal.createdAt.toISOString(),
       processedAt: withdrawal.processedAt?.toISOString(),
-      transactionHash: withdrawal.transactionHash
+      transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
     }));
 
     return NextResponse.json({
@@ -144,13 +144,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create pending withdrawal record
+    // Create pending withdrawal record with temporary transaction hash
+    const tempTxHash = `pending_${session.user.id}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    
     const withdrawal = await prisma.transaction.create({
       data: {
         type: 'WITHDRAWAL',
         toAddress: session.user.walletAddress,
         amount: amountWei.toString(),
-        transactionHash: '', // Will be filled when blockchain transaction is made
+        transactionHash: tempTxHash, // Temporary unique hash for pending withdrawals
         blockNumber: 0, // Will be filled when blockchain transaction is confirmed
         status: 'PENDING',
         userId: session.user.id
@@ -173,7 +175,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.message
       }, { status: 400 });
     }
 

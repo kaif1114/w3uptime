@@ -364,35 +364,70 @@ class BlockchainListener {
         return;
       }
 
+      // Check if there's a pending withdrawal for this user with the same amount
+      const pendingWithdrawal = await prisma.transaction.findFirst({
+        where: {
+          type: 'WITHDRAWAL',
+          toAddress: normalizedAddress,
+          amount: amount.toString(),
+          status: 'PENDING',
+          userId: existingUser.id,
+          transactionHash: {
+            startsWith: 'pending_'
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
       // Process the withdrawal in a transaction
       await prisma.$transaction(async (tx) => {
-        await tx.transaction.create({
-          data: {
-            type: 'WITHDRAWAL',
-            toAddress: normalizedAddress,
-            amount: amount.toString(),
-            transactionHash: event.transactionHash,
-            blockNumber: event.blockNumber,
-            status: 'CONFIRMED',
-            createdAt: new Date(Number(timestamp) * 1000),
-            processedAt: new Date(),
-            userId: existingUser.id
-          }
-        });
-
-        // Update user balance (decrement for withdrawal)
-        const amountWei = BigInt(amount.toString());
-        const amountEth = Number(amountWei) / Math.pow(10, 18);
-        const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
-
-        await tx.user.update({
-          where: { walletAddress: normalizedAddress },
-          data: {
-            balance: {
-              decrement: balanceDecrement
+        if (pendingWithdrawal) {
+          // Update existing pending withdrawal
+          console.log("Updating existing pending withdrawal:", pendingWithdrawal.id);
+          await tx.transaction.update({
+            where: { id: pendingWithdrawal.id },
+            data: {
+              transactionHash: event.transactionHash,
+              blockNumber: event.blockNumber,
+              status: 'CONFIRMED',
+              processedAt: new Date()
             }
-          }
-        });
+          });
+        } else {
+          // Create new withdrawal record (this shouldn't normally happen if frontend is used)
+          console.log("Creating new withdrawal record for blockchain event");
+          await tx.transaction.create({
+            data: {
+              type: 'WITHDRAWAL',
+              toAddress: normalizedAddress,
+              amount: amount.toString(),
+              transactionHash: event.transactionHash,
+              blockNumber: event.blockNumber,
+              status: 'CONFIRMED',
+              createdAt: new Date(Number(timestamp) * 1000),
+              processedAt: new Date(),
+              userId: existingUser.id
+            }
+          });
+        }
+
+        // Update user balance (decrement for withdrawal) - only if not already processed
+        if (!pendingWithdrawal || pendingWithdrawal.status === 'PENDING') {
+          const amountWei = BigInt(amount.toString());
+          const amountEth = Number(amountWei) / Math.pow(10, 18);
+          const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+
+          await tx.user.update({
+            where: { walletAddress: normalizedAddress },
+            data: {
+              balance: {
+                decrement: balanceDecrement
+              }
+            }
+          });
+        }
       });
 
       console.log(`Withdrawal processed successfully for user ${normalizedAddress}: ${ethers.formatEther(amount)} ETH`);

@@ -31,9 +31,9 @@ async function authenticateRequest(request: NextRequest) {
 }
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Find the withdrawal request
     const withdrawal = await prisma.transaction.findFirst({

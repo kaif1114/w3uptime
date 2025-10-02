@@ -13,10 +13,11 @@ export function useExecuteWithdrawal() {
 
   return useMutation({
     mutationFn: async (params: {
+      withdrawalId: string;
       signature: WithdrawalSignature;
       onProgress?: (step: string) => void;
     }): Promise<WithdrawalExecutionResult> => {
-      const { signature, onProgress } = params;
+      const { withdrawalId, signature, onProgress } = params;
 
       try {
         onProgress?.('Connecting to wallet...');
@@ -61,6 +62,24 @@ export function useExecuteWithdrawal() {
 
         if (!receipt) {
           throw new Error('Transaction receipt not available');
+        }
+
+        onProgress?.('Updating withdrawal record...');
+
+        // Update the withdrawal record with the real transaction hash
+        const updateResponse = await fetch(`/api/withdrawals/${withdrawalId}/execute`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            transactionHash: receipt.hash,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          console.warn('Failed to update withdrawal record, but blockchain transaction succeeded');
         }
 
         return {

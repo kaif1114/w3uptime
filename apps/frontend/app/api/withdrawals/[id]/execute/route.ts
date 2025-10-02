@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
+import { z } from 'zod';
+
+const ExecuteWithdrawalSchema = z.object({
+  transactionHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash format'),
+});
 
 async function authenticateRequest(request: NextRequest) {
   const sessionId = request.cookies.get('sessionId')?.value;
@@ -29,12 +34,12 @@ async function authenticateRequest(request: NextRequest) {
 }
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await authenticateRequest(request);
 
@@ -45,53 +50,58 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
+    const body = await request.json();
+    const { transactionHash } = ExecuteWithdrawalSchema.parse(body);
 
+    // Find the withdrawal request
     const withdrawal = await prisma.transaction.findFirst({
       where: {
         id,
         type: 'WITHDRAWAL',
-        userId: session.user.id
-      },
-      select: {
-        id: true,
-        toAddress: true,
-        amount: true,
-        transactionHash: true,
-        blockNumber: true,
-        status: true,
-        createdAt: true,
-        processedAt: true
+        userId: session.user.id,
+        status: 'PENDING'
       }
     });
 
     if (!withdrawal) {
       return NextResponse.json({
         success: false,
-        error: 'Withdrawal not found'
+        error: 'Withdrawal request not found or already processed'
       }, { status: 404 });
     }
 
-    // Format withdrawal to match frontend expectations
-    const formattedWithdrawal = {
-      id: withdrawal.id,
-      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, // Convert to ETH
-      status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
-      requestedAt: withdrawal.createdAt.toISOString(),
-      processedAt: withdrawal.processedAt?.toISOString(),
-      transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
-    };
+    // Update the withdrawal with the real transaction hash
+    await prisma.transaction.update({
+      where: { id },
+      data: {
+        transactionHash,
+        processedAt: new Date()
+      }
+    });
 
     return NextResponse.json({
       success: true,
-      data: formattedWithdrawal
+      data: {
+        withdrawalId: id,
+        transactionHash
+      }
     });
 
   } catch (error) {
-    console.error('Error fetching withdrawal details:', error);
+    console.error('Error executing withdrawal:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid request data',
+        details: error.message
+      }, { status: 400 });
+    }
+
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch withdrawal details'
+      error: 'Failed to execute withdrawal'
     }, { status: 500 });
   }
 }
