@@ -33,12 +33,15 @@ class BlockchainListener {
       // Listen for FundsDeposited events
       this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
 
+      // Listen for Withdrawal events
+      this.contract.on("Withdrawal", this.handleWithdrawalEvent.bind(this));
+
       // Handle provider errors
       this.provider.on("error", this.handleProviderError.bind(this));
 
       this.isListening = true;
       this.reconnectAttempts = 0;
-      console.log(`Listening for FundsDeposited events on contract: ${CONTRACT_ADDRESS}`);
+      console.log(`Listening for FundsDeposited and Withdrawal events on contract: ${CONTRACT_ADDRESS}`);
 
       // Process past events (last 100 blocks)
       await this.processPastEvents();
@@ -58,9 +61,10 @@ class BlockchainListener {
       const chunkSize = 10; // Max blocks per request for free tier
       const fromBlock = Math.max(0, currentBlock - blocksToCheck);
 
-      console.log(`Checking for past FundsDeposited events from block ${fromBlock} to ${currentBlock} in chunks of ${chunkSize}`);
+      console.log(`Checking for past FundsDeposited and Withdrawal events from block ${fromBlock} to ${currentBlock} in chunks of ${chunkSize}`);
 
-      const filter = this.contract.filters.FundsDeposited();
+      const depositFilter = this.contract.filters.FundsDeposited();
+      const withdrawalFilter = this.contract.filters.Withdrawal();
       let allEvents: ethers.Log[] = [];
 
       // Process in chunks to avoid rate limits
@@ -69,9 +73,15 @@ class BlockchainListener {
         
         try {
           console.log(`Querying events from block ${start} to ${end}`);
-          const chunkEvents = await this.contract.queryFilter(filter, start, end);
-          console.log(`Found ${chunkEvents.length} events in blocks ${start}-${end}`);
-          allEvents = allEvents.concat(chunkEvents);
+          
+          // Query both deposit and withdrawal events
+          const [depositEvents, withdrawalEvents] = await Promise.all([
+            this.contract.queryFilter(depositFilter, start, end),
+            this.contract.queryFilter(withdrawalFilter, start, end)
+          ]);
+          
+          console.log(`Found ${depositEvents.length} deposit events and ${withdrawalEvents.length} withdrawal events in blocks ${start}-${end}`);
+          allEvents = allEvents.concat(depositEvents, withdrawalEvents);
           
           // Small delay to avoid hitting rate limits
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -82,10 +92,10 @@ class BlockchainListener {
       }
 
       for (const event of allEvents) {
-        await this.processDepositEvent(event, undefined);
+        await this.processEvent(event, undefined);
       }
 
-      console.log(`Processed ${allEvents.length} past deposit events from ${blocksToCheck} blocks`);
+      console.log(`Processed ${allEvents.length} past events (deposits and withdrawals) from ${blocksToCheck} blocks`);
     } catch (error) {
       console.error("Error processing past events:", error);
     }
@@ -96,6 +106,39 @@ class BlockchainListener {
     // The event parameter is actually a ContractEventPayload, extract the log
     const log = event.log || event;
     await this.processDepositEvent(log, event.args);
+  }
+
+  private async handleWithdrawalEvent(_user: string, _amount: bigint, _nonce: bigint, _timestamp: bigint, event: any) {
+   
+    // The event parameter is actually a ContractEventPayload, extract the log
+    const log = event.log || event;
+    await this.processWithdrawalEvent(log, event.args);
+  }
+
+  private async processEvent(event: ethers.Log, precomputedArgs?: any[]) {
+    try {
+      if (!this.contract) return;
+
+      // Determine event type by parsing the log
+      let parsedEvent;
+      try {
+        parsedEvent = this.contract.interface.parseLog({
+          topics: event.topics,
+          data: event.data || '0x'
+        });
+      } catch (parseError) {
+        console.error('Failed to parse event log:', parseError);
+        return;
+      }
+
+      if (parsedEvent?.name === "FundsDeposited") {
+        await this.processDepositEvent(event, precomputedArgs);
+      } else if (parsedEvent?.name === "Withdrawal") {
+        await this.processWithdrawalEvent(event, precomputedArgs);
+      }
+    } catch (error) {
+      console.error("Error processing event:", error);
+    }
   }
 
   private async processDepositEvent(event: ethers.Log, precomputedArgs?: any[]) {
@@ -226,6 +269,132 @@ class BlockchainListener {
 
     } catch (error) {
       console.error("Error processing deposit event:", error);
+    }
+  }
+
+  private async processWithdrawalEvent(event: ethers.Log, precomputedArgs?: any[]) {
+    try {
+      if (!this.contract) return;
+
+      console.log('Processing withdrawal event:', {
+        address: event.address,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash,
+        hasPrecomputedArgs: !!precomputedArgs
+      });
+
+      // Validate this is from our contract
+      if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
+        console.warn('Event not from our contract, skipping:', event.address);
+        return;
+      }
+
+      // Use precomputed args if available (from ContractEventPayload), otherwise parse
+      let user: string, amount: bigint, nonce: bigint, timestamp: bigint;
+      
+      if (precomputedArgs && precomputedArgs.length >= 4) {
+        [user, amount, nonce, timestamp] = precomputedArgs;
+        console.log('Using precomputed args from ContractEventPayload');
+      } else {
+        // Fallback to parsing the log manually
+        console.log('Parsing log manually');
+        
+        if (!event.topics || event.topics.length === 0) {
+          console.warn('Event has no topics, cannot parse');
+          return;
+        }
+
+        let parsedEvent;
+        try {
+          parsedEvent = this.contract.interface.parseLog({
+            topics: event.topics,
+            data: event.data || '0x'
+          });
+        } catch (parseError) {
+          console.error('Failed to parse event log:', parseError);
+          return;
+        }
+
+        if (!parsedEvent || parsedEvent.name !== "Withdrawal") {
+          console.log('Not a Withdrawal event or parsing failed');
+          return;
+        }
+
+        if (!parsedEvent.args || parsedEvent.args.length < 4) {
+          console.error('Parsed event missing required arguments:', parsedEvent.args);
+          return;
+        }
+
+        [user, amount, nonce, timestamp] = parsedEvent.args;
+      }
+
+      console.log("Processing withdrawal event:", {
+        user,
+        amount: ethers.formatEther(amount),
+        nonce: nonce.toString(),
+        timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+        txHash: event.transactionHash,
+        blockNumber: event.blockNumber
+      });
+
+      // Check if transaction already exists
+      const existingTransaction = await prisma.transaction.findUnique({
+        where: { transactionHash: event.transactionHash }
+      });
+
+      if (existingTransaction) {
+        console.log("Transaction already processed:", event.transactionHash);
+        return;
+      }
+
+      const normalizedAddress = user.toLowerCase();
+      console.log("Normalized address:", normalizedAddress);
+
+      // Find user - withdrawal events only come from existing users
+      const existingUser = await prisma.user.findUnique({
+        where: { walletAddress: normalizedAddress }
+      });
+
+      if (!existingUser) {
+        console.error("User not found for withdrawal:", normalizedAddress);
+        return;
+      }
+
+      // Process the withdrawal in a transaction
+      await prisma.$transaction(async (tx) => {
+        await tx.transaction.create({
+          data: {
+            type: 'WITHDRAWAL',
+            toAddress: normalizedAddress,
+            amount: amount.toString(),
+            transactionHash: event.transactionHash,
+            blockNumber: event.blockNumber,
+            status: 'CONFIRMED',
+            createdAt: new Date(Number(timestamp) * 1000),
+            processedAt: new Date(),
+            userId: existingUser.id
+          }
+        });
+
+        // Update user balance (decrement for withdrawal)
+        const amountWei = BigInt(amount.toString());
+        const amountEth = Number(amountWei) / Math.pow(10, 18);
+        const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+
+        await tx.user.update({
+          where: { walletAddress: normalizedAddress },
+          data: {
+            balance: {
+              decrement: balanceDecrement
+            }
+          }
+        });
+      });
+
+      console.log(`Withdrawal processed successfully for user ${normalizedAddress}: ${ethers.formatEther(amount)} ETH`);
+
+    } catch (error) {
+      console.error("Error processing withdrawal event:", error);
     }
   }
 

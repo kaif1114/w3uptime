@@ -610,12 +610,29 @@ export interface DepositEvent {
   transactionHash: string;
 }
 
+export interface WithdrawalEvent {
+  user: string;
+  amount: string;
+  nonce: string;
+  timestamp: string;
+  blockNumber: number;
+  transactionHash: string;
+}
+
 export interface ContractInstance extends ethers.Contract {
   on(event: "FundsDeposited", listener: (from: string, amount: bigint, timestamp: bigint, event: ethers.Log) => void): this;
   off(event: "FundsDeposited", listener: (from: string, amount: bigint, timestamp: bigint, event: ethers.Log) => void): this;
+  on(event: "Withdrawal", listener: (user: string, amount: bigint, nonce: bigint, timestamp: bigint, event: ethers.Log) => void): this;
+  off(event: "Withdrawal", listener: (user: string, amount: bigint, nonce: bigint, timestamp: bigint, event: ethers.Log) => void): this;
   
   getContractBalance(): Promise<bigint>;
   paused(): Promise<boolean>;
+  withdraw(amount: bigint, nonce: bigint, expiry: bigint, signature: string): Promise<ethers.ContractTransaction>;
+  getMessageHash(user: string, amount: bigint, nonce: bigint, expiry: bigint): Promise<string>;
+  verifySignature(user: string, amount: bigint, nonce: bigint, expiry: bigint, signature: string): Promise<boolean>;
+  isNonceUsed(nonce: bigint): Promise<boolean>;
+  minWithdrawalAmount(): Promise<bigint>;
+  maxWithdrawalAmount(): Promise<bigint>;
 }
 
 export function createContractInstance(provider: ethers.Provider): ContractInstance {
@@ -640,4 +657,24 @@ export function isValidEthereumAddress(address: string): boolean {
 
 export async function waitForDeposit(provider: ethers.Provider, transactionHash: string): Promise<ethers.TransactionReceipt | null> {
   return await provider.waitForTransaction(transactionHash);
+}
+
+export function formatWithdrawalAmount(amount: bigint): string {
+  return ethers.formatEther(amount);
+}
+
+export function parseWithdrawalAmount(amount: string): bigint {
+  return ethers.parseEther(amount);
+}
+
+export async function waitForWithdrawal(provider: ethers.Provider, transactionHash: string): Promise<ethers.TransactionReceipt | null> {
+  return await provider.waitForTransaction(transactionHash);
+}
+
+export function generateNonce(): bigint {
+  return BigInt(Date.now());
+}
+
+export function getWithdrawalExpiry(minutesFromNow: number = 15): bigint {
+  return BigInt(Math.floor(Date.now() / 1000) + (minutesFromNow * 60));
 }

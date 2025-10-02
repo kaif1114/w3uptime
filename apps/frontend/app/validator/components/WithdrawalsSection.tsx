@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { WithdrawalRequest } from "@/types/validator";
 import {
+  useWithdrawals,
+  useCreateWithdrawal,
+  useGetWithdrawalSignature
+} from "@/hooks/useWithdrawals";
+import { useExecuteWithdrawal } from "@/hooks/useWithdrawalExecution";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -40,18 +46,26 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
-interface WithdrawalsSectionProps {
-  withdrawals: WithdrawalRequest[];
-  isLoading?: boolean;
-}
+interface WithdrawalsSectionProps {}
 
-export default function WithdrawalsSection({
-  withdrawals,
-  isLoading = false,
-}: WithdrawalsSectionProps) {
+export default function WithdrawalsSection() {
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [executingWithdrawalId, setExecutingWithdrawalId] = useState<string | null>(null);
+  const [executionProgress, setExecutionProgress] = useState<string>("");
+
+  // Fetch withdrawals
+  const { data: withdrawalsData, isLoading, error } = useWithdrawals(currentPage, 10);
+  
+  // Mutations
+  const createWithdrawalMutation = useCreateWithdrawal();
+  const getSignatureMutation = useGetWithdrawalSignature();
+  const executeWithdrawalMutation = useExecuteWithdrawal();
+
+  const withdrawals = withdrawalsData?.withdrawals || [];
 
   const getStatusBadge = (status: WithdrawalRequest["status"]) => {
     switch (status) {
@@ -101,13 +115,43 @@ export default function WithdrawalsSection({
     const amount = parseFloat(withdrawalAmount);
     if (amount > 0) {
       try {
-        // TODO: Implement actual withdrawal API call here
-        console.log("Withdrawal request:", amount);
+        const result = await createWithdrawalMutation.mutateAsync(amount);
+        toast.success("Withdrawal request created successfully");
         setWithdrawalAmount("");
         setIsWithdrawalDialogOpen(false);
-      } catch (error) {
-        console.error("Withdrawal request failed:", error);
+        
+        // Automatically start the withdrawal process
+        setTimeout(() => {
+          handleExecuteWithdrawal(result.withdrawalId);
+        }, 1000);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to create withdrawal request");
       }
+    }
+  };
+
+  const handleExecuteWithdrawal = async (withdrawalId: string) => {
+    try {
+      setExecutingWithdrawalId(withdrawalId);
+      setExecutionProgress("Getting withdrawal signature...");
+
+      // Get signature from backend
+      const signature = await getSignatureMutation.mutateAsync(withdrawalId);
+      
+      // Execute withdrawal on blockchain
+      setExecutionProgress("Executing withdrawal...");
+      const result = await executeWithdrawalMutation.mutateAsync({
+        signature,
+        onProgress: setExecutionProgress
+      });
+
+      toast.success("Withdrawal executed successfully!");
+      setExecutingWithdrawalId(null);
+      setExecutionProgress("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to execute withdrawal");
+      setExecutingWithdrawalId(null);
+      setExecutionProgress("");
     }
   };
 
@@ -172,11 +216,11 @@ export default function WithdrawalsSection({
                   disabled={
                     !withdrawalAmount ||
                     parseFloat(withdrawalAmount) <= 0 ||
-                    isLoading
+                    createWithdrawalMutation.isPending
                   }
                 >
                   <ArrowUpRight className="h-4 w-4 mr-2" />
-                  {isLoading ? "Processing..." : "Request Withdrawal"}
+                  {createWithdrawalMutation.isPending ? "Processing..." : "Request Withdrawal"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -193,7 +237,17 @@ export default function WithdrawalsSection({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {withdrawals.length === 0 ? (
+          {error ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <XCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Failed to load withdrawals</p>
+            </div>
+          ) : isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+              <p>Loading withdrawals...</p>
+            </div>
+          ) : withdrawals.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No withdrawal requests yet</p>
@@ -209,6 +263,7 @@ export default function WithdrawalsSection({
                     <TableHead>Requested</TableHead>
                     <TableHead>Processed</TableHead>
                     <TableHead>Transaction</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -241,8 +296,33 @@ export default function WithdrawalsSection({
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            onClick={() => window.open(`https://sepolia.etherscan.io/tx/${withdrawal.transactionHash}`, '_blank')}
                           >
                             <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {withdrawal.status === 'pending' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExecuteWithdrawal(withdrawal.id)}
+                            disabled={executingWithdrawalId === withdrawal.id}
+                          >
+                            {executingWithdrawalId === withdrawal.id ? (
+                              <>
+                                <Clock className="h-3 w-3 mr-1 animate-spin" />
+                                {executionProgress || "Processing..."}
+                              </>
+                            ) : (
+                              <>
+                                <ArrowUpRight className="h-3 w-3 mr-1" />
+                                Execute
+                              </>
+                            )}
                           </Button>
                         ) : (
                           "-"
