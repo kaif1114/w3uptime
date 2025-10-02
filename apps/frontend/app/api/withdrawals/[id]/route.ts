@@ -1,32 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
-
-async function authenticateRequest(request: NextRequest) {
-  const sessionId = request.cookies.get('sessionId')?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          walletAddress: true,
-          balance: true
-        }
-      }
-    }
-  });
-
-  if (!session || new Date() > session.expiresAt) {
-    return null;
-  }
-
-  return session;
-}
+import { withAuth } from '@/lib/auth';
 
 interface RouteParams {
   params: {
@@ -34,16 +8,8 @@ interface RouteParams {
   };
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export const GET = withAuth(async (request: NextRequest, user, session, { params }: RouteParams) => {
   try {
-    const session = await authenticateRequest(request);
-
-    if (!session) {
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
-    }
 
     const { id } = params;
 
@@ -51,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       where: {
         id,
         type: 'WITHDRAWAL',
-        userId: session.user.id
+        userId: user.id
       },
       select: {
         id: true,

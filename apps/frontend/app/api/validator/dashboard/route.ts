@@ -1,48 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
-import { z } from 'zod';
+import { withAuth } from '@/lib/auth';
 
-async function authenticateRequest(request: NextRequest) {
-  const sessionId = request.cookies.get('sessionId')?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          walletAddress: true,
-          balance: true,
-          type: true
-        }
-      }
-    }
-  });
-
-  if (!session || new Date() > session.expiresAt) {
-    return null;
-  }
-
-  return session;
-}
-
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await authenticateRequest(request);
+    const userId = user.id;
+    
+    // Get user with balance
+    const userWithBalance = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { balance: true }
+    });
 
-    if (!session) {
+    if (!userWithBalance) {
       return NextResponse.json({
         success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
+        error: 'User not found'
+      }, { status: 404 });
     }
 
-    const userId = session.user.id;
-    const userBalance = session.user.balance; // Internal balance units (1000 = 1 ETH)
+    const userBalance = userWithBalance.balance; // Internal balance units (1000 = 1 ETH)
 
     // Get user transactions for calculating totals
     const allTransactions = await prisma.transaction.findMany({

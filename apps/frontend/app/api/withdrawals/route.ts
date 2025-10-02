@@ -1,48 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { z } from 'zod';
+import { withAuth } from '@/lib/auth';
 
 const WithdrawalRequestSchema = z.object({
   amount: z.string().min(1, 'Amount is required'),
 });
 
-async function authenticateRequest(request: NextRequest) {
-  const sessionId = request.cookies.get('sessionId')?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          walletAddress: true,
-          balance: true
-        }
-      }
-    }
-  });
-
-  if (!session || new Date() > session.expiresAt) {
-    return null;
-  }
-
-  return session;
-}
-
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await authenticateRequest(request);
-
-    if (!session) {
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -52,7 +18,7 @@ export async function GET(request: NextRequest) {
     const withdrawals = await prisma.transaction.findMany({
       where: {
         type: 'WITHDRAWAL',
-        userId: session.user.id
+        userId: user.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -74,7 +40,7 @@ export async function GET(request: NextRequest) {
     const totalCount = await prisma.transaction.count({
       where: {
         type: 'WITHDRAWAL',
-        userId: session.user.id
+        userId: user.id
       }
     });
 
@@ -98,7 +64,7 @@ export async function GET(request: NextRequest) {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: session.user.balance
+        userBalance: 0 // Will be fetched separately if needed
       }
     });
 
@@ -111,15 +77,19 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await authenticateRequest(request);
+    // Get user with balance
+    const userWithBalance = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true, walletAddress: true }
+    });
 
-    if (!session) {
+    if (!userWithBalance) {
       return NextResponse.json({
         success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
+        error: 'User not found'
+      }, { status: 404 });
     }
 
     const body = await request.json();
@@ -137,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user balance
-    if (session.user.balance < amountInternalUnits) {
+    if (userWithBalance.balance < amountInternalUnits) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'
@@ -145,17 +115,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create pending withdrawal record with temporary transaction hash
-    const tempTxHash = `pending_${session.user.id}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    const tempTxHash = `pending_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     
     const withdrawal = await prisma.transaction.create({
       data: {
         type: 'WITHDRAWAL',
-        toAddress: session.user.walletAddress,
+        toAddress: userWithBalance.walletAddress,
         amount: amountWei.toString(),
         transactionHash: tempTxHash, // Temporary unique hash for pending withdrawals
         blockNumber: 0, // Will be filled when blockchain transaction is confirmed
         status: 'PENDING',
-        userId: session.user.id
+        userId: user.id
       }
     });
 

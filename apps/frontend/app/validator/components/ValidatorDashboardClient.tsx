@@ -54,9 +54,9 @@ export default function ValidatorDashboardClient() {
       <WithdrawalsSection />
 
       {/* Transaction History Section - only show if there are transactions */}
-      {dashboardData.recentTransactions.length > 0 && (
+      {/* {dashboardData.recentTransactions.length > 0 && (
         <TransactionsList transactions={dashboardData.recentTransactions} />
-      )}
+      )} */}
     </div>
   );
 }

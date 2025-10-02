@@ -2,33 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { ethers } from 'ethers';
 import { generateNonce, getWithdrawalExpiry } from 'common/contract';
-
-async function authenticateRequest(request: NextRequest) {
-  const sessionId = request.cookies.get('sessionId')?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          walletAddress: true,
-          balance: true
-        }
-      }
-    }
-  });
-
-  if (!session || new Date() > session.expiresAt) {
-    return null;
-  }
-
-  return session;
-}
+import { withAuth } from '@/lib/auth';
 
 interface RouteParams {
   params: Promise<{
@@ -36,15 +10,19 @@ interface RouteParams {
   }>;
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export const POST = withAuth(async (request: NextRequest, user, session, { params }: RouteParams) => {
   try {
-    const session = await authenticateRequest(request);
+    // Get user with balance and wallet address
+    const userWithBalance = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true, walletAddress: true }
+    });
 
-    if (!session) {
+    if (!userWithBalance) {
       return NextResponse.json({
         success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
+        error: 'User not found'
+      }, { status: 404 });
     }
 
     const { id } = await params;
@@ -54,7 +32,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: {
         id,
         type: 'WITHDRAWAL',
-        userId: session.user.id,
+        userId: user.id,
         status: 'PENDING'
       }
     });
@@ -68,7 +46,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Check if user still has sufficient balance
     const amountInternalUnits = Math.floor(Number(BigInt(withdrawal.amount)) / Math.pow(10, 15)); // Convert from wei to internal units
-    if (session.user.balance < amountInternalUnits) {
+    if (userWithBalance.balance < amountInternalUnits) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'
@@ -92,7 +70,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Create message hash
     const messageHash = ethers.solidityPackedKeccak256(
       ['address', 'uint256', 'uint256', 'uint256'],
-      [session.user.walletAddress, withdrawal.amount, nonce, expiry]
+      [userWithBalance.walletAddress, withdrawal.amount, nonce, expiry]
     );
 
     // Sign the message
@@ -106,7 +84,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         nonce: nonce.toString(),
         expiry: expiry.toString(),
         amount: withdrawal.amount,
-        userAddress: session.user.walletAddress
+        userAddress: userWithBalance.walletAddress
       }
     });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { z } from 'zod';
+import { withAuth } from '@/lib/auth';
 
 const DepositEventSchema = z.object({
   fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
@@ -10,43 +11,8 @@ const DepositEventSchema = z.object({
   blockNumber: z.number().int().positive('Block number must be positive')
 });
 
-async function authenticateRequest(request: NextRequest) {
-  const sessionId = request.cookies.get('sessionId')?.value;
-
-  if (!sessionId) {
-    return null;
-  }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          walletAddress: true,
-          balance: true
-        }
-      }
-    }
-  });
-
-  if (!session || new Date() > session.expiresAt) {
-    return null;
-  }
-
-  return session;
-}
-
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await authenticateRequest(request);
-
-    if (!session) {
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required'
-      }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -57,7 +23,7 @@ export async function GET(request: NextRequest) {
       where: {
         type: 'DEPOSIT',
         fromAddress: {
-          equals: session.user.walletAddress,
+          equals: user.walletAddress,
           mode: 'insensitive'
         }
       },
@@ -81,7 +47,7 @@ export async function GET(request: NextRequest) {
       where: {
         type: 'DEPOSIT',
         fromAddress: {
-          equals: session.user.walletAddress,
+          equals: user.walletAddress,
           mode: 'insensitive'
         }
       }
@@ -97,7 +63,7 @@ export async function GET(request: NextRequest) {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: session.user.balance
+        userBalance: 0 // Will be fetched separately if needed
       }
     });
 
