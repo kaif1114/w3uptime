@@ -162,6 +162,7 @@ export default function TransactionsList({
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          onClick={() => window.open(`https://sepolia.etherscan.io/tx/${transaction.transactionHash}`, '_blank')}
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>

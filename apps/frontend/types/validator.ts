@@ -73,7 +73,7 @@ export interface ValidationSummary {
 export interface WithdrawalRequest {
   id: string;
   amount: number;
-  status: "pending" | "approved" | "rejected" | "completed";
+  status: "pending" | "approved" | "rejected" | "completed" | "failed";
   requestedAt: string;
   processedAt?: string;
   transactionHash?: string;

@@ -94,3 +94,47 @@ export interface MonitorTickBatchResponse {
     error: string;
   }[];
 }
+
+export interface DepositEvent {
+  fromAddress: string;
+  amount: string;
+  timestamp: string;
+  transactionHash: string;
+  blockNumber: number;
+}
+
+export interface TransactionHistoryItem {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
+  fromAddress: string | null;
+  toAddress: string | null;
+  amount: string;
+  transactionHash: string;
+  blockNumber: number;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  createdAt: Date;
+}
+
+export interface DepositHistoryItem {
+  id: string;
+  fromAddress: string;
+  amount: string;
+  transactionHash: string;
+  blockNumber: number;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  createdAt: Date;
+}
+
+export interface DepositHistoryResponse {
+  success: boolean;
+  data: {
+    deposits: DepositHistoryItem[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+    userBalance: number;
+  };
+}

@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
             id: true,
             walletAddress: true,
             createdAt: true,
-            updatedAt: true
+            updatedAt: true,
+            balance: true
           }
         }
       }

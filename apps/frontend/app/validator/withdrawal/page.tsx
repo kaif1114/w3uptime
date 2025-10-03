@@ -8,24 +8,6 @@ export default async function WithdrawalPage() {
     redirect("/login");
   }
 
-  // Mock data for withdrawal page - in a real app, this would come from your API
-  const mockWithdrawals = [
-    {
-      id: "1",
-      amount: 50.0,
-      status: "pending" as const,
-      requestedAt: "2024-01-15T10:30:00Z",
-      processedAt: undefined,
-    },
-    {
-      id: "2",
-      amount: 25.5,
-      status: "completed" as const,
-      requestedAt: "2024-01-10T14:20:00Z",
-      processedAt: "2024-01-11T09:15:00Z",
-    },
-  ];
-
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -38,14 +20,7 @@ export default async function WithdrawalPage() {
         </p>
       </div>
 
-      <WithdrawalsSection
-        withdrawals={mockWithdrawals}
-        onWithdrawalRequest={async (amount: number) => {
-          // This would be handled by the client component
-          console.log("Withdrawal request:", amount);
-        }}
-        isLoading={false}
-      />
+      <WithdrawalsSection />
     </div>
   );
 }
