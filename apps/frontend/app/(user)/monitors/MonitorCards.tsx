@@ -31,7 +31,7 @@ interface MonitorCardProps {
   monitor: Monitor;
 }
 
-export function MonitorCard({ monitor }: MonitorCardProps) {
+  export function MonitorCard({ monitor }: MonitorCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pauseMutation = usePauseMonitor();
   const deleteMutation = useDeleteMonitor();
