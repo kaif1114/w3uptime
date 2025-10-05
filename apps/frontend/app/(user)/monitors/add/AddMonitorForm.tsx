@@ -430,15 +430,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
           </div>
         </details>
 
-        {/* Metadata */}
-        <details className="group rounded-lg border">
-          <summary className="cursor-pointer list-none px-4 py-3 font-medium">
-            Metadata
-          </summary>
-          <div className="px-4 pb-4 text-sm text-muted-foreground">
-            Add custom metadata to enhance your monitor context (coming soon).
-          </div>
-        </details>
+     
       </div>
 
       {/* Global Escalation Policy Dialog (always mounted) */}
