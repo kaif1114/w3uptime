@@ -579,7 +579,7 @@ export function EscalationPoliciesPage() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(policy.updatedAt).toLocaleDateString()}
-                      </TableCell>
+                      </TableCell>  
                       <TableCell>
                         <Button
                           variant="ghost"
