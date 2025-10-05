@@ -2,9 +2,9 @@ import { prisma } from '../src/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Set your monitor ID here - update this with your actual monitor ID
-const MONITOR_ID = 'e8ab2a3e-e6ed-4ee3-b6e4-2325efea7f88';
+const MONITOR_ID = 'e32af7df-ab0c-4c97-9ba9-8721c9c941fc';
 // Set the validator ID to use for all ticks
-const VALIDATOR_ID = 'a29145f8-2c8a-4052-a750-a31bfe2c83a3';
+const VALIDATOR_ID = 'f64a7e81-ad7e-4df0-afa6-3159c1ad5f05';
 
 // Sample cities with their coordinates and location data
 const SAMPLE_LOCATIONS = [
