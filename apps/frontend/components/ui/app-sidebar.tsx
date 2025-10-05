@@ -27,6 +27,7 @@ import {
   BarChart3,
   Lightbulb,
   Settings,
+  Wallet,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -61,6 +62,11 @@ const items = [
     title: "Escalation Policies",
     url: "/escalation-policies",
     icon: Users,
+  },
+  {
+    title: "Wallet",
+    url: "/wallet",
+    icon: Wallet,
   },
   {
     title: "Community",

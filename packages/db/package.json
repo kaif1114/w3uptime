@@ -27,6 +27,6 @@
   "main": "index.js",
   "description": "",
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node seed/monitorTickSeed.js"
   }
 }
