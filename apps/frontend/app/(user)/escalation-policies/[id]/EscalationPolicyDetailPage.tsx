@@ -514,22 +514,35 @@ export function EscalationPolicyDetailPage({
                                   <div className="space-y-2">
                                     <Label>
                                       {currentLevel?.method === "SLACK" 
-                                        ? "Slack Channels" 
+                                        ? "Slack Workspace" 
                                         : "Target"}
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
                                       <SlackWorkspaceSelector
                                         selectedWorkspaces={
-                                          (currentLevel?.slackChannels as SelectedSlackWorkspace[]) || []
+                                          currentLevel?.slackChannels?.map((channel: any) => ({
+                                            teamId: channel.teamId,
+                                            teamName: channel.teamName,
+                                            defaultChannelId: channel.defaultChannelId || channel.channelId,
+                                            defaultChannelName: channel.defaultChannelName || channel.channelName,
+                                          })) || []
                                         }
                                         onWorkspacesChange={(workspaces) => {
+                                          // Convert back to the expected format for the form
+                                          const formattedWorkspaces = workspaces.map(workspace => ({
+                                            teamId: workspace.teamId,
+                                            teamName: workspace.teamName,
+                                            channelId: workspace.defaultChannelId,
+                                            channelName: workspace.defaultChannelName,
+                                          }));
                                           form.setValue(
                                             `levels.${index}.slackChannels`,
-                                            workspaces
+                                            formattedWorkspaces
                                           );
                                           form.trigger(`levels.${index}.slackChannels`);
                                         }}
-                                        placeholder="Select Slack workspaces for alerts..."
+                                        placeholder="Select a Slack workspace for alerts..."
+                                        maxSelections={1}
                                       />
                                     ) : (
                                       <Input
