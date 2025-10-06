@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAvailableRegions } from "@/hooks/useAnalytics";
 import { useMonitorRegionalTimeseries } from "@/hooks/useAnalytics";
 import { EnhancedTimePeriod } from "@/types/analytics";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo, useState } from "react";
 
 interface RegionalLatencyChartProps {
@@ -83,7 +83,7 @@ export function RegionalLatencyChart({ monitorId, period, defaultRegionType = 'c
         ) : (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="time" className="text-xs" />
                 <YAxis className="text-xs" label={{ value: 'Latency (ms)', angle: -90, position: 'insideLeft' }} />
@@ -95,8 +95,8 @@ export function RegionalLatencyChart({ monitorId, period, defaultRegionType = 'c
                   }}
                   formatter={(value: unknown) => [`${value}ms`, 'Latency']}
                 />
-                <Area type="monotone" dataKey="latency" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-              </AreaChart>
+                <Line type="monotone" dataKey="latency" stroke="#8b5cf6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         ))}
