@@ -128,9 +128,9 @@ export default function IncidentsClient() {
 
   if (loading) {
     return (
-      <div className="">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -144,9 +144,9 @@ export default function IncidentsClient() {
 
   if (error) {
     return (
-      <div className="">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -166,10 +166,10 @@ export default function IncidentsClient() {
   }
 
   return (
-    <div className="">
+    <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight ml-1">Incidents</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
@@ -185,18 +185,12 @@ export default function IncidentsClient() {
               /
             </span>
           </div>
-
-          {/* Report New Incident Button */}
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Report a new incident
-          </Button>
         </div>
       </div>
 
       {/* Incidents Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-3">
           {paginatedIncidents.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -346,7 +340,7 @@ export default function IncidentsClient() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 mt-6">
           <Button
             variant="outline"
             size="sm"
@@ -386,7 +380,7 @@ export default function IncidentsClient() {
       {/* Footer */}
       <div className="text-center text-sm text-gray-500 py-6">
         <div className="flex items-center justify-center gap-2">
-          <span>?</span>
+       
           <span>Need help? Let us know at</span>
           <a
             href="mailto:hello@w3uptime.com"

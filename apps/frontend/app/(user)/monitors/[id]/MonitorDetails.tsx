@@ -128,30 +128,19 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
               className={`w-3 h-3 rounded-full ${getStatusColor(monitor?.status)}`}
             />
             <div>
+            <div className=" items-center gap-4">
+          
               <h1 className="text-2xl font-bold">
                 {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
               </h1>
-              <div className="flex items-center gap-4 text-muted-foreground">
-                <span className="text-lg font-medium">
-                  {getStatusText(monitor?.status)}
-                </span>
-                <span>•</span>
-                <span>Checked every {monitor?.checkInterval / 60} minutes</span>
+                <h1 className="text-md font-medium  text-muted-foreground">
+                  [{getStatusText(monitor?.status)}]
+                </h1>
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="outline" size="sm">
-              <Send className="mr-2 h-4 w-4" />
-              Send test alert
-            </Button>
-            <Link href={`/incidents?monitor=${monitorId}`}>
-              <Button variant="outline" size="sm">
-                <Calendar className="mr-2 h-4 w-4" />
-                Incidents
-              </Button>
-            </Link>
             <Button
               variant="outline"
               size="sm"

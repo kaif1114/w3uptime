@@ -43,7 +43,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     url: "",
     timeout: 30,
     checkInterval: 300,
-    expectedStatusCodes: [200],
+    // expectedStatusCodes: [200],
     status: "ACTIVE",
   });
 
@@ -185,7 +185,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
             <h3 className="text-lg font-semibold">What to monitor</h3>
             <p className="text-sm text-muted-foreground">
               Configure the target website you want to monitor. You can find
-              additional configuration in Advanced settings.
+              add escalation policy in the escalation policies section to get Alerts Timely.
             </p>
           </div>
           <Card className="md:col-span-2">
@@ -312,7 +312,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
         </div>
 
         {/* Advanced settings */}
-        <details className="group rounded-lg border">
+        {/* <details className="group rounded-lg border">
           <summary className="cursor-pointer list-none px-4 py-3 font-medium flex items-center justify-between">
             <span>Advanced settings</span>
             <span className="text-muted-foreground text-sm">(optional)</span>
@@ -428,17 +428,9 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
               </div>
             </div>
           </div>
-        </details>
+        </details> */}
 
-        {/* Metadata */}
-        <details className="group rounded-lg border">
-          <summary className="cursor-pointer list-none px-4 py-3 font-medium">
-            Metadata
-          </summary>
-          <div className="px-4 pb-4 text-sm text-muted-foreground">
-            Add custom metadata to enhance your monitor context (coming soon).
-          </div>
-        </details>
+     
       </div>
 
       {/* Global Escalation Policy Dialog (always mounted) */}

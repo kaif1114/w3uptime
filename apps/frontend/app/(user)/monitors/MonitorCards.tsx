@@ -31,7 +31,7 @@ interface MonitorCardProps {
   monitor: Monitor;
 }
 
-export function MonitorCard({ monitor }: MonitorCardProps) {
+  export function MonitorCard({ monitor }: MonitorCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pauseMutation = usePauseMonitor();
   const deleteMutation = useDeleteMonitor();
@@ -96,11 +96,6 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
     setShowDeleteDialog(true);
   };
 
-  const formatInterval = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-    return `${Math.floor(seconds / 3600)}h`;
-  };
 
   return (
     <>
@@ -176,11 +171,9 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span>Check every {formatInterval(monitor.checkInterval)}</span>
-              <span>Timeout: {monitor.timeout}s</span>
-              <span>Status codes: {monitor.expectedStatusCodes.join(", ")}</span>
-            </div>
+       <div className="flex items-center gap-2">
+        <div className="text-sm font-medium text-muted-foreground">Set Escalation Policies to get Alerts</div>
+        </div>
             <span>Created {new Date(monitor.createdAt).toLocaleDateString()}</span>
           </div>
         </CardContent>

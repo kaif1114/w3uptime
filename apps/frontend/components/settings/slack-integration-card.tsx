@@ -144,7 +144,7 @@ export default function SlackIntegrationCard() {
             <p className="text-muted-foreground mb-4">
               No Slack workspaces connected yet.
             </p>
-            <a href="https://slack.com/oauth/v2/authorize?client_id=9604180472545.9587048237669&scope=incoming-webhook,chat:write,channels:read&user_scope=">
+            <a href={`https://slack.com/oauth/v2/authorize?client_id=${process.env.NEXT_PUBLIC_SLACK_CLIENT_ID}&scope=incoming-webhook,chat:write,channels:read&user_scope=`}>
               <img 
                 alt="Add to Slack" 
                 height="40" 

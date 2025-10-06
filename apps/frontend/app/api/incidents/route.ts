@@ -24,7 +24,6 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     }
 
     const { title, cause, status, monitorId } = validation.data;
-
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorId,

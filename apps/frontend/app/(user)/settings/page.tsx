@@ -12,29 +12,6 @@ export default function SettingsPage() {
       <div className="grid gap-6">
         <SlackIntegrationCard />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardDescription>
-              Manage your account preferences and personal information.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Account settings coming soon...</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Notification Preferences</CardTitle>
-            <CardDescription>
-              Configure how and when you want to receive notifications.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Notification preferences coming soon...</p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
