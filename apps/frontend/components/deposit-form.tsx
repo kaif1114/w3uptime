@@ -186,7 +186,7 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
         <DialogTrigger asChild>
           <Button 
             size="lg"
-            className="px-8 bg-blue-600 hover:bg-blue-700"
+            className="px-8"
           >
             Deposit
           </Button>

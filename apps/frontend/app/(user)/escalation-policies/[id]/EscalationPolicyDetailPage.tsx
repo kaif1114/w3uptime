@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import SlackWorkspaceSelector, { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
+import SlackWorkspaceSelector from "@/components/slack-workspace-selector";
 
 type SlackChannelData = {
   teamId: string;
@@ -520,11 +520,11 @@ export function EscalationPolicyDetailPage({
                                     {currentLevel?.method === "SLACK" ? (
                                       <SlackWorkspaceSelector
                                         selectedWorkspaces={
-                                          currentLevel?.slackChannels?.map((channel: any) => ({
+                                          currentLevel?.slackChannels?.map((channel: SlackChannelData) => ({
                                             teamId: channel.teamId,
                                             teamName: channel.teamName,
-                                            defaultChannelId: channel.defaultChannelId || channel.channelId,
-                                            defaultChannelName: channel.defaultChannelName || channel.channelName,
+                                            defaultChannelId: 'defaultChannelId' in channel ? channel.defaultChannelId : channel.channelId,
+                                            defaultChannelName: 'defaultChannelName' in channel ? channel.defaultChannelName : channel.channelName,
                                           })) || []
                                         }
                                         onWorkspacesChange={(workspaces) => {

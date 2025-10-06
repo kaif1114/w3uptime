@@ -101,9 +101,7 @@ export function WalletContent() {
                 onError={handleDepositError}
                 variant="button"
               />
-              <Button variant="outline" size="lg" className="px-8">
-                Withdraw
-              </Button>
+             
             </div>
           </div>
         </CardContent>
@@ -163,8 +161,8 @@ export function WalletContent() {
                   <TableRow key={deposit.id} className="border-b hover:bg-muted/50">
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                          <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-primary rounded-lg flex items-center justify-center">
+                          <Wallet className="h-5 w-5 text-black" />
                         </div>
                         <div>
                           <div className="font-medium">Ethereum Wallet</div>
