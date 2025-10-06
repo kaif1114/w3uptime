@@ -131,13 +131,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="text-sm text-sidebar-foreground/70">Theme</span>
             <ModeToggle />
           </div>
-          <NavUser
+          {/* <NavUser
             user={{
               name: "Muhammad Kaif",
               email: "kaif@w3uptime.com",
               avatar: "https://github.com/shadcn.png",
             }}
-          />
+          /> */}
         </div>
       </SidebarFooter>
     </Sidebar>

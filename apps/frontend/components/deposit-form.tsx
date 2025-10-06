@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Wallet, AlertCircle, CheckCircle } from 'lucide-react';
 import { CONTRACT_ADDRESS, createContractInstanceWithSigner, parseDepositAmount } from 'common/contract';
 
@@ -31,14 +32,16 @@ type DepositFormData = z.infer<typeof depositFormSchema>;
 interface DepositFormProps {
   onSuccess?: (transactionHash: string) => void;
   onError?: (error: string) => void;
+  variant?: 'full' | 'button';
 }
 
-export function DepositForm({ onSuccess, onError }: DepositFormProps) {
+export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFormProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm<DepositFormData>({
     resolver: zodResolver(depositFormSchema),
@@ -163,6 +166,7 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
 
       onSuccess?.(transaction.hash);
       form.reset();
+      setDialogOpen(false);
       
     } catch (err: unknown) {
       console.error('Deposit error:', err);
@@ -175,6 +179,132 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       setIsDepositing(false);
     }
   };
+
+  if (variant === 'button') {
+    return (
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            size="lg"
+            className="px-8"
+          >
+            Deposit
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              Deposit SepoliaETH
+            </DialogTitle>
+            <DialogDescription>
+              Deposit SepoliaETH (testnet) to your W3Uptime account to monitor websites
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {!walletAddress ? (
+              <Button 
+                onClick={connectWallet} 
+                disabled={isConnecting}
+                className="w-full"
+                size="lg"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Connect MetaMask
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                  </AlertDescription>
+                </Alert>
+
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount (SepoliaETH)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="0.01"
+                              type="number"
+                              step="0.001"
+                              min="0.001"
+                              max="10"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Minimum: 0.001 SepoliaETH, Maximum: 10 SepoliaETH
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button 
+                      type="submit" 
+                      disabled={isDepositing}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {isDepositing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Deposit SepoliaETH'
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </div>
+            )}
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {transactionHash && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Transaction submitted: 
+                  <a 
+                    href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline ml-1"
+                  >
+                    View on Etherscan
+                  </a>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">

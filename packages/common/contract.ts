@@ -619,11 +619,11 @@ export interface WithdrawalEvent {
   transactionHash: string;
 }
 
-export interface ContractInstance extends ethers.Contract {
-  on(event: "FundsDeposited", listener: (...args: unknown[]) => void): Promise<this>;
-  off(event: "FundsDeposited", listener: (...args: unknown[]) => void): Promise<this>;
-  on(event: "Withdrawal", listener: (...args: unknown[]) => void): Promise<this>;
-  off(event: "Withdrawal", listener: (...args: unknown[]) => void): Promise<this>;
+export type ContractInstance = ethers.Contract & {
+  on(event: "FundsDeposited", listener: (...args: unknown[]) => void): Promise<ContractInstance>;
+  off(event: "FundsDeposited", listener: (...args: unknown[]) => void): Promise<ContractInstance>;
+  on(event: "Withdrawal", listener: (...args: unknown[]) => void): Promise<ContractInstance>;
+  off(event: "Withdrawal", listener: (...args: unknown[]) => void): Promise<ContractInstance>;
   
   getContractBalance(): Promise<bigint>;
   paused(): Promise<boolean>;

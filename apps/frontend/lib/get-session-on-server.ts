@@ -17,6 +17,7 @@ export async function getSessionOnServer() {
           walletAddress: true,
           createdAt: true,
           updatedAt: true,
+          balance: true
         },
       },
     },

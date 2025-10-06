@@ -1,13 +1,19 @@
 "use client"
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, ExternalLink, Wallet, Clock, Hash } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { RefreshCw, ExternalLink, Wallet, MoreHorizontal, TrendingUp } from 'lucide-react';
 import { DepositForm } from '@/components/deposit-form';
 import { useDepositHistory, useRefreshDeposits } from '@/hooks/useDeposits';
 import { useSession } from '@/hooks/useSession';
@@ -65,131 +71,159 @@ export function WalletContent() {
   const balanceInEth = userBalance / 1000; // Convert from stored balance (1000 = 1 SepoliaETH)
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Deposit Form */}
-      <div className="space-y-6">
-        <DepositForm 
-          onSuccess={handleDepositSuccess}
-          onError={handleDepositError}
-        />
-
-        {/* Balance Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sessionLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                `${balanceInEth.toFixed(4)} SepoliaETH`
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Available for monitoring services
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Deposit History */}
-      <div className="space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+    <div className="space-y-8">
+      {/* Total Balance Card - Following design layout */}
+      <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-0 shadow-lg">
+        <CardContent className="p-8">
+          <div className="space-y-6">
             <div>
-              <CardTitle>Deposit History</CardTitle>
-              <CardDescription>
-                Your recent SepoliaETH deposits
-              </CardDescription>
+              <h2 className="text-lg font-medium text-muted-foreground mb-2">Total Balance</h2>
+              <div className="flex items-baseline gap-2">
+                {sessionLoading ? (
+                  <Skeleton className="h-16 w-64" />
+                ) : (
+                  <>
+                    <span className="text-5xl font-bold">{balanceInEth.toFixed(4)} SepoliaETH</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-4 mt-4 text-sm">
+                <div className="flex items-center gap-1 text-green-600">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Available for monitoring</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <DepositForm 
+                onSuccess={handleDepositSuccess}
+                onError={handleDepositError}
+                variant="button"
+              />
+             
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transaction History - Following design layout */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Transaction history</CardTitle>
             </div>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={handleRefresh}
               disabled={historyLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${historyLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 ${historyLoading ? 'animate-spin' : ''}`} />
             </Button>
-          </CardHeader>
-          <CardContent>
-            {historyLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : historyError ? (
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {historyLoading ? (
+            <div className="space-y-3 p-6">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : historyError ? (
+            <div className="p-6">
               <Alert variant="destructive">
                 <AlertDescription>
-                  Failed to load deposit history. Please try again.
+                  Failed to load transaction history. Please try again.
                 </AlertDescription>
               </Alert>
-            ) : !historyData?.data.deposits.length ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No deposits found</p>
-                <p className="text-sm">Make your first deposit to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Transaction</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {historyData.data.deposits.map((deposit) => (
-                      <TableRow key={deposit.id}>
-                        <TableCell className="font-medium">
-                          <Badge variant="secondary">
-                            {formatDepositAmount(BigInt(deposit.amount))} SepoliaETH
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            {format(new Date(deposit.createdAt), 'MMM dd, yyyy HH:mm')}
+            </div>
+          ) : !historyData?.data.deposits.length ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No transactions found</p>
+              <p className="text-sm">Make your first deposit to get started</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b">
+                  <TableHead className="text-muted-foreground font-normal">Payment Method</TableHead>
+                  <TableHead className="text-muted-foreground font-normal">Details</TableHead>
+                  <TableHead className="text-muted-foreground font-normal">Date</TableHead>
+                  <TableHead className="text-muted-foreground font-normal text-right">Amount</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyData.data.deposits.map((deposit) => (
+                  <TableRow key={deposit.id} className="border-b hover:bg-muted/50">
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-primary rounded-lg flex items-center justify-center">
+                          <Wallet className="h-5 w-5 text-black" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Ethereum Wallet</div>
+                          <div className="text-sm text-muted-foreground">
+                            {deposit.transactionHash.slice(0, 8)}...{deposit.transactionHash.slice(-6)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Hash className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-mono text-sm">
-                              {deposit.transactionHash.slice(0, 8)}...{deposit.transactionHash.slice(-6)}
-                            </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      >
+                        Deposit
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-4 text-muted-foreground">
+                      {format(new Date(deposit.createdAt), 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell className="py-4 text-right font-medium">
+                      {formatDepositAmount(BigInt(deposit.amount))} SepoliaETH
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
                             <a
                               href={`https://sepolia.etherscan.io/tx/${deposit.transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="ml-2"
+                              className="flex items-center gap-2"
                             >
-                              <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              <ExternalLink className="h-4 w-4" />
+                              View on Etherscan
                             </a>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
 
-                {historyData.data.pagination.totalPages > 1 && (
-                  <div className="flex justify-center mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {historyData.data.deposits.length} of {historyData.data.pagination.total} deposits
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          {historyData?.data.pagination && historyData.data.pagination.totalPages > 1 && (
+            <div className="flex justify-center p-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {historyData.data.deposits.length} of {historyData.data.pagination.total} transactions
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
