@@ -31,9 +31,10 @@ type DepositFormData = z.infer<typeof depositFormSchema>;
 interface DepositFormProps {
   onSuccess?: (transactionHash: string) => void;
   onError?: (error: string) => void;
+  variant?: 'full' | 'button';
 }
 
-export function DepositForm({ onSuccess, onError }: DepositFormProps) {
+export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFormProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -175,6 +176,26 @@ export function DepositForm({ onSuccess, onError }: DepositFormProps) {
       setIsDepositing(false);
     }
   };
+
+  if (variant === 'button') {
+    return (
+      <Button 
+        onClick={connectWallet} 
+        disabled={isConnecting || isDepositing}
+        size="lg"
+        className="px-8 bg-blue-600 hover:bg-blue-700"
+      >
+        {isConnecting || isDepositing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {isConnecting ? 'Connecting...' : 'Processing...'}
+          </>
+        ) : (
+          'Deposit'
+        )}
+      </Button>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
