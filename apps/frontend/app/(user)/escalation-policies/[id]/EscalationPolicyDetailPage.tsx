@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import SlackWorkspaceSelector, { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
 
 type SlackChannelData = {
   teamId: string;
@@ -517,34 +518,19 @@ export function EscalationPolicyDetailPage({
                                         : "Target"}
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
-                                      <div className="space-y-2">
-                                        {currentLevel?.slackChannels && currentLevel.slackChannels.length > 0 ? (
-                                          <div className="space-y-2">
-                                            <div className="text-sm text-muted-foreground">
-                                              Configured Slack workspaces:
-                                            </div>
-                                            <div className="space-y-1">
-                                              {currentLevel.slackChannels.map((workspace: SlackChannelData) => (
-                                                <div
-                                                  key={workspace.teamId}
-                                                  className="flex items-center gap-2 p-2 bg-muted rounded-md"
-                                                >
-                                                  <MessageSquare className="h-4 w-4 text-blue-600" />
-                                                  <span className="text-sm">
-                                                    {workspace.teamName} - #{('defaultChannelName' in workspace) ? workspace.defaultChannelName : workspace.channelName}
-                                                  </span>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                                            <p className="text-sm text-amber-800 dark:text-amber-200">
-                                              No Slack workspaces configured for this escalation level.
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
+                                      <SlackWorkspaceSelector
+                                        selectedWorkspaces={
+                                          (currentLevel?.slackChannels as SelectedSlackWorkspace[]) || []
+                                        }
+                                        onWorkspacesChange={(workspaces) => {
+                                          form.setValue(
+                                            `levels.${index}.slackChannels`,
+                                            workspaces
+                                          );
+                                          form.trigger(`levels.${index}.slackChannels`);
+                                        }}
+                                        placeholder="Select Slack workspaces for alerts..."
+                                      />
                                     ) : (
                                       <Input
                                         {...form.register(
