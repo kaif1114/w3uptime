@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,7 +13,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { RefreshCw, ExternalLink, Wallet, Clock, Hash, MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
+import { RefreshCw, ExternalLink, Wallet, MoreHorizontal, TrendingUp } from 'lucide-react';
 import { DepositForm } from '@/components/deposit-form';
 import { useDepositHistory, useRefreshDeposits } from '@/hooks/useDeposits';
 import { useSession } from '@/hooks/useSession';
@@ -217,7 +217,7 @@ export function WalletContent() {
             </Table>
           )}
 
-          {historyData?.data.pagination.totalPages > 1 && (
+          {historyData?.data.pagination && historyData.data.pagination.totalPages > 1 && (
             <div className="flex justify-center p-4 border-t">
               <p className="text-sm text-muted-foreground">
                 Showing {historyData.data.deposits.length} of {historyData.data.pagination.total} transactions
