@@ -12,6 +12,9 @@ export interface Monitor {
   createdAt: string;
   updatedAt: string;
   lastCheckedAt?: string | null;
+  lastIncidentResolvedAt?: string | null;
+  hasOngoingIncident?: boolean;
+  ongoingIncidentStartedAt?: string | null;
 }
 
 export interface CreateMonitorData {

@@ -1,19 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import SlackWorkspaceSelector from "@/components/slack-workspace-selector";
-
-type SlackChannelData = {
-  teamId: string;
-  teamName: string;
-  defaultChannelId: string;
-  defaultChannelName: string;
-} | {
-  teamId: string;
-  teamName: string;
-  channelId: string;
-  channelName: string;
-};
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,9 +31,21 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+
+type SlackChannelData = {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+} | {
+  teamId: string;
+  teamName: string;
+  channelId: string;
+  channelName: string;
+};
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -138,7 +138,7 @@ export function EscalationPolicyDetailPage({
   const watchedLevels = form.watch("levels");
 
   // Initialize form when policy data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (policy) {
       const formData = {
         name: policy.name,
