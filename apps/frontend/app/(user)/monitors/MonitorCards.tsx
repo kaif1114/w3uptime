@@ -43,6 +43,10 @@ interface MonitorCardProps {
         return "bg-green-500";
       case "PAUSED":
         return "bg-yellow-500";
+      case "DOWN":
+        return "bg-red-500";
+      case "RECOVERING":
+        return "bg-blue-500";
       case "DISABLED":
         return "bg-gray-500";
       default:
@@ -139,16 +143,17 @@ interface MonitorCardProps {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handlePauseToggle}>
-                    {monitor.status === "ACTIVE" ? (
+                    {monitor.status != "PAUSED" ? (
+                      <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Resume
+                    </>
+                    ) : (
                       <>
                         <Pause className="mr-2 h-4 w-4" />
                         Pause
                       </>
-                    ) : (
-                      <>
-                        <Play className="mr-2 h-4 w-4" />
-                        Resume
-                      </>
+                      
                     )}
                   </DropdownMenuItem>
                   <Link href={`/monitors/${monitor.id}/edit`}>

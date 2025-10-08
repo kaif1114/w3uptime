@@ -17,7 +17,7 @@ export function MonitorsList({ monitors }: MonitorsListProps) {
         <div className="flex flex-col items-center gap-1 text-center">
           <h3 className="text-2xl font-bold tracking-tight">No monitors yet</h3>
           <p className="text-sm text-muted-foreground">
-            You haven't created any monitors. Add one to get started.
+            You haven&apos;t created any monitors. Add one to get started.
           </p>
           <Link href="/monitors/add">
             <Button className="mt-4">
