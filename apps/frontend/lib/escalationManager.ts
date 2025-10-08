@@ -1,4 +1,4 @@
-import { Job } from "bullmq";
+
 import { prisma } from "db/client";
 import { escalationQueue, EscalationJobData, getJobName, getJobPattern } from "./queue";
 

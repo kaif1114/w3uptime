@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLandingAuth } from "@/hooks/useLandingAuth";
+import { IconSatellite } from "@tabler/icons-react";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,14 +27,33 @@ export default function Home() {
     setError
   } = useLandingAuth();
 
+  const date = new Date();
+  const year = date.getFullYear();
   return (
     <div className="min-h-screen bg-gradient-to-br from-black-900 via-blue-900 to-gray-900">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat'
-        }}></div>
+      {/* Background Blurred Shapes */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-30">
+          <img 
+            src="/blurred-shape.svg" 
+            alt="" 
+            className="absolute top-20 left-10 w-96 h-96 object-contain"
+          />
+        </div>
+        <div className="absolute top-0 right-0 w-full h-full opacity-20">
+          <img 
+            src="/blurred-shape-gray.svg" 
+            alt="" 
+            className="absolute top-40 right-10 w-80 h-80 object-contain"
+          />
+        </div>
+        <div className="absolute bottom-0 left-0 w-full h-full opacity-25">
+          <img 
+            src="/blurred-shape.svg" 
+            alt="" 
+            className="absolute bottom-20 left-20 w-72 h-72 object-contain"
+          />
+        </div>
       </div>
       
       {/* Header */}
@@ -41,10 +61,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
-            <span className="text-white text-xl font-semibold">W3Uptime</span>
+          <IconSatellite className="!size-8" /><span className="text-white text-xl font-semibold">W3Uptime</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -151,21 +168,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Success State */}
-      {isAuthenticated && !isSessionLoading && (
-        <div className="relative z-10 px-6 py-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-green-400 rounded-full"></div>
-                <p className="text-green-400 text-sm">Welcome back! You're already connected with MetaMask.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Display */}
       {error && (
         <div className="relative z-10 px-6 py-4">
           <div className="max-w-4xl mx-auto">
@@ -197,11 +199,11 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative z-10 px-6 py-20">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            The most reliable uptime monitoring.
+          <h1 className="text-5xl md:text-6xl font-bold text-blue-200 mb-6 leading-tight">
+            Distributed uptime monitoring Need of the hour.
           </h1>
           <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
-            Get 10 monitors, 10 heartbeats and a status page with 3-minute checks totally free.
+            Get 10 monitors, 10 heartbeats and a status page with 3-minute checks totally free. For the community, by the community.
           </p>
           
           {/* CTA Form */}
@@ -240,6 +242,119 @@ export default function Home() {
           />
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 mt-20">
+        {/* Footer Background */}
+        <div className="absolute inset-0">
+          <img 
+            src="/footer-illustration.svg" 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        
+        {/* Footer Content */}
+        <div className="relative z-10 bg-black/40 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {/* Logo and Description */}
+              <div className="md:col-span-2">
+                <div className="flex items-center space-x-2 mb-4">
+                  <IconSatellite className="!size-8" />
+                  <span className="text-white text-xl font-semibold">W3Uptime</span>
+                </div>
+                <p className="text-white/70 mb-6 max-w-md">
+                  The most reliable uptime monitoring platform. Get 10 monitors, 10 heartbeats and a status page with 3-minute checks totally free.
+                </p>
+                <div className="flex space-x-4">
+                  <Button 
+                    onClick={() => handleNavigation('/monitors')}
+                    disabled={isConnecting || isSessionLoading}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6"
+                  >
+                    {isConnecting ? 'Connecting...' : 'Get Started'}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10"
+                  >
+                    Book a Demo
+                  </Button>
+                </div>
+              </div>
+
+              {/* Product Links */}
+              <div>
+                <h3 className="text-white font-semibold mb-4">Product</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <button 
+                      onClick={() => handleNavigation('/monitors')}
+                      className="text-white/70 hover:text-white transition-colors"
+                    >
+                      Monitors
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => handleNavigation('/incidents')}
+                      className="text-white/70 hover:text-white transition-colors"
+                    >
+                      Incidents
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => handleNavigation('/status-pages')}
+                      className="text-white/70 hover:text-white transition-colors"
+                    >
+                      Status Pages
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => handleNavigation('/community')}
+                      className="text-white/70 hover:text-white transition-colors"
+                    >
+                      Community
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Support Links */}
+              <div>
+                <h3 className="text-white font-semibold mb-4">Support</h3>
+                <ul className="space-y-3">
+                 <li>
+                    <Link href="/wallet" className="text-white/70 hover:text-white transition-colors">
+                      Deposit or Withdraw
+                    </Link>
+                  </li>
+                  <li>
+                    <Link   href="/status-pages" className="text-white/70 hover:text-white transition-colors">
+                      System Status
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+
+            {/* Bottom Bar */}
+            <div className="border-t border-white/20 mt-12 pt-8">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <p className="text-white/60 text-sm">
+                  {year} W3Uptime. All rights reserved.
+                </p>
+                <div className="flex space-x-6 mt-4 md:mt-0">
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
