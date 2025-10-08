@@ -43,7 +43,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     url: "",
     timeout: 30,
     checkInterval: 300,
-    // expectedStatusCodes: [200],
+    expectedStatusCodes: [200],
     status: "ACTIVE",
   });
 
