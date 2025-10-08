@@ -132,6 +132,27 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       await createMutation.mutateAsync(payload);
       onSuccess?.();
     } catch (error) {
+      // Map backend validation errors to field-level errors where possible
+      const message = error instanceof Error ? error.message : String(error);
+      const newErrors: Record<string, string> = {};
+      if (/status/i.test(message) && /(enum|Active|Paused)/i.test(message)) {
+        newErrors.status = "Status must be Active or Paused";
+      }
+      if (/url/i.test(message)) {
+        newErrors.url = "Please enter a valid URL";
+      }
+      if (/timeout/i.test(message)) {
+        newErrors.timeout = "Timeout must be greater than 0";
+      }
+      if (/check.?interval/i.test(message)) {
+        newErrors.checkInterval = "Check interval must be greater than 0";
+      }
+      if (/escalation/i.test(message)) {
+        newErrors.escalationPolicy = "Escalation policy is required";
+      }
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+      }
       console.error(error);
     }
   };
@@ -333,9 +354,11 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="PAUSED">Paused</SelectItem>
-                    <SelectItem value="DISABLED">Disabled</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.status && (
+                  <p className="text-sm text-destructive">{errors.status}</p>
+                )}
               </div>
 
               <div className="space-y-2">
