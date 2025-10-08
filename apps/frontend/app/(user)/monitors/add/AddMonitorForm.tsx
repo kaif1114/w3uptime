@@ -43,7 +43,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     url: "",
     timeout: 30,
     checkInterval: 300,
-    expectedStatusCodes: [200],
+    // expectedStatusCodes: [200],
     status: "ACTIVE",
   });
 
@@ -333,7 +333,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
         </div>
 
         {/* Advanced settings */}
-        <details className="group rounded-lg border">
+        {/* <details className="group rounded-lg border">
           <summary className="cursor-pointer list-none px-4 py-3 font-medium flex items-center justify-between">
             <span>Advanced settings</span>
             <span className="text-muted-foreground text-sm">(optional)</span>
@@ -451,7 +451,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
               </div>
             </div>
           </div>
-        </details>
+        </details> */}
 
      
       </div>

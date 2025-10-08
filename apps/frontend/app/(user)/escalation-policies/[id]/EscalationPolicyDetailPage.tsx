@@ -1,18 +1,7 @@
 "use client";
 
+import SlackWorkspaceSelector from "@/components/slack-workspace-selector";
 import { Badge } from "@/components/ui/badge";
-
-type SlackChannelData = {
-  teamId: string;
-  teamName: string;
-  defaultChannelId: string;
-  defaultChannelName: string;
-} | {
-  teamId: string;
-  teamName: string;
-  channelId: string;
-  channelName: string;
-};
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,9 +31,21 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+
+type SlackChannelData = {
+  teamId: string;
+  teamName: string;
+  defaultChannelId: string;
+  defaultChannelName: string;
+} | {
+  teamId: string;
+  teamName: string;
+  channelId: string;
+  channelName: string;
+};
 
 interface EscalationPolicyDetailPageProps {
   policyId: string;
@@ -137,7 +138,7 @@ export function EscalationPolicyDetailPage({
   const watchedLevels = form.watch("levels");
 
   // Initialize form when policy data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (policy) {
       const formData = {
         name: policy.name,
@@ -513,38 +514,36 @@ export function EscalationPolicyDetailPage({
                                   <div className="space-y-2">
                                     <Label>
                                       {currentLevel?.method === "SLACK" 
-                                        ? "Slack Channels" 
+                                        ? "Slack Workspace" 
                                         : "Target"}
                                     </Label>
                                     {currentLevel?.method === "SLACK" ? (
-                                      <div className="space-y-2">
-                                        {currentLevel?.slackChannels && currentLevel.slackChannels.length > 0 ? (
-                                          <div className="space-y-2">
-                                            <div className="text-sm text-muted-foreground">
-                                              Configured Slack workspaces:
-                                            </div>
-                                            <div className="space-y-1">
-                                              {currentLevel.slackChannels.map((workspace: SlackChannelData) => (
-                                                <div
-                                                  key={workspace.teamId}
-                                                  className="flex items-center gap-2 p-2 bg-muted rounded-md"
-                                                >
-                                                  <MessageSquare className="h-4 w-4 text-blue-600" />
-                                                  <span className="text-sm">
-                                                    {workspace.teamName} - #{('defaultChannelName' in workspace) ? workspace.defaultChannelName : workspace.channelName}
-                                                  </span>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                                            <p className="text-sm text-amber-800 dark:text-amber-200">
-                                              No Slack workspaces configured for this escalation level.
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
+                                      <SlackWorkspaceSelector
+                                        selectedWorkspaces={
+                                          currentLevel?.slackChannels?.map((channel: SlackChannelData) => ({
+                                            teamId: channel.teamId,
+                                            teamName: channel.teamName,
+                                            defaultChannelId: 'defaultChannelId' in channel ? channel.defaultChannelId : channel.channelId,
+                                            defaultChannelName: 'defaultChannelName' in channel ? channel.defaultChannelName : channel.channelName,
+                                          })) || []
+                                        }
+                                        onWorkspacesChange={(workspaces) => {
+                                          // Convert back to the expected format for the form
+                                          const formattedWorkspaces = workspaces.map(workspace => ({
+                                            teamId: workspace.teamId,
+                                            teamName: workspace.teamName,
+                                            channelId: workspace.defaultChannelId,
+                                            channelName: workspace.defaultChannelName,
+                                          }));
+                                          form.setValue(
+                                            `levels.${index}.slackChannels`,
+                                            formattedWorkspaces
+                                          );
+                                          form.trigger(`levels.${index}.slackChannels`);
+                                        }}
+                                        placeholder="Select a Slack workspace for alerts..."
+                                        maxSelections={1}
+                                      />
                                     ) : (
                                       <Input
                                         {...form.register(

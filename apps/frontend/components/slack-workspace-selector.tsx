@@ -44,12 +44,14 @@ interface SlackWorkspaceSelectorProps {
   selectedWorkspaces: SelectedSlackWorkspace[];
   onWorkspacesChange: (workspaces: SelectedSlackWorkspace[]) => void;
   placeholder?: string;
+  maxSelections?: number;
 }
 
 export default function SlackWorkspaceSelector({
   selectedWorkspaces,
   onWorkspacesChange,
   placeholder = "Select Slack workspaces...",
+  maxSelections,
 }: SlackWorkspaceSelectorProps) {
   const [open, setOpen] = useState(false);
   const { data, isLoading, error } = useSlackIntegrations();
@@ -65,13 +67,18 @@ export default function SlackWorkspaceSelector({
       onWorkspacesChange(newWorkspaces);
     } else {
       // Add workspace
-      if (integration.defaultChannelId && integration.defaultChannelName) {
-        const newWorkspace: SelectedSlackWorkspace = {
-          teamId: integration.teamId,
-          teamName: integration.teamName,
-          defaultChannelId: integration.defaultChannelId,
-          defaultChannelName: integration.defaultChannelName,
-        };
+      const newWorkspace: SelectedSlackWorkspace = {
+        teamId: integration.teamId,
+        teamName: integration.teamName,
+        defaultChannelId: integration.defaultChannelId || "general",
+        defaultChannelName: integration.defaultChannelName || "general",
+      };
+      
+      if (maxSelections === 1) {
+        // Replace existing selection with new one for single selection mode
+        onWorkspacesChange([newWorkspace]);
+      } else if (!maxSelections || selectedWorkspaces.length < maxSelections) {
+        // Add to existing selections if under limit
         onWorkspacesChange([...selectedWorkspaces, newWorkspace]);
       }
     }
@@ -97,13 +104,13 @@ export default function SlackWorkspaceSelector({
   }
 
   const availableWorkspaces = data?.integrations?.filter(
-    integration => integration.isActive && integration.defaultChannelId && integration.defaultChannelName
+    integration => integration.isActive
   ) || [];
 
   if (availableWorkspaces.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">
-        No Slack workspaces with default channels found. Please connect a Slack workspace first in Settings.
+        No Slack workspaces found. Please connect a Slack workspace first in Settings.
       </div>
     );
   }
@@ -122,7 +129,9 @@ export default function SlackWorkspaceSelector({
             {isLoading ? (
               "Loading workspaces..."
             ) : selectedWorkspaces.length > 0 ? (
-              `${selectedWorkspaces.length} workspace${selectedWorkspaces.length > 1 ? "s" : ""} selected`
+              maxSelections === 1 
+                ? selectedWorkspaces[0].teamName
+                : `${selectedWorkspaces.length} workspace${selectedWorkspaces.length > 1 ? "s" : ""} selected`
             ) : (
               placeholder
             )}
@@ -154,7 +163,10 @@ export default function SlackWorkspaceSelector({
                       <div>
                         <div className="font-medium">{integration.teamName}</div>
                         <div className="text-xs text-muted-foreground">
-                          #{integration.defaultChannelName}
+                          {integration.defaultChannelName 
+                            ? `#${integration.defaultChannelName}`
+                            : "Default channel not configured"
+                          }
                         </div>
                       </div>
                     </div>

@@ -38,6 +38,38 @@ export const GET = withAuth(
         );
       }
 
+      // Fetch incident data in parallel for better performance
+      const [lastResolvedIncident, ongoingIncident] = await Promise.all([
+        // Get the most recent resolved incident
+        prisma.incident.findFirst({
+          where: {
+            monitorId: monitorid,
+            status: "RESOLVED",
+          },
+          orderBy: {
+            resolvedAt: "desc",
+          },
+          select: {
+            resolvedAt: true,
+          },
+        }),
+        // Check if there's any ongoing incident
+        prisma.incident.findFirst({
+          where: {
+            monitorId: monitorid,
+            status: {
+              in: ["ONGOING", "ACKNOWLEDGED"],
+            },
+          },
+          select: {
+            id: true,
+            createdAt: true,
+          },
+        }),
+      ]);
+
+    
+
       return NextResponse.json(
         {
           id: monitor.id,
@@ -52,6 +84,13 @@ export const GET = withAuth(
           updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
           lastCheckedAt: monitor.lastCheckedAt
             ? monitor.lastCheckedAt.toISOString()
+            : null,
+          lastIncidentResolvedAt: lastResolvedIncident?.resolvedAt
+            ? lastResolvedIncident.resolvedAt.toISOString()
+            : null,
+          hasOngoingIncident: !!ongoingIncident,
+          ongoingIncidentStartedAt: ongoingIncident?.createdAt
+            ? ongoingIncident.createdAt.toISOString()
             : null,
         },
         { status: 200 }

@@ -133,7 +133,7 @@ export function EscalationLevelItem({
       case "EMAIL":
         return "Email Address";
       case "SLACK":
-        return "Slack Workspaces";
+        return "Slack Workspace";
       case "WEBHOOK":
         return "Webhook URL";
       default:
@@ -168,7 +168,7 @@ export function EscalationLevelItem({
                 {!isExpanded && method && (method === "SLACK" ? slackWorkspaces.length > 0 : target) && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     - {method} → {method === "SLACK" 
-                      ? `${slackWorkspaces.length} workspace${slackWorkspaces.length > 1 ? 's' : ''}`
+                      ? slackWorkspaces[0]?.teamName || "No workspace selected"
                       : target}
                   </span>
                 )}
@@ -218,7 +218,8 @@ export function EscalationLevelItem({
                 <SlackWorkspaceSelector
                   selectedWorkspaces={slackWorkspaces}
                   onWorkspacesChange={onSlackWorkspacesChange || (() => {})}
-                  placeholder="Select Slack workspaces for alerts..."
+                  placeholder="Select a Slack workspace for alerts..."
+                  maxSelections={1}
                 />
               ) : (
                 <Input

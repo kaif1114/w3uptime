@@ -1,25 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useMonitorDetails, useMonitorIncidents, usePauseMonitor, useDeleteMonitor } from "@/hooks/useMonitors";
+import { useDeleteMonitor, useMonitorDetails, useMonitorIncidents, usePauseMonitor } from "@/hooks/useMonitors";
 import { MonitorStatus } from "@/types/monitor";
 import {
   AlertTriangle,
-  Calendar,
   Edit3,
   Pause,
   Play,
-  Send,
   Trash2
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import { DeleteConfirmDialog } from "../DeleteConfirmDialog";
+import { MetricsCards } from "./MetricsCards";
 import { TimePeriod } from "./MonitoringControls";
 import { TimeSeriesChart } from "./TimeSeriesChart";
-import { MetricsCards } from "./MetricsCards";
-import { DeleteConfirmDialog } from "../DeleteConfirmDialog";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 interface MonitorDetailsProps {
   monitorId: string;
@@ -31,6 +29,10 @@ function getStatusColor(status: MonitorStatus): string {
       return "bg-green-500";
     case "PAUSED":
       return "bg-yellow-500";
+    case "DOWN":
+      return "bg-red-500";
+    case "RECOVERING":
+      return "bg-blue-500";
     default:
       return "bg-gray-500";
   }
@@ -42,6 +44,10 @@ function getStatusText(status: MonitorStatus): string {
       return "Active";
     case "PAUSED":
       return "Paused";
+    case "DOWN":
+      return "Down";
+    case "RECOVERING":
+      return "Recovering";
     default:
       return "Unknown";
   }
@@ -134,7 +140,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
                 {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
               </h1>
                 <h1 className="text-md font-medium  text-muted-foreground">
-                  [{getStatusText(monitor?.status)}]
+                  {getStatusText(monitor?.status)}
                 </h1>
               </div>
             </div>
@@ -185,6 +191,9 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           incidentCount={incidentsData?.incidentCount || 0}
           refetchMonitor={refetchMonitor}
           currentStatus={monitor?.status}
+          lastIncidentResolvedAt={monitor?.lastIncidentResolvedAt}
+          hasOngoingIncident={monitor?.hasOngoingIncident}
+          ongoingIncidentStartedAt={monitor?.ongoingIncidentStartedAt}
         />
 
         {/* Tab Navigation */}
