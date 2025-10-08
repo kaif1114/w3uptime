@@ -2,7 +2,7 @@ import { prisma } from '../src/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Set your monitor ID here - update this with your actual monitor ID
-const MONITOR_ID = '329d1faf-c7f2-4cef-9046-1711ec7aaa1a';
+const MONITOR_ID = '975fd306-5ce5-4bae-adc1-0bd46fb086c1';
 // Set the validator ID to use for all ticks
 const VALIDATOR_ID = 'a357f494-ba7c-4049-a3c9-80e93f64bf72';
 

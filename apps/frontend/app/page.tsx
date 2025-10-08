@@ -2,7 +2,7 @@
 export default function Home() {
   return (
     <div>
-      <h1>Homepage</h1>
+      <h1>Frontend Page</h1>
     </div>
   );
 }
