@@ -14,7 +14,7 @@
     "db:logs": "docker-compose logs -f timescaledb",
     "db:shell": "docker-compose exec timescaledb psql -U postgres -d myapp",
     "pgadmin:start": "docker-compose up pgadmin -d",
-    "dev:services": "docker-compose up -d",
+    "dev:services": "docker-compose -f docker-compose.yml up -d",
     "dev:services:stop": "docker-compose down"
   },
   "devDependencies": {

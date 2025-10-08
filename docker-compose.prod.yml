@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       # Remove POSTGRES_HOST_AUTH_METHOD=trust for security
     ports:
-      - "${POSTGRES_PORT:-9999}:5444"
+      - "${POSTGRES_PORT:-5432}:5444"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./docker/init-scripts:/docker-entrypoint-initdb.d
@@ -37,7 +37,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:9999/${POSTGRES_DB:-myapp}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
       FRONTEND_URL: http://frontend:8000
       HUB_URL: http://hub:8080
     ports:
@@ -63,7 +63,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:9999/${POSTGRES_DB:-myapp}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
       DATA_INGESTION_URL: http://data-ingestion:4001
     ports:
       - "8080:8080"
@@ -88,7 +88,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:9999/${POSTGRES_DB:-myapp}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
       HUB_URL: http://hub:8080
     ports:
       - "8000:8000"

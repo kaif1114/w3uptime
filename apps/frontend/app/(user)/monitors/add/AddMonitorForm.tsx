@@ -43,7 +43,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     url: "",
     timeout: 30,
     checkInterval: 300,
-    // expectedStatusCodes: [200],
+    expectedStatusCodes: [200],
     status: "ACTIVE",
   });
 
@@ -132,6 +132,27 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       await createMutation.mutateAsync(payload);
       onSuccess?.();
     } catch (error) {
+      // Map backend validation errors to field-level errors where possible
+      const message = error instanceof Error ? error.message : String(error);
+      const newErrors: Record<string, string> = {};
+      if (/status/i.test(message) && /(enum|Active|Paused)/i.test(message)) {
+        newErrors.status = "Status must be Active or Paused";
+      }
+      if (/url/i.test(message)) {
+        newErrors.url = "Please enter a valid URL";
+      }
+      if (/timeout/i.test(message)) {
+        newErrors.timeout = "Timeout must be greater than 0";
+      }
+      if (/check.?interval/i.test(message)) {
+        newErrors.checkInterval = "Check interval must be greater than 0";
+      }
+      if (/escalation/i.test(message)) {
+        newErrors.escalationPolicy = "Escalation policy is required";
+      }
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+      }
       console.error(error);
     }
   };
@@ -312,7 +333,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
         </div>
 
         {/* Advanced settings */}
-        {/* <details className="group rounded-lg border">
+        <details className="group rounded-lg border">
           <summary className="cursor-pointer list-none px-4 py-3 font-medium flex items-center justify-between">
             <span>Advanced settings</span>
             <span className="text-muted-foreground text-sm">(optional)</span>
@@ -333,9 +354,11 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="PAUSED">Paused</SelectItem>
-                    <SelectItem value="DISABLED">Disabled</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.status && (
+                  <p className="text-sm text-destructive">{errors.status}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -428,7 +451,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
               </div>
             </div>
           </div>
-        </details> */}
+        </details>
 
      
       </div>
