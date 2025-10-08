@@ -330,7 +330,7 @@ export default function Home() {
                  <li>
                     <Link href="/wallet" className="text-white/70 hover:text-white transition-colors">
                       Deposit or Withdraw
-                    </Link>
+                    </Link  >
                   </li>
                   <li>
                     <Link   href="/status-pages" className="text-white/70 hover:text-white transition-colors">
