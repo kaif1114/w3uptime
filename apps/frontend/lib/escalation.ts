@@ -172,7 +172,7 @@ export async function sendEscalationSlack(
             if (incidentId) {
                 await createEscalationTimelineEvent(
                     incidentId,
-                    `Slack webhook alert sent`
+                    `Slack Alert sent`
                 );
             }
         }
