@@ -7,7 +7,7 @@ const addCommentSchema = z.object({
   description: z.string().min(1, "Comment description is required"),
 });
 
-// POST /api/incidents/[incidentid]/comments - Add new comment to incident
+
 export const POST = withAuth(async (
   req: NextRequest,
   user,
@@ -33,7 +33,7 @@ export const POST = withAuth(async (
       );
     }
 
-    // First verify the incident exists and belongs to the user
+    
     const incident = await prisma.incident.findFirst({
       where: {
         id: incidentid,
@@ -52,7 +52,7 @@ export const POST = withAuth(async (
 
     const { description } = validation.data;
 
-    // Create new timeline event with type USER_COMMENT
+    
     const timelineEvent = await prisma.timelineEvent.create({
       data: {
         description,

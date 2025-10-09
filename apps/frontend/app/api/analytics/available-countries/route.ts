@@ -6,10 +6,10 @@ import { RawAvailableCountryResult } from "@/types/analytics";
 
 const availableCountriesQuerySchema = z.object({
   monitorId: z.string().optional(),
-  continent: z.string().optional(), // Filter by continent code
+  continent: z.string().optional(), 
 });
 
-// GET /api/analytics/available-countries - Get available countries with monitoring data
+
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -32,7 +32,7 @@ export const GET = withAuth(async (
 
     const { monitorId, continent } = validation.data;
 
-    // If monitorId is provided, verify ownership
+    
     if (monitorId) {
       const monitor = await prisma.monitor.findFirst({
         where: {
@@ -49,7 +49,7 @@ export const GET = withAuth(async (
       }
     }
 
-    // Get available countries, optionally filtered by continent
+    
     const whereConditions = [];
     const params = [];
     
@@ -83,7 +83,7 @@ export const GET = withAuth(async (
       ORDER BY data_count DESC, avg_latency ASC
     `, ...(continent ? [continent] : []), ...(monitorId ? [monitorId] : []));
 
-    // Helper function to convert BigInt to Number
+    
     const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);
@@ -98,7 +98,7 @@ export const GET = withAuth(async (
       return obj;
     };
 
-    // Transform the data to include performance metrics
+    
     const transformedCountries = (availableCountries as RawAvailableCountryResult[]).map(country => ({
       country_code: country.country_code,
       country_name: country.country_name,

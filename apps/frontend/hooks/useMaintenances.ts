@@ -4,23 +4,23 @@ export interface Maintenance {
   id: string;
   title: string;
   description?: string;
-  start: string; // ISO string
-  end: string; // ISO string
+  start: string; 
+  end: string; 
   status: "scheduled" | "in_progress" | "completed";
 }
 
 export interface CreateMaintenanceData {
   title: string;
   description: string;
-  from: string; // ISO string
-  to: string; // ISO string
+  from: string; 
+  to: string; 
 }
 
 export interface UpdateMaintenanceData {
   title?: string;
   description?: string;
-  from?: string; // ISO string
-  to?: string; // ISO string
+  from?: string; 
+  to?: string; 
 }
 
 export interface MaintenancesResponse {
@@ -41,7 +41,7 @@ export interface DeleteMaintenanceResponse {
   message: string;
 }
 
-// Fetch all maintenances for a status page
+
 export function useMaintenances(statusPageId: string) {
   return useQuery<MaintenancesResponse>({
     queryKey: ["maintenances", statusPageId],
@@ -61,7 +61,7 @@ export function useMaintenances(statusPageId: string) {
       return response.json();
     },
     enabled: !!statusPageId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;
@@ -69,7 +69,7 @@ export function useMaintenances(statusPageId: string) {
   });
 }
 
-// Fetch a specific maintenance
+
 export function useMaintenance(customid: string, maintenanceid: string) {
   return useQuery<Maintenance>({
     queryKey: ["maintenance", customid, maintenanceid],
@@ -89,7 +89,7 @@ export function useMaintenance(customid: string, maintenanceid: string) {
       return response.json();
     },
     enabled: !!(customid && maintenanceid),
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 2, 
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;
@@ -97,7 +97,7 @@ export function useMaintenance(customid: string, maintenanceid: string) {
   });
 }
 
-// Create a new maintenance
+
 export function useCreateMaintenance() {
   const queryClient = useQueryClient();
 
@@ -121,9 +121,9 @@ export function useCreateMaintenance() {
     },
     onSuccess: (response, variables) => {
       console.log("Maintenance created successfully:", response.maintenance);
-      // Invalidate maintenances list for this status page
+      
       queryClient.invalidateQueries({ queryKey: ["maintenances", variables.statusPageId] });
-      // Set the new maintenance in cache
+      
       queryClient.setQueryData(
         ["maintenance", variables.statusPageId, response.maintenance.id],
         response.maintenance
@@ -135,7 +135,7 @@ export function useCreateMaintenance() {
   });
 }
 
-// Update a maintenance
+
 export function useUpdateMaintenance() {
   const queryClient = useQueryClient();
 
@@ -163,7 +163,7 @@ export function useUpdateMaintenance() {
     },
     onSuccess: (response, variables) => {
       console.log("Maintenance updated successfully:", response.maintenance);
-      // Invalidate and update caches
+      
       queryClient.invalidateQueries({ queryKey: ["maintenances", variables.statusPageId] });
       queryClient.setQueryData(
         ["maintenance", variables.statusPageId, variables.maintenanceId],
@@ -176,7 +176,7 @@ export function useUpdateMaintenance() {
   });
 }
 
-// Delete a maintenance
+
 export function useDeleteMaintenance() {
   const queryClient = useQueryClient();
 
@@ -199,7 +199,7 @@ export function useDeleteMaintenance() {
     },
     onSuccess: (response, variables) => {
       console.log("Maintenance deleted successfully:", response.message);
-      // Invalidate maintenances list and remove from cache
+      
       queryClient.invalidateQueries({ queryKey: ["maintenances", variables.statusPageId] });
       queryClient.removeQueries({ 
         queryKey: ["maintenance", variables.statusPageId, variables.maintenanceId] 

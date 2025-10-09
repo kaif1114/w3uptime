@@ -224,10 +224,7 @@ export function createTestMessage(): SlackMessage {
   };
 }
 
-/**
- * SlackWebhookAPI - Sends messages using Slack Incoming Webhooks
- * Based on: https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks
- */
+
 export class SlackWebhookAPI {
   private webhookUrl: string;
 
@@ -235,9 +232,7 @@ export class SlackWebhookAPI {
     this.webhookUrl = webhookUrl;
   }
 
-  /**
-   * Send a message using the incoming webhook
-   */
+  
   async sendMessage(message: SlackMessage): Promise<boolean> {
     try {
       const payload = {
@@ -254,7 +249,7 @@ export class SlackWebhookAPI {
         body: JSON.stringify(payload),
       });
 
-      // Slack webhook responds with 200 and "ok" for success
+      
       if (response.ok) {
         const responseText = await response.text();
         return responseText === "ok";
@@ -268,9 +263,7 @@ export class SlackWebhookAPI {
     }
   }
 
-  /**
-   * Test the webhook URL by sending a simple message
-   */
+  
   async testWebhook(): Promise<boolean> {
     const testMessage: SlackMessage = {
       text: "Webhook test from W3Uptime",
@@ -289,9 +282,7 @@ export class SlackWebhookAPI {
   }
 }
 
-/**
- * Send notification using webhook URLs from Slack integrations
- */
+
 export async function sendSlackWebhookNotification(
   userId: string,
   message: SlackMessage
@@ -332,9 +323,7 @@ export async function sendSlackWebhookNotification(
   }
 }
 
-/**
- * Create escalation message specifically formatted for webhooks
- */
+
 export function createEscalationMessage(escalation: {
   title: string;
   monitorName: string;
@@ -378,7 +367,7 @@ export function createEscalationMessage(escalation: {
     }
   ];
 
-  // Add actions block if escalation log ID is provided
+  
   console.log('Slack createEscalationMessage - escalationLogId:', escalation.escalationLogId);
   if (escalation.escalationLogId) {
     console.log('Adding acknowledge button to Slack');
@@ -438,9 +427,7 @@ export function createEscalationMessage(escalation: {
   };
 }
 
-/**
- * Create resolution message for resolved incidents
- */
+
 export function createResolutionMessage(resolution: {
   title: string;
   monitorName: string;

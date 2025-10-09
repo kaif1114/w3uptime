@@ -8,7 +8,7 @@ const updateIncidentSchema = z.object({
   status: z.enum(["ONGOING", "ACKNOWLEDGED", "RESOLVED"]),
 });
 
-// GET /api/incidents/[incidentid] - Get specific incident
+
 export const GET = withAuth(
   async (
     req: NextRequest,
@@ -128,7 +128,7 @@ export const PATCH = withAuth(
         );
       }
 
-      // Update incident and create timeline events in a transaction
+      
       const result = await prisma.$transaction(async (tx) => {
         const updatedIncident = await tx.incident.update({
           where: {
@@ -156,7 +156,7 @@ export const PATCH = withAuth(
           },
         });
 
-        // Create timeline events for status changes
+        
         if (status === "RESOLVED") {
           await tx.timelineEvent.create({
             data: {
@@ -182,14 +182,14 @@ export const PATCH = withAuth(
         return updatedIncident;
       });
 
-      // Stop escalation if incident is acknowledged or resolved
+      
       if (status === "ACKNOWLEDGED" || status === "RESOLVED") {
         try {
           await stopEscalation(result.Monitor.id, incidentid);
           console.log(`Escalation stopped for incident ${incidentid} (status: ${status})`);
         } catch (escalationError) {
           console.error(`Failed to stop escalation for incident ${incidentid}:`, escalationError);
-          // Don't fail the entire request if escalation stopping fails
+          
         }
       }
 
@@ -207,7 +207,7 @@ export const PATCH = withAuth(
   }
 );
 
-// DELETE /api/incidents/[incidentid] - Delete incident
+
 export const DELETE = withAuth(
   async (
     req: NextRequest,
@@ -241,16 +241,16 @@ export const DELETE = withAuth(
         );
       }
 
-      // Delete incident in a transaction to ensure timeline events are deleted first
+      
       await prisma.$transaction(async (tx) => {
-        // Delete all timeline events first
+        
         await tx.timelineEvent.deleteMany({
           where: {
             incidentId: incidentid,
           },
         });
 
-        // Then delete the incident
+        
         await tx.incident.delete({
           where: {
             id: incidentid,

@@ -6,11 +6,9 @@ import {
 } from "@/types/analytics";
 import { useQuery } from "@tanstack/react-query";
 
-// ===== AVAILABLE REGIONS HOOKS =====
 
-/**
- * Hook to fetch available regions for analytics
- */
+
+
 export function useAvailableRegions(
   regionType: 'continent' | 'country' | 'city' = 'continent',
   monitorId?: string
@@ -37,14 +35,12 @@ export function useAvailableRegions(
       
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - regions don't change often
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes
+    staleTime: 5 * 60 * 1000, 
+    refetchInterval: 10 * 60 * 1000, 
   });
 }
 
-/**
- * Hook to fetch available countries, optionally filtered by continent
- */
+
 export function useAvailableCountries(monitorId?: string, continent?: string) {
   return useQuery<AvailableCountriesResponse>({
     queryKey: ["available-countries", monitorId, continent],
@@ -70,12 +66,12 @@ export function useAvailableCountries(monitorId?: string, continent?: string) {
       
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000, 
+    refetchInterval: 10 * 60 * 1000, 
   });
 }
 
-// ===== REGIONAL ANALYTICS HOOKS =====
+
 
 export function useMonitorRegionalTimeseries(
   monitorId: string,
@@ -114,13 +110,11 @@ export function useMonitorRegionalTimeseries(
 }
 
 
-// ===== UTILITY HOOKS =====
 
 
 
-/**
- * Hook for handling custom time periods with validation
- */
+
+
 export function useCustomTimePeriod() {
   const validatePeriod = (startDate: string, endDate: string): { isValid: boolean; error?: string } => {
     const start = new Date(startDate);

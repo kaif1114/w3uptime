@@ -38,7 +38,7 @@ export const POST = withAuth(
 
       const { customid } = await params;
 
-      // Ensure the status page exists and belongs to the authenticated user
+      
       const statusPage = await prisma.statusPage.findFirst({
         where: { id: customid, userId: user.id },
         select: { id: true },

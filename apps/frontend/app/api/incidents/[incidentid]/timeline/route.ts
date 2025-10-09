@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 
-// GET /api/incidents/[incidentid]/timeline - Get all timeline events for specific incident
+
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -19,7 +19,7 @@ export const GET = withAuth(async (
       );
     }
 
-    // First verify the incident exists and belongs to the user
+    
     const incident = await prisma.incident.findFirst({
       where: {
         id: incidentid,

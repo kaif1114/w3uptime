@@ -10,10 +10,7 @@ export interface AuthResult {
   error: string | null;
 }
 
-/**
- * Middleware function to authenticate requests based on session cookie
- * Use this in API routes that require authentication
- */
+
 export async function authenticateRequest(
   request: NextRequest
 ): Promise<AuthResult> {
@@ -92,9 +89,7 @@ export async function authenticateRequest(
   }
 }
 
-/**
- * Helper function to create unauthorized response
- */
+
 export function createUnauthorizedResponse(error: string = "Unauthorized") {
   return Response.json(
     {
@@ -112,10 +107,7 @@ export function createUnauthorizedResponse(error: string = "Unauthorized") {
   );
 }
 
-/**
- * Wrapper function for protected API routes
- * Use this to wrap your API handlers that require authentication
- */
+
 export function withAuth<T extends readonly unknown[]>(
   handler: (
     request: NextRequest,
@@ -137,9 +129,7 @@ export function withAuth<T extends readonly unknown[]>(
   };
 }
 
-/**
- * Clean up expired sessions (we will call this periodically, e.g., via a cron job)
- */
+
 export async function cleanupExpiredSessions(): Promise<number> {
   try {
     const result = await prisma.session.deleteMany({
@@ -234,8 +224,8 @@ export const logout = async () => {
       method: "POST",
       credentials: "include",
     });
-    // Remove session cache so all consumers switch to unauthenticated state
-    // queryClient.removeQueries({ queryKey: ["session"] });
+    
+    
   } catch (error) {
     console.error("Logout error:", error);
   }

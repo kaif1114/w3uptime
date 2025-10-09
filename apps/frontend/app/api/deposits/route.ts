@@ -63,7 +63,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: 0 // Will be fetched separately if needed
+        userBalance: 0 
       }
     });
 

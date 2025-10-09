@@ -25,24 +25,24 @@ class BlockchainListener {
       this.provider = new ethers.JsonRpcProvider(rpcUrl);
       this.contract = createContractInstance(this.provider);
 
-      // Test connection
+      
       const network = await this.provider.getNetwork();
       console.log(`Connected to Ethereum network: ${network.name} (${network.chainId})`);
 
-      // Listen for FundsDeposited events
+      
       this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
 
-      // Listen for Withdrawal events
+      
       this.contract.on("Withdrawal", this.handleWithdrawalEvent.bind(this));
 
-      // Handle provider errors
+      
       this.provider.on("error", this.handleProviderError.bind(this));
 
       this.isListening = true;
       this.reconnectAttempts = 0;
       console.log(`Listening for FundsDeposited and Withdrawal events on contract: ${CONTRACT_ADDRESS}`);
 
-      // Process past events (last 100 blocks)
+      
       await this.processPastEvents();
 
     } catch (error) {
@@ -56,8 +56,8 @@ class BlockchainListener {
 
     try {
       const currentBlock = await this.provider.getBlockNumber();
-      const blocksToCheck = 50; // Reduced from 100 to be more conservative
-      const chunkSize = 10; // Max blocks per request for free tier
+      const blocksToCheck = 50; 
+      const chunkSize = 10; 
       const fromBlock = Math.max(0, currentBlock - blocksToCheck);
 
       console.log(`Checking for past FundsDeposited and Withdrawal events from block ${fromBlock} to ${currentBlock} in chunks of ${chunkSize}`);
@@ -66,14 +66,14 @@ class BlockchainListener {
       const withdrawalFilter = this.contract.filters.Withdrawal();
       let allEvents: ethers.Log[] = [];
 
-      // Process in chunks to avoid rate limits
+      
       for (let start = fromBlock; start <= currentBlock; start += chunkSize) {
         const end = Math.min(start + chunkSize - 1, currentBlock);
         
         try {
           console.log(`Querying events from block ${start} to ${end}`);
           
-          // Query both deposit and withdrawal events
+          
           const [depositEvents, withdrawalEvents] = await Promise.all([
             this.contract.queryFilter(depositFilter, start, end),
             this.contract.queryFilter(withdrawalFilter, start, end)
@@ -82,11 +82,11 @@ class BlockchainListener {
           console.log(`Found ${depositEvents.length} deposit events and ${withdrawalEvents.length} withdrawal events in blocks ${start}-${end}`);
           allEvents = allEvents.concat(depositEvents, withdrawalEvents);
           
-          // Small delay to avoid hitting rate limits
+          
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (chunkError) {
           console.error(`Error querying events for blocks ${start}-${end}:`, chunkError);
-          // Continue with next chunk even if one fails
+          
         }
       }
 
@@ -101,14 +101,14 @@ class BlockchainListener {
   }
 
   private async handleDepositEvent(...args: unknown[]) {
-    // Last argument is the event
+    
     const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
     const log = event.log || event;
     await this.processDepositEvent(log, event.args);
   }
 
   private async handleWithdrawalEvent(...args: unknown[]) {
-    // Last argument is the event  
+    
     const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
     const log = event.log || event;
     await this.processWithdrawalEvent(log, event.args);
@@ -118,7 +118,7 @@ class BlockchainListener {
     try {
       if (!this.contract) return;
 
-      // Determine event type by parsing the log
+      
       let parsedEvent;
       try {
         parsedEvent = this.contract.interface.parseLog({
@@ -151,13 +151,13 @@ class BlockchainListener {
         hasPrecomputedArgs: !!precomputedArgs
       });
 
-      // Validate this is from our contract
+      
       if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
         console.warn('Event not from our contract, skipping:', event.address);
         return;
       }
 
-      // Use precomputed args if available (from ContractEventPayload), otherwise parse
+      
       let from: string, amount: bigint, timestamp: bigint;
       
       if (precomputedArgs && precomputedArgs.length >= 3) {
@@ -166,7 +166,7 @@ class BlockchainListener {
         timestamp = precomputedArgs[2] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
-        // Fallback to parsing the log manually
+        
         console.log('Parsing log manually');
         
         if (!event.topics || event.topics.length === 0) {
@@ -206,7 +206,7 @@ class BlockchainListener {
         blockNumber: event.blockNumber
       });
 
-      // Check if transaction already exists
+      
       const existingTransaction = await prisma.transaction.findUnique({
         where: { transactionHash: event.transactionHash }
       });
@@ -220,7 +220,7 @@ class BlockchainListener {
 
       console.log("Normalized address:", normalizedAddress);
 
-      // Find or create user
+      
       let user = await prisma.user.findUnique({
         where: { walletAddress: normalizedAddress }
       });
@@ -235,7 +235,7 @@ class BlockchainListener {
         });
       }
 
-      // Process the deposit in a transaction
+      
       await prisma.$transaction(async (tx) => {
         await tx.transaction.create({
           data: {
@@ -251,10 +251,10 @@ class BlockchainListener {
           }
         });
 
-        // Update user balance
+        
         const amountWei = BigInt(amount.toString());
         const amountEth = Number(amountWei) / Math.pow(10, 18);
-        const balanceIncrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+        const balanceIncrement = Math.floor(amountEth * 1000); 
 
         await tx.user.update({
           where: { walletAddress: normalizedAddress },
@@ -284,13 +284,13 @@ class BlockchainListener {
         hasPrecomputedArgs: !!precomputedArgs
       });
 
-      // Validate this is from our contract
+      
       if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
         console.warn('Event not from our contract, skipping:', event.address);
         return;
       }
 
-      // Use precomputed args if available (from ContractEventPayload), otherwise parse
+      
       let user: string, amount: bigint, nonce: bigint, timestamp: bigint;
       
       if (precomputedArgs && precomputedArgs.length >= 4) {
@@ -300,7 +300,7 @@ class BlockchainListener {
         timestamp = precomputedArgs[3] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
-        // Fallback to parsing the log manually
+        
         console.log('Parsing log manually');
         
         if (!event.topics || event.topics.length === 0) {
@@ -341,14 +341,14 @@ class BlockchainListener {
         blockNumber: event.blockNumber
       });
 
-      // Check if transaction already exists with this hash
+      
       const existingTransaction = await prisma.transaction.findUnique({
         where: { transactionHash: event.transactionHash }
       });
 
       if (existingTransaction) {
         console.log("Transaction already processed:", event.transactionHash);
-        // If it exists but is still pending, update it to confirmed
+        
         if (existingTransaction.status === 'PENDING') {
           await prisma.transaction.update({
             where: { id: existingTransaction.id },
@@ -365,7 +365,7 @@ class BlockchainListener {
       const normalizedAddress = user.toLowerCase();
       console.log("Normalized address:", normalizedAddress);
 
-      // Find user - withdrawal events only come from existing users
+      
       const existingUser = await prisma.user.findUnique({
         where: { walletAddress: normalizedAddress }
       });
@@ -375,7 +375,7 @@ class BlockchainListener {
         return;
       }
 
-      // Look for any pending withdrawal for this user with matching amount
+      
       const amountString = amount.toString();
       const pendingWithdrawal = await prisma.transaction.findFirst({
         where: {
@@ -390,10 +390,10 @@ class BlockchainListener {
         }
       });
 
-      // Process the withdrawal in a transaction
+      
       await prisma.$transaction(async (tx) => {
         if (pendingWithdrawal) {
-          // Update existing pending withdrawal
+          
           await tx.transaction.update({
             where: { id: pendingWithdrawal.id },
             data: {
@@ -404,7 +404,7 @@ class BlockchainListener {
             }
           });
         } else {
-          // Create new withdrawal record (fallback case)
+          
           await tx.transaction.create({
             data: {
               type: 'WITHDRAWAL',
@@ -420,10 +420,10 @@ class BlockchainListener {
           });
         }
 
-        // Update user balance (decrement for confirmed withdrawal)
+        
         const amountWei = BigInt(amount.toString());
         const amountEth = Number(amountWei) / Math.pow(10, 18);
-        const balanceDecrement = Math.floor(amountEth * 1000); // Store as integer (1000 = 1 ETH)
+        const balanceDecrement = Math.floor(amountEth * 1000); 
 
         await tx.user.update({
           where: { walletAddress: normalizedAddress },
@@ -455,7 +455,7 @@ class BlockchainListener {
     }
 
     this.reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000); // Exponential backoff, max 30s
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000); 
 
     console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
@@ -469,7 +469,7 @@ class BlockchainListener {
     if (!this.isListening) return;
 
     if (this.contract) {
-      // Remove all listeners for FundsDeposited events
+      
       this.contract.removeAllListeners();
       this.contract = null;
     }
@@ -494,7 +494,7 @@ class BlockchainListener {
   }
 }
 
-// Global instance
+
 let blockchainListener: BlockchainListener | null = null;
 
 export function startBlockchainListener() {

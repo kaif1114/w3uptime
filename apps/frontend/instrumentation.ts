@@ -2,14 +2,14 @@ import "server-only";
 
 
 export async function register() {
-  // Only initialize in Node.js runtime, not Edge runtime
+  
   if (process.env.NEXT_RUNTIME !== "edge") {
-    // Dynamic import to avoid bundling pg client in Edge runtime
+    
     const { initializeConnection } = await import("@/lib/pg");
     console.log("Initializing PostgreSQL connection on application startup...");
     initializeConnection();
 
-    // Initialize workers
+    
     try {
       console.log("Initializing escalation workers...");
       const { WorkerManager } = await import("@/lib/workerManager");
@@ -21,7 +21,7 @@ export async function register() {
       console.error("Failed to initialize escalation workers:", error);
     }
 
-    // Initialize blockchain listener
+    
     try {
       console.log("Initializing blockchain listener...");
       const { startBlockchainListener } = await import("@/lib/blockchain-listener");

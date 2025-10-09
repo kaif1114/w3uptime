@@ -10,7 +10,7 @@ const createProposalSchema = z.object({
   tags: z.array(z.string()).optional().default([]),
 });
 
-// POST /api/proposals - Create a new proposal
+
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
@@ -45,7 +45,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-// GET /api/proposals - List proposals with filters and pagination
+
 export const GET = async (req: NextRequest) => {
   try {
     const { searchParams } = new URL(req.url);
@@ -55,7 +55,7 @@ export const GET = async (req: NextRequest) => {
     const status = searchParams.get("status");
     const query = searchParams.get("q");
 
-    // Build where clause for filtering
+    
     const where: Record<string, unknown> = {};
 
     if (type && type !== "all") {
@@ -73,10 +73,10 @@ export const GET = async (req: NextRequest) => {
       ];
     }
 
-    // Calculate pagination
+    
     const skip = (page - 1) * pageSize;
 
-    // Fetch proposals from database with relations
+    
     const [proposals, total] = await Promise.all([
       prisma.proposal.findMany({
         where,

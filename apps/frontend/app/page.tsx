@@ -31,7 +31,7 @@ export default function Home() {
   const year = date.getFullYear();
   return (
     <div className="min-h-screen bg-gradient-to-br from-black-900 via-blue-900 to-gray-900">
-      {/* Background Blurred Shapes */}
+      {}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-30">
           <img 
@@ -56,15 +56,15 @@ export default function Home() {
         </div>
       </div>
       
-      {/* Header */}
+      {}
       <header className="relative z-10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo */}
+          {}
           <div className="flex items-center space-x-2">
           <IconSatellite className="!size-8" /><span className="text-white text-xl font-semibold">W3Uptime</span>
           </div>
 
-          {/* Desktop Navigation */}
+          {}
           <nav className="hidden md:flex items-center space-x-8">
             <button 
               onClick={() => handleNavigation('/monitors')}
@@ -92,7 +92,7 @@ export default function Home() {
             </button>
           </nav>
 
-          {/* Auth Buttons */}
+          {}
           <div className="hidden md:flex items-center space-x-4">
             <Button 
               onClick={() => handleNavigation('/monitors')} 
@@ -103,7 +103,7 @@ export default function Home() {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {}
           <button 
             className="md:hidden text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -112,7 +112,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {}
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-slate-800/95 backdrop-blur-sm border-t border-slate-700">
             <nav className="px-6 py-4 space-y-4">
@@ -154,7 +154,7 @@ export default function Home() {
         )}
       </header>
 
-      {/* Loading State */}
+      {}
       {isSessionLoading && (
         <div className="relative z-10 px-6 py-4">
           <div className="max-w-4xl mx-auto">
@@ -196,7 +196,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hero Section */}
+      {}
       <section className="relative z-10 px-6 py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-blue-200 mb-6 leading-tight">
@@ -206,7 +206,7 @@ export default function Home() {
             Get 10 monitors, 10 heartbeats and a status page with 3-minute checks totally free. For the community, by the community.
           </p>
           
-          {/* CTA Form */}
+          {}
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-8">
             <Input 
               type="email" 
@@ -231,7 +231,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Dashboard Preview */}
+      {}
       <section className="relative z-10 px-6 pb-20">
         <div className="max-w-7xl mx-auto flex justify-center">
           <img 
@@ -243,9 +243,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
+      {}
       <footer className="relative z-10 mt-20">
-        {/* Footer Background */}
+        {}
         <div className="absolute inset-0">
           <img 
             src="/footer-illustration.svg" 
@@ -254,11 +254,11 @@ export default function Home() {
           />
         </div>
         
-        {/* Footer Content */}
+        {}
         <div className="relative z-10 bg-black/40 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-16">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {/* Logo and Description */}
+              {}
               <div className="md:col-span-2">
                 <div className="flex items-center space-x-2 mb-4">
                   <IconSatellite className="!size-8" />
@@ -284,7 +284,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Product Links */}
+              {}
               <div>
                 <h3 className="text-white font-semibold mb-4">Product</h3>
                 <ul className="space-y-3">
@@ -323,7 +323,7 @@ export default function Home() {
                 </ul>
               </div>
 
-              {/* Support Links */}
+              {}
               <div>
                 <h3 className="text-white font-semibold mb-4">Support</h3>
                 <ul className="space-y-3">
@@ -342,7 +342,7 @@ export default function Home() {
             </div>
 
 
-            {/* Bottom Bar */}
+            {}
             <div className="border-t border-white/20 mt-12 pt-8">
               <div className="flex flex-col md:flex-row justify-between items-center">
                 <p className="text-white/60 text-sm">

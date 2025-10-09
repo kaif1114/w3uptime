@@ -1,8 +1,6 @@
-// Analytics and monitoring data types
 
-/**
- * Raw timeseries data from database
- */
+
+
 export interface RawTimeSeriesPoint {
   timestamp_bucket: Date | string;
   avg_latency: number | string;
@@ -10,9 +8,7 @@ export interface RawTimeSeriesPoint {
   total_ticks: number | string;
 }
 
-/**
- * Transformed timeseries data for frontend (legacy - use EnhancedTimeSeriesPoint for new features)
- */
+
 export interface TransformedTimeSeriesPoint {
   time_bucket: string;
   avg_latency: number;
@@ -20,9 +16,7 @@ export interface TransformedTimeSeriesPoint {
   total_checks: number;
 }
 
-/**
- * Monitor stats data
- */
+
 export interface MonitorStatsData {
   avg_latency: number | string;
   success_rate: number | string;
@@ -30,9 +24,7 @@ export interface MonitorStatsData {
   incident_count?: number | string;
 }
 
-/**
- * Monitor analytics data
- */
+
 export interface MonitorAnalyticsData {
   avg_response_time: number | string;
   success_rate: number | string;
@@ -47,33 +39,23 @@ export interface MonitorAnalyticsData {
   reliability_score: number | string;
 }
 
-/**
- * Time period for analytics queries
- */
+
 export type AnalyticsPeriod = '1h' | '24h' | '7d' | '30d' | '90d';
 
-/**
- * Enhanced time period type including custom periods
- */
+
 export type EnhancedTimePeriod = 'day' | 'week' | 'month' | 'custom';
 
-/**
- * Custom time period with start and end dates
- */
+
 export interface CustomTimePeriod {
   type: 'custom';
-  startDate: string; // ISO date string
-  endDate: string; // ISO date string
+  startDate: string; 
+  endDate: string; 
 }
 
-/**
- * Time period selection (standard or custom)
- */
+
 export type TimePeriodSelection = EnhancedTimePeriod | CustomTimePeriod;
 
-/**
- * Analytics response structure
- */
+
 export interface AnalyticsResponse {
   monitorId: string;
   period: AnalyticsPeriod;
@@ -81,22 +63,18 @@ export interface AnalyticsResponse {
   generatedAt: string;
 }
 
-// ===== NEW REGIONAL ANALYTICS TYPES =====
 
-/**
- * Available region data from discovery API
- */
+
+
 export interface AvailableRegion {
   region_id: string;
   region_name: string;
-  continent_code?: string; // For countries and cities
-  country_code?: string; // For cities
+  continent_code?: string; 
+  country_code?: string; 
   data_count: number;
 }
 
-/**
- * Available regions response
- */
+
 export interface AvailableRegionsResponse {
   regionType: 'continent' | 'country' | 'city';
   monitorId: string | null;
@@ -105,9 +83,7 @@ export interface AvailableRegionsResponse {
   generatedAt: string;
 }
 
-/**
- * Available country with performance metrics
- */
+
 export interface AvailableCountry {
   country_code: string;
   country_name: string;
@@ -118,9 +94,7 @@ export interface AvailableCountry {
   total_checks: number;
 }
 
-/**
- * Available countries response
- */
+
 export interface AvailableCountriesResponse {
   continent: string | null;
   monitorId: string | null;
@@ -129,9 +103,7 @@ export interface AvailableCountriesResponse {
   generatedAt: string;
 }
 
-/**
- * Enhanced timeseries data point with additional metrics
- */
+
 export interface EnhancedTimeSeriesPoint {
   time_bucket: string;
   avg_latency: number;
@@ -145,9 +117,7 @@ export interface EnhancedTimeSeriesPoint {
   p95_latency: number;
 }
 
-/**
- * Regional timeseries response
- */
+
 export interface RegionalTimeSeriesResponse {
   region: string;
   regionType: 'continent' | 'country' | 'city';
@@ -159,7 +129,7 @@ export interface RegionalTimeSeriesResponse {
   generatedAt: string;
 }
 
-// Raw row type from get_monitor_regional_timeseries
+
 export interface RawRegionalTimeSeriesPoint {
   timestamp_bucket: Date | string;
   avg_latency: number | string;
@@ -172,9 +142,7 @@ export interface RawRegionalTimeSeriesPoint {
   success_rate: number | string;
 }
 
-/**
- * Regional statistics
- */
+
 export interface RegionalStatistics {
   country_code?: string;
   region_type: string;
@@ -190,9 +158,7 @@ export interface RegionalStatistics {
   performance_score: number;
 }
 
-/**
- * Country timeseries and statistics response
- */
+
 export interface CountryAnalyticsResponse {
   country: string;
   period: string;
@@ -204,9 +170,7 @@ export interface CountryAnalyticsResponse {
   generatedAt: string;
 }
 
-/**
- * Chart data point for visualizations
- */
+
 export interface ChartDataPoint {
   timestamp: string;
   value: number;
@@ -214,9 +178,7 @@ export interface ChartDataPoint {
   category?: string;
 }
 
-/**
- * Chart series for multi-line charts
- */
+
 export interface ChartSeries {
   name: string;
   data: ChartDataPoint[];
@@ -224,9 +186,7 @@ export interface ChartSeries {
   type?: 'line' | 'area' | 'bar';
 }
 
-/**
- * Regional comparison data for ranking
- */
+
 export interface RegionalComparisonItem {
   region_id: string;
   region_name: string;
@@ -238,23 +198,19 @@ export interface RegionalComparisonItem {
   rank: number;
 }
 
-/**
- * Analytics filters for queries
- */
+
 export interface AnalyticsFilters {
   period: EnhancedTimePeriod;
   customPeriod?: CustomTimePeriod;
   selectedRegion?: string;
   selectedCountry?: string;
   regionType?: 'continent' | 'country' | 'city';
-  compareRegions?: string[]; // For comparison charts
+  compareRegions?: string[]; 
 }
 
-// ===== DATABASE QUERY RESULT TYPES =====
 
-/**
- * Raw database result from region discovery queries (continent/country/city)
- */
+
+
 export interface RawRegionQueryResult {
   region_id: string;
   region_name: string;
@@ -263,9 +219,7 @@ export interface RawRegionQueryResult {
   data_count: bigint;
 }
 
-/**
- * Raw monitor stats query result from database function
- */
+
 export interface RawMonitorStatsResult {
   total_checks: bigint;
   successful_checks: bigint;
@@ -274,9 +228,7 @@ export interface RawMonitorStatsResult {
   avg_latency: number;
 }
 
-/**
- * Raw best/worst performing regions query result
- */
+
 export interface RawPerformingRegionResult {
   region_id: string;
   region_name: string;
@@ -285,9 +237,7 @@ export interface RawPerformingRegionResult {
   uptime_percentage?: number;
 }
 
-/**
- * Raw continental/country/city timeseries query result
- */
+
 export interface RawTimeseriesQueryResult {
   continent_code?: string;
   country_code?: string;
@@ -298,9 +248,7 @@ export interface RawTimeseriesQueryResult {
   time_bucket?: string;
 }
 
-/**
- * Processed continent/country data for aggregation
- */
+
 export interface ProcessedRegionData {
   continent_code?: string;
   country_code?: string;
@@ -310,9 +258,7 @@ export interface ProcessedRegionData {
   total_samples: number;
 }
 
-/**
- * Raw available countries query result from database
- */
+
 export interface RawAvailableCountryResult {
   country_code: string;
   country_name: string;
@@ -323,11 +269,9 @@ export interface RawAvailableCountryResult {
   total_checks: bigint;
 }
 
-// ===== MONITOR-SPECIFIC REGIONAL ANALYTICS TYPES =====
 
-/**
- * Monitor country data result from get_monitor_country_data function
- */
+
+
 export interface MonitorCountryDataResult {
   country_code: string;
   avg_latency: number;
@@ -336,9 +280,7 @@ export interface MonitorCountryDataResult {
   success_rate: number;
 }
 
-/**
- * Monitor continent data result from get_monitor_continent_data function
- */
+
 export interface MonitorContinentDataResult {
   continent_code: string;
   avg_latency: number;
@@ -347,9 +289,7 @@ export interface MonitorContinentDataResult {
   success_rate: number;
 }
 
-/**
- * Monitor best/worst regions result from get_monitor_best_worst_regions function
- */
+
 export interface MonitorBestWorstRegionsResult {
   region_id: string;
   region_name: string;
@@ -360,9 +300,7 @@ export interface MonitorBestWorstRegionsResult {
   rank_position: bigint;
 }
 
-/**
- * Processed regional data for frontend consumption
- */
+
 export interface ProcessedMonitorRegionalData {
   country_code?: string;
   continent_code?: string;
@@ -370,11 +308,9 @@ export interface ProcessedMonitorRegionalData {
   sample_count: number;
 }
 
-// ===== ENHANCED ANALYTICS TYPES =====
 
-/**
- * Hourly pattern data from get_monitor_hourly_patterns function
- */
+
+
 export interface HourlyPattern {
   hour_of_day: number;
   avg_latency: number;
@@ -384,9 +320,7 @@ export interface HourlyPattern {
   check_frequency: number;
 }
 
-/**
- * Weekly comparison data from get_monitor_weekly_comparison function
- */
+
 export interface WeeklyComparison {
   metric_name: string;
   current_week: number;
@@ -395,9 +329,7 @@ export interface WeeklyComparison {
   trend_direction: 'up' | 'down' | 'stable';
 }
 
-/**
- * Performance insight from get_monitor_performance_insights function
- */
+
 export interface PerformanceInsight {
   insight_type: 'health_score' | 'uptime' | 'latency' | 'patterns';
   insight_title: string;
@@ -407,9 +339,7 @@ export interface PerformanceInsight {
   health_score: string;
 }
 
-/**
- * Health score with grade and color for display
- */
+
 export interface HealthScore {
   grade: string;
   score: number;
@@ -417,9 +347,7 @@ export interface HealthScore {
   description: string;
 }
 
-/**
- * Raw database result types for new functions
- */
+
 export interface RawHourlyPatternResult {
   hour_of_day: number | bigint;
   avg_latency: number | string;
@@ -446,9 +374,7 @@ export interface RawPerformanceInsightResult {
   health_score: string;
 }
 
-/**
- * Enhanced analytics response with new insights data
- */
+
 export interface EnhancedAnalyticsResponse {
   monitorId: string;
   period: string;
@@ -479,7 +405,7 @@ export interface EnhancedAnalyticsResponse {
   worldMap: {
     byCountry: ProcessedMonitorRegionalData[];
   };
-  // New enhanced features
+  
   hourlyPatterns: HourlyPattern[];
   weeklyComparison: WeeklyComparison[];
   performanceInsights: PerformanceInsight[];

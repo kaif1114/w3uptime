@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Forward the request to the hub server with the session cookie
+    
     const hubResponse = await fetch(`${HUB_SERVER_URL}/validators/count`, {
       method: 'GET',
       headers: {

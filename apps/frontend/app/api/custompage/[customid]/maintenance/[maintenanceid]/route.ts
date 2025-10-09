@@ -7,14 +7,14 @@ const updateMaintenanceSchema = z.object({
 	title: z.string().min(1, "Title is required").optional(),
 	description: z.string().optional(),
 	from: z.string().refine((val) => {
-		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		
 		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 		const isDatetimeLocal = datetimeLocalRegex.test(val);
 		const isValidDate = !isNaN(new Date(val).getTime());
 		return isDatetimeLocal || isValidDate;
 	}, "Invalid datetime format").optional(),
 	to: z.string().refine((val) => {
-		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
+		
 		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 		const isDatetimeLocal = datetimeLocalRegex.test(val);
 		const isValidDate = !isNaN(new Date(val).getTime());
@@ -22,7 +22,7 @@ const updateMaintenanceSchema = z.object({
 	}, "Invalid datetime format").optional(),
 });
 
-// GET /api/custompage/[customid]/maintenance/[maintenanceid] - Get a specific maintenance
+
 export const GET = withAuth(async (
 	req: NextRequest,
 	user,
@@ -32,7 +32,7 @@ export const GET = withAuth(async (
 	try {
 		const { customid, maintenanceid } = await params;
 
-		// Verify status page exists and belongs to user
+		
 		const statusPage = await prisma.statusPage.findFirst({
 			where: { id: customid, userId: user.id },
 			select: { id: true },
@@ -45,7 +45,7 @@ export const GET = withAuth(async (
 			);
 		}
 
-		// Fetch the specific maintenance
+		
 		const maintenance = await prisma.maintenance.findFirst({
 			where: { 
 				id: maintenanceid,
@@ -60,7 +60,7 @@ export const GET = withAuth(async (
 			);
 		}
 
-		// Transform to frontend format
+		
 		const formattedMaintenance = {
 			id: maintenance.id,
 			title: maintenance.title,
@@ -80,7 +80,7 @@ export const GET = withAuth(async (
 	}
 });
 
-// PATCH /api/custompage/[customid]/maintenance/[maintenanceid] - Update a specific maintenance
+
 export const PATCH = withAuth(async (
 	req: NextRequest,
 	user,
@@ -99,7 +99,7 @@ export const PATCH = withAuth(async (
 			);
 		}
 
-		// Verify status page exists and belongs to user
+		
 		const statusPage = await prisma.statusPage.findFirst({
 			where: { id: customid, userId: user.id },
 			select: { id: true },
@@ -112,7 +112,7 @@ export const PATCH = withAuth(async (
 			);
 		}
 
-		// Check if maintenance exists
+		
 		const existingMaintenance = await prisma.maintenance.findFirst({
 			where: { 
 				id: maintenanceid,
@@ -138,7 +138,7 @@ export const PATCH = withAuth(async (
 			data: updateData,
 		});
 
-		// Transform to frontend format
+		
 		const formattedMaintenance = {
 			id: updatedMaintenance.id,
 			title: updatedMaintenance.title,
@@ -161,7 +161,7 @@ export const PATCH = withAuth(async (
 	}
 });
 
-// DELETE /api/custompage/[customid]/maintenance/[maintenanceid] - Delete a specific maintenance
+
 export const DELETE = withAuth(async (
 	req: NextRequest,
 	user,
@@ -171,7 +171,7 @@ export const DELETE = withAuth(async (
 	try {
 		const { customid, maintenanceid } = await params;
 
-		// Verify status page exists and belongs to user
+		
 		const statusPage = await prisma.statusPage.findFirst({
 			where: { id: customid, userId: user.id },
 			select: { id: true },
@@ -184,7 +184,7 @@ export const DELETE = withAuth(async (
 			);
 		}
 
-		// Check if maintenance exists
+		
 		const existingMaintenance = await prisma.maintenance.findFirst({
 			where: { 
 				id: maintenanceid,
@@ -199,7 +199,7 @@ export const DELETE = withAuth(async (
 			);
 		}
 
-		// Delete the maintenance
+		
 		await prisma.maintenance.delete({
 			where: { id: maintenanceid },
 		});

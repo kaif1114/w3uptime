@@ -16,8 +16,8 @@ export function useSession() {
   return useQuery({
     queryKey: ["session"],
     queryFn: fetchSession,
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 60, // 60 minutes
+    staleTime: 1000 * 60 * 15, 
+    gcTime: 1000 * 60 * 60, 
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     retry: (failureCount, error: any) => {

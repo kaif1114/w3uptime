@@ -8,7 +8,7 @@ export interface StatusPageResourceMonitor {
   monitorId: string;
 }
 
-export type StatusPageResource = StatusPageResourceMonitor; // Future: add groups/services
+export type StatusPageResource = StatusPageResourceMonitor; 
 
 export interface StatusPageSection {
   id: string;
@@ -21,8 +21,8 @@ export interface StatusPageMaintenance {
   id: string;
   title: string;
   description?: string;
-  start: string; // ISO
-  end: string; // ISO
+  start: string; 
+  end: string; 
   status: "scheduled" | "in_progress" | "completed";
   affectedResourceIds?: string[];
 }
@@ -31,7 +31,7 @@ export interface StatusPageUpdate {
   id: string;
   title: string;
   body?: string;
-  createdAt: string; // ISO
+  createdAt: string; 
 }
 
 export interface StatusPage {

@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-// Email transporter configuration using Gmail SMTP
+
 const createTransporter = () => {
   if (!process.env.GOOGLE_APP_USER || !process.env.GOOGLE_APP_PASSWORD) {
     throw new Error('Email configuration missing: GOOGLE_APP_USER and GOOGLE_APP_PASSWORD environment variables are required');
@@ -17,7 +17,7 @@ const createTransporter = () => {
   });
 };
 
-// Email template for escalation alerts
+
 const createEscalationEmailTemplate = (
   title: string,
   message: string,
