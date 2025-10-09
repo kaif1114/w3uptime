@@ -138,7 +138,7 @@ const createResolutionEmailTemplate = (
     <body>
         <div class="container">
             <div class="header">
-                <h1>✅ W3Uptime Incident Resolved</h1>
+                <h1> W3Uptime Incident Resolved</h1>
                 <span class="resolved-badge">RESOLVED</span>
             </div>
             <div class="content">
@@ -282,7 +282,7 @@ export async function sendResolutionEmail(
           address: process.env.GOOGLE_APP_USER!,
         },
         to: email,
-        subject: `✅ W3Uptime Resolved: ${title}`,
+        subject: ` W3Uptime Resolved: ${title}`,
         text,
         html,
         priority: 'normal' as const,

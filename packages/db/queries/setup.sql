@@ -1,171 +1,171 @@
--- 1. First, ensure TimescaleDB extension is enabled
-CREATE EXTENSION IF NOT EXISTS timescaledb;
+    -- 1. First, ensure TimescaleDB extension is enabled
+    CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- 2. Convert MonitorTick table to hypertable (run this once after table creation)
 -- This should be done after the Prisma migration creates the table
-SELECT create_hypertable('"MonitorTick"', 'createdAt', if_not_exists => TRUE);
+        SELECT create_hypertable('"MonitorTick"', 'createdAt', if_not_exists => TRUE);
 
 -- 3. Create continuous aggregates for different time intervals
 
 -- 3a. 5-minute continuous aggregate (for day view - 288 data points over 24 hours)
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_5min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('5 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId";
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_5min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('5 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    GROUP BY time_bucket, "monitorId";
 
--- 3b. 30-minute continuous aggregate (for week view - 336 data points over 7 days)
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_30min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('30 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId";
+    -- 3b. 30-minute continuous aggregate (for week view - 336 data points over 7 days)
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_30min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('30 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    GROUP BY time_bucket, "monitorId";
 
--- 3c. 2-hour continuous aggregate (for month view - 360 data points over 30 days)
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_2hour
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('2 hours', "createdAt") AS time_bucket,
-    "monitorId",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-GROUP BY time_bucket, "monitorId";
+    -- 3c. 2-hour continuous aggregate (for month view - 360 data points over 30 days)
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_2hour
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('2 hours', "createdAt") AS time_bucket,
+        "monitorId",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    GROUP BY time_bucket, "monitorId";
 
--- 3d. Regional continuous aggregates for country-level data
+    -- 3d. Regional continuous aggregates for country-level data
 
--- 5-minute country-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_5min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('5 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    "countryCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "countryCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "countryCode";
+    -- 5-minute country-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_5min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('5 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        "countryCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "countryCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "countryCode";
 
--- 30-minute country-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_30min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('30 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    "countryCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "countryCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "countryCode";
+    -- 30-minute country-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_30min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('30 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        "countryCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "countryCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "countryCode";
 
--- 2-hour country-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_2hour
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('2 hours', "createdAt") AS time_bucket,
-    "monitorId",
-    "countryCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "countryCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "countryCode";
+    -- 2-hour country-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_country_2hour
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('2 hours', "createdAt") AS time_bucket,
+        "monitorId",
+        "countryCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "countryCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "countryCode";
 
--- 3e. Regional continuous aggregates for continent-level data
+    -- 3e. Regional continuous aggregates for continent-level data
 
--- 5-minute continent-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_5min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('5 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    "continentCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "continentCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "continentCode";
+    -- 5-minute continent-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_5min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('5 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        "continentCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "continentCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "continentCode";
 
--- 30-minute continent-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_30min
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('30 minutes', "createdAt") AS time_bucket,
-    "monitorId",
-    "continentCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "continentCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "continentCode";
+    -- 30-minute continent-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_30min
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('30 minutes', "createdAt") AS time_bucket,
+        "monitorId",
+        "continentCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "continentCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "continentCode";
 
--- 2-hour continent-level continuous aggregate
-CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_2hour
-WITH (timescaledb.continuous) AS
-SELECT 
-    time_bucket('2 hours', "createdAt") AS time_bucket,
-    "monitorId",
-    "continentCode",
-    COUNT(*) as total_ticks,
-    COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
-    AVG(latency) as avg_latency,
-    MIN(latency) as min_latency,
-    MAX(latency) as max_latency,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
-FROM "MonitorTick"
-WHERE "continentCode" IS NOT NULL
-GROUP BY time_bucket, "monitorId", "continentCode";
+    -- 2-hour continent-level continuous aggregate
+    CREATE MATERIALIZED VIEW IF NOT EXISTS monitor_tick_continent_2hour
+    WITH (timescaledb.continuous) AS
+    SELECT 
+        time_bucket('2 hours', "createdAt") AS time_bucket,
+        "monitorId",
+        "continentCode",
+        COUNT(*) as total_ticks,
+        COUNT(*) FILTER (WHERE status = 'GOOD') as successful_ticks,
+        AVG(latency) as avg_latency,
+        MIN(latency) as min_latency,
+        MAX(latency) as max_latency,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency) as median_latency,
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency) as p95_latency
+    FROM "MonitorTick"
+    WHERE "continentCode" IS NOT NULL
+    GROUP BY time_bucket, "monitorId", "continentCode";
 
 
 -----------------------

@@ -253,7 +253,7 @@ export class ValidatorService extends EventEmitter {
       // Update stats
       this.updateStats(result);
       
-      const statusIcon = result.status === 'GOOD' ? '✅' : '❌';
+      const statusIcon = result.status === 'GOOD' ? '[GOOD]' : '[BAD]';
         console.log(chalk.gray(`${statusIcon} ${data.url} - ${result.status} (${result.latency.toFixed(2)}ms)`));
       
     } catch (error) {
