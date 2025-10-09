@@ -50,7 +50,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [statusCodeInput, setStatusCodeInput] = useState("");
 
-  // Escalation policy selection / inline create
+  
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | undefined>(
     undefined
   );
@@ -71,13 +71,13 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     Record<string, string>
   >({});
 
-  // UI-only options (not yet persisted)
+  
   const [alertWhen] = useState<string>("unavailable");
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Name is optional; we'll derive it from URL if it's not provided
+    
 
     if (!formData.url.trim()) {
       newErrors.url = "URL is required";
@@ -101,7 +101,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
     )
       newErrors.expectedStatusCodes = "At least one status code is required";
 
-    // Require an escalation policy selection (or creation)
+    
     if (!selectedPolicyId) {
       newErrors.escalationPolicy = "Escalation policy is required";
     }
@@ -121,7 +121,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       if (selectedPolicyId) {
         payload.escalationPolicyId = selectedPolicyId;
       }
-      // Safety: API requires a policy; stop if missing
+      
       if (!payload.escalationPolicyId) {
         setErrors((prev) => ({
           ...prev,
@@ -132,7 +132,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       await createMutation.mutateAsync(payload);
       onSuccess?.();
     } catch (error) {
-      // Map backend validation errors to field-level errors where possible
+      
       const message = error instanceof Error ? error.message : String(error);
       const newErrors: Record<string, string> = {};
       if (/status/i.test(message) && /(enum|Active|Paused)/i.test(message)) {
@@ -200,7 +200,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
       )}
 
       <div className="grid gap-6">
-        {/* What to monitor */}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 space-y-2">
             <h3 className="text-lg font-semibold">What to monitor</h3>
@@ -253,7 +253,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
           </Card>
         </div>
 
-        {/* Escalation Policies */}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 space-y-2">
             <h3 className="text-lg font-semibold">Escalation Policies</h3>
@@ -332,138 +332,20 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
           </Card>
         </div>
 
-        {/* Advanced settings */}
-        {/* <details className="group rounded-lg border">
-          <summary className="cursor-pointer list-none px-4 py-3 font-medium flex items-center justify-between">
-            <span>Advanced settings</span>
-            <span className="text-muted-foreground text-sm">(optional)</span>
-          </summary>
-          <div className="px-4 pb-4">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: MonitorStatus) =>
-                    setFormData((prev) => ({ ...prev, status: value }))
-                  }
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="PAUSED">Paused</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.status && (
-                  <p className="text-sm text-destructive">{errors.status}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="checkInterval">Check Interval (seconds)</Label>
-                <Input
-                  id="checkInterval"
-                  type="number"
-                  min={60}
-                  value={formData.checkInterval}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      checkInterval: parseInt(e.target.value) || 300,
-                    }))
-                  }
-                  aria-invalid={!!errors.checkInterval}
-                />
-                {errors.checkInterval && (
-                  <p className="text-sm text-destructive">
-                    {errors.checkInterval}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timeout">Timeout (seconds)</Label>
-                <Input
-                  id="timeout"
-                  type="number"
-                  min={1}
-                  max={120}
-                  value={formData.timeout}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      timeout: parseInt(e.target.value) || 30,
-                    }))
-                  }
-                  aria-invalid={!!errors.timeout}
-                />
-                {errors.timeout && (
-                  <p className="text-sm text-destructive">{errors.timeout}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Expected Status Codes</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min={100}
-                    max={599}
-                    placeholder="200"
-                    value={statusCodeInput}
-                    onChange={(e) => setStatusCodeInput(e.target.value)}
-                    onKeyPress={handleStatusCodeKeyPress}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addStatusCode}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {errors.expectedStatusCodes && (
-                  <p className="text-sm text-destructive">
-                    {errors.expectedStatusCodes}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.expectedStatusCodes?.map((code) => (
-                    <div
-                      key={code}
-                      className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                    >
-                      {code}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0"
-                        onClick={() => removeStatusCode(code)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </details> */}
+        
+        
 
      
       </div>
 
-      {/* Global Escalation Policy Dialog (always mounted) */}
+      
       <Dialog open={isCreatePolicyOpen} onOpenChange={setIsCreatePolicyOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Escalation Policy</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {/* Policy Name */}
+            
             <div className="space-y-2">
               <Label htmlFor="newPolicyName">Policy Name *</Label>
               <Input
@@ -482,7 +364,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
 
             <Separator />
 
-            {/* Escalation Levels */}
+            
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">
@@ -561,7 +443,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
                             setNewPolicyExpandedLevels((prev) => {
                               const newSet = new Set(prev);
                               newSet.delete(index);
-                              // Adjust indices for levels after the deleted one
+                              
                               const adjustedSet = new Set<number>();
                               newSet.forEach((i) => {
                                 if (i > index) {
@@ -778,7 +660,7 @@ export function AddMonitorForm({ onSuccess }: AddMonitorFormProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Primary Actions */}
+      
       <div className="flex justify-end">
         <Button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending ? "Creating..." : "Create monitor"}

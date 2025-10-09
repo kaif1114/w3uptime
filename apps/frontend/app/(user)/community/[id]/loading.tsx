@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export default function ProposalDetailLoading() {
   return (
     <div className="space-y-6">
-      {/* Back Button Skeleton */}
+      
       <div className="flex items-center space-x-2">
         <Skeleton className="h-9 w-32" />
       </div>
 
-      {/* Proposal Header Skeleton */}
+      
       <Card>
         <CardHeader>
           <div className="space-y-4">
@@ -29,7 +29,7 @@ export default function ProposalDetailLoading() {
               <Skeleton className="h-4 w-full mt-2" />
             </div>
 
-            {/* Tags Skeleton */}
+            
             <div className="flex items-center space-x-2">
               <Skeleton className="h-4 w-4" />
               <div className="flex flex-wrap gap-2">
@@ -39,7 +39,7 @@ export default function ProposalDetailLoading() {
               </div>
             </div>
 
-            {/* Meta Information Skeleton */}
+            
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-4">
                 <Skeleton className="h-4 w-24" />
@@ -51,7 +51,7 @@ export default function ProposalDetailLoading() {
         </CardHeader>
       </Card>
 
-      {/* Voting Section Skeleton */}
+      
       <Card>
         <CardHeader>
           <Skeleton className="h-6 w-32" />
@@ -68,7 +68,7 @@ export default function ProposalDetailLoading() {
         </CardContent>
       </Card>
 
-      {/* Comments skeleton temporarily removed */}
+      
     </div>
   );
 }

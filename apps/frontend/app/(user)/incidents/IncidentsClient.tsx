@@ -42,7 +42,7 @@ export default function IncidentsClient() {
   
   const error = queryError?.message || null;
 
-  // Filter incidents based on search query
+  
   const filteredIncidents = useMemo(() => {
     return incidents.filter(
       (incident) =>
@@ -54,7 +54,7 @@ export default function IncidentsClient() {
     );
   }, [incidents, searchQuery]);
 
-  // Pagination
+  
   const totalPages = Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedIncidents = filteredIncidents.slice(
@@ -114,7 +114,7 @@ export default function IncidentsClient() {
           router.push(`/incidents/${incident.id}`);
           break;
         case "edit":
-          // TODO: Open edit modal or navigate to edit page
+          
           console.log("Edit incident:", incident.id);
           break;
         default:
@@ -122,7 +122,7 @@ export default function IncidentsClient() {
       }
     } catch (error) {
       console.error(`Failed to ${action} incident:`, error);
-      // You could add a toast notification here
+      
     }
   };
 
@@ -167,12 +167,12 @@ export default function IncidentsClient() {
 
   return (
     <div>
-      {/* Header */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
 
         <div className="flex items-center gap-3">
-          {/* Search Bar */}
+          
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -188,7 +188,7 @@ export default function IncidentsClient() {
         </div>
       </div>
 
-      {/* Incidents Table */}
+      
       <Card>
         <CardContent className="p-3">
           {paginatedIncidents.length === 0 ? (
@@ -338,7 +338,7 @@ export default function IncidentsClient() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <Button
@@ -377,7 +377,7 @@ export default function IncidentsClient() {
         </div>
       )}
 
-      {/* Footer */}
+      
       <div className="text-center text-sm text-gray-500 py-6">
         <div className="flex items-center justify-center gap-2">
        

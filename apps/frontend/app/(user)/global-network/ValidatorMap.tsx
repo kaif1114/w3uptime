@@ -51,18 +51,18 @@ export function ValidatorMap() {
     });
 
     return Array.from(locationMap.values()).map(location => {
-      // Since we don't have performance data from validators endpoint,
-      // we'll just show them as 'good' status with placeholder values
+      
+      
       return {
         city: location.city,
         countryCode: location.countryCode,
         latitude: location.latitude,
         longitude: location.longitude,
         validatorCount: location.validators.size,
-        goodChecks: location.validators.size, // Placeholder - assume all good
-        badChecks: 0, // Placeholder - no bad checks
-        avgLatency: 0, // Placeholder - no latency data available
-        status: 'good' as const, // All validators shown as good since they're online
+        goodChecks: location.validators.size, 
+        badChecks: 0, 
+        avgLatency: 0, 
+        status: 'good' as const, 
       };
     });
   }, [validatorsData]);
@@ -126,7 +126,7 @@ export function ValidatorMap() {
         <CardTitle>Validator Network</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Stats */}
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-muted rounded-lg">
             <div className="text-2xl font-bold">{totalValidators}</div>
@@ -148,7 +148,7 @@ export function ValidatorMap() {
           </div>
         </div>
 
-        {/* Location List */}
+        
         <div className="space-y-2">
           <h3 className="font-semibold text-sm">Validator Locations</h3>
           <div className="max-h-96 overflow-y-auto space-y-2">
@@ -191,7 +191,7 @@ export function ValidatorMap() {
           </div>
         </div>
 
-        {/* Regional Distribution */}
+        
         <div className="space-y-2">
           <h3 className="font-semibold text-sm">Regional Distribution</h3>
           <div className="flex flex-wrap gap-2">

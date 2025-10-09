@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
-// Menu items.
+
 const items = [
   {
     title: "Monitors",
@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {/* main */}
+        
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
@@ -131,13 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="text-sm text-sidebar-foreground/70">Theme</span>
             <ModeToggle />
           </div>
-          {/* <NavUser
-            user={{
-              name: "Muhammad Kaif",
-              email: "kaif@w3uptime.com",
-              avatar: "https://github.com/shadcn.png",
-            }}
-          /> */}
+          
         </div>
       </SidebarFooter>
     </Sidebar>

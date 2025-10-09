@@ -12,11 +12,11 @@ export default async function StatusLayout({
 }>) {
   const { id } = await params;
 
-  // Fetch status page data using server action
+  
   const statusPage = await getStatusPageNavInfo(id);
 
   if (!statusPage) {
-    // Server action handles notFound() internally, but double check
+    
     return null;
   }
 

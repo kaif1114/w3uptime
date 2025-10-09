@@ -26,10 +26,10 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
   const [monthsWithIncidents, setMonthsWithIncidents] = useState<Map<string, number>>(new Map());
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   
-  // Constants
+  
   const MONTHS_PER_VIEW = 3;
   
-  // Static calculation of all months (1 year back + 1 year ahead)
+  
   const getAllMonths = (): MonthData[] => {
     const months: string[] = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -47,7 +47,7 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
     
     const result: MonthData[] = [];
     
-    // Generate 24 months: 12 months back + 12 months ahead
+    
     for (let i = -12; i < 12; i++) {
       const targetDate = new Date(currentYear, currentMonth + i, 1);
       const monthIndex = targetDate.getMonth();
@@ -76,26 +76,26 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
   
   const allMonths = getAllMonths();
   
-  // Initialize range to show current month in the middle
+  
   useEffect(() => {
-    // Find current month index and set range to show it
+    
     const currentMonthIndex = allMonths.findIndex(month => month.isCurrent);
     if (currentMonthIndex !== -1) {
-      // Set range start to show current month in the view
+      
       const idealStart = Math.max(0, currentMonthIndex - Math.floor(MONTHS_PER_VIEW / 2));
       setRangeStartIndex(Math.min(idealStart, allMonths.length - MONTHS_PER_VIEW));
     }
     setIsInitialLoading(false);
   }, []);
 
-  // Fetch incident data for visible months
+  
   useEffect(() => {
     if (!statusPageId) return;
     
     const endIndex = Math.min(rangeStartIndex + MONTHS_PER_VIEW, allMonths.length);
     const currentViewMonths = allMonths.slice(rangeStartIndex, endIndex);
     
-    // For each month in current view, fetch incident data
+    
     currentViewMonths.forEach(async (monthData) => {
       try {
         const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -119,23 +119,23 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
     });
   }, [statusPageId, rangeStartIndex, allMonths]);
 
-  // Get current view months
+  
   const getCurrentViewMonths = (): MonthData[] => {
     const endIndex = Math.min(rangeStartIndex + MONTHS_PER_VIEW, allMonths.length);
     const viewMonths = allMonths.slice(rangeStartIndex, endIndex);
-    return viewMonths.reverse(); // Show most recent first
+    return viewMonths.reverse(); 
   };
   
-  // Get the range display string
+  
   const getRangeDisplay = (months: MonthData[]): string => {
     if (months.length === 0) return '';
-    const startMonth = months[months.length - 1]; // First month (reversed array)
-    const endMonth = months[0]; // Last month (reversed array)
+    const startMonth = months[months.length - 1]; 
+    const endMonth = months[0]; 
     
     return `${startMonth.shortMonth} ${startMonth.year} to ${endMonth.shortMonth} ${endMonth.year}`;
   };
   
-  // Check if navigation is possible
+  
   const canNavigate = (direction: 'prev' | 'next'): boolean => {
     if (direction === 'prev') {
       return rangeStartIndex > 0;
@@ -156,12 +156,12 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
 
   const months = getCurrentViewMonths();
 
-  // Show skeleton during initial loading
+  
   if (isInitialLoading) {
     return <IncidentsListSkeleton />;
   }
 
-  // Get status info for each month
+  
   const getMonthStatusInfo = (monthData: MonthData) => {
     const incidentCount = monthData.incidentCount || 0;
     
@@ -191,7 +191,7 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
 
   return (
     <>
-      {/* Range Navigation */}
+      
       <div className="flex items-center justify-center gap-4 mb-8">
         <Button
           variant="ghost"
@@ -220,7 +220,7 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
         </Button>
       </div>
 
-      {/* Month Cards */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {months.map((monthData, index) => {
           const statusInfo = getMonthStatusInfo(monthData);
@@ -253,7 +253,7 @@ function IncidentsList({ statusPageId }: IncidentsListProps) {
         })}
       </div>
 
-      {/* Summary */}
+      
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground">
           Showing {months.length} months (1 year back to 1 year ahead from today)

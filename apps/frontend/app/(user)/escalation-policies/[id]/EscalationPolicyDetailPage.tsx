@@ -73,7 +73,7 @@ const methodColors = {
     "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
 };
 
-// Validation schema for escalation policy
+
 const escalationPolicySchema = z.object({
   name: z
     .string()
@@ -134,10 +134,10 @@ export function EscalationPolicyDetailPage({
     name: "levels",
   });
 
-  // Watch form values to ensure UI updates
+  
   const watchedLevels = form.watch("levels");
 
-  // Initialize form when policy data loads
+  
   useEffect(() => {
     if (policy) {
       const formData = {
@@ -161,7 +161,7 @@ export function EscalationPolicyDetailPage({
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form to original values
+    
     if (policy) {
       const formData = {
         name: policy.name,
@@ -182,7 +182,7 @@ export function EscalationPolicyDetailPage({
     try {
       await updateMutation.mutateAsync({ id: policyId, data });
       setIsEditing(false);
-      // You can add a toast notification here
+      
       alert("Escalation policy updated successfully!");
     } catch (error) {
       console.error("Error updating escalation policy:", error);
@@ -201,13 +201,13 @@ export function EscalationPolicyDetailPage({
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Update the order field for each item
+    
     const updatedItems = items.map((item, index) => ({
       ...item,
       order: index + 1,
     }));
 
-    // Update form values
+    
     form.setValue("levels", updatedItems);
   };
 
@@ -224,7 +224,7 @@ export function EscalationPolicyDetailPage({
 
   const removeLevel = (index: number) => {
     remove(index);
-    // Update order for remaining items
+    
     const updatedLevels = form.getValues("levels").map((level, idx) => ({
       ...level,
       order: idx + 1,
@@ -383,7 +383,7 @@ export function EscalationPolicyDetailPage({
       </div>
 
       <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
-        {/* Policy Information */}
+        
         <Card>
           <CardHeader>
             <CardTitle>Policy Information</CardTitle>
@@ -427,7 +427,7 @@ export function EscalationPolicyDetailPage({
           </CardContent>
         </Card>
 
-        {/* Escalation Levels */}
+        
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -490,7 +490,7 @@ export function EscalationPolicyDetailPage({
                                           `levels.${index}.method`,
                                           value as "EMAIL" | "SLACK" | "WEBHOOK"
                                         );
-                                        // Trigger form validation
+                                        
                                         form.trigger(`levels.${index}.method`);
                                       }}
                                     >
@@ -528,7 +528,7 @@ export function EscalationPolicyDetailPage({
                                           })) || []
                                         }
                                         onWorkspacesChange={(workspaces) => {
-                                          // Convert back to the expected format for the form
+                                          
                                           const formattedWorkspaces = workspaces.map(workspace => ({
                                             teamId: workspace.teamId,
                                             teamName: workspace.teamName,

@@ -14,7 +14,7 @@ import {
   ResponseTimeChartsSkeleton,
 } from "@/components/skeletons/StatusPageSkeletons";
 
-// Types for components (matching the expected interfaces)
+
 interface Monitor {
   id: string;
   name: string;
@@ -36,14 +36,14 @@ const PublicPage = ({ id }: { id: string }) => {
     "24h"
   );
 
-  // Fetch public status page data (includes sections, maintenances, updates)
+  
   const {
     data: statusPageData,
     isLoading: isStatusPageLoading,
     error: statusPageError,
   } = usePublicStatusPageData(id);
 
-  // Fetch daily status data for the chart
+  
   const { data: dailyStatusData, isLoading: isDailyStatusLoading } =
     useDailyStatus({
       monitorId: id,
@@ -52,7 +52,7 @@ const PublicPage = ({ id }: { id: string }) => {
       enabled: !!id,
     });
 
-  // Handle loading state
+  
   if (isStatusPageLoading) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -64,12 +64,12 @@ const PublicPage = ({ id }: { id: string }) => {
     );
   }
 
-  // Handle error state
+  
   if (statusPageError || !statusPageData) {
     notFound();
   }
 
-  // Transform API data to match component interfaces
+  
   const transformedSections: Section[] = statusPageData.sections.map(
     (section) => ({
       id: section.id,
@@ -83,15 +83,15 @@ const PublicPage = ({ id }: { id: string }) => {
             section.monitor.status === "ACTIVE"
               ? "up"
               : ("down" as "up" | "down" | "maintenance"),
-          uptime: 99.9, // Default uptime - would need to calculate from actual data
-          responseTime: 150, // Default response time - would need actual data
+          uptime: 99.9, 
+          responseTime: 150, 
           lastChecked: new Date().toISOString(),
         },
       ],
     })
   );
 
-  // Determine which charts to show based on section types
+  
   const shouldShowHistory = statusPageData.sections.some(
     (section) => section.type === "HISTORY" || section.type === "BOTH"
   );
@@ -99,10 +99,10 @@ const PublicPage = ({ id }: { id: string }) => {
     (section) => section.type === "STATUS" || section.type === "BOTH"
   );
 
-  // Get monitor ID for history chart (use first monitor)
+  
   const monitorId = statusPageData.sections[0]?.monitor.id;
 
-  // Check overall status
+  
   const allOperational = transformedSections.every((section) =>
     section.monitors.every((monitor) => monitor.status === "up")
   );
@@ -110,7 +110,7 @@ const PublicPage = ({ id }: { id: string }) => {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header Section */}
+        
         <div className="text-center space-y-4">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
           <h1 className="text-4xl font-semibold text-foreground">
@@ -123,9 +123,9 @@ const PublicPage = ({ id }: { id: string }) => {
           </p>
         </div>
 
-        {/* Combined Services and Response Times Section */}
+        
         <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-          {/* Section Header */}
+          
           {transformedSections.map((section) => (
             <div key={section.id}>
               <div className="flex items-center justify-between mb-4">
@@ -141,10 +141,10 @@ const PublicPage = ({ id }: { id: string }) => {
                 </div>
               </div>
 
-              {/* Monitor Row with Status Bars and Uptime */}
+              
               {section.monitors.map((monitor) => (
                 <div key={monitor.id} className="space-y-2">
-                  {/* Service name and uptime percentage row */}
+                  
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="w-5 h-5 text-green-500" />
@@ -157,7 +157,7 @@ const PublicPage = ({ id }: { id: string }) => {
                     </span>
                   </div>
 
-                  {/* Status Bars on separate row - full width, always 30 days */}
+                  
                   <div className="w-full">
                     <UptimeStatusBars monitorId={monitor.id} period="30d" />
                   </div>
@@ -166,7 +166,7 @@ const PublicPage = ({ id }: { id: string }) => {
             </div>
           ))}
 
-          {/* Response Times Chart */}
+          
           {shouldShowHistory && monitorId && (
             <div className="mt-6">
               <PublicTimeSeriesChart

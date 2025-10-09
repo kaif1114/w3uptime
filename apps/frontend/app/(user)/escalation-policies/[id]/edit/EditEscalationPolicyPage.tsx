@@ -81,7 +81,7 @@ export function EditEscalationPolicyPage({
     resolver: zodResolver(escalationPolicySchema),
   });
 
-  // Initialize form with policy data
+  
   useEffect(() => {
     if (policy && !isInitialized) {
       setPolicyName(policy.name);
@@ -318,7 +318,7 @@ export function EditEscalationPolicyPage({
             }}
             className="space-y-6"
           >
-            {/* Policy Name */}
+            
             <div className="space-y-2">
               <Label htmlFor="policy-name">Policy Name</Label>
               <Input
@@ -335,7 +335,7 @@ export function EditEscalationPolicyPage({
 
             <Separator />
 
-            {/* Escalation Levels */}
+            
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -409,7 +409,7 @@ export function EditEscalationPolicyPage({
 
             <Separator />
 
-            {/* Form Actions */}
+            
             <div className="flex items-center justify-between pt-4">
               <Button
                 type="button"
@@ -445,7 +445,7 @@ export function EditEscalationPolicyPage({
               </Button>
             </div>
 
-            {/* Success Message */}
+            
             {successMessage && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <p className="text-sm text-green-800 font-medium">
@@ -454,7 +454,7 @@ export function EditEscalationPolicyPage({
               </div>
             )}
 
-            {/* Error Message */}
+            
             {updateMutation.error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                 <p className="text-sm text-destructive font-medium mb-1">

@@ -32,7 +32,7 @@ export function StructureTab({
   isSaving,
   hasChanges,
 }: StructureTabProps) {
-  // Section management functions
+  
   function addSection() {
     const id = crypto.randomUUID();
     setSections([
@@ -95,7 +95,7 @@ export function StructureTab({
 
   return (
     <div className="space-y-12">
-      {/* Monitors & heartbeats section */}
+      
       <div className="flex gap-12">
         <div className="w-1/3 space-y-4">
           <h2 className="text-xl font-semibold text-foreground">
@@ -196,7 +196,7 @@ export function StructureTab({
                             >
                               <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mt-2" />
                               <div className="flex-1">
-                                {/* Monitor dropdown */}
+                                
                                 <div className="space-y-2 w-full">
                                   <Label className="text-xs font-medium text-foreground">
                                     Monitor

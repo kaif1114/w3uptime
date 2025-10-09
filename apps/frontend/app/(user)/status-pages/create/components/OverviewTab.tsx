@@ -55,7 +55,7 @@ export function OverviewTab({
 
   return (
     <div className="space-y-12">
-      {/* Basic information section */}
+      
       <div className="flex gap-12">
         <div className="w-1/3 space-y-4">
           <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ export function OverviewTab({
         </div>
       </div>
 
-      {/* Links & URLs section */}
+      
       <div className="flex gap-12">
         <div className="w-1/3 space-y-4">
           <h2 className="text-xl font-semibold text-foreground">

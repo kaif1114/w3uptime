@@ -41,21 +41,19 @@ export default function ValidatorDashboardClient() {
 
   return (
     <div className="space-y-6">
-      {/* Balance Overview */}
+      
       <BalanceOverview balance={dashboardData.balance} />
 
-      {/* Only show validation summary if there's actual validation data */}
+      
       {dashboardData.validationSummary.totalValidations > 0 && (
         <ValidationsSummary validationSummary={dashboardData.validationSummary} />
       )}
 
-      {/* Withdrawals & Payments Section */}
+      
       <WithdrawalsSection />
 
-      {/* Transaction History Section - only show if there are transactions */}
-      {/* {dashboardData.recentTransactions.length > 0 && (
-        <TransactionsList transactions={dashboardData.recentTransactions} />
-      )} */}
+      
+      
     </div>
   );
 }

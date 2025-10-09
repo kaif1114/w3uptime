@@ -99,7 +99,7 @@ export function CreateEscalationPolicyForm() {
         waitTimeMinutes: 60,
       };
       setLevels([...levels, newLevel]);
-      setExpandedIndex(levels.length); // focus newly added level
+      setExpandedIndex(levels.length); 
     }
   };
 
@@ -107,7 +107,7 @@ export function CreateEscalationPolicyForm() {
     if (levels.length > 1) {
       const updated = levels.filter((_, i) => i !== index);
       setLevels(updated);
-      // keep expanded index valid
+      
       if (expandedIndex === index) {
         setExpandedIndex(Math.max(0, index - 1));
       } else if (expandedIndex > index) {
@@ -140,10 +140,10 @@ export function CreateEscalationPolicyForm() {
       const newLevels = [...levels];
       const draggedLevel = newLevels[draggedIndex];
 
-      // Remove the dragged item
+      
       newLevels.splice(draggedIndex, 1);
 
-      // Insert it at the new position
+      
       newLevels.splice(dropIndex, 0, draggedLevel);
 
       setLevels(newLevels);
@@ -157,14 +157,14 @@ export function CreateEscalationPolicyForm() {
     console.log("🔥 isValid():", isValid());
     console.log("🔥 createMutation.isPending:", createMutation.isPending);
     try {
-      // Validate all fields
+      
       const nameValidationError = validatePolicyName(policyName);
       if (nameValidationError) {
         setNameError(nameValidationError);
         return;
       }
 
-      // Validate levels
+      
       const validLevels = levels.filter(
         (level, index) => {
           const hasValidTarget = level.method === "SLACK" 
@@ -172,7 +172,7 @@ export function CreateEscalationPolicyForm() {
             : level.target.trim();
           return level.method &&
             hasValidTarget &&
-            (level.waitTimeMinutes > 0 || index === levels.length - 1); // Last level can have 0 wait time
+            (level.waitTimeMinutes > 0 || index === levels.length - 1); 
         }
       );
 
@@ -188,7 +188,7 @@ export function CreateEscalationPolicyForm() {
           target: level.target.trim(),
           slackChannels: level.method === "SLACK" ? level.slackWorkspaces : undefined,
           waitTimeMinutes:
-            index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, // Last level gets 0 wait time
+            index === validLevels.length - 1 ? 0 : level.waitTimeMinutes, 
         })),
       };
 
@@ -197,17 +197,17 @@ export function CreateEscalationPolicyForm() {
       const response = await createMutation.mutateAsync(formData);
       console.log("Policy created successfully:", response);
 
-      // Show success message briefly
+      
       setSuccessMessage("Escalation policy created successfully!");
 
-      // Navigate back to the escalation policies list after a short delay
+      
       setTimeout(() => {
         router.push("/escalation-policies");
       }, 1500);
     } catch (error: unknown) {
       console.error("Failed to create escalation policy:", error);
 
-      // Show more detailed error information
+      
       if (isApiError(error) && error.details) {
         console.error("Validation errors:", error.details);
       }
@@ -223,7 +223,7 @@ export function CreateEscalationPolicyForm() {
           : level.target.trim();
         return level.method &&
           hasValidTarget &&
-          (level.waitTimeMinutes > 0 || index === levels.length - 1); // Last level can have 0 wait time
+          (level.waitTimeMinutes > 0 || index === levels.length - 1); 
       }
     );
 
@@ -261,7 +261,7 @@ export function CreateEscalationPolicyForm() {
             }}
             className="space-y-6"
           >
-            {/* Policy Name */}
+            
             <div className="space-y-2">
               <Label htmlFor="policy-name">Policy Name</Label>
               <Input
@@ -278,7 +278,7 @@ export function CreateEscalationPolicyForm() {
 
             <Separator />
 
-            {/* Escalation Levels */}
+            
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -352,7 +352,7 @@ export function CreateEscalationPolicyForm() {
 
             <Separator />
 
-            {/* Form Actions */}
+            
             <div className="flex items-center justify-between pt-4">
               <div className="flex gap-2">
                 <Button
@@ -406,7 +406,7 @@ export function CreateEscalationPolicyForm() {
               </Button>
             </div>
 
-            {/* Success Message */}
+            
             {successMessage && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <p className="text-sm text-green-800 font-medium">
@@ -415,7 +415,7 @@ export function CreateEscalationPolicyForm() {
               </div>
             )}
 
-            {/* Error Message */}
+            
             {createMutation.error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                 <p className="text-sm text-destructive font-medium mb-1">

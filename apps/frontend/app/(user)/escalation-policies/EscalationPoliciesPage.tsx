@@ -63,7 +63,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-// Simple toast replacement - you can install sonner or use your preferred toast library
+
 const toast = {
   success: (message: string) => {
     alert(`${message}`);
@@ -114,7 +114,7 @@ export function EscalationPoliciesPage() {
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Fetch policies with current filters
+  
   const queryParams: FetchEscalationPoliciesParams = {
     page: currentPage,
     limit: pageSize,
@@ -130,13 +130,13 @@ export function EscalationPoliciesPage() {
   const policies = data?.escalationPolicies || [];
   const pagination = data?.pagination;
 
-  // Handle search
+  
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1); 
   };
 
-  // Handle sorting
+  
   const handleSort = (field: "name" | "createdAt" | "updatedAt") => {
     if (sortBy === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -147,12 +147,12 @@ export function EscalationPoliciesPage() {
     setCurrentPage(1);
   };
 
-  // Handle pagination
+  
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Handle selection
+  
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedPolicies(policies.map((p) => p.id));
@@ -169,7 +169,7 @@ export function EscalationPoliciesPage() {
     }
   };
 
-  // Handle individual delete
+  
   const handleDeleteClick = (policy: EscalationPolicy) => {
     setPolicyToDelete(policy);
     setDeleteDialogOpen(true);
@@ -189,7 +189,7 @@ export function EscalationPoliciesPage() {
     }
   };
 
-  // Handle bulk delete
+  
   const handleBulkDeleteClick = () => {
     setBulkDeleteDialogOpen(true);
   };
@@ -216,17 +216,17 @@ export function EscalationPoliciesPage() {
     }
   };
 
-  // Handle edit
+  
   const handleEdit = (policyId: string) => {
     router.push(`/escalation-policies/${policyId}/edit`);
   };
 
-  // Calculate pagination info
+  
   const totalPages = pagination?.totalPages || 0;
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage === totalPages;
 
-  // Loading state
+  
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -264,7 +264,7 @@ export function EscalationPoliciesPage() {
     );
   }
 
-  // Error state
+  
   if (error) {
     return (
       <div className="space-y-6">
@@ -303,7 +303,7 @@ export function EscalationPoliciesPage() {
     );
   }
 
-  // Empty state
+  
   if (!policies || policies.length === 0) {
     if (searchQuery) {
       return (
@@ -598,7 +598,7 @@ export function EscalationPoliciesPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
+          
           {pagination && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
               <div className="text-sm text-muted-foreground">
@@ -673,7 +673,7 @@ export function EscalationPoliciesPage() {
         </div>
       
 
-      {/* Delete Confirmation Dialog */}
+      
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -699,7 +699,7 @@ export function EscalationPoliciesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Delete Confirmation Dialog */}
+      
       <AlertDialog
         open={bulkDeleteDialogOpen}
         onOpenChange={setBulkDeleteDialogOpen}

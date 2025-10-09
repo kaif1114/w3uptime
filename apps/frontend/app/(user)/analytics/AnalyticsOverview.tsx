@@ -32,11 +32,11 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
   
   const exportToPDF = async () => {
     setIsExporting(true);
-    // Store current active tab to restore later
+    
     const originalActiveTab = activeTab;
     try {
       
-      // Dynamic import to avoid SSR issues
+      
       const html2canvas = (await import('html2canvas-pro')).default;
       const jsPDF = (await import('jspdf')).default;
       
@@ -45,7 +45,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
       
-      // Add title and header information
+      
       pdf.setFontSize(24);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Website Analytics Report', margin, 20);
@@ -62,7 +62,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       pdf.text(`Period: ${typeof period === 'string' ? period : 'Custom'}`, margin, headerY); headerY += 7;
       pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, headerY); headerY += 7;
       
-      // Add summary data if available
+      
       if (analytics) {
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
@@ -99,17 +99,17 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         summaryY = summaryY + 8;
       }
       
-      // Add new page for Overview section
+      
       pdf.addPage();
       pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Overview', margin, 20);
       
-      // Switch to overview tab and wait for content to render
+      
       setActiveTab('overview');
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Capture Overview Tab
+      
       const overviewElement = document.querySelector('[data-tab="overview"]');
       if (overviewElement) {
         const canvas = await html2canvas(overviewElement as HTMLElement, {
@@ -125,7 +125,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         const xCentered = (pageWidth - imgWidth) / 2;
         
-        // Split large images across multiple pages
+        
         let remainingHeight = imgHeight;
         let sourceY = 0;
         let currentY = 30;
@@ -148,9 +148,9 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         }
       }
       
-      // Capture Insights Tab
+      
       if (analytics && analytics.performanceInsights && analytics.performanceInsights.length > 0) {
-        // Switch to insights tab and wait for content to render
+        
         setActiveTab('insights');
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -184,9 +184,9 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       }
       }
       
-      // Capture Rankings Tab
+      
       if (availableCountries && availableCountries.countries.length > 0) {
-        // Switch to rankings tab and wait for content to render
+        
         setActiveTab('rankings');
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -210,7 +210,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         const xCenteredRankings = (pageWidth - imgWidth) / 2;
         
-        // Split large images across multiple pages
+        
         let remainingHeight = imgHeight;
         let currentY = 30;
         
@@ -230,17 +230,17 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       }
       }
       
-      // Restore original active tab
+      
       setActiveTab(originalActiveTab);
       
-      // Save PDF
+      
       const fileSlug = monitor ? (monitor.name || monitor.url || monitorId).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : monitorId;
       pdf.save(`analytics-report-${fileSlug}-${new Date().toISOString().split('T')[0]}.pdf`);
       
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Failed to export PDF. Please try again.');
-      // Restore original active tab on error
+      
       setActiveTab(originalActiveTab);
     } finally {
       setIsExporting(false);
@@ -324,10 +324,10 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-        {/* Overview Tab */}
+        
         <TabsContent value="overview" className="space-y-6" data-tab="overview">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Uptime Overview */}
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Uptime</CardTitle>
@@ -353,7 +353,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
             </CardContent>
           </Card>
 
-          {/* Worst Performing Region */}
+          
           {worstRegion && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -376,7 +376,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
             </Card>
           )}
 
-          {/* Best Performing Region */}
+          
           {bestRegion && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -400,14 +400,14 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           )}
         </div>
 
-        {/* Regional Latency Chart */}
+        
         <RegionalLatencyChart 
           monitorId={monitorId} 
           period={typeof period === 'string' ? period : 'day'} 
           customPeriod={customPeriod ? { startDate: customPeriod.startDate, endDate: customPeriod.endDate } : undefined}
         />
 
-        {/* Regional Distribution */}
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top Performing Countries</CardTitle>
@@ -443,9 +443,9 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         </Card>
       </TabsContent>
 
-        {/* Insights Tab */}
+        
         <TabsContent value="insights" className="space-y-6" data-tab="insights">
-        {/* Performance Insights - Full Width */}
+        
         {analytics.performanceInsights && analytics.healthScore && (
           <div className="w-full">
             <PerformanceInsightsCard 
@@ -455,16 +455,16 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           </div>
         )}
 
-        {/* Weekly Comparison and Hourly Patterns - Two Column Layout */}
+        
         <div className="">
-          {/* Weekly Comparison */}
+          
           {analytics.weeklyComparison && analytics.weeklyComparison.length > 0 && (
             <div className="w-full mb-6">
               <WeeklyComparisonTable comparisons={analytics.weeklyComparison} />
             </div>
           )}
 
-          {/* Hourly Patterns */}
+          
           {analytics.hourlyPatterns && analytics.hourlyPatterns.length > 0 && (
             <div className="w-full">
               <HourlyPatternsChart 
@@ -475,7 +475,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
           )}
         </div>
 
-        {/* Fallback message if no enhanced data */}
+        
         {(!analytics.performanceInsights || analytics.performanceInsights.length === 0) && 
          (!analytics.weeklyComparison || analytics.weeklyComparison.length === 0) && 
          (!analytics.hourlyPatterns || analytics.hourlyPatterns.length === 0) && (
@@ -488,7 +488,7 @@ export function AnalyticsOverview({ monitorId, period, customPeriod }: Analytics
         )}
       </TabsContent>
 
-        {/* Rankings Tab */}
+        
         <TabsContent value="rankings" className="space-y-6" data-tab="rankings">
         {availableCountries && availableCountries.countries.length > 0 && (
           <CountryRankingTable

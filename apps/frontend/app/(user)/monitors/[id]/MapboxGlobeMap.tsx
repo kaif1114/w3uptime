@@ -22,7 +22,7 @@ interface MapboxValidatorData {
   continentCode: string;
   flag: string | null;
   latency?: number;
-  createdAt?: string; // Add timestamp for comparison
+  createdAt?: string; 
 }
 
 interface MapboxCountryData {
@@ -36,7 +36,7 @@ interface MapboxGlobeMapProps {
   monitorId: string;
 }
 
-// Extended type for hover state that includes additional properties
+
 type ExtendedValidatorData = MapboxValidatorData & {
   validatorCount?: number;
   cities?: string[];
@@ -45,12 +45,12 @@ type ExtendedValidatorData = MapboxValidatorData & {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-// Available avatars (17 avatars available)
+
 const AVAILABLE_AVATARS = Array.from({ length: 17 }, (_, i) => `/avatar-${i + 1}.png`);
 
-// Function to assign avatar to validator based on their ID
+
 function getValidatorAvatar(validatorId: string): string {
-  // Create a simple hash from the validator ID to ensure consistent avatar assignment
+  
   let hash = 0;
   for (let i = 0; i < validatorId.length; i++) {
     hash = ((hash << 5) - hash + validatorId.charCodeAt(i)) & 0xffffffff;
@@ -82,10 +82,10 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
   });
 
-  // Fetch validator network data
+  
   const { data: validatorsData, isLoading, error } = useValidators();
 
-  // Transform validator data to MapboxValidatorData format
+  
   const validators: MapboxValidatorData[] = useMemo(() => {
     if (!validatorsData?.validators || validatorsData.validators.length === 0) {
       return [];
@@ -105,13 +105,13 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }));
   }, [validatorsData]);
 
-  // Transform country data based on validators
+  
   const countryData: MapboxCountryData[] = useMemo(() => {
     if (!validators || validators.length === 0) {
       return [];
     }
 
-    // Group validators by country
+    
     const countryMap = new (globalThis.Map)<string, MapboxValidatorData[]>();
     
     validators.forEach(validator => {
@@ -122,9 +122,9 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       countryMap.get(countryKey)!.push(validator);
     });
 
-    // Convert to country data format
+    
     return (Array.from(countryMap.entries()) as [string, MapboxValidatorData[]][]).map(([countryCode, countryValidators]) => ({
-      name: countryCode, // Use country code as name since we don't have full country names
+      name: countryCode, 
       code: countryCode,
       validators: countryValidators,
       onlineCount: countryValidators.length
@@ -143,7 +143,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     return countryData.find((country: MapboxCountryData) => country.name === selectedCountry);
   }, [countryData, selectedCountry]);
 
-  // Aggregate data by continent
+  
   const continentData = useMemo(() => {
     const continentMap = new (globalThis.Map)<string, ContinentData>();
     
@@ -169,21 +169,21 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     return Array.from(continentMap.values()).sort((a: ContinentData, b: ContinentData) => b.count - a.count);
   }, [validators]);
 
-  // Simple list of countries with validators for highlighting
+  
   const countriesWithValidators = useMemo(() => {
-    // Map lowercase validator country names to title case for Mapbox matching
+    
     return countryData.map(country => {
-      // Convert "pakistan" to "Pakistan" for Mapbox NAME property
+      
       return country.name.charAt(0).toUpperCase() + country.name.slice(1).toLowerCase();
     });
   }, [countryData]);
 
-  // Handle map click events
+  
   const onMapClick = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
-    // Check if the country-hover layer exists before querying
+    
     if (!map.getLayer('country-hover')) {
       console.warn('country-hover layer not found, skipping click handling');
       return;
@@ -197,10 +197,10 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       const feature = features[0];
       const countryName = feature.properties?.name_en || feature.properties?.NAME || feature.properties?.name;
       
-      // Try matching by name first
+      
       let countryInData = countryData.find((c: MapboxCountryData) => c.name.toLowerCase() === countryName?.toLowerCase());
       
-      // If no match by name, try country code
+      
       if (!countryInData && feature.properties?.iso_3166_1) {
         countryInData = countryData.find((c: MapboxCountryData) => c.code === feature.properties!.iso_3166_1);
       }
@@ -211,17 +211,17 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
   }, [countryData, selectedCountry, mapLoaded]);
 
-  // Handle map hover events
+  
   const onMapMouseMove = useCallback((event: MapboxEvent) => {
     const map = mapRef.current?.getMap();
     if (!map || !mapLoaded) return;
 
-    // Check if the country-hover layer exists before querying
+    
     if (!map.getLayer('country-hover')) {
       return;
     }
 
-    // Query specifically our country layer
+    
     const countryFeatures = map.queryRenderedFeatures([event.point.x, event.point.y], {
       layers: ['country-hover']
     });
@@ -229,15 +229,15 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     if (countryFeatures.length > 0) {
       const feature = countryFeatures[0];
       
-      // Use English name from Mapbox properties (more reliable than bilingual names)
+      
       const mapboxCountryName = feature.properties?.name_en || feature.properties?.NAME || feature.properties?.name;
       
-      // Try matching by English name first
+      
       let countryInData = countryData.find(c => 
         c.name.toLowerCase() === mapboxCountryName?.toLowerCase()
       );
       
-      // If no match by name, try country code matching if available
+      
       if (!countryInData && feature.properties?.iso_3166_1) {
         const mapboxCountryCode = feature.properties.iso_3166_1;
         countryInData = countryData.find(c => 
@@ -247,18 +247,18 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       
       if (countryInData) {
         
-        // Show tooltip with country validator information
+        
         setHoveredValidator({
           id: countryInData.code,
           country: countryInData.name,
-          city: '', // Not used
-          lat: 0, lng: 0, // Not used
+          city: '', 
+          lat: 0, lng: 0, 
           status: 'online',
           countryCode: countryInData.code,
           continent: countryInData.validators[0]?.continent || '',
           continentCode: countryInData.validators[0]?.continentCode || '',
           flag: countryInData.validators[0]?.flag || null,
-          // Store additional data in a custom property
+          
           ...{
             validatorCount: countryInData.onlineCount,
             cities: countryInData.validators.map(v => v.city)
@@ -271,14 +271,14 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
       }
     }
 
-    // Clear all hover states
+    
     setHoveredCountry(null);
     setHoveredValidator(null);
     setTooltipPosition(null);
     map.getCanvas().style.cursor = '';
   }, [countryData, mapLoaded]);
 
-  // Map control functions
+  
   const toggleGlobeView = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map) return;
@@ -323,14 +323,14 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     setSelectedValidator(null);
   }, []);
 
-  // Focus on continent
+  
   const focusOnContinent = useCallback((continentName: string) => {
     const continentValidators = validators.filter(v => v.continent.toLowerCase() === continentName.toLowerCase());
     
     if (continentValidators.length > 0 && mapRef.current) {
       const map = mapRef.current.getMap();
       
-      // Calculate bounds for the continent
+      
       const lngs = continentValidators.map(v => v.lng);
       const lats = continentValidators.map(v => v.lat);
       
@@ -349,14 +349,14 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
   }, [validators]);
 
-  // Focus on selected country
+  
   useEffect(() => {
     if (selectedCountryData && mapRef.current) {
       const map = mapRef.current.getMap();
       const countryValidators = selectedCountryData.validators;
       
       if (countryValidators.length > 0) {
-        // Calculate bounds for the country
+        
         const lngs = countryValidators.map((v: MapboxValidatorData) => v.lng);
         const lats = countryValidators.map((v: MapboxValidatorData) => v.lat);
         
@@ -373,7 +373,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     }
   }, [selectedCountryData]);
 
-  // Show loading state
+  
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -391,7 +391,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     );
   }
 
-  // Show error state
+  
   if (error) {
     return (
       <div className="space-y-6">
@@ -409,7 +409,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
     );
   }
 
-  // Show empty state when no validators
+  
   if (!validators || validators.length === 0) {
     return (
       <div className="space-y-6">
@@ -448,7 +448,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
         </div>
       </div>
         <div className="space-y-6">
-          {/* Mapbox 3D Globe */}
+          
           <div className="space-y-4">
             <div className="h-screen rounded-lg overflow-hidden relative border">
                              <Map
@@ -472,7 +472,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                    "star-intensity": 0.15
                  }}
                >
-                {/* Add country boundaries for hover detection */}
+                
                 <Source
                   id="countries"
                   type="vector"
@@ -499,7 +499,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                   />
                 </Source>
 
-                {/* Avatar markers for individual validators */}
+                
                 {validators.map((validator) => (
                   <Marker
                     key={validator.id}
@@ -518,7 +518,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                         setSelectedValidator(
                           selectedValidator?.id === validator.id ? null : validator
                         );
-                        setSelectedCountry(null); // Clear country selection when selecting validator
+                        setSelectedCountry(null); 
                       }}
                       onMouseEnter={(e) => {
                         setHoveredValidator(validator);
@@ -551,13 +551,13 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                           alt={`Validator in ${validator.city}, ${validator.country}`}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            // Fallback to a default avatar if image fails to load
+                            
                             (e.target as HTMLImageElement).src = '/avatar-1.png';
                           }}
                         />
                       </div>
                       
-                      {/* Online status indicator */}
+                      
                       <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm">
                         <div className="absolute inset-1 bg-green-400 rounded-full animate-pulse"></div>
                       </div>
@@ -566,7 +566,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                 ))}
               </Map>
 
-              {/* Map Controls */}
+              
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 <Button
                   size="sm"
@@ -602,7 +602,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                 </Button>
               </div>
 
-              {/* Selected validator info overlay */}
+              
               {selectedValidator && (
                 <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-sm max-w-80">
                   <div className="flex items-center gap-3 mb-3">
@@ -623,7 +623,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                   </div>
                   
                   <div className="space-y-3">
-                    {/* Location Information */}
+                    
                     <div className="border-b border-white/20 pb-3">
                       <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Location</h5>
                       <div className="flex items-center gap-2 mb-1">
@@ -640,7 +640,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                       </div>
                     </div>
 
-                    {/* Technical Details */}
+                    
                     <div className="border-b border-white/20 pb-3">
                       <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Technical Info</h5>
                       <div className="space-y-1 text-sm">
@@ -661,7 +661,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                       </div>
                     </div>
 
-                    {/* Coordinates */}
+                    
                     <div>
                       <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Coordinates</h5>
                       <div className="text-xs text-gray-400 font-mono">
@@ -671,7 +671,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                     </div>
                   </div>
 
-                  {/* Close button */}
+                  
                   <button
                     onClick={() => setSelectedValidator(null)}
                     className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg"
@@ -681,7 +681,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-              {/* Selected country info overlay */}
+              
               {selectedCountryData && !selectedValidator && (
                 <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-sm max-w-72">
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -694,7 +694,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                     <p>📍 {selectedCountryData.validators.length} validators</p>
                     <p>{selectedCountryData.onlineCount} online</p>
                   </div>
-                  {/* City breakdown */}
+                  
                   <div className="border-t border-white/20 pt-2">
                     <p className="text-xs font-medium mb-1">Cities:</p>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
@@ -719,7 +719,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                 </div>
               )}
 
-              {/* Validator/Country tooltip on hover */}
+              
               {hoveredValidator && tooltipPosition && !selectedValidator && (
                 <div 
                   className="absolute pointer-events-none bg-black/90 text-white p-3 rounded-md text-sm z-50 max-w-72"
@@ -729,9 +729,9 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                     transform: 'translateY(-100%)'
                   }}
                 >
-                  {/* Check if this is an individual validator tooltip or country tooltip */}
+                  
                   {hoveredValidator.validatorCount ? (
-                    // Country tooltip (aggregated data)
+                    
                     <>
                       <div className="font-semibold flex items-center gap-2 mb-2">
                         {hoveredValidator.flag && (
@@ -758,7 +758,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
                       </div>
                     </>
                   ) : (
-                    // Individual validator tooltip
+                    
                     <>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 rounded-full overflow-hidden border border-white/30">
@@ -793,7 +793,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
 
             </div>
 
-            {/* Continental Distribution */}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
               <div className="md:col-span-2 lg:col-span-3">
                 <h3 className="text-lg font-semibold mb-3">Validator Distribution by Continent</h3>
@@ -821,7 +821,7 @@ export function MapboxGlobeMap({ monitorId }: MapboxGlobeMapProps) {
               ))}
             </div>
 
-            {/* Status Legend */}
+            
             <div className="grid grid-cols-1 gap-4 p-4 bg-muted rounded-lg">
               <div>
                 <h4 className="font-medium mb-2">Legend</h4>

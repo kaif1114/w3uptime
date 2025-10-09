@@ -54,7 +54,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Auto-select first monitor if none selected
+  
   const currentMonitorId = selectedMonitorId || monitors.monitors[0]?.id;
 
   return (
@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-      {/* Monitor and Time Period Selection */}
+      
       <div className="flex justify-between gap-4 items-center">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Monitor:</span>
@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Analytics Content */}
+      
       {currentMonitorId && (
         <AnalyticsOverview 
           monitorId={currentMonitorId} 

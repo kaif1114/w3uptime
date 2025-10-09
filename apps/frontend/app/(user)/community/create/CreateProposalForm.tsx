@@ -47,7 +47,7 @@ export function CreateProposalForm() {
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+    
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -175,7 +175,7 @@ export function CreateProposalForm() {
 
   return (
     <div className="space-y-6">
-      {/* Proposal Type Selection */}
+      
       <Card>
         <CardHeader>
           <CardTitle>Choose Proposal Type</CardTitle>
@@ -209,7 +209,7 @@ export function CreateProposalForm() {
         </CardContent>
       </Card>
 
-      {/* Type Information */}
+      
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-2">
@@ -236,7 +236,7 @@ export function CreateProposalForm() {
         </CardContent>
       </Card>
 
-      {/* Proposal Form */}
+      
       <Card>
         <CardHeader>
           <CardTitle>Proposal Details</CardTitle>
@@ -246,7 +246,7 @@ export function CreateProposalForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
+            
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -264,7 +264,7 @@ export function CreateProposalForm() {
               </p>
             </div>
 
-            {/* Description */}
+            
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
               <Textarea
@@ -285,7 +285,7 @@ export function CreateProposalForm() {
               </p>
             </div>
 
-            {/* Tags */}
+            
             <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
               <div className="flex space-x-2">
@@ -321,7 +321,7 @@ export function CreateProposalForm() {
               </p>
             </div>
 
-            {/* Error Message */}
+            
             {errors.submit && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -329,7 +329,7 @@ export function CreateProposalForm() {
               </Alert>
             )}
 
-            {/* Submit Button */}
+            
             <div className="flex justify-between">
               <Link href="/community">
                 <Button type="button" variant="outline">

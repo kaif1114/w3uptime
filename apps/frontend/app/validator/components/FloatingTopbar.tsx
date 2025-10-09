@@ -38,7 +38,7 @@ export default function FloatingTopbar() {
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-lg">
-        {/* Mobile menu button */}
+        
         <div className="md:hidden p-2">
           <Button
             variant="ghost"
@@ -51,7 +51,7 @@ export default function FloatingTopbar() {
           </Button>
         </div>
 
-        {/* Desktop navigation */}
+        
         <div className="hidden md:flex items-center space-x-1 p-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -71,7 +71,7 @@ export default function FloatingTopbar() {
             );
           })}
 
-          {/* Right side controls */}
+          
           <div className="flex items-center space-x-1 ml-4 pl-4 border-l">
             <ModeToggle />
             <Button
@@ -86,7 +86,7 @@ export default function FloatingTopbar() {
           </div>
         </div>
 
-        {/* Mobile navigation */}
+        
         {isOpen && (
           <div className="md:hidden border-t">
             <div className="p-2 space-y-1">
@@ -112,7 +112,7 @@ export default function FloatingTopbar() {
                 );
               })}
 
-              {/* Mobile controls */}
+              
               <div className="flex items-center justify-between pt-2 border-t">
                 <ModeToggle />
                 <Button

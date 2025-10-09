@@ -30,18 +30,18 @@ export default function IncidentActions({ incident }: IncidentActionsProps) {
   );
 
   const handleEscalate = () => {
-    // TODO: Implement escalation functionality
+    
     toast.info("Escalation functionality will be implemented later");
   };
 
   const handleAcknowledge = () => {
-    // TODO: Implement acknowledgement functionality
+    
     setIsAcknowledged(true);
     toast.info("Acknowledgement functionality will be implemented later");
   };
 
   const handleResolve = () => {
-    // TODO: Implement resolve functionality
+    
     toast.info("Resolve functionality will be implemented later");
   };
 

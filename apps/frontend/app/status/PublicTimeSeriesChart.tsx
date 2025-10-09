@@ -99,17 +99,17 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
     );
   }
 
-  // Transform data for chart
+  
   const chartData = timeseriesData.data.map(point => {
-    // Handle invalid or empty time_bucket
+    
     const timeValue = point.time_bucket && typeof point.time_bucket === 'string' 
       ? point.time_bucket 
-      : new Date().toISOString(); // fallback to current time
+      : new Date().toISOString(); 
     
     const dateObj = new Date(timeValue);
     const isValidDate = !isNaN(dateObj.getTime());
     
-    // Determine time format based on period
+    
     const getTimeFormat = (period: string) => {
       switch(period) {
         case 'hour': return 'HH:mm';
@@ -206,7 +206,7 @@ export function PublicTimeSeriesChart({ monitorId, period, type, selectedPeriod,
     );
   }
 
-  // Uptime chart
+  
   return (
       <div>
       <div className="flex items-center justify-between mb-4">

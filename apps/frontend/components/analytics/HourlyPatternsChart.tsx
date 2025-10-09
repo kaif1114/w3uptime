@@ -19,7 +19,7 @@ const formatHour = (hour: number): string => {
 export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartProps) {
   const [tooltipData, setTooltipData] = useState<{ pattern: HourlyPattern; x: number; y: number } | null>(null);
   
-  // Sort patterns by hour to ensure correct order
+  
   const sortedPatterns = [...patterns].sort((a, b) => a.hour_of_day - b.hour_of_day);
   
   const handleMouseEnter = (pattern: HourlyPattern, event: React.MouseEvent) => {
@@ -42,7 +42,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
     setTooltipData(null);
   };
   
-  // Find peak hours (highest and lowest latency)
+  
   const peakLatencyHour = patterns.reduce((max, current) => 
     current.avg_latency > max.avg_latency ? current : max, patterns[0] || { hour_of_day: 0, avg_latency: 0 }
   );
@@ -87,7 +87,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Summary Stats */}
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 p-3 rounded-lg border">
               <div className="flex items-center gap-2 mb-1">
@@ -129,7 +129,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             </div>
           </div>
 
-          {/* True Horizontal Bar Chart */}
+          
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Hourly Latency Distribution</h3>
@@ -145,31 +145,31 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
               </div>
             </div>
             
-            {/* Horizontal Chart Container */}
+            
             <div className="bg-muted/20 rounded-lg p-4">
               <div className="w-full">
                 {(() => {
                   const maxLatency = Math.max(...patterns.map(p => p.avg_latency));
                   
-                  // Calculate dynamic heights based on data
-                  const minChartHeight = 120; // Minimum chart height
-                  const maxChartHeight = 400; // Maximum chart height
-                  const baseHeight = 200; // Base height for medium latencies
                   
-                  // Scale chart height based on max latency (assuming 50-500ms is typical range)
-                  const latencyFactor = Math.min(Math.max(maxLatency / 100, 0.5), 4); // Scale factor 0.5x to 4x
+                  const minChartHeight = 120; 
+                  const maxChartHeight = 400; 
+                  const baseHeight = 200; 
+                  
+                  
+                  const latencyFactor = Math.min(Math.max(maxLatency / 100, 0.5), 4); 
                   const dynamicChartHeight = Math.max(minChartHeight, Math.min(maxChartHeight, baseHeight * latencyFactor));
                   
-                  const paddingTop = 40; // Space for labels and badges above bars
-                  const paddingBottom = 40; // Space for hour labels below
+                  const paddingTop = 40; 
+                  const paddingBottom = 40; 
                   const totalContainerHeight = dynamicChartHeight + paddingTop + paddingBottom;
                   const barsAreaHeight = dynamicChartHeight;
                   
                   return (
                     <>
-                      {/* Chart Area */}
+                      
                       <div className="relative" style={{ height: `${totalContainerHeight}px` }}>
-                        {/* Background Grid Lines */}
+                        
                         <div className="absolute left-0 right-0" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
                           <div className="h-full flex flex-col">
                             {[0, 25, 50, 75, 100].map((percent) => (
@@ -178,7 +178,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                           </div>
                         </div>
                         
-                        {/* Y-Axis Labels (Latency) */}
+                        
                         <div className="absolute left-0 w-12 flex flex-col justify-between text-xs text-muted-foreground" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
                           {(() => {
                             const steps = [maxLatency, maxLatency * 0.75, maxLatency * 0.5, maxLatency * 0.25, 0];
@@ -190,14 +190,14 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                           })()}
                         </div>
                   
-                        {/* Bars */}
+                        
                         <div className="ml-12 absolute left-0 right-0" style={{ top: `${paddingTop}px`, height: `${barsAreaHeight}px` }}>
-                          {/* Bars container */}
+                          
                           <div className="ml-12 absolute bottom-0 left-0 right-0 flex items-end gap-1">
                             {sortedPatterns.map((pattern) => {
-                              // Enhanced height calculation with dynamic scaling
+                              
                               const normalizedHeight = maxLatency > 0 ? (pattern.avg_latency / maxLatency) : 0;
-                              const minBarHeightPx = 4; // Minimum bar height
+                              const minBarHeightPx = 4; 
                               const barHeightPx = Math.max(minBarHeightPx, normalizedHeight * barsAreaHeight);
                         
                         const avgLatency = patterns.reduce((sum, p) => sum + p.avg_latency, 0) / patterns.length;
@@ -208,7 +208,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                         
                         return (
                           <div key={pattern.hour_of_day} className="relative" style={{ width: barWidth }}>
-                            {/* Bar */}
+                            
                             <div 
                               className={`w-full rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer shadow-sm ${
                                 isHighLatency ? 'bg-gradient-to-t from-red-600 to-red-400' : 'bg-gradient-to-t from-green-600 to-green-400'
@@ -218,12 +218,12 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                               onMouseMove={(e) => handleMouseMove(pattern, e)}
                               onMouseLeave={handleMouseLeave}
                             >
-                              {/* Value label on top of bar */}
+                              
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground whitespace-nowrap">
                                 {pattern.avg_latency.toFixed(0)}ms
                               </div>
                               
-                              {/* Special Hour Badges */}
+                              
                               {isPeakHour && (
                                 <Badge variant="destructive" className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs h-4 px-1 whitespace-nowrap">
                                   Peak
@@ -241,7 +241,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                       })}
                     </div>
                     
-                          {/* Hour Labels - positioned outside the bars container */}
+                          
                           <div className="ml-12 absolute left-0 right-0 flex gap-1" style={{ top: `${barsAreaHeight + 8}px` }}>
                             {sortedPatterns.map((pattern) => {
                               const barWidth = `calc((100% - ${sortedPatterns.length - 1} * 0.25rem) / ${sortedPatterns.length})`;
@@ -258,7 +258,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
                   );
                 })()}
                 
-                {/* X-axis label */}
+                
                 <div className="mt-4 text-xs text-muted-foreground text-center">
                   Hours (0-23)
                 </div>
@@ -266,7 +266,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
             </div>
           </div>
 
-          {/* Insights */}
+          
           <div className="bg-muted/30 p-3 rounded-lg">
             <h4 className="text-sm font-medium mb-2">Quick Insights:</h4>
             <div className="text-xs text-muted-foreground space-y-1">
@@ -286,7 +286,7 @@ export function HourlyPatternsChart({ patterns, period }: HourlyPatternsChartPro
         </div>
       </CardContent>
       
-      {/* Cursor-following Tooltip */}
+      
       {tooltipData && (
         <div 
           className="fixed pointer-events-none z-50"

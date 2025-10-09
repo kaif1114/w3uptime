@@ -50,7 +50,7 @@ const ITEMS_PER_PAGE = 5;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CommunityGovernanceClientProps {
-  // Props can be added here as needed
+  
 }
 
 export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
@@ -61,7 +61,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Convert filter to API parameters
+  
   const getApiFilters = (): ProposalFilters => {
     const filters: ProposalFilters = {
       page: currentPage,
@@ -81,7 +81,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     return filters;
   };
 
-  // Fetch proposals using the hook
+  
   const {
     data: proposalsData,
     isLoading,
@@ -90,12 +90,12 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   const voteProposal = useVoteProposal();
   const { data: session } = useSession();
 
-  // Use fetched data
+  
   const proposals = proposalsData?.data || [];
   const total = proposalsData?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
-  // Reset to first page when search or filter changes
+  
   const handleSearch = () => {
     setCurrentPage(1);
   };
@@ -175,7 +175,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     return userVote ? userVote.vote : null;
   };
 
-  // If a proposal is selected, show the detail view
+  
   if (selectedProposal) {
     return (
       <div className="space-y-4">
@@ -273,7 +273,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                 </div>
               </div>
 
-              {/* Voting Section */}
+              
               <div className="border rounded-lg p-4 bg-muted/30">
                 <h3 className="text-lg font-semibold mb-4">
                   Vote on this proposal
@@ -321,7 +321,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                 </div>
               </div>
 
-              {/* Comments Section */}
+              
               <ProposalComments proposalId={selectedProposal.id} />
             </CardContent>
           </Card>
@@ -330,7 +330,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     );
   }
 
-  // Show error state
+  
   if (error) {
     return (
       <div className="space-y-4">
@@ -347,10 +347,10 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
 
   return (
     <div className="space-y-4">
-      {/* Separator */}
+      
       <div className="border-t border-border/50 my-6" />
 
-      {/* Search and Filter Row */}
+      
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Input
@@ -372,13 +372,13 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
         </Select>
       </div>
 
-      {/* Results count */}
+      
       <div className="text-sm text-muted-foreground">
         Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
         {Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} proposals
       </div>
 
-      {/* Proposals List */}
+      
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -400,7 +400,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
         />
       )}
 
-      {/* Pagination */}
+      
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button
@@ -554,7 +554,7 @@ function ProposalsList({
               </div>
             </div>
 
-            {/* Voting Buttons */}
+            
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="flex space-x-3">
                 <Button

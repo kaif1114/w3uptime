@@ -118,7 +118,7 @@ export default function IncidentTimeline({
 
   return (
     <div className="space-y-6">
-      {/* Comment Input - Styled like reference UI */}
+      
       <div className="space-y-4">
         <div className="flex gap-3">
           <Avatar className="h-8 w-8">
@@ -151,9 +151,9 @@ export default function IncidentTimeline({
         </div>
       </div>
 
-      {/* Timeline Events */}
+      
       <div className="relative">
-        {/* Continuous vertical line */}
+        
         {data?.timelineEvents && data?.timelineEvents.length > 1 && (
           <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-border" />
         )}
@@ -170,15 +170,15 @@ export default function IncidentTimeline({
                     : "items-center")
                 }
               >
-                {/* Timeline Node */}
+                
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border-2 border-background relative z-10 shrink-0">
-                  {/* Ensure consistent icon sizing */}
+                  
                   <div className="flex items-center justify-center h-4 w-4">
                     {getTimelineIcon(event.type)}
                   </div>
                 </div>
 
-                {/* Event Content */}
+                
                 <div
                   className={
                     "flex-1 " +
@@ -217,7 +217,7 @@ export default function IncidentTimeline({
                       </div>
                     )}
 
-                  {/* Escalation details */}
+                  
                   {event.escalationLog && (
                     <div className="bg-muted p-3 rounded-md text-sm space-y-2 ml-2">
                       {event.escalationLog.Alert && (

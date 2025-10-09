@@ -27,18 +27,18 @@ function SlackCallbackContent() {
       }
 
       try {
-        // First check if user is authenticated
+        
         const sessionResponse = await fetch("/api/auth/session");
         const sessionData = await sessionResponse.json();
 
         if (!sessionData.authenticated) {
-          // User is not authenticated, redirect to login with return URL
+          
           const returnUrl = encodeURIComponent(`/slack/callback?code=${code}&state=${state || ""}`);
           router.push(`/login?from=${returnUrl}`);
           return;
         }
 
-        // User is authenticated, proceed with OAuth
+        
         const response = await fetch("/api/slack/oauth", {
           method: "POST",
           headers: {

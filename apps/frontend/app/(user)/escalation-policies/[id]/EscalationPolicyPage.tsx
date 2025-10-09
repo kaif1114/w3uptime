@@ -151,7 +151,7 @@ export function EscalationPolicyPage({ policyId }: EscalationPolicyPageProps) {
       </div>
 
       <div className="grid gap-6">
-        {/* Policy Information */}
+        
         <Card>
           <CardHeader>
             <CardTitle>Policy Information</CardTitle>
@@ -178,7 +178,7 @@ export function EscalationPolicyPage({ policyId }: EscalationPolicyPageProps) {
           </CardContent>
         </Card>
 
-        {/* Escalation Levels */}
+        
         <Card>
           <CardHeader>
             <CardTitle>Escalation Levels</CardTitle>

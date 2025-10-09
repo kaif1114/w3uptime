@@ -10,8 +10,8 @@ export function QueryProvider({ children, dehydratedState }: { children: React.R
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60 * 15, // 15 minutes
-            gcTime: 1000 * 60 * 60, // 60 minutes
+            staleTime: 1000 * 60 * 15, 
+            gcTime: 1000 * 60 * 60, 
             refetchOnWindowFocus: false,
             retry: (failureCount, error) => {
               if (error && typeof error === "object" && "status" in (error as any)) {

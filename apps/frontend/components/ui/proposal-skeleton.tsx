@@ -42,7 +42,7 @@ export function ProposalCardSkeleton() {
           </div>
         </div>
 
-        {/* Voting buttons skeleton */}
+        
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="flex space-x-3">
             <Skeleton className="h-8 w-20" />
@@ -76,7 +76,7 @@ export function ProposalDetailSkeleton() {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-2/3" />
 
-              {/* Tags skeleton */}
+              
               <div className="flex flex-wrap gap-2 pt-2">
                 <Skeleton className="h-6 w-16" />
                 <Skeleton className="h-6 w-20" />
@@ -110,7 +110,7 @@ export function ProposalDetailSkeleton() {
             </div>
           </div>
 
-          {/* Voting section skeleton */}
+          
           <div className="border rounded-lg p-4 bg-muted/30">
             <Skeleton className="h-6 w-48 mb-4" />
             <div className="flex items-center justify-between">

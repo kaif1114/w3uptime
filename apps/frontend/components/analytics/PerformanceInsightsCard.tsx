@@ -59,7 +59,7 @@ const getHealthScoreColor = (color: string) => {
 };
 
 export function PerformanceInsightsCard({ insights, healthScore }: PerformanceInsightsCardProps) {
-  // Filter out health_score from regular insights since we display it separately
+  
   const regularInsights = insights.filter(insight => insight.insight_type !== 'health_score');
 
   return (
@@ -71,7 +71,7 @@ export function PerformanceInsightsCard({ insights, healthScore }: PerformanceIn
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Health Score Display */}
+        
         <div className={`rounded-lg p-4 border ${getHealthScoreColor(healthScore.color)}`}>
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-sm">Overall Health Grade</h3>
@@ -87,7 +87,7 @@ export function PerformanceInsightsCard({ insights, healthScore }: PerformanceIn
           <p className="text-xs opacity-90">{healthScore.description}</p>
         </div>
 
-        {/* Performance Insights */}
+        
         <div className="space-y-3 flex gap-3">
           {regularInsights.length > 0 ? (
             regularInsights.map((insight, index) => (
@@ -121,7 +121,7 @@ export function PerformanceInsightsCard({ insights, healthScore }: PerformanceIn
           )}
         </div>
 
-        {/* Quick Actions */}
+        
         {regularInsights.length > 0 && (
           <div className="pt-2 border-t">
             <div className="text-xs text-muted-foreground mb-2">Quick Stats:</div>

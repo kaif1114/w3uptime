@@ -55,10 +55,10 @@ export default function WithdrawalsSection() {
   const [executingWithdrawalId, setExecutingWithdrawalId] = useState<string | null>(null);
   const [executionProgress, setExecutionProgress] = useState<string>("");
 
-  // Fetch withdrawals
+  
   const { data: withdrawalsData, isLoading, error } = useWithdrawals(currentPage, 10);
   
-  // Mutations
+  
   const createWithdrawalMutation = useCreateWithdrawal();
   const getSignatureMutation = useGetWithdrawalSignature();
   const executeWithdrawalMutation = useExecuteWithdrawal();
@@ -108,7 +108,7 @@ export default function WithdrawalsSection() {
         setWithdrawalAmount("");
         setIsWithdrawalDialogOpen(false);
         
-        // Automatically start the withdrawal process
+        
         setTimeout(() => {
           handleExecuteWithdrawal(result.withdrawalId);
         }, 1000);
@@ -124,10 +124,10 @@ export default function WithdrawalsSection() {
       setExecutingWithdrawalId(withdrawalId);
       setExecutionProgress("Getting withdrawal signature...");
 
-      // Get signature from backend
+      
       const signature = await getSignatureMutation.mutateAsync(withdrawalId);
       
-      // Execute withdrawal on blockchain
+      
       setExecutionProgress("Executing withdrawal...");
       await executeWithdrawalMutation.mutateAsync({
         withdrawalId,
@@ -148,7 +148,7 @@ export default function WithdrawalsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Withdrawal Request Card */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -219,7 +219,7 @@ export default function WithdrawalsSection() {
         </CardContent>
       </Card>
 
-      {/* Withdrawals History */}
+      
       <Card>
         <CardHeader>
           <CardTitle>Withdrawal History</CardTitle>

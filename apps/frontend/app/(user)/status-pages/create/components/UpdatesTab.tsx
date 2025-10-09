@@ -61,7 +61,7 @@ export function UpdatesTab({
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportExpandedSections, setReportExpandedSections] = useState<Record<string, boolean>>({});
 
-  // Report draft state
+  
   const [reportDraft, setReportDraft] = useState({
     title: "",
     description: "",
@@ -81,16 +81,16 @@ export function UpdatesTab({
       throw new Error("Description is required");
     }
 
-    // Prepare affected sections data
+    
     const affectedSections = Object.entries(reportDraft.affected)
       .filter(([_, status]) => status !== "not_affected")
       .map(([resourceId, status]) => {
-        // Find the section that contains this resource
+        
         const section = sections.find(s => 
           s.resources.some(r => r.id === resourceId)
         );
         return {
-          sectionId: section?.id || resourceId, // Use section ID if found, otherwise resource ID
+          sectionId: section?.id || resourceId, 
           status: status.toUpperCase() as "DOWNTIME" | "DEGRADED" | "RESOLVED"
         };
       });
@@ -106,7 +106,7 @@ export function UpdatesTab({
 
     await onCreateReport(payload);
 
-    // Reset the form
+    
     setReportDraft({
       title: "",
       description: "",
@@ -142,7 +142,7 @@ export function UpdatesTab({
 
   return (
     <div className="space-y-12">
-      {/* Basic information for report */}
+      
       <div className="flex gap-12">
         <div className="w-1/3 space-y-4">
           <h2 className="text-xl font-semibold text-foreground">
@@ -226,7 +226,7 @@ export function UpdatesTab({
         </div>
       </div>
 
-      {/* Affected services */}
+      
       <div className="flex gap-12">
         <div className="w-1/3 space-y-4">
           <h2 className="text-xl font-semibold text-foreground">
@@ -424,7 +424,7 @@ export function UpdatesTab({
         </div>
       </div>
 
-      {/* Submit button */}
+      
       <div className="flex justify-end gap-4 pt-8">
         <Button
           variant="outline"
@@ -442,7 +442,7 @@ export function UpdatesTab({
         </Button>
       </div>
 
-      {/* Existing status updates */}
+      
       {updates.length > 0 && (
         <div className="flex gap-12">
           <div className="w-1/3 space-y-4">

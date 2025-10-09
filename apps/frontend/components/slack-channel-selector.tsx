@@ -51,11 +51,11 @@ export default function SlackChannelSelector({
     );
 
     if (existingIndex >= 0) {
-      // Remove channel
+      
       const newChannels = selectedChannels.filter((_, index) => index !== existingIndex);
       onChannelsChange(newChannels);
     } else {
-      // Add channel
+      
       const newChannel: SelectedSlackChannel = {
         teamId: workspace.teamId,
         teamName: workspace.teamName,

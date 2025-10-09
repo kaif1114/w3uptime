@@ -44,12 +44,12 @@ const UPDATE_FREQUENCY_OPTIONS = [
 ];
 
 const REGION_COLORS = {
-  northAmerica: '#3b82f6', // blue
-  europe: '#10b981', // green
-  asia: '#f59e0b', // yellow
-  oceania: '#8b5cf6', // purple
-  southAmerica: '#ef4444', // red
-  africa: '#06b6d4' // cyan
+  northAmerica: '#3b82f6', 
+  europe: '#10b981', 
+  asia: '#f59e0b', 
+  oceania: '#8b5cf6', 
+  southAmerica: '#ef4444', 
+  africa: '#06b6d4' 
 };
 
 export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps) {
@@ -90,7 +90,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
     const min = Math.min(...allLatencies);
     const max = Math.max(...allLatencies);
     
-    // Calculate P95
+    
     const sorted = allLatencies.sort((a, b) => a - b);
     const p95Index = Math.floor(sorted.length * 0.95);
     const p95 = sorted[p95Index] || 0;
@@ -175,7 +175,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
           </div>
         </div>
 
-        {/* Statistics Cards */}
+        
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Average</p>
@@ -224,7 +224,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
               />
               <Legend />
 
-              {/* Incident markers */}
+              
               {showIncidents && incidentMarkers.map((incident, index) => (
                 <ReferenceLine
                   key={index}
@@ -235,7 +235,7 @@ export function GlobalLatencyChart({ data, incidents }: GlobalLatencyChartProps)
                 />
               ))}
 
-              {/* Regional latency lines */}
+              
               <Line 
                 type="monotone" 
                 dataKey="northAmerica" 

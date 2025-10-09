@@ -75,7 +75,7 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Add Comment Form */}
+        
         <form onSubmit={handleSubmitComment} className="space-y-3">
           <Textarea
             placeholder="Share your thoughts on this proposal..."
@@ -96,10 +96,10 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
           </div>
         </form>
 
-        {/* Comments List */}
+        
         <div className="space-y-4">
           {isLoading ? (
-            // Loading skeletons
+            
             Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex gap-3">
                 <Skeleton className="h-8 w-8 rounded-full" />

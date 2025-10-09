@@ -96,7 +96,7 @@ export function RegionalStats({ validators }: RegionalStatsProps) {
       stats.maxLatency = Math.max(stats.maxLatency, validator.latency);
     });
 
-    // Calculate averages and percentages
+    
     regionMap.forEach(stats => {
       const regionValidators = validators.filter(v => v.continent === stats.continent);
       const totalLatency = regionValidators.reduce((sum, v) => sum + v.latency, 0);
@@ -124,7 +124,7 @@ export function RegionalStats({ validators }: RegionalStatsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Global Overview Cards */}
+      
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -179,7 +179,7 @@ export function RegionalStats({ validators }: RegionalStatsProps) {
         </Card>
       </div>
 
-      {/* Performance Leaders */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-3">
@@ -248,7 +248,7 @@ export function RegionalStats({ validators }: RegionalStatsProps) {
         </Card>
       </div>
 
-      {/* Regional Breakdown */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

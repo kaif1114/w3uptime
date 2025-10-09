@@ -41,7 +41,7 @@ export function MonitoringControls({
       <CardContent className="p-4">
         <div className="flex flex-wrap items-center gap-4 justify-between">
           <div className="flex flex-wrap items-center gap-4">
-            {/* Time Period Selector */}
+            
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Period:</span>
               <Select value={timePeriod} onValueChange={onTimePeriodChange}>
@@ -58,7 +58,7 @@ export function MonitoringControls({
               </Select>
             </div>
 
-            {/* Auto Refresh Toggle */}
+            
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Auto-refresh:</span>
               <Button 
@@ -72,7 +72,7 @@ export function MonitoringControls({
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Last Updated */}
+            
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Last updated:</span>
               <Badge variant="outline">
@@ -80,7 +80,7 @@ export function MonitoringControls({
               </Badge>
             </div>
 
-            {/* Manual Refresh */}
+            
             <Button 
               variant="outline" 
               size="sm" 

@@ -58,10 +58,10 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
     const calculateUptime = (data: UptimeRecord[]) => {
       if (data.length === 0) return 100;
       const upCount = data.filter(record => record.status === 'up').length;
-      return Math.round((upCount / data.length) * 100 * 100) / 100; // Round to 2 decimal places
+      return Math.round((upCount / data.length) * 100 * 100) / 100; 
     };
 
-    // Current uptime streak
+    
     let currentStreak = 0;
     const sortedData = [...uptimeData].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     for (const record of sortedData) {
@@ -72,7 +72,7 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
       }
     }
 
-    // Calculate current uptime duration
+    
     const lastDowntime = sortedData.find(record => record.status === 'down');
     const uptimeStart = lastDowntime ? lastDowntime.timestamp : sortedData[sortedData.length - 1]?.timestamp || now;
     
@@ -121,7 +121,7 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
 
   return (
     <div className="space-y-6">
-      {/* Ongoing Incidents Alert */}
+      
       {ongoingIncidents.length > 0 && (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -136,7 +136,7 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
         </Alert>
       )}
 
-      {/* Current Status */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
         </CardContent>
       </Card>
 
-      {/* Incident History */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -270,7 +270,7 @@ export function UptimeIncidentPanel({ uptimeData, incidents, monitorName }: Upti
         </CardContent>
       </Card>
 
-      {/* SLA Summary */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

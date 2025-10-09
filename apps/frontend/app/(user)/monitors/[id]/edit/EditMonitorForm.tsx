@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-// Simple toast replacement - you can install sonner or use your preferred toast library
+
 const toast = {
   success: (message: string) => {
     alert(`${message}`);
@@ -189,7 +189,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Basic Information */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="name">Monitor Name</Label>
@@ -237,7 +237,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         </div>
       </div>
 
-      {/* URL Configuration */}
+      
       <div className="space-y-2">
         <Label htmlFor="url">Website URL</Label>
 
@@ -253,7 +253,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         )}
       </div>
 
-      {/* Monitor Settings */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="checkInterval">Check Interval (seconds)</Label>
@@ -305,7 +305,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         </div>
       </div>
 
-      {/* Expected Status Codes */}
+      
       <div>
         <div>
           <div className="text-base">Expected Status Codes</div>
@@ -365,7 +365,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         </div>
       </div>
 
-      {/* Escalation Policy */}
+      
       <div>
         <div>
           <div className="text-base">Escalation Policy</div>
@@ -416,7 +416,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
               </p>
             )}
 
-            {/* Show current escalation policy info */}
+            
             {watch("escalationPolicyId") &&
               escalationPolicies?.escalationPolicies && (
                 <div className="mt-2 p-3 bg-muted rounded-lg">
@@ -453,7 +453,7 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
         </div>
       </div>
 
-      {/* Form Actions */}
+      
       <div className="flex items-center justify-between pt-6 border-t">
         <Button
           type="button"

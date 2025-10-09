@@ -38,7 +38,7 @@ function formatUptime(
   hasOngoingIncident?: boolean,
   ongoingIncidentStartedAt?: string | null
 ): { text: string; isDown: boolean } {
-  // If there's an ongoing incident, the monitor is currently down
+  
   if (hasOngoingIncident && ongoingIncidentStartedAt) {
     const started = new Date(ongoingIncidentStartedAt);
     const now = new Date();
@@ -59,7 +59,7 @@ function formatUptime(
     };
   }
 
-  // Use the most recent resolved incident time if available
+  
   const startTime = lastIncidentResolvedAt || createdAt;
   const started = new Date(startTime);
   const now = new Date();
@@ -87,14 +87,14 @@ function formatTimeAgo(timestamp: string | null): string {
     const checkedTime = new Date(timestamp);
     const now = new Date();
     
-    // Check if the timestamp is valid
+    
     if (isNaN(checkedTime.getTime())) {
       return 'Invalid time';
     }
     
     const diff = Math.floor((now.getTime() - checkedTime.getTime()) / 1000);
 
-    // Handle negative differences (future timestamps)
+    
     if (diff < 0) {
       return 'Just now';
     }
@@ -131,7 +131,7 @@ export function MetricsCards({
   const [liveTimeAgo, setLiveTimeAgo] = useState<string>('');
   const [liveUptime, setLiveUptime] = useState<{ text: string; isDown: boolean }>({ text: '', isDown: false });
 
-  // Update live time ago every second
+  
   useEffect(() => {
     const updateTimeAgo = () => {
       setLiveTimeAgo(formatTimeAgo(lastCheckedAt));
@@ -143,7 +143,7 @@ export function MetricsCards({
     return () => clearInterval(interval);
   }, [lastCheckedAt]);
 
-  // Update live uptime every second
+  
   useEffect(() => {
     const updateUptime = () => {
       if (createdAt) {
@@ -157,7 +157,7 @@ export function MetricsCards({
     return () => clearInterval(interval);
   }, [createdAt, lastIncidentResolvedAt, hasOngoingIncident, ongoingIncidentStartedAt]);
 
-  // Connect to SSE for real-time updates
+  
   useEffect(() => {
     const eventSource = new EventSource(`/api/monitors/${monitorId}/stream`);
 
@@ -167,8 +167,8 @@ export function MetricsCards({
         console.log("Message received:", data);
         if (data.type === 'monitor_update' && data.monitorId === monitorId) {
           setLastCheckedAt(data.checkedAt || null);
-          // Refetch monitor data whenever status changes to DOWN or ACTIVE
-          // This ensures we get updated incident information (ongoing or resolved)
+          
+          
           if(data.status === 'DOWN' || data.status === 'ACTIVE') {
             refetchMonitor();
           }
@@ -185,12 +185,12 @@ export function MetricsCards({
     return () => {
       eventSource.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [monitorId]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-      {/* Currently up for / down for */}
+      
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -211,7 +211,7 @@ export function MetricsCards({
         </CardContent>
       </Card>
 
-      {/* Last checked at */}
+      
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export function MetricsCards({
         </CardContent>
       </Card>
 
-      {/* Incidents */}
+      
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">

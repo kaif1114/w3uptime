@@ -10,7 +10,7 @@ export default function ValidatorDashboardLoading() {
       </div>
 
       <div className="space-y-6">
-        {/* Balance Overview Loading */}
+        
         <div className="grid gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
@@ -26,7 +26,7 @@ export default function ValidatorDashboardLoading() {
           ))}
         </div>
 
-        {/* Validations Summary Loading */}
+        
         <Card>
           <CardHeader>
             <Skeleton className="h-6 w-48 mb-2" />
@@ -63,7 +63,7 @@ export default function ValidatorDashboardLoading() {
           </CardContent>
         </Card>
 
-        {/* Tabs Loading */}
+        
         <Card>
           <CardHeader>
             <Skeleton className="h-10 w-64" />

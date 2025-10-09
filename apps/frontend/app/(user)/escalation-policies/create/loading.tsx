@@ -12,16 +12,16 @@ export default function Loading() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Policy Name Section */}
+            
             <div className="space-y-2">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-9 w-full" />
             </div>
 
-            {/* Separator */}
+            
             <div className="border-t" />
 
-            {/* Escalation Levels Section */}
+            
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -31,7 +31,7 @@ export default function Loading() {
                 <Skeleton className="h-8 w-24" />
               </div>
 
-              {/* Mock Escalation Level Cards */}
+              
               {[1, 2].map((i) => (
                 <Card key={i} className="border-l-4 border-l-blue-500">
                   <CardHeader className="pb-4">
@@ -70,10 +70,10 @@ export default function Loading() {
               ))}
             </div>
 
-            {/* Separator */}
+            
             <div className="border-t" />
 
-            {/* Form Actions */}
+            
             <div className="flex items-center justify-between pt-4">
               <Skeleton className="h-9 w-16" />
               <Skeleton className="h-9 w-32" />

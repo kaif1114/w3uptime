@@ -20,7 +20,7 @@ export default function BalanceOverview({ balance }: BalanceOverviewProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      {/* Total Earnings */}
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -36,7 +36,7 @@ export default function BalanceOverview({ balance }: BalanceOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Available Balance */}
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
@@ -52,7 +52,7 @@ export default function BalanceOverview({ balance }: BalanceOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Pending Withdrawals */}
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">

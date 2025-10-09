@@ -85,7 +85,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
       onSuccess: () => {
         toast.success("Monitor deleted successfully");
         setShowDeleteDialog(false);
-        // Redirect to monitors list
+        
         router.push("/monitors");
       },
       onError: (error) => {
@@ -127,7 +127,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   return (
     <>
       <div className="space-y-6">
-        {/* Monitor Header */}
+        
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div
@@ -137,7 +137,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
             <div className=" items-center gap-4">
           
               <h1 className="text-2xl font-bold">
-                {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              {monitor?.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
               </h1>
                 <h1 className="text-md font-medium  text-muted-foreground">
                   {getStatusText(monitor?.status)}
@@ -183,7 +183,7 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           </div>
         </div>
 
-        {/* Metrics Cards */}
+        
         <MetricsCards
           monitorId={monitorId}
           createdAt={monitor?.createdAt}
@@ -196,13 +196,13 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
           ongoingIncidentStartedAt={monitor?.ongoingIncidentStartedAt}
         />
 
-        {/* Tab Navigation */}
+        
         <div>
           <div className="p-0">
             <div className="p-6">
-              {/* Performance Content */}
+              
               <div className="space-y-6">
-                {/* Performance Tab Time Period Buttons */}
+                
                 <div className="flex flex-wrap gap-2">
                   {(["day", "week", "month"] as const).map((period) => (
                     <Button

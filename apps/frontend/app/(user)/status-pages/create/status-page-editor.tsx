@@ -14,7 +14,7 @@ type Props = { mode: "create" | "edit"; id?: string };
 export default function StatusPageEditor({ mode, id }: Props) {
   const { data: monitorsData } = useMonitors();
   const {
-    // State
+    
     isPublished,
     setIsPublished,
     name,
@@ -32,28 +32,28 @@ export default function StatusPageEditor({ mode, id }: Props) {
     updates,
     maintenances,
     
-    // Loading states
+    
     isLoading,
     isSaving,
     isCreatingReport,
     isCreatingMaintenance,
     isDeletingMaintenance,
     
-    // Error states
+    
     statusPageError,
     maintenancesError,
     
-    // Computed values
+    
     hasChanges,
     
-    // Actions
+    
     handleSave,
     removeMaintenance,
     createMaintenance,
     createReport,
   } = useStatusPageEditor(mode, id);
 
-  // Show error states if any
+  
   if (statusPageError) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
