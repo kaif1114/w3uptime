@@ -142,7 +142,7 @@ export function createIncidentMessage(incident: {
   createdAt: Date;
 }): SlackMessage {
   const statusColor = incident.status === "RESOLVED" ? "good" : "danger";
-  const statusEmoji = incident.status === "RESOLVED" ? "✅" : "🚨";
+  const statusEmoji = incident.status === "RESOLVED" ? "" : "";
 
   return {
     text: `${statusEmoji} Incident Alert: ${incident.title}`,
@@ -349,7 +349,7 @@ export function createEscalationMessage(escalation: {
       type: "header",
       text: {
         type: "plain_text",
-        text: "🚨 Escalation Alert"
+        text: " Escalation Alert"
       }
     },
     {
@@ -456,7 +456,7 @@ export function createResolutionMessage(resolution: {
       type: "header",
       text: {
         type: "plain_text",
-        text: "✅ Incident Resolved"
+        text: " Incident Resolved"
       }
     },
     {
