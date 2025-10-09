@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
- ChevronDown,
   
   Menu,
   X
@@ -12,6 +11,8 @@ import {
 import { useState } from "react";
 import { useLandingAuth } from "@/hooks/useLandingAuth";
 import { IconSatellite } from "@tabler/icons-react";
+import { Icon } from "@tabler/icons-react";
+import Image from "next/image";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,8 +98,9 @@ export default function Home() {
             <Button 
               onClick={() => handleNavigation('/monitors')} 
               disabled={isConnecting || isSessionLoading}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6"
             >
+              <img src="/metamask-icon.svg" alt="MetaMask" className="w-6 h-6" />
               {isConnecting ? 'Connecting...' : 'Continue with MetaMask'}
             </Button>
           </div>
