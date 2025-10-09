@@ -1,5 +1,5 @@
 "use client";
-import { IconSatellite } from "@tabler/icons-react";
+import { IconLogout, IconSatellite } from "@tabler/icons-react";
 import * as React from "react";
 
 import { NavUser } from "@/components/ui/nav-user";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
   AlertTriangleIcon,
@@ -30,6 +30,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { logout } from "@/lib/auth";
 
 // Menu items.
 const items = [
@@ -81,6 +82,16 @@ const items = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
   const pathname = usePathname();
   useEffect(() => {
     console.log(pathname);
@@ -131,13 +142,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="text-sm text-sidebar-foreground/70">Theme</span>
             <ModeToggle />
           </div>
-          {/* <NavUser
-            user={{
-              name: "Muhammad Kaif",
-              email: "kaif@w3uptime.com",
-              avatar: "https://github.com/shadcn.png",
-            }}
-          /> */}
+          <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={handleLogout} size="lg">
+          <IconLogout className="mr-2 h-4 w-4 cursor-pointer" />
+          Log out
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+              
         </div>
       </SidebarFooter>
     </Sidebar>
