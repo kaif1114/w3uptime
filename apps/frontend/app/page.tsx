@@ -1,21 +1,19 @@
 
 "use client";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  
+import { useSession } from "@/hooks/useSession";
+import { connectWallet } from "@/lib/auth";
+import { IconSatellite } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
   Menu,
   X
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useSession } from "@/hooks/useSession";
-import { IconSatellite } from "@tabler/icons-react";
-import { Icon } from "@tabler/icons-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { connectWallet } from "@/lib/auth";
+import { useState } from "react";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,11 +26,11 @@ export default function Home() {
     isLoading: isSessionLoading,
   } = useSession();
 
-  useEffect(() => {
-    if (session?.authenticated) {
-      router.push("/monitors");
-    }
-  }, [session, router]);
+  // useEffect(() => {
+  //   if (session?.authenticated) {
+  //     router.push("/monitors");
+  //   }
+  // }, [session, router]);
 
   async function handleLogin() {
     setIsConnecting(true);
@@ -283,11 +281,13 @@ export default function Home() {
       {}
       <section className="relative z-10 px-6 pb-20">
         <div className="max-w-7xl mx-auto flex justify-center">
-          <img 
-            src="/Landing.png" 
+          <Image 
+            src="/landing.png" 
             alt="Dashboard Preview" 
             className="max-w-full h-auto rounded-2xl shadow-2xl"
             style={{ maxWidth: '1000px', width: '100%' }}
+            width={1000}
+            height={1000}
           />
         </div>
       </section>
