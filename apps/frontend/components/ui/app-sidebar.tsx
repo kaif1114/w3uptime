@@ -87,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleLogout = async () => {
     try {
       await logout()
-      router.push("/login")
+      router.push("/")
     } catch (error) {
       console.error("Logout failed:", error)
     }
