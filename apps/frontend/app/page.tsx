@@ -26,7 +26,6 @@ export default function Home() {
   const {
     data: session,
     isLoading: isSessionLoading,
-    isError: isSessionError,
   } = useSession();
 
   useEffect(() => {
@@ -52,9 +51,9 @@ export default function Home() {
       } else {
         setError('Failed to connect with MetaMask');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('MetaMask connection error:', err);
-      setError(err.message || 'Failed to connect with MetaMask');
+      setError(err instanceof Error ? err.message : 'Failed to connect with MetaMask');
     } finally {
       setIsConnecting(false);
     }
