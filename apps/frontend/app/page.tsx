@@ -8,25 +8,73 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { useState } from "react";
-import { useLandingAuth } from "@/hooks/useLandingAuth";
+import { useState, useEffect } from "react";
+import { useSession } from "@/hooks/useSession";
 import { IconSatellite } from "@tabler/icons-react";
 import { Icon } from "@tabler/icons-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { connectWallet } from "@/lib/auth";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { 
-    isConnecting, 
-    error, 
-    isAuthenticated, 
-    isSessionLoading,
-    handleNavigation, 
-    connectWithMetaMask,
-    checkMetaMaskInstalled,
-    installMetaMask,
-    setError
-  } = useLandingAuth();
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const {
+    data: session,
+    isLoading: isSessionLoading,
+    isError: isSessionError,
+  } = useSession();
+
+  useEffect(() => {
+    if (session?.authenticated) {
+      router.push("/monitors");
+    }
+  }, [session, router]);
+
+  async function handleLogin() {
+    setIsConnecting(true);
+    setError(null);
+
+    try {
+      if (!window.ethereum) {
+        setError('MetaMask is not installed. Please install MetaMask to continue.');
+        return;
+      }
+
+      const verifyData = await connectWallet();
+      if (verifyData) {
+        queryClient.setQueryData(["session"], verifyData);
+        router.push("/monitors");
+      } else {
+        setError('Failed to connect with MetaMask');
+      }
+    } catch (err: any) {
+      console.error('MetaMask connection error:', err);
+      setError(err.message || 'Failed to connect with MetaMask');
+    } finally {
+      setIsConnecting(false);
+    }
+  }
+
+  function handleNavigation(path: string) {
+    if (session?.authenticated) {
+      router.push(path);
+    } else {
+      handleLogin();
+    }
+  }
+
+  const checkMetaMaskInstalled = () => {
+    return typeof window !== 'undefined' && !!window.ethereum;
+  };
+
+  const installMetaMask = () => {
+    window.open('https://metamask.io/download/', '_blank');
+  };
 
   const date = new Date();
   const year = date.getFullYear();
@@ -96,12 +144,12 @@ export default function Home() {
           {}
           <div className="hidden md:flex items-center space-x-4">
             <Button 
-              onClick={() => handleNavigation('/monitors')} 
+              onClick={handleLogin} 
               disabled={isConnecting || isSessionLoading}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6"
             >
               <img src="/metamask-icon.svg" alt="MetaMask" className="w-6 h-6" />
-              {isConnecting ? 'Connecting...' : 'Continue with MetaMask'}
+              {isConnecting ? 'Connecting...' : 'Login with MetaMask'}
             </Button>
           </div>
 
@@ -144,11 +192,11 @@ export default function Home() {
               </button>
               <div className="pt-4 border-t border-slate-700 space-y-2">
                 <Button 
-                  onClick={() => handleNavigation('/monitors')}
+                  onClick={handleLogin}
                   disabled={isConnecting || isSessionLoading}
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                 >
-                  {isConnecting ? 'Connecting...' : 'Continue with MetaMask'}
+                  {isConnecting ? 'Connecting...' : 'Login with MetaMask'}
                 </Button>
               </div>
             </nav>
@@ -216,7 +264,7 @@ export default function Home() {
               className="bg-slate-800/50 border-slate-600 text-white placeholder:text-white/60 focus:border-blue-500"
             />
             <Button 
-              onClick={() => handleNavigation('/monitors')}
+              onClick={handleLogin}
               disabled={isConnecting || isSessionLoading}
               className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-2 whitespace-nowrap"
             >
@@ -271,7 +319,7 @@ export default function Home() {
                 </p>
                 <div className="flex space-x-4">
                   <Button 
-                    onClick={() => handleNavigation('/monitors')}
+                    onClick={handleLogin}
                     disabled={isConnecting || isSessionLoading}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-6"
                   >
