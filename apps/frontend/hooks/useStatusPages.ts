@@ -12,7 +12,7 @@ import {
 
 const API_BASE = "/api/status-pages";
 
-
+// Fetch all status pages
 export function useStatusPages() {
   return useQuery<StatusPagesListResponse>({
     queryKey: ["status-pages"],
@@ -27,7 +27,7 @@ export function useStatusPages() {
       }
       return res.json();
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;
@@ -35,7 +35,7 @@ export function useStatusPages() {
   });
 }
 
-
+// Fetch single status page
 export function useStatusPage(id: string) {
   return useQuery<GetStatusPageResponse>({
     queryKey: ["status-page", id],
@@ -51,7 +51,7 @@ export function useStatusPage(id: string) {
       return res.json();
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 2, 
+    staleTime: 1000 * 60 * 2, // 2 minutes for individual pages
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;
@@ -59,7 +59,7 @@ export function useStatusPage(id: string) {
   });
 }
 
-
+// Create status page
 export function useCreateStatusPage() {
   const queryClient = useQueryClient();
 
@@ -83,9 +83,9 @@ export function useCreateStatusPage() {
     },
     onSuccess: (response) => {
       console.log("Status page created successfully:", response.statusPage);
-      
+      // Invalidate and refetch status pages list
       queryClient.invalidateQueries({ queryKey: ["status-pages"] });
-      
+      // Set the new status page in cache
       queryClient.setQueryData(
         ["status-page", response.statusPage.id],
         response.statusPage
@@ -97,7 +97,7 @@ export function useCreateStatusPage() {
   });
 }
 
-
+// Update status page
 export function useUpdateStatusPage() {
   const queryClient = useQueryClient();
 
@@ -125,9 +125,9 @@ export function useUpdateStatusPage() {
     },
     onSuccess: (response, variables) => {
       console.log("Status page updated successfully:", response.statusPage);
-      
+      // Invalidate and refetch status pages list
       queryClient.invalidateQueries({ queryKey: ["status-pages"] });
-      
+      // Update the specific status page in cache
       queryClient.setQueryData(
         ["status-page", variables.id],
         response.statusPage
@@ -139,7 +139,7 @@ export function useUpdateStatusPage() {
   });
 }
 
-
+// Delete status page
 export function useDeleteStatusPage() {
   const queryClient = useQueryClient();
 
@@ -162,9 +162,9 @@ export function useDeleteStatusPage() {
     },
     onSuccess: (response, id) => {
       console.log("Status page deleted successfully:", response.message);
-      
+      // Invalidate and refetch status pages list
       queryClient.invalidateQueries({ queryKey: ["status-pages"] });
-      
+      // Remove the specific status page from cache
       queryClient.removeQueries({ queryKey: ["status-page", id] });
     },
     onError: (error: any) => {
@@ -173,7 +173,7 @@ export function useDeleteStatusPage() {
   });
 }
 
-
+// Publish/Unpublish status page (convenience hook)
 export function useToggleStatusPagePublication() {
   const queryClient = useQueryClient();
 
@@ -201,9 +201,9 @@ export function useToggleStatusPagePublication() {
     },
     onSuccess: (response, variables) => {
       console.log(`Status page ${variables.isPublished ? 'published' : 'unpublished'} successfully:`, response.statusPage);
-      
+      // Invalidate and refetch status pages list
       queryClient.invalidateQueries({ queryKey: ["status-pages"] });
-      
+      // Update the specific status page in cache
       queryClient.setQueryData(
         ["status-page", variables.id],
         response.statusPage

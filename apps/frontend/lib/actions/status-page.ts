@@ -15,7 +15,11 @@ export interface StatusPageDetails {
   updatedAt: string;
 }
 
-
+/**
+ * Server action to fetch published status page details
+ * @param statusPageId - The ID of the status page to fetch
+ * @returns StatusPageDetails or throws notFound() if not found/published
+ */
 export async function getPublishedStatusPageDetails(statusPageId: string): Promise<StatusPageDetails> {
   if (!statusPageId) {
     notFound();
@@ -25,13 +29,13 @@ export async function getPublishedStatusPageDetails(statusPageId: string): Promi
     const statusPage = await prisma.statusPage.findFirst({
       where: {
         id: statusPageId,
-        isPublished: true, 
+        isPublished: true, // Only return published status pages
       },
       select: {
         id: true,
         name: true,
         logoUrl: true,
-        logo: true, 
+        logo: true, // This maps to logoLinkUrl
         supportUrl: true,
         announcement: true,
         isPublished: true,
@@ -61,7 +65,11 @@ export async function getPublishedStatusPageDetails(statusPageId: string): Promi
   }
 }
 
-
+/**
+ * Server action to check if a status page exists and is published
+ * @param statusPageId - The ID of the status page to check
+ * @returns boolean indicating if the page exists and is published
+ */
 export async function isStatusPagePublished(statusPageId: string): Promise<boolean> {
   if (!statusPageId) {
     return false;
@@ -85,7 +93,11 @@ export async function isStatusPagePublished(statusPageId: string): Promise<boole
   }
 }
 
-
+/**
+ * Server action to get basic status page info for navigation
+ * @param statusPageId - The ID of the status page
+ * @returns Basic info needed for navbar or null if not found/published
+ */
 export async function getStatusPageNavInfo(statusPageId: string): Promise<{
   id: string;
   name: string;
@@ -106,7 +118,7 @@ export async function getStatusPageNavInfo(statusPageId: string): Promise<{
         id: true,
         name: true,
         logoUrl: true,
-        logo: true, 
+        logo: true, // This maps to logoLinkUrl
       },
     });
 

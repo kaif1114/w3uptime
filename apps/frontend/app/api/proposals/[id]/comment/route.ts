@@ -11,7 +11,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-
+// GET /api/proposals/[id]/comment - List comments for a proposal
 export const GET = withAuth(
   async (
     _req: NextRequest,
@@ -37,7 +37,7 @@ export const GET = withAuth(
   }
 );
 
-
+// POST /api/proposals/[id]/comment - Add a new comment
 export const POST = withAuth(
   async (
     req: NextRequest,
@@ -56,7 +56,7 @@ export const POST = withAuth(
         );
       }
 
-      
+      // ensure proposal exists
       const proposal = await prisma.proposal.findUnique({
         where: { id: proposalId },
       });

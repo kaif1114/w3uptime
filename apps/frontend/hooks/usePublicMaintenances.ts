@@ -4,8 +4,8 @@ export interface PublicMaintenanceData {
   id: string;
   title: string;
   description: string;
-  from: string; 
-  to: string; 
+  from: string; // ISO string
+  to: string; // ISO string
   status: "scheduled" | "in_progress" | "completed";
 }
 
@@ -13,7 +13,7 @@ export interface PublicMaintenancesResponse {
   maintenances: PublicMaintenanceData[];
 }
 
-
+// Hook for fetching public maintenances (no auth required)
 export function usePublicMaintenances(statusPageId: string) {
   return useQuery<PublicMaintenancesResponse>({
     queryKey: ["public-maintenances", statusPageId],
@@ -28,7 +28,7 @@ export function usePublicMaintenances(statusPageId: string) {
       return res.json();
     },
     enabled: !!statusPageId,
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 404) return false;
       return failureCount < 2;
@@ -36,7 +36,7 @@ export function usePublicMaintenances(statusPageId: string) {
   });
 }
 
-
+// Hook that works for both authenticated and public access
 export function useMaintenanceData(statusPageId: string, isPublic: boolean = false) {
   return useQuery<PublicMaintenancesResponse>({
     queryKey: isPublic ? ["public-maintenances", statusPageId] : ["auth-maintenances", statusPageId],
@@ -58,7 +58,7 @@ export function useMaintenanceData(statusPageId: string, isPublic: boolean = fal
       return res.json();
     },
     enabled: !!statusPageId,
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 404 || error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;

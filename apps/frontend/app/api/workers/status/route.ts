@@ -3,13 +3,13 @@ import { withAuth } from "@/lib/auth";
 import WorkerManager from "@/lib/workerManager";
 import { escalationQueue } from "@/lib/queue";
 
-
+// GET /api/workers/status - Get worker status (requires authentication)
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const workerManager = WorkerManager.getInstance();
     const workerStatus = workerManager.getStatus();
     
-    
+    // Get queue statistics
     const queueStats = {
       waiting: await escalationQueue.getWaiting().then(jobs => jobs.length),
       active: await escalationQueue.getActive().then(jobs => jobs.length),
@@ -39,7 +39,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-
+// POST /api/workers/status - Control workers (restart, etc.)
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();

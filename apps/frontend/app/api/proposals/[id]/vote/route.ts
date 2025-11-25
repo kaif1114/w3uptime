@@ -12,7 +12,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-
+// POST /api/proposals/[id]/vote - Cast or toggle a vote
 export const POST = withAuth(
   async (
     req: NextRequest,
@@ -32,7 +32,7 @@ export const POST = withAuth(
       }
       const { vote } = validation.data;
 
-      
+      // Ensure proposal exists
       const proposal = await prisma.proposal.findUnique({
         where: { id: proposalId },
       });
@@ -47,7 +47,7 @@ export const POST = withAuth(
           where: { proposalId_userId: { proposalId, userId: user.id } },
         })
         .catch(async () => {
-          
+          // Fallback for older Prisma versions without named compound unique
           const found = await prisma.proposalVote.findFirst({
             where: { proposalId, userId: user.id },
           });

@@ -40,8 +40,8 @@ export function useDepositHistory(
     },
     enabled,
     refetchInterval,
-    staleTime: 1000 * 60 * 5, 
-    gcTime: 1000 * 60 * 10 
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10 // 10 minutes
   });
 }
 
@@ -67,9 +67,9 @@ export function useProcessDepositEvent() {
       return response.json();
     },
     onSuccess: () => {
-      
+      // Invalidate and refetch deposit history queries
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      
+      // Also invalidate user session to refresh balance
       queryClient.invalidateQueries({ queryKey: ['session'] });
     }
   });

@@ -1,19 +1,27 @@
+// Database transaction and operation types
 
-
-
+/**
+ * Prisma transaction type
+ */
 export type PrismaTransaction = Parameters<Parameters<typeof import('db/client').prisma.$transaction>[0]>[0];
 
-
+/**
+ * Generic where clause for Prisma queries
+ */
 export interface WhereClause {
   [key: string]: unknown;
 }
 
-
+/**
+ * Generic order by clause for Prisma queries
+ */
 export interface OrderByClause {
   [key: string]: 'asc' | 'desc' | OrderByClause;
 }
 
-
+/**
+ * Database escalation policy with levels
+ */
 export interface DbEscalationPolicyWithLevels {
   id: string;
   name: string;
@@ -35,7 +43,9 @@ export interface DbEscalationPolicyWithLevels {
   };
 }
 
-
+/**
+ * Database escalation level
+ */
 export interface DbEscalationLevel {
   id: string;
   escalationPolicyId: string;

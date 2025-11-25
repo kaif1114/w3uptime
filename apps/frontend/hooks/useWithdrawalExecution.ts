@@ -22,19 +22,19 @@ export function useExecuteWithdrawal() {
       try {
         onProgress?.('Connecting to wallet...');
 
-        
+        // Check if MetaMask is available
         if (!window.ethereum) {
           throw new Error('MetaMask is not installed');
         }
 
-        
+        // Request account access
         await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-        
+        // Create provider and signer
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
 
-        
+        // Verify the connected account matches the withdrawal address
         const connectedAddress = await signer.getAddress();
         if (connectedAddress.toLowerCase() !== signature.userAddress.toLowerCase()) {
           throw new Error('Connected wallet address does not match withdrawal address');
@@ -42,10 +42,10 @@ export function useExecuteWithdrawal() {
 
         onProgress?.('Preparing withdrawal transaction...');
 
-        
+        // Create contract instance with signer
         const contract = createContractInstanceWithSigner(signer);
 
-        
+        // Execute withdrawal
         onProgress?.('Executing withdrawal...');
         
         const tx = await contract.withdraw(
@@ -57,7 +57,7 @@ export function useExecuteWithdrawal() {
 
         onProgress?.('Waiting for confirmation...');
 
-        
+        // Wait for transaction to be mined
         const receipt = await tx.wait(1);
 
         if (!receipt) {
@@ -74,7 +74,7 @@ export function useExecuteWithdrawal() {
       } catch (error: unknown) {
         console.error('Withdrawal execution error:', error);
         
-        
+        // Handle specific error cases
         const errorObj = error as { code?: number; message?: string };
         const errorMessage = errorObj.message || '';
         
@@ -104,14 +104,14 @@ export function useExecuteWithdrawal() {
       }
     },
     onSuccess: (result) => {
-      
+      // Invalidate relevant queries to refetch updated data
       queryClient.invalidateQueries({ queryKey: ['withdrawals'] });
-      queryClient.invalidateQueries({ queryKey: ['deposits'] }); 
+      queryClient.invalidateQueries({ queryKey: ['deposits'] }); // User balance might have changed
     },
   });
 }
 
-
+// Hook to check withdrawal limits from contract
 export function useWithdrawalLimits() {
   return useMutation({
     mutationFn: async (): Promise<{ min: string; max: string }> => {

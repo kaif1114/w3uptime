@@ -28,7 +28,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    
+    // Get user's active Slack integrations
     const integrations = await prisma.slackIntegration.findMany({
       where: {
         userId: session.user.id,
@@ -42,7 +42,7 @@ export async function GET() {
 
     const workspaceChannels: WorkspaceChannels[] = [];
 
-    
+    // Fetch channels for each workspace
     for (const integration of integrations) {
       try {
         const response = await fetch("https://slack.com/api/conversations.list", {
@@ -57,7 +57,7 @@ export async function GET() {
 
         if (data.ok && data.channels) {
           const channels: SlackChannel[] = data.channels
-            .filter((channel: SlackApiChannel) => !channel.is_archived) 
+            .filter((channel: SlackApiChannel) => !channel.is_archived) // Only active channels
             .map((channel: SlackApiChannel) => ({
               id: channel.id,
               name: channel.name,

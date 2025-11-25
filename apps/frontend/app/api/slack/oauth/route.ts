@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Authorization code is required" }, { status: 400 });
     }
 
-    
+    // Exchange code for access token
     const tokenResponse = await fetch("https://slack.com/api/oauth.v2.access", {
       method: "POST",
       headers: {
@@ -46,14 +46,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    
+    // Extract webhook URL if incoming webhook was authorized
     let webhookUrl: string | null = null;
     if (tokenData.incoming_webhook) {
       webhookUrl = tokenData.incoming_webhook.url;
       console.log("Webhook URL received from Slack:", webhookUrl);
     }
 
-    
+    // Get default channel (try #general first, then first available channel)
     let defaultChannelId: string | null = null;
     let defaultChannelName: string | null = null;
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       const channelsData = await channelsResponse.json();
 
       if (channelsData.ok && channelsData.channels) {
-        
+        // Try to find #general first
         const generalChannel = channelsData.channels.find((ch: SlackApiChannel) => 
           ch.name === "general" && !ch.is_archived
         );
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
           defaultChannelId = generalChannel.id;
           defaultChannelName = generalChannel.name;
         } else {
-          
+          // Fallback to first available public channel
           const firstChannel = channelsData.channels.find((ch: SlackApiChannel) => 
             !ch.is_private && !ch.is_archived
           );
@@ -91,16 +91,16 @@ export async function POST(request: NextRequest) {
       }
     } catch (channelError) {
       console.error("Error fetching default channel:", channelError);
-      
+      // Continue without default channel - user can set it later
     }
 
-    
+    // Check if integration already exists for this team
     const existingIntegration = await prisma.slackIntegration.findUnique({
       where: { teamId: tokenData.team.id },
     });
 
     if (existingIntegration) {
-      
+      // Update existing integration
       await prisma.slackIntegration.update({
         where: { teamId: tokenData.team.id },
         data: {
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      
+      // Create new integration
       await prisma.slackIntegration.create({
         data: {
           userId: session.user.id,

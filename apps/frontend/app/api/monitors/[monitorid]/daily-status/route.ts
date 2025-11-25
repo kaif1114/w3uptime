@@ -17,7 +17,7 @@ type DailyAggregation = {
   uptime_percentage: number;
 };
 
-
+// Function to determine daily status based on uptime percentage
 function getDailyStatus(uptimePercentage: number, totalChecks: number): DailyStatus {
   if (totalChecks === 0) return 'unknown';
   if (uptimePercentage >= 99.5) return 'up';
@@ -36,7 +36,7 @@ export const GET = withAuth(
         timezone: url.searchParams.get("timezone"),
       });
 
-      
+      // First verify that the monitor belongs to the user
       const monitor = await prisma.monitor.findFirst({
         where: {
           id: monitorid,
@@ -51,13 +51,13 @@ export const GET = withAuth(
         );
       }
 
-      
+      // Calculate the date range
       const periodDays = parseInt(period.replace('d', ''));
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - periodDays);
 
-      
+      // Query to get daily aggregations
       const dailyAggregations = await prisma.$queryRaw<DailyAggregation[]>`
         SELECT 
           DATE("createdAt" AT TIME ZONE ${timezone}) as date,
@@ -76,13 +76,13 @@ export const GET = withAuth(
         ORDER BY date ASC
       `;
 
-      
+      // Create a map of existing data
       const dataMap = new Map<string, DailyAggregation>();
       dailyAggregations.forEach(agg => {
         dataMap.set(agg.date.toISOString().split('T')[0], agg);
       });
 
-      
+      // Fill in missing days with no data
       const result: DailyStatusData[] = [];
       for (let i = 0; i < periodDays; i++) {
         const currentDate = new Date(startDate);
@@ -104,10 +104,10 @@ export const GET = withAuth(
             successfulChecks,
             averageResponseTime: Math.round(agg.avg_latency),
             incidents: totalChecks > 0 && successfulChecks < totalChecks ? 1 : 0,
-            downtimeMinutes: Math.round(((totalChecks - successfulChecks) * 5)), 
+            downtimeMinutes: Math.round(((totalChecks - successfulChecks) * 5)), // Assuming 5-minute intervals
           });
         } else {
-          
+          // No data for this day
           result.push({
             date: dateString,
             status: 'unknown',

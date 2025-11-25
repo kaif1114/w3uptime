@@ -6,7 +6,7 @@ import {
 
 const API_BASE = "/api/validators";
 
-
+// Fetch all validators with optional filters
 export function useValidators(filters?: ValidatorFilters) {
   const queryParams = new URLSearchParams();
   if (filters?.countrycode) queryParams.append('countrycode', filters.countrycode);
@@ -31,6 +31,6 @@ export function useValidators(filters?: ValidatorFilters) {
       }
       return response.json();
     },
-    refetchInterval: 60000, 
+    refetchInterval: 60000, // Refetch every minute as validators can connect/disconnect
   });
 }

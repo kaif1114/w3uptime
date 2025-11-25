@@ -23,7 +23,7 @@ export interface ValidatorCountResponse {
   count: number;
 }
 
-
+// Query parameters for filtering validators
 export interface ValidatorFilters {
   countrycode?: string;
   city?: string;
@@ -31,7 +31,7 @@ export interface ValidatorFilters {
   continent?: string;
 }
 
-
+// Aggregated data for display
 export interface CountryValidatorData {
   name: string;
   code: string;
@@ -54,7 +54,7 @@ export interface ContinentValidatorData {
   countries: CountryValidatorData[];
 }
 
-
+// Validator Dashboard Types
 export interface ValidatorBalance {
   totalEarnings: number;
   availableBalance: number;

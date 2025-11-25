@@ -15,7 +15,7 @@ import {
 
 const API_BASE = "/api/proposals";
 
-
+// Fetch all proposals with filters and pagination
 export function useProposals(filters: ProposalFilters = {}) {
   return useQuery<ProposalsResponse>({
     queryKey: ["proposals", filters],
@@ -45,7 +45,7 @@ export function useProposals(filters: ProposalFilters = {}) {
   });
 }
 
-
+// Fetch single proposal by ID
 export function useProposal(id: string) {
   return useQuery<ProposalResponse>({
     queryKey: ["proposal", id],
@@ -67,7 +67,7 @@ export function useProposal(id: string) {
   });
 }
 
-
+// Create a new proposal
 export function useCreateProposal() {
   const queryClient = useQueryClient();
 
@@ -95,7 +95,7 @@ export function useCreateProposal() {
   });
 }
 
-
+// Vote on a proposal
 export function useVoteProposal() {
   const queryClient = useQueryClient();
 
@@ -122,7 +122,7 @@ export function useVoteProposal() {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      
+      // Invalidate proposals list and specific proposal
       queryClient.invalidateQueries({ queryKey: ["proposals"] });
       queryClient.invalidateQueries({
         queryKey: ["proposal", variables.proposalId],
@@ -131,7 +131,7 @@ export function useVoteProposal() {
   });
 }
 
-
+// Add a comment to a proposal
 export function useAddComment() {
   const queryClient = useQueryClient();
 
@@ -158,11 +158,11 @@ export function useAddComment() {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      
+      // Invalidate specific proposal to refetch with new comment
       queryClient.invalidateQueries({
         queryKey: ["proposal", variables.proposalId],
       });
-      
+      // Invalidate comments query to refetch comments list
       queryClient.invalidateQueries({
         queryKey: ["proposal-comments", variables.proposalId],
       });
@@ -170,7 +170,7 @@ export function useAddComment() {
   });
 }
 
-
+// Fetch comments for a proposal
 export function useProposalComments(proposalId: string) {
   return useQuery<ProposalComment[]>({
     queryKey: ["proposal-comments", proposalId],
@@ -187,7 +187,7 @@ export function useProposalComments(proposalId: string) {
       }
 
       const data = await response.json();
-      return data.comments; 
+      return data.comments; // API returns { comments: ProposalComment[] }
     },
     enabled: !!proposalId,
   });

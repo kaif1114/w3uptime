@@ -12,7 +12,7 @@ const updateAlertSchema = z.object({
 });
 
 
-
+//acknowledged will most prolly be by the user or idk 
 const acknowledgeAlertSchema = z.object({
   acknowledgedBy: z.string().min(1).optional(), 
   alertId: z.string().min(1),
@@ -20,8 +20,8 @@ const acknowledgeAlertSchema = z.object({
 
 
 
-
-
+//get specific alert
+// Check and working fine on Postman
 export const GET = withAuth(async (req: NextRequest, user) =>
 {
   try {
@@ -70,7 +70,7 @@ export const GET = withAuth(async (req: NextRequest, user) =>
 }
 );
 
-
+// PATCH /api/alerts/[alertid] - Acknowledge alert (specific action)
 export const PATCH = withAuth(async (req: NextRequest, user) =>
 {
   try {
@@ -100,15 +100,15 @@ export const PATCH = withAuth(async (req: NextRequest, user) =>
       );
     }
 
-    
+    // Note: Alert acknowledgment status would need to be added to the schema if needed
 
-    
+    // Acknowledge the alert
     const acknowledgedAlert = await prisma.alert.update({
       where: {
         id: validation.data.alertId,
       },
       data: {
-        
+        // Note: Acknowledgment fields would need to be added to the Alert schema
       },
       include: {
         monitor: {
@@ -134,7 +134,7 @@ export const PATCH = withAuth(async (req: NextRequest, user) =>
   }
 });
 
-
+// DELETE /api/alerts/[alertid] - Delete alert
 export const DELETE = withAuth(async (req: NextRequest, user) =>
 {
   try {

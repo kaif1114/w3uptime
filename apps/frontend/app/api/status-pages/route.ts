@@ -6,7 +6,7 @@ import { prisma } from "db/client";
 const createSchema = z.object({
   name: z.string().min(1),
   isPublished: z.boolean().optional().default(false),
-  
+  // Accept any string for logo so we can support uploads/data URLs during prototyping
   logoUrl: z.string().optional().nullable(),
   logoLinkUrl: z.string().optional().nullable(),
   supportUrl: z.string().optional().nullable(),
@@ -73,7 +73,7 @@ export const GET = withAuth(async (_req: NextRequest, user) => {
         id: page.id,
         name: page.name,
         isPublished: page.isPublished,
-        historyRange: "7d", 
+        historyRange: "7d", // Default value since it's not in DB yet
         createdAt: page.createdAt.toISOString(),
         updatedAt: page.updatedAt.toISOString(),
       })),
@@ -103,7 +103,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     }
     console.log("Validation passed:", parsed.data);
 
-    
+    // Create the status page in the database
     const statusPage = await prisma.statusPage.create({
       data: {
         name: parsed.data.name,
@@ -114,21 +114,21 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       },
     });
 
-    
+    // Create sections if provided
     if (parsed.data.sections && parsed.data.sections.length > 0) {
       await prisma.statusPageSection.createMany({
         data: parsed.data.sections.map((section, index) => ({
           name: section.name,
           description: null,
           order: index + 1,
-          type: "BOTH", 
-          monitorId: section.resources[0]?.monitorId || "", 
+          type: "BOTH", // Default type
+          monitorId: section.resources[0]?.monitorId || "", // Use first monitor if available
           statusPageId: statusPage.id,
         })),
       });
     }
 
-    
+    // Fetch the complete status page with sections
     const completeStatusPage = await prisma.statusPage.findUnique({
       where: { id: statusPage.id },
       include: {
@@ -147,8 +147,8 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       isPublished: statusPage.isPublished,
       logoUrl: statusPage.logoUrl,
       logoLinkUrl: statusPage.logo,
-      supportUrl: null, 
-      historyRange: "7d", 
+      supportUrl: null, // 
+      historyRange: "7d", // Default value
       sections: completeStatusPage?.statusPageSections.map(section => ({
         id: section.id,
         name: section.name,

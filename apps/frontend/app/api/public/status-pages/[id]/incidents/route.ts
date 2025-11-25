@@ -9,7 +9,7 @@ export const GET = async (
     const { id } = await context.params;
     const { searchParams } = new URL(req.url);
 
-    
+    // First verify the status page exists and is published
     const statusPage = await prisma.statusPage.findFirst({
       where: { 
         id, 
@@ -32,7 +32,7 @@ export const GET = async (
       );
     }
 
-    
+    // Extract monitor IDs from the status page
     const monitorIds = statusPage.statusPageSections.map(section => section.monitorId);
 
     if (monitorIds.length === 0) {
@@ -44,7 +44,7 @@ export const GET = async (
       });
     }
 
-    
+    // Parse query parameters
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Math.min(parseInt(searchParams.get('pageSize') || '10', 10), 100);
     const status = searchParams.get('status') as "ONGOING" | "ACKNOWLEDGED" | "RESOLVED" | null;
@@ -54,7 +54,7 @@ export const GET = async (
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 
-    
+    // Build where clause
     const whereClause: Record<string, unknown> = {
       monitorId: {
         in: monitorIds,
@@ -80,22 +80,22 @@ export const GET = async (
       whereClause.createdAt = dateFilter;
     }
 
-    
+    // Build orderBy clause
     const orderBy: Record<string, unknown> = {};
     if (sortBy === 'createdAt' || sortBy === 'resolvedAt') {
       orderBy[sortBy] = sortOrder;
     } else if (sortBy === 'downtime') {
       orderBy.downtime = sortOrder;
     } else {
-      orderBy.createdAt = 'desc'; 
+      orderBy.createdAt = 'desc'; // Default fallback
     }
 
-    
+    // Get total count
     const total = await prisma.incident.count({
       where: whereClause,
     });
 
-    
+    // Fetch incidents with pagination
     const incidents = await prisma.incident.findMany({
       where: whereClause,
       include: {
@@ -112,7 +112,7 @@ export const GET = async (
       take: pageSize,
     });
 
-    
+    // Transform to public API format
     const formattedIncidents = incidents.map(incident => ({
       id: incident.id,
       title: incident.title,

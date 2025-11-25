@@ -14,7 +14,7 @@ import {
 
 const API_BASE = "/api/monitors";
 
-
+// Fetch all monitors
 export function useMonitors() {
   return useQuery<MonitorApiResponse>({
     queryKey: ["monitors"],
@@ -33,7 +33,7 @@ export function useMonitors() {
   });
 }
 
-
+// Fetch single monitor
 export function useMonitor(id: string) {
   return useQuery<Monitor>({
     queryKey: ["monitor", id],
@@ -53,7 +53,7 @@ export function useMonitor(id: string) {
   });
 }
 
-
+// Fetch monitor details with stats and metrics
 export function useMonitorDetails(id: string) {
   return useQuery<Monitor>({
     queryKey: ["monitor-details", id],
@@ -70,11 +70,11 @@ export function useMonitorDetails(id: string) {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: 30000, 
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
   });
 }
 
-
+// Create monitor
 export function useCreateMonitor() {
   const queryClient = useQueryClient();
 
@@ -102,7 +102,7 @@ export function useCreateMonitor() {
   });
 }
 
-
+// Update monitor
 export function useUpdateMonitor() {
   const queryClient = useQueryClient();
 
@@ -131,7 +131,7 @@ export function useUpdateMonitor() {
   });
 }
 
-
+// Delete monitor
 export function useDeleteMonitor() {
   const queryClient = useQueryClient();
 
@@ -153,10 +153,10 @@ export function useDeleteMonitor() {
       return response.json();
     },
     onSuccess: (data, deletedMonitorId) => {
-      
+      // Invalidate monitors list to refetch
       queryClient.invalidateQueries({ queryKey: ["monitors"] });
       
-      
+      // Remove the specific monitor from cache
       queryClient.removeQueries({ queryKey: ["monitor", deletedMonitorId] });
       queryClient.removeQueries({ queryKey: ["monitor-analytics", deletedMonitorId] });
       queryClient.removeQueries({ queryKey: ["monitor-timeseries", deletedMonitorId] });
@@ -169,13 +169,13 @@ export function useDeleteMonitor() {
   });
 }
 
-
+// Pause/Unpause monitor  
 export function usePauseMonitor() {
   const queryClient = useQueryClient();
 
   return useMutation<UpdateMonitorResponse, Error, { id: string; status: "ACTIVE" | "PAUSED" }>({
     mutationFn: async ({ id, status }) => {
-      
+      // Get current monitor data first
       const currentResponse = await fetch(`${API_BASE}/${id}`, {
         credentials: 'include',
         headers: {
@@ -187,7 +187,7 @@ export function usePauseMonitor() {
       }
       const currentMonitor = await currentResponse.json();
 
-      
+      // Update with new status
       const response = await fetch(`${API_BASE}/${id}`, {
         method: "PATCH",
         credentials: 'include',
@@ -214,7 +214,7 @@ export function usePauseMonitor() {
   });
 }
 
-
+// Fetch monitor analytics data
 export function useMonitorAnalytics(id: string, period: string = 'day') {
   return useQuery<MonitorAnalyticsResponse>({
     queryKey: ["monitor-analytics", id, period],
@@ -231,12 +231,12 @@ export function useMonitorAnalytics(id: string, period: string = 'day') {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: 60000, 
-    staleTime: 30000, 
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 }
 
-
+// Fetch monitor timeseries data for charts
 export function useMonitorTimeSeries(id: string, period: string = 'day') {
   return useQuery<MonitorTimeSeriesResponse>({
     queryKey: ["monitor-timeseries", id, period],
@@ -253,12 +253,12 @@ export function useMonitorTimeSeries(id: string, period: string = 'day') {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: 60000, 
-    staleTime: 30000, 
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 }
 
-
+// Fetch monitor statistics 
 export function useMonitorStats(id: string, period: string = 'day') {
   return useQuery({
     queryKey: ["monitor-stats", id, period],
@@ -275,12 +275,12 @@ export function useMonitorStats(id: string, period: string = 'day') {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: 60000, 
-    staleTime: 30000, 
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 }
 
-
+// Fetch monitor incidents count
 export function useMonitorIncidents(id: string) {
   return useQuery<{ monitorId: string; incidentCount: number }>({
     queryKey: ["monitor-incidents", id],
@@ -297,8 +297,8 @@ export function useMonitorIncidents(id: string) {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: 60000, 
-    staleTime: 30000, 
+    refetchInterval: 60000, // Refetch every 60 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 }
 

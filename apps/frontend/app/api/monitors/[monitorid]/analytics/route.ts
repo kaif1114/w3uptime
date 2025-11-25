@@ -21,7 +21,7 @@ const analyticsQuerySchema = z.object({
   period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
-
+// GET /api/monitors/[monitorid]/analytics - Get comprehensive monitor analytics
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -45,7 +45,7 @@ export const GET = withAuth(async (
 
     const { period } = validation.data;
 
-    
+    // Verify monitor ownership
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
@@ -60,7 +60,7 @@ export const GET = withAuth(async (
       );
     }
 
-    
+    // Execute all analytics queries in parallel
     const [
       monitorStats,
       bestRegions,
@@ -71,32 +71,32 @@ export const GET = withAuth(async (
       weeklyComparison,
       performanceInsights,
     ] = await Promise.all([
-      
+      // Monitor uptime and latency statistics
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_stats($1::UUID, $2::TEXT)`, monitorid, period),
       
-      
+      // Best performing regions (top 1)
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_best_worst_regions($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT) LIMIT 1`, monitorid, period, 'country', 'best'),
       
-      
+      // Worst performing regions (top 1)
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_best_worst_regions($1::UUID, $2::TEXT, $3::TEXT, $4::TEXT) ORDER BY performance_score ASC LIMIT 1`, monitorid, period, 'country', 'worst'),
       
-      
+      // Continental data for the specific monitor
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_continent_data($1::UUID, $2::TEXT)`, monitorid, period),
       
-      
+      // Country data for the specific monitor
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_country_data($1::UUID, $2::TEXT)`, monitorid, period),
       
-      
+      // Hourly patterns data
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_hourly_patterns($1::UUID, $2::TEXT)`, monitorid, period),
       
-      
+      // Weekly comparison data
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_weekly_comparison($1::UUID)`, monitorid),
       
-      
+      // Performance insights and recommendations
       prisma.$queryRawUnsafe(`SELECT * FROM get_monitor_performance_insights($1::UUID, $2::TEXT)`, monitorid, period),
     ]);
 
-    
+    // Helper function to convert BigInt to Number
     const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);
@@ -111,12 +111,12 @@ export const GET = withAuth(async (
       return obj;
     };
 
-    
+    // Transform the data to match expected frontend format
     const stats = (monitorStats as RawMonitorStatsResult[])[0] || {};
     const bestRegion = (bestRegions as MonitorBestWorstRegionsResult[])[0] || null;
     const worstRegion = (worstRegions as MonitorBestWorstRegionsResult[])[0] || null;
 
-    
+    // Process regional data - these are now already aggregated by the functions
     const processedContinentData: ProcessedMonitorRegionalData[] = (continentData as MonitorContinentDataResult[]).map(item => ({
       continent_code: item.continent_code,
       avg_latency: Number(item.avg_latency || 0),
@@ -129,7 +129,7 @@ export const GET = withAuth(async (
       sample_count: Number(item.total_ticks || 0),
     }));
 
-    
+    // Process hourly patterns data
     const processedHourlyPatterns: HourlyPattern[] = (hourlyPatterns as RawHourlyPatternResult[]).map(item => ({
       hour_of_day: Number(item.hour_of_day),
       avg_latency: Number(item.avg_latency || 0),
@@ -139,7 +139,7 @@ export const GET = withAuth(async (
       check_frequency: Number(item.check_frequency || 0),
     }));
 
-    
+    // Process weekly comparison data
     const processedWeeklyComparison: WeeklyComparison[] = (weeklyComparison as RawWeeklyComparisonResult[]).map(item => ({
       metric_name: item.metric_name,
       current_week: Number(item.current_week || 0),
@@ -148,7 +148,7 @@ export const GET = withAuth(async (
       trend_direction: item.trend_direction as 'up' | 'down' | 'stable',
     }));
 
-    
+    // Process performance insights data
     const processedInsights: PerformanceInsight[] = (performanceInsights as RawPerformanceInsightResult[]).map(item => ({
       insight_type: item.insight_type as 'health_score' | 'uptime' | 'latency' | 'patterns',
       insight_title: item.insight_title,
@@ -158,13 +158,13 @@ export const GET = withAuth(async (
       health_score: item.health_score,
     }));
 
-    
+    // Calculate health score
     const uptimePercentage = Number(stats.uptime_percentage || 0);
     const avgLatency = Number(stats.avg_latency || 0);
     
     const healthScore: HealthScore = {
       grade: processedInsights.find(i => i.insight_type === 'health_score')?.health_score || 'N/A',
-      score: Math.round((uptimePercentage + (100 - Math.min(avgLatency / 50, 100))) / 2), 
+      score: Math.round((uptimePercentage + (100 - Math.min(avgLatency / 50, 100))) / 2), // Simple scoring
       color: (() => {
         const grade = processedInsights.find(i => i.insight_type === 'health_score')?.health_score;
         if (grade === 'A+' || grade === 'A') return 'green';
@@ -183,29 +183,29 @@ export const GET = withAuth(async (
         successful_checks: Number(stats.successful_checks || 0),
         failed_checks: Number(stats.failed_checks || 0),
         uptime_percentage: Number(stats.uptime_percentage || 0),
-        availability_sla: Number(stats.uptime_percentage || 0), 
+        availability_sla: Number(stats.uptime_percentage || 0), // Use uptime as SLA for now
       },
       bestRegion: bestRegion ? {
-        region_type: "Country", 
+        region_type: "Country", // Default to country for now
         region_name: bestRegion.region_name || bestRegion.region_id || 'Unknown',
         avg_latency: Number(bestRegion.avg_latency || 0),
         sample_count: Number(bestRegion.total_checks || 0),
       } : null,
       worstRegion: worstRegion ? {
-        region_type: "Country", 
+        region_type: "Country", // Default to country for now  
         region_name: worstRegion.region_name || worstRegion.region_id || 'Unknown',
         avg_latency: Number(worstRegion.avg_latency || 0),
         sample_count: Number(worstRegion.total_checks || 0),
       } : null,
       regional: {
-        byCountry: processedCountryData.sort((a, b) => a.avg_latency - b.avg_latency), 
-        byContinent: processedContinentData.sort((a, b) => a.avg_latency - b.avg_latency), 
-        byCity: [], 
+        byCountry: processedCountryData.sort((a, b) => a.avg_latency - b.avg_latency), // Sort by best latency
+        byContinent: processedContinentData.sort((a, b) => a.avg_latency - b.avg_latency), // Sort by best latency
+        byCity: [], // Not needed for monitor-specific data
       },
       worldMap: {
         byCountry: processedCountryData,
       },
-      
+      // Enhanced analytics data
       hourlyPatterns: processedHourlyPatterns,
       weeklyComparison: processedWeeklyComparison,
       performanceInsights: processedInsights,

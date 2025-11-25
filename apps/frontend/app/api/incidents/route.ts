@@ -10,7 +10,7 @@ const createIncidentSchema = z.object({
   monitorId: z.string().min(1),
 });
 
-
+// POST /api/incidents - Create new incident
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
@@ -38,9 +38,9 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    
+    // Create incident with initial timeline event in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      
+      // Create the incident
       const incident = await tx.incident.create({
         data: {
           title,
@@ -65,7 +65,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
         },
       });
 
-      
+      // Create initial timeline event
       await tx.timelineEvent.create({
         data: {
           description: `Incident "${title}" was created`,
@@ -94,7 +94,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-
+// GET /api/incidents - Get all incidents
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const incidents = await prisma.incident.findMany({

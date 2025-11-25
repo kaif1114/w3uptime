@@ -15,7 +15,7 @@ const createAlertSchema = z.object({
   status: z.enum(["PENDING", "SENT", "ACKNOWLEDGED", "RESOLVED"]).default("PENDING"),
 });
 
-
+// GET /api/alerts - Get all alerts (with optional monitor filter)
 
 export const GET = withAuth(async (req: NextRequest, user) =>
 {
@@ -36,11 +36,11 @@ export const GET = withAuth(async (req: NextRequest, user) =>
       },
     };
 
-    
+    // Use query parameter if provided, otherwise use hardcoded monitor ID
     const targetMonitorId = validation.data.monitorId || user.id;
     whereClause.monitorId = targetMonitorId;
 
-    
+    // Note: Status filtering would require adding status field to Alert schema
 
     const alerts = await prisma.alert.findMany({
       where: whereClause,
@@ -68,7 +68,7 @@ export const GET = withAuth(async (req: NextRequest, user) =>
   }
 });
 
-
+// POST /api/alerts - Create new alert
 export const POST = withAuth(async (req: NextRequest, user) =>
 {
   const body = await req.json();
@@ -83,7 +83,7 @@ export const POST = withAuth(async (req: NextRequest, user) =>
   try{
     const { title, message, severity, triggerStatusCode, expectedStatusCode } = validation.data;
     const monitorId = validation.data.monitorId || user.id;
-    
+    // Check if monitor exists and belongs to user
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorId,
@@ -98,7 +98,7 @@ export const POST = withAuth(async (req: NextRequest, user) =>
       );
     }
 
-    
+    // Create the alert
     const alert = await prisma.alert.create({
       data: {
         title,
@@ -106,7 +106,7 @@ export const POST = withAuth(async (req: NextRequest, user) =>
         triggerStatusCode,
         expectedStatusCode,
         monitorId,
-        
+        // Note: severity, status, currentEscalationLevel, escalationCompleted fields would need to be added to schema
       },
       include: {
         monitor: {
@@ -119,8 +119,8 @@ export const POST = withAuth(async (req: NextRequest, user) =>
       },
     });
 
-    
-    
+    // TODO: Trigger notification/escalation process here
+    // You could call NotificationService.processEscalation(alert.id) here
 
     return NextResponse.json(
       {

@@ -13,12 +13,14 @@ export class WorkerManager {
     return WorkerManager.instance;
   }
 
-  
+  /**
+   * Initialize all workers for the application
+   */
   async initializeWorkers(): Promise<void> {
     try {
       console.log('Initializing workers...');
       
-      
+      // Initialize escalation worker
       await this.initializeEscalationWorker();
       
       console.log('All workers initialized successfully');
@@ -28,7 +30,9 @@ export class WorkerManager {
     }
   }
 
-  
+  /**
+   * Initialize the escalation worker
+   */
   private async initializeEscalationWorker(): Promise<void> {
     if (this.escalationWorkerStarted) {
       console.log('ℹEscalation worker already started');
@@ -46,7 +50,9 @@ export class WorkerManager {
     }
   }
 
-  
+  /**
+   * Stop all workers gracefully
+   */
   async stopWorkers(): Promise<void> {
     try {
       console.log('Stopping workers...');
@@ -64,7 +70,9 @@ export class WorkerManager {
     }
   }
 
-  
+  /**
+   * Get worker status information
+   */
   getStatus(): { escalationWorker: { isRunning: boolean } } {
     const escalationWorker = getEscalationWorker();
     return {
@@ -74,7 +82,9 @@ export class WorkerManager {
     };
   }
 
-  
+  /**
+   * Restart workers (useful for development)
+   */
   async restartWorkers(): Promise<void> {
     console.log('Restarting workers...');
     await this.stopWorkers();

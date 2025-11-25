@@ -8,7 +8,7 @@ const statsQuerySchema = z.object({
   period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
-
+// GET /api/monitors/[monitorid]/stats - Get monitor statistics
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -32,7 +32,7 @@ export const GET = withAuth(async (
 
     const { period } = validation.data;
 
-    
+    // Verify monitor ownership
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
@@ -47,14 +47,14 @@ export const GET = withAuth(async (
       );
     }
 
-    
+    // Get monitor statistics with explicit type casting
     const statsData = await prisma.$queryRawUnsafe(
       `SELECT * FROM get_monitor_stats($1::UUID, $2::TEXT)`, 
       monitorid, 
       period
     );
 
-    
+    // Helper function to convert BigInt to Number
     const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);

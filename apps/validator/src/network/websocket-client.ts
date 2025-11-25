@@ -7,10 +7,10 @@ import { networkInterfaces } from 'os';
 
 export interface WebSocketConfig {
   url: string;
-  reconnectInterval: number; 
+  reconnectInterval: number; // milliseconds
   maxReconnectAttempts: number;
-  pingInterval: number; 
-  connectionTimeout: number; 
+  pingInterval: number; // milliseconds
+  connectionTimeout: number; // milliseconds
 }
 
 export interface QueuedMessage {
@@ -39,14 +39,16 @@ export class ValidatorWebSocketClient extends EventEmitter {
     this.signer = signer;
   }
 
-  
+  /**
+   * Connect to the WebSocket server
+   */
   async connect(): Promise<void> {
     if (this.isDestroyed) {
       throw new Error('Client has been destroyed');
     }
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      return; 
+      return; // Already connected
     }
 
     try {
@@ -58,14 +60,18 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }
   }
 
-  
+  /**
+   * Disconnect from the WebSocket server
+   */
   disconnect(): void {
     this.cleanup();
     this.isConnected = false;
     this.emit('disconnected');
   }
 
-  
+  /**
+   * Send a signed message to the hub
+   */
   async sendSignedMessage(type: string, data: any): Promise<void> {
     if (!this.signer.isAuthenticated()) {
       throw new Error('Signer not authenticated');
@@ -86,12 +92,14 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }
   }
 
-  
+  /**
+   * Send raw message (queued if not connected)
+   */
   async sendMessage(message: any): Promise<void> {
     const messageId = this.generateMessageId();
     
     if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      
+      // Queue the message
       this.queueMessage(messageId, message);
       return;
     }
@@ -100,13 +108,15 @@ export class ValidatorWebSocketClient extends EventEmitter {
       this.ws.send(JSON.stringify(message));
       this.emit('messageSent', { id: messageId, message });
     } catch (error) {
-      
+      // Queue the message for retry
       this.queueMessage(messageId, message);
       throw new Error(`Failed to send message: ${error}`);
     }
   }
 
-  
+  /**
+   * Sign up as a validator
+   */
   async signup(): Promise<void> {
     if (!this.signer.isAuthenticated()) {
       throw new Error('Signer not authenticated');
@@ -122,7 +132,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     await this.sendSignedMessage('signup', signupData);
   }
 
-  
+  /**
+   * Send validation result
+   */
   async sendValidationResult(result: {
     callbackId: string;
     status: 'GOOD' | 'BAD';
@@ -142,7 +154,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     await this.sendSignedMessage('validate', validationData);
   }
 
-  
+  /**
+   * Get connection status
+   */
   getConnectionStatus(): {
     connected: boolean;
     reconnectAttempts: number;
@@ -157,7 +171,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     };
   }
 
-  
+  /**
+   * Create WebSocket connection
+   */
   private async createConnection(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
@@ -204,7 +220,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
         });
 
         this.ws.on('pong', () => {
-          
+          // Heartbeat received
           this.emit('heartbeat');
         });
 
@@ -214,7 +230,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     });
   }
 
-  
+  /**
+   * Handle incoming messages
+   */
   private handleMessage(data: string): void {
     try {
       const message: OutgoingMessage = JSON.parse(data);
@@ -244,7 +262,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }
   }
 
-  
+  /**
+   * Setup heartbeat/ping mechanism
+   */
   private setupHeartbeat(): void {
     if (this.pingTimer) {
       clearInterval(this.pingTimer);
@@ -257,7 +277,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }, this.config.pingInterval);
   }
 
-  
+  /**
+   * Schedule reconnection attempt
+   */
   private scheduleReconnect(): void {
     if (this.isDestroyed || this.reconnectAttempts >= this.config.maxReconnectAttempts) {
       console.log('Max reconnection attempts reached');
@@ -275,14 +297,14 @@ export class ValidatorWebSocketClient extends EventEmitter {
         await this.createConnection();
         this.emit('reconnected');
         
-        
+        // Automatically send signup message after successful reconnection
         if (this.signer.isAuthenticated()) {
           try {
             await this.signup();
             console.log('Re-registered with hub after reconnection');
           } catch (signupError) {
             console.error('Failed to re-register after reconnection:', signupError);
-            
+            // Don't fail the reconnection, but log the error
           }
         }
       } catch (error) {
@@ -292,7 +314,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }, delay);
   }
 
-  
+  /**
+   * Queue message for later sending
+   */
   private queueMessage(id: string, message: any, maxAttempts: number = 3): void {
     const queuedMessage: QueuedMessage = {
       id,
@@ -306,7 +330,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     this.emit('messageQueued', queuedMessage);
   }
 
-  
+  /**
+   * Process queued messages
+   */
   private async processMessageQueue(): Promise<void> {
     const messagesToSend = [...this.messageQueue];
     this.messageQueue = [];
@@ -319,13 +345,13 @@ export class ValidatorWebSocketClient extends EventEmitter {
           this.ws.send(JSON.stringify(queuedMessage.data));
           this.emit('queuedMessageSent', queuedMessage);
         } else {
-          
+          // Re-queue if connection lost
           if (queuedMessage.attempts < queuedMessage.maxAttempts) {
             this.messageQueue.push(queuedMessage);
           }
         }
       } catch (error) {
-        
+        // Re-queue if failed to send
         if (queuedMessage.attempts < queuedMessage.maxAttempts) {
           this.messageQueue.push(queuedMessage);
         } else {
@@ -335,20 +361,26 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }
   }
 
-  
+  /**
+   * Generate unique message ID
+   */
   private generateMessageId(): string {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  
+  /**
+   * Generate callback ID
+   */
   private generateCallbackId(): string {
     return uuidv7();
   }
 
-  
+  /**
+   * Get public IP address
+   */
   private async getLocalIP(): Promise<string> {
     try {
-      
+      // get public IP from external service
       const response = await fetch('https://api.ipify.org?format=json');
       if (response.ok) {
         const data = await response.json();
@@ -362,7 +394,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     return '127.0.0.1';
   }
 
-  
+  /**
+   * Cleanup resources
+   */
   private cleanup(): void {
     if (this.ws) {
       this.ws.removeAllListeners();
@@ -381,7 +415,9 @@ export class ValidatorWebSocketClient extends EventEmitter {
     }
   }
 
-  
+  /**
+   * Destroy the client
+   */
   destroy(): void {
     this.isDestroyed = true;
     this.cleanup();

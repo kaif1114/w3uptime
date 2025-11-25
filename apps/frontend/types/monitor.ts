@@ -25,7 +25,7 @@ export interface CreateMonitorData {
   expectedStatusCodes?: number[];
   status?: MonitorStatus;
   escalationPolicyId?: string | null;
-  
+  // Optional: allow inline creation of policy when creating monitor
   escalationPolicy?: {
     name: string;
     levels: Array<{
@@ -64,7 +64,7 @@ export interface DeleteMonitorResponse {
   message: string;
 }
 
-
+// Monitor metrics and stats
 export interface MonitorStats {
   currentlyUpFor: string;
   lastCheckedAt: string;
@@ -106,7 +106,7 @@ export interface MonitorDetailsResponse {
   responseTimeData: ResponseTimeData[];
 }
 
-
+// Monitor analytics types for TimescaleDB functions
 export interface UptimeData {
   total_checks: number;
   successful_checks: number;
@@ -123,11 +123,11 @@ export interface LatencyData {
 }
 
 export interface DowntimeData {
-  total_downtime_duration: string; 
+  total_downtime_duration: string; // PostgreSQL INTERVAL type
   downtime_incidents: number;
   avg_incident_duration: string;
   longest_incident: string;
-  mttr: string; 
+  mttr: string; // Mean Time To Recovery
 }
 
 export interface BestRegion {
@@ -173,7 +173,7 @@ export interface MonitorAnalyticsResponse {
   worldMap: {
     byCountry: SampleCountData[];
   };
-  
+  // Enhanced analytics data (optional for backward compatibility)
   hourlyPatterns?: Array<{
     hour_of_day: number;
     avg_latency: number;
@@ -220,23 +220,23 @@ export interface MonitorTimeSeriesResponse {
   generatedAt: string;
 }
 
-
+// Daily status tracking types
 export type DailyStatus = 'up' | 'down' | 'partial' | 'maintenance' | 'unknown';
 
 export interface DailyStatusData {
-  date: string; 
+  date: string; // ISO date string
   status: DailyStatus;
-  uptime: number; 
+  uptime: number; // percentage (0-100)
   totalChecks: number;
   successfulChecks: number;
-  averageResponseTime?: number; 
+  averageResponseTime?: number; // in milliseconds
   incidents?: number;
   downtimeMinutes?: number;
 }
 
 export interface DailyStatusHistoryResponse {
   monitorId: string;
-  period: string; 
+  period: string; // e.g., "90d", "30d", "7d"
   data: DailyStatusData[];
   generatedAt: string;
 }

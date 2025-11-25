@@ -13,7 +13,7 @@ import { ValidatorService } from '../services/validator-service.js';
 
 const program = new Command();
 
-
+// Global configuration manager
 let configManager: ConfigManager;
 
 async function initializeConfig(): Promise<void> {
@@ -21,7 +21,7 @@ async function initializeConfig(): Promise<void> {
   await configManager.loadConfig();
 }
 
-
+// Initialize command
 program
   .command('init')
   .description('Initialize validator configuration and import an existing wallet')
@@ -32,7 +32,7 @@ program
     try {
       console.log(chalk.blue('🚀 Initializing W3Uptime Validator'));
       
-      
+      // Private key is required
       if (!options.privateKey) {
         console.error(chalk.red('Private key is required. Use --private-key option to provide your existing wallet private key.'));
         process.exit(1);
@@ -40,14 +40,14 @@ program
       
       await initializeConfig();
       
-      
+      // Update hub URL if provided
       if (options.hubUrl) {
         configManager.setHubUrl(options.hubUrl);
       }
 
       const keystoreManager = new KeystoreManager(configManager.getSecurityConfig().keystoreDir);
       
-      
+      // Import existing private key
       const password = await promptPassword('Enter password to encrypt your wallet:');
       const confirmPassword = await promptPassword('Confirm password:');
       
@@ -64,17 +64,17 @@ program
       
       console.log(chalk.green('Wallet imported successfully'));
       
-      
+      // Set as default wallet
       const walletName = path.basename(walletResult.keystorePath, '.json');
       configManager.setDefaultWallet(walletName);
       
-      
+      // Save configuration
       await configManager.saveConfig();
       
       console.log(chalk.cyan(`Wallet Address: ${walletResult.address}`));
       console.log(chalk.cyan(`📁 Keystore Path: ${walletResult.keystorePath}`));
       console.log(chalk.cyan(`⚙️  Config Path: ${configManager.getConfigPath()}`));
-      console.log(chalk.yellow(' Keep your password safe - it cannot be recovered!'));
+      console.log(chalk.yellow('🔐 Keep your password safe - it cannot be recovered!'));
       
     } catch (error) {
       console.error(chalk.red(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`));
@@ -82,7 +82,7 @@ program
     }
   });
 
-
+// Start command
 program
   .command('start')
   .description('Start the validator daemon')
@@ -97,19 +97,19 @@ program
       
       const config = configManager.getConfig();
       
-      
+      // Enable paranoid mode if requested
       if (options.paranoid) {
         configManager.setParanoidMode(true);
       }
       
-      
+      // Determine wallet to use
       const walletName = options.wallet || config.validator.defaultWallet;
       if (!walletName) {
         console.error(chalk.red('No wallet specified. Use --wallet or set default wallet with config command'));
         process.exit(1);
       }
       
-      
+      // Start validator service
       const validatorService = new ValidatorService(configManager);
       await validatorService.start(walletName);
       
@@ -119,7 +119,7 @@ program
     }
   });
 
-
+// Status command
 program
   .command('status')
   .description('Show validator status and statistics')
@@ -132,14 +132,14 @@ program
       console.log(chalk.blue('📊 W3Uptime Validator Status'));
       console.log(chalk.gray('═'.repeat(50)));
       
-      
+      // Configuration info
       console.log(chalk.cyan('Configuration:'));
       console.log(`  Hub URL: ${config.hub.url}`);
       console.log(`  Default Wallet: ${config.validator.defaultWallet || 'Not set'}`);
       console.log(`  Paranoid Mode: ${config.security.paranoidMode ? 'Enabled' : 'Disabled'}`);
       console.log(`  Session Timeout: ${config.security.sessionTimeoutMinutes} minutes`);
       
-      
+      // Wallet info
       const keystoreManager = new KeystoreManager(config.security.keystoreDir);
       const wallets = await keystoreManager.listWallets();
       
@@ -153,7 +153,7 @@ program
         });
       }
       
-      
+      // Connection status (would need to be implemented with persistent state)
       console.log(chalk.cyan('\nConnection:'));
       console.log('  Status: Not running (use "start" command)');
       
@@ -163,7 +163,7 @@ program
     }
   });
 
-
+// Wallet commands
 const walletCmd = program
   .command('wallet')
   .description('Wallet management commands');
@@ -213,7 +213,7 @@ walletCmd
       
       const keystoreManager = new KeystoreManager(configManager.getSecurityConfig().keystoreDir);
       
-      
+      // Check if wallet already exists
       if (keystoreManager.keystoreExists(name)) {
         console.error(chalk.red(`Wallet "${name}" already exists`));
         process.exit(1);
@@ -240,7 +240,7 @@ walletCmd
     }
   });
 
-
+// Config commands
 const configCmd = program
   .command('config')
   .description('Configuration management commands');
@@ -271,11 +271,11 @@ configCmd
     try {
       await initializeConfig();
       
-      
+      // Parse nested keys (e.g., "hub.url")
       const keys = key.split('.');
       const config = configManager.getConfig();
       
-      
+      // Simple nested object setter
       let target: any = config;
       for (let i = 0; i < keys.length - 1; i++) {
         if (!(keys[i] in target)) {
@@ -327,7 +327,7 @@ configCmd
     }
   });
 
-
+// Utility functions
 async function promptPassword(message: string): Promise<string> {
   const { password } = await inquirer.default.prompt([
     {
@@ -359,7 +359,7 @@ async function promptPrivateKey(message: string): Promise<string> {
 }
 
 
-
+// Global error handler
 process.on('uncaughtException', (error) => {
   console.error(chalk.red('Uncaught Exception:'), error);
   process.exit(1);
@@ -370,13 +370,13 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-
+// Program info
 program
   .name('w3uptime-validator')
   .description('W3Uptime decentralized validator CLI')
   .version('1.0.0');
 
-
+// Parse command line arguments
 program.parse();
 
 export { program };

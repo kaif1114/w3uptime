@@ -4,7 +4,7 @@ A secure, decentralized validator CLI application for the W3Uptime monitoring ne
 
 ## Features
 
-###  Security-First Design
+### 🔐 Security-First Design
 - **Import-Only Wallets**: Users import existing private keys from their own wallets (MetaMask, etc.)
 - **Automatic Key Derivation**: Public keys are automatically derived from private keys
 - **Encrypted Keystore**: Private keys stored using AES-128-CTR encryption with scrypt key derivation
@@ -12,7 +12,7 @@ A secure, decentralized validator CLI application for the W3Uptime monitoring ne
 - **Session Management**: Configurable session timeouts with secure memory cleanup
 - **Paranoid Mode**: Optional mode requiring password for each signing operation
 
-###  Robust Networking
+### 🌐 Robust Networking
 - **Auto-Reconnection**: Automatic reconnection with exponential backoff
 - **Message Queuing**: Queues messages during network interruptions
 - **WebSocket Communication**: Real-time communication with the hub

@@ -7,7 +7,7 @@ const timeseriesQuerySchema = z.object({
   period: z.enum(['day', 'week', 'month']).default('day'),
 });
 
-
+// GET /api/public/monitors/[monitorId]/timeseries - Get public time series data for charts
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ monitorId: string }> }
@@ -29,7 +29,7 @@ export async function GET(
 
     const { period } = validation.data;
 
-    
+    // Check if monitor exists and has public status page
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorId,
@@ -50,20 +50,20 @@ export async function GET(
       );
     }
 
-    
+    // Get time series data with explicit type casting
     const timeseriesData = await prisma.$queryRawUnsafe(
       `SELECT * FROM get_monitor_timeseries($1::UUID, $2::TEXT)`, 
       monitorId, 
       period
     );
 
-    
+    // Transform TimescaleDB data to match frontend types
     const transformTimeSeriesData = (rawData: RawTimeSeriesPoint[]): TransformedTimeSeriesPoint[] => {
       return rawData.map(point => ({
         time_bucket: point.timestamp_bucket instanceof Date ? point.timestamp_bucket.toISOString() : point.timestamp_bucket,
         avg_latency: Number(point.avg_latency) || 0,
-        uptime_percentage: Number(point.success_rate) || 0, 
-        total_checks: Number(point.total_ticks) || 0, 
+        uptime_percentage: Number(point.success_rate) || 0, // Map success_rate to uptime_percentage
+        total_checks: Number(point.total_ticks) || 0, // Map total_ticks to total_checks
       }));
     };
 

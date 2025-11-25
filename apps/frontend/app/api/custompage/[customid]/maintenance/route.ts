@@ -7,14 +7,14 @@ const createMaintenanceSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string(),
 	from: z.string().refine((val) => {
-		
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
 		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 		const isDatetimeLocal = datetimeLocalRegex.test(val);
 		const isValidDate = !isNaN(new Date(val).getTime());
 		return isDatetimeLocal || isValidDate;
 	}, "Invalid datetime format"),
 	to: z.string().refine((val) => {
-		
+		// Check if it's a valid datetime-local format (YYYY-MM-DDTHH:MM) or ISO datetime
 		const datetimeLocalRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 		const isDatetimeLocal = datetimeLocalRegex.test(val);
 		const isValidDate = !isNaN(new Date(val).getTime());
@@ -22,7 +22,7 @@ const createMaintenanceSchema = z.object({
 	}, "Invalid datetime format"),
 });
 
-
+// GET /api/custompage/[customid]/maintenance - Get all maintenances for a status page
 export const GET = withAuth(async (
 	req: NextRequest,
 	user,
@@ -32,7 +32,7 @@ export const GET = withAuth(async (
 	try {
 		const { customid } = await params;
 
-		
+		// Verify status page exists and belongs to user
 		const statusPage = await prisma.statusPage.findFirst({
 			where: { id: customid, userId: user.id },
 			select: { id: true },
@@ -45,20 +45,20 @@ export const GET = withAuth(async (
 			);
 		}
 
-		
+		// Fetch all maintenances for this status page
 		const maintenances = await prisma.maintenance.findMany({
 			where: { statusPageId: customid },
 			orderBy: { from: 'desc' },
 		});
 
-		
+		// Transform to frontend format
 		const formattedMaintenances = maintenances.map(maintenance => ({
 			id: maintenance.id,
 			title: maintenance.title,
 			description: maintenance.description,
 			start: maintenance.from.toISOString(),
 			end: maintenance.to.toISOString(),
-			status: "scheduled" as const, 
+			status: "scheduled" as const, // You may want to add logic to determine actual status
 		}));
 
 		return NextResponse.json({
@@ -115,7 +115,7 @@ export const POST = withAuth(async (
 			},
 		});
 
-		
+		// Transform to frontend format
 		const formattedMaintenance = {
 			id: maintenance.id,
 			title: maintenance.title,
@@ -141,4 +141,5 @@ export const POST = withAuth(async (
 	}
 });
 
-
+// https://uptime.betterstack.com/team/t344919/status-pages/223815/maintenances/new this is the route which it will hit
+// https://uptime.betterstack.com/team/t344919/status-pages/223815/maintenances/new this is the route which it will hit

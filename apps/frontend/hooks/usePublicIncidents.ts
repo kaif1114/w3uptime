@@ -6,10 +6,10 @@ export interface PublicIncidentData {
   cause: string;
   status: "ONGOING" | "ACKNOWLEDGED" | "RESOLVED";
   monitorId: string;
-  createdAt: string; 
-  updatedAt: string | null; 
-  resolvedAt: string | null; 
-  downtime: number | null; 
+  createdAt: string; // ISO string
+  updatedAt: string | null; // ISO string
+  resolvedAt: string | null; // ISO string
+  downtime: number | null; // in minutes
 }
 
 export interface PublicIncidentsResponse {
@@ -24,17 +24,17 @@ export interface PublicIncidentFilters {
   pageSize?: number;
   status?: "ONGOING" | "ACKNOWLEDGED" | "RESOLVED";
   monitorId?: string;
-  startDate?: string; 
-  endDate?: string; 
+  startDate?: string; // ISO string
+  endDate?: string; // ISO string
   sortBy?: "createdAt" | "resolvedAt" | "downtime";
   sortOrder?: "asc" | "desc";
 }
 
-
+// Hook for fetching public incidents (no auth required)
 export function usePublicIncidents(statusPageId: string, filters: PublicIncidentFilters = {}) {
   const queryParams = new URLSearchParams();
   
-  
+  // Add filters to query params
   if (filters.page) queryParams.set('page', filters.page.toString());
   if (filters.pageSize) queryParams.set('pageSize', filters.pageSize.toString());
   if (filters.status) queryParams.set('status', filters.status);
@@ -58,7 +58,7 @@ export function usePublicIncidents(statusPageId: string, filters: PublicIncident
       return res.json();
     },
     enabled: !!statusPageId,
-    staleTime: 1000 * 60 * 2, 
+    staleTime: 1000 * 60 * 2, // 2 minutes (incidents change more frequently)
     retry: (failureCount, error: any) => {
       if (error?.status === 404) return false;
       return failureCount < 2;
@@ -66,7 +66,7 @@ export function usePublicIncidents(statusPageId: string, filters: PublicIncident
   });
 }
 
-
+// Hook for fetching incidents by month (useful for previous incidents page)
 export function usePublicIncidentsByMonth(statusPageId: string, year: number, month: number) {
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
@@ -76,11 +76,11 @@ export function usePublicIncidentsByMonth(statusPageId: string, year: number, mo
     endDate,
     sortBy: "createdAt",
     sortOrder: "desc",
-    pageSize: 100, 
+    pageSize: 100, // Get all incidents for the month
   });
 }
 
-
+// Hook for fetching resolved incidents (for previous incidents page)
 export function usePublicPreviousIncidents(statusPageId: string, filters: PublicIncidentFilters = {}) {
   return usePublicIncidents(statusPageId, {
     ...filters,
@@ -90,11 +90,11 @@ export function usePublicPreviousIncidents(statusPageId: string, filters: Public
   });
 }
 
-
+// Hook that works for both authenticated and public access
 export function useIncidentData(statusPageId: string, isPublic: boolean = false, filters: PublicIncidentFilters = {}) {
   const queryParams = new URLSearchParams();
   
-  
+  // Add filters to query params
   if (filters.page) queryParams.set('page', filters.page.toString());
   if (filters.pageSize) queryParams.set('pageSize', filters.pageSize.toString());
   if (filters.status) queryParams.set('status', filters.status);
@@ -109,7 +109,7 @@ export function useIncidentData(statusPageId: string, isPublic: boolean = false,
     queryFn: async () => {
       const baseUrl = isPublic 
         ? `/api/public/status-pages/${statusPageId}/incidents`
-        : `/api/incidents`; 
+        : `/api/incidents`; // Assuming authenticated endpoint exists
         
       const url = `${baseUrl}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
@@ -126,7 +126,7 @@ export function useIncidentData(statusPageId: string, isPublic: boolean = false,
       return res.json();
     },
     enabled: !!statusPageId,
-    staleTime: 1000 * 60 * 2, 
+    staleTime: 1000 * 60 * 2, // 2 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 404 || error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;

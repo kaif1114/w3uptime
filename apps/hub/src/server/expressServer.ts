@@ -9,7 +9,7 @@ export function createExpressServer(): { app: express.Application, httpServer: h
   const app = express();
   const httpServer = http.createServer(app);
 
-  
+  // Middleware
   app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -22,7 +22,7 @@ export function createExpressServer(): { app: express.Application, httpServer: h
     next();
   });
 
-  
+  // Routes
   app.get('/ping', (req, res) => {
     res.json({ status: 'OK' });
   });
@@ -33,7 +33,7 @@ export function createExpressServer(): { app: express.Application, httpServer: h
       
       let filteredValidators = validators;
       
-      
+      // Apply filters based on query parameters
       if (countrycode) {
         filteredValidators = filteredValidators.filter(v => 
           v.location.countryCode.toLowerCase() === (countrycode as string).toLowerCase()

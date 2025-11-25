@@ -7,7 +7,7 @@ import { prisma } from "db/client";
 const updateSchema = z.object({
   name: z.string().optional(),
   isPublished: z.boolean().optional(),
-  
+  // Relax URL validation while prototyping uploads / non-http values
   logoUrl: z.string().nullable().optional(),
   logoLinkUrl: z.string().nullable().optional(),
   supportUrl: z.string().nullable().optional(),
@@ -84,9 +84,9 @@ export const GET = withAuth(
         logoUrl: statusPage.logoUrl,
         logoLinkUrl: statusPage.logo,
         supportUrl: statusPage.supportUrl,
-        historyRange: "7d", 
+        historyRange: "7d", // Default value
         sections: statusPage.statusPageSections.map((section) => {
-          
+          // Map database StatusPageSectionType to frontend WidgetType
           let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
           
           switch (section.type) {
@@ -120,7 +120,7 @@ export const GET = withAuth(
           description: maintenance.description,
           start: maintenance.from.toISOString(),
           end: maintenance.to.toISOString(),
-          status: "scheduled", 
+          status: "scheduled", // Default status
         })),
         updates: statusPage.updates.map((update: DbUpdate) => ({
           id: update.id,
@@ -148,7 +148,7 @@ export const PATCH = withAuth(
     try {
       const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
-      
+      // Check if status page exists and belongs to user
       const existingPage = await prisma.statusPage.findFirst({
         where: {
           id,
@@ -169,7 +169,7 @@ export const PATCH = withAuth(
         );
       }
 
-      
+      // Update the status page
       const updatedStatusPage = await prisma.statusPage.update({
         where: { id },
         data: {
@@ -177,7 +177,7 @@ export const PATCH = withAuth(
           isPublished: parsed.data.isPublished ?? existingPage.isPublished,
           logoUrl: parsed.data.logoUrl ?? existingPage.logoUrl,
           logo: parsed.data.logoLinkUrl ?? existingPage.logo,
-          
+          // Support URL maps 1:1 to DB; allow explicit null to clear
           supportUrl: parsed.data.supportUrl ?? existingPage.supportUrl,
         },
         include: {
@@ -189,15 +189,15 @@ export const PATCH = withAuth(
         },
       });
 
-      
+      // Update sections if provided
       if (parsed.data.sections) {
-        
+        // Update existing sections and create new ones if needed; do not delete others
         for (let index = 0; index < parsed.data.sections.length; index++) {
           const section = parsed.data.sections[index];
           const resource = section.resources?.[0];
           const monitorId = resource?.monitorId;
 
-          
+          // Map frontend WidgetType to database StatusPageSectionType
           let dbType: "STATUS" | "HISTORY" | "BOTH" = "BOTH";
           
           switch (section.widgetType) {
@@ -227,7 +227,7 @@ export const PATCH = withAuth(
               },
             });
           } catch (_err) {
-            
+            // If not found, create only when we have a valid monitorId
             if (typeof monitorId === "string" && monitorId.trim().length > 0) {
               await prisma.statusPageSection.create({
                 data: {
@@ -244,7 +244,7 @@ export const PATCH = withAuth(
         }
       }
 
-      
+      // Explicitly remove sections if requested via removedSectionIds
       if (parsed.data.removedSectionIds && parsed.data.removedSectionIds.length > 0) {
         await prisma.statusPageSection.deleteMany({
           where: {
@@ -254,7 +254,7 @@ export const PATCH = withAuth(
         });
       }
 
-      
+      // Fetch updated data
       const finalStatusPage = await prisma.statusPage.findUnique({
         where: { id },
         include: {
@@ -280,7 +280,7 @@ export const PATCH = withAuth(
         supportUrl: finalStatusPage.supportUrl,
         historyRange: "7d",
         sections: finalStatusPage.statusPageSections.map((section) => {
-          
+          // Map database StatusPageSectionType to frontend WidgetType
           let widgetType: "current" | "with_history" | "with_history_chart" = "with_history";
           
           switch (section.type) {
@@ -345,7 +345,7 @@ export const DELETE = withAuth(
     try {
       const { id } = (await (context as { params: Promise<{ id: string }> }).params);
       
-      
+      // Check if status page exists and belongs to user
       const statusPage = await prisma.statusPage.findFirst({
         where: {
           id,
@@ -357,7 +357,7 @@ export const DELETE = withAuth(
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
 
-      
+      // Delete the status page (this will cascade delete related sections, etc.)
       await prisma.statusPage.delete({
         where: { id },
       });

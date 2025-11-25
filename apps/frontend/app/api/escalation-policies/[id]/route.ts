@@ -20,7 +20,7 @@ interface EscalationLevelUpdateInput {
   waitTimeMinutes: number;
 }
 
-
+// Validation schema for updating escalation policy
 const updateEscalationPolicySchema = z.object({
   name: z
     .string()
@@ -54,7 +54,7 @@ const updateEscalationPolicySchema = z.object({
     .max(10, "Cannot have more than 10 escalation levels"),
 });
 
-
+// GET /api/escalation-policies/[id] - Get single escalation policy
 export const GET = withAuth(
   async (
     _req: NextRequest,
@@ -75,7 +75,7 @@ export const GET = withAuth(
       const escalationPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
-          userId: user.id, 
+          userId: user.id, // Direct userId lookup
         },
         include: {
           levels: {
@@ -93,7 +93,7 @@ export const GET = withAuth(
         );
       }
 
-      
+      // Transform the data to match frontend types
       const transformedPolicy = {
         id: escalationPolicy.id,
         name: escalationPolicy.name,
@@ -121,7 +121,7 @@ export const GET = withAuth(
   }
 );
 
-
+// PUT /api/escalation-policies/[id] - Update escalation policy
 export const PUT = withAuth(
   async (
     req: NextRequest,
@@ -139,7 +139,7 @@ export const PUT = withAuth(
         );
       }
 
-      
+      // Parse and validate request body
       const body = await req.json();
       const validation = updateEscalationPolicySchema.safeParse(body);
 
@@ -155,14 +155,14 @@ export const PUT = withAuth(
 
       const { name, levels } = validation.data;
 
-      
+      // Check if policy exists and user has access
       const existingPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
-          userId: user.id, 
+          userId: user.id, // Direct userId lookup
         },
         include: {
-          levels: true, 
+          levels: true, // Include existing levels for comparison
         },
       });
 
@@ -173,12 +173,12 @@ export const PUT = withAuth(
         );
       }
 
-      
-      
+      // Allow updates even when policy is in use by monitors
+      // Removed restriction to enable escalation policy updates
 
-      
+      // Update policy and levels in a transaction
       const updatedPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {
-        
+        // Update the escalation policy
         const policy = await tx.escalationPolicy.update({
           where: { id },
           data: {
@@ -190,24 +190,24 @@ export const PUT = withAuth(
         const existingLevelIds = existingPolicy.levels.map(level => level.id);
         const incomingLevelIds = levels.filter(level => level.id).map(level => level.id);
         
-        
+        // Delete levels that are no longer present
         const levelsToDelete = existingLevelIds.filter(existingId => 
           !incomingLevelIds.includes(existingId)
         );
         
         if (levelsToDelete.length > 0) {
-          
+          // First delete associated escalation logs to avoid foreign key constraint violation
           await tx.escalationLog.deleteMany({
             where: { escalationLevelId: { in: levelsToDelete } },
           });
           
-          
+          // Then delete the escalation levels
           await tx.escalationLevel.deleteMany({
             where: { id: { in: levelsToDelete } },
           });
         }
 
-        
+        // Process each level (update existing or create new)
         const processedLevels = await Promise.all(
           levels.map(async (level: EscalationLevelUpdateInput, index: number) => {
             const levelData = {
@@ -219,13 +219,13 @@ export const PUT = withAuth(
             };
 
             if (level.id && existingLevelIds.includes(level.id)) {
-              
+              // Update existing level
               return await tx.escalationLevel.update({
                 where: { id: level.id },
                 data: levelData,
               });
             } else {
-              
+              // Create new level
               return await tx.escalationLevel.create({
                 data: {
                   escalationId: id,
@@ -242,7 +242,7 @@ export const PUT = withAuth(
         };
       });
 
-      
+      // Transform response to match frontend types
       const transformedPolicy = {
         id: updatedPolicy.id,
         name: updatedPolicy.name,
@@ -284,7 +284,7 @@ export const PUT = withAuth(
   }
 );
 
-
+// DELETE /api/escalation-policies/[id] - Delete escalation policy
 export const DELETE = withAuth(
   async (
     _req: NextRequest,
@@ -302,11 +302,11 @@ export const DELETE = withAuth(
         );
       }
 
-      
+      // Check if policy exists and user has access
       const existingPolicy = await prisma.escalationPolicy.findFirst({
         where: {
           id,
-          userId: user.id, 
+          userId: user.id, // Direct userId lookup
         },
         include: {
           monitors: true,
@@ -320,7 +320,7 @@ export const DELETE = withAuth(
         );
       }
 
-      
+      // Check if policy is in use by any monitors
       if (existingPolicy.monitors.length > 0) {
         return NextResponse.json(
           {
@@ -334,16 +334,16 @@ export const DELETE = withAuth(
         );
       }
 
-      
+      // Delete policy and its levels in a transaction
       await prisma.$transaction(async (tx: PrismaTransaction) => {
-        
+        // Delete levels first
         await tx.escalationLevel.deleteMany({
           where: {
             escalationId: id,
           },
         });
 
-        
+        // Delete policy
         await tx.escalationPolicy.delete({
           where: {
             id,

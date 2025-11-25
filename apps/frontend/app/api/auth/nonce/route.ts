@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const normalizedAddress = walletAddress.toLowerCase();
 
     const nonce = uuidv7();
-    const nonceExpiry = new Date(Date.now() + 10 * 60 * 1000); 
+    const nonceExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
 
     let user = await prisma.user.findUnique({

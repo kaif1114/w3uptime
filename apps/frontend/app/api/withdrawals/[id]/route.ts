@@ -38,10 +38,10 @@ export const GET = withAuth(async (request: NextRequest, user, session, { params
       }, { status: 404 });
     }
 
-    
+    // Format withdrawal to match frontend expectations
     const formattedWithdrawal = {
       id: withdrawal.id,
-      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, 
+      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, // Convert to ETH
       status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
       requestedAt: withdrawal.createdAt.toISOString(),
       processedAt: withdrawal.processedAt?.toISOString(),

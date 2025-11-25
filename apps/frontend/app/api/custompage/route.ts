@@ -1,4 +1,4 @@
-
+// ROUTE FOR CREATING A CUSTOM PAGE
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";

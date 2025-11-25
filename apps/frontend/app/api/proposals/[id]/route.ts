@@ -16,7 +16,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-
+// GET /api/proposals/[id] - Get a proposal by ID
 export const GET = async (
   _req: NextRequest,
   { params }: RouteParams
@@ -51,7 +51,7 @@ export const GET = async (
   }
 
 
-
+// PATCH /api/proposals/[id] - Update a proposal
 export const PATCH = withAuth(
   async (
     req: NextRequest,
@@ -70,7 +70,7 @@ export const PATCH = withAuth(
         );
       }
 
-      
+      // Ensure ownership
       const existing = await prisma.proposal.findUnique({ where: { id } });
       if (!existing)
         return NextResponse.json(
@@ -96,7 +96,7 @@ export const PATCH = withAuth(
   }
 );
 
-
+// DELETE /api/proposals/[id] - Delete a proposal
 export const DELETE = withAuth(
   async (
     _req: NextRequest,

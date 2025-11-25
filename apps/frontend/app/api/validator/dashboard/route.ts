@@ -6,7 +6,7 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
   try {
     const userId = user.id;
     
-    
+    // Get user with balance
     const userWithBalance = await prisma.user.findUnique({
       where: { id: userId },
       select: { balance: true }
@@ -19,9 +19,9 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
       }, { status: 404 });
     }
 
-    const userBalance = userWithBalance.balance; 
+    const userBalance = userWithBalance.balance; // Internal balance units (1000 = 1 ETH)
 
-    
+    // Get user transactions for calculating totals
     const allTransactions = await prisma.transaction.findMany({
       where: {
         userId,
@@ -32,12 +32,12 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
       }
     });
 
-    
+    // Calculate balance metrics
     const confirmedDeposits = allTransactions
       .filter(tx => tx.type === 'DEPOSIT')
       .reduce((sum, tx) => sum + BigInt(tx.amount), BigInt(0));
 
-    
+    // Get pending withdrawals
     const pendingWithdrawals = await prisma.transaction.findMany({
       where: {
         userId,
@@ -49,16 +49,16 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
     const pendingWithdrawalAmount = pendingWithdrawals
       .reduce((sum, tx) => sum + BigInt(tx.amount), BigInt(0));
 
-    
+    // Convert amounts from Wei to ETH
     const totalDepositsEth = Number(confirmedDeposits) / Math.pow(10, 18);
     const pendingWithdrawalsEth = Number(pendingWithdrawalAmount) / Math.pow(10, 18);
-    const availableBalanceEth = userBalance / 1000; 
+    const availableBalanceEth = userBalance / 1000; // Convert internal units to ETH
 
-    
-    
+    // Calculate total earnings (this would typically come from validator rewards)
+    // For now, we'll use total deposits as a proxy
     const totalEarnings = totalDepositsEth;
 
-    
+    // Get recent transactions (last 5)
     const recentTransactions = allTransactions.slice(0, 5).map(tx => ({
       id: tx.id,
       type: tx.type === 'DEPOSIT' ? 'earnings' as const : 'withdrawal' as const,
@@ -73,7 +73,7 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
       transactionHash: tx.transactionHash?.startsWith('pending_') ? undefined : tx.transactionHash
     }));
 
-    
+    // Mock validation summary for now (this would come from validator performance data)
     const validationSummary = {
       totalValidations: 0,
       successfulValidations: 0,

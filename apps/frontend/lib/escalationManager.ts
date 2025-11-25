@@ -4,12 +4,15 @@ import { escalationQueue, EscalationJobData, getJobName, getJobPattern } from ".
 
 export class EscalationManager {
   
-  
+  /**
+   * Start escalation for a monitor incident
+   * Creates delayed jobs for each escalation level based on the monitor's escalation policy
+   */
   static async startEscalation(monitorId: string, incidentId: string): Promise<void> {
     try {
       console.log(`Starting escalation for monitor ${monitorId}, incident ${incidentId}`);
 
-      
+      // Fetch monitor with its escalation policy and levels
       const monitor = await prisma.monitor.findUnique({
         where: { id: monitorId },
         include: {
@@ -42,7 +45,7 @@ export class EscalationManager {
         return;
       }
 
-      
+      // Get incident details for job data
       const incident = await prisma.incident.findUnique({
         where: { id: incidentId }
       });
@@ -54,11 +57,11 @@ export class EscalationManager {
 
       console.log(`Found ${escalationPolicy.levels.length} escalation levels for policy "${escalationPolicy.name}"`);
 
-      
+      // Calculate delay and create jobs for each level
       let cumulativeDelay = 0;
 
       for (const level of escalationPolicy.levels) {
-        cumulativeDelay += level.waitMinutes * 60 * 1000; 
+        cumulativeDelay += level.waitMinutes * 60 * 1000; // Convert minutes to milliseconds
 
         const jobData: EscalationJobData = {
           monitor: {
@@ -79,13 +82,13 @@ export class EscalationManager {
 
         const jobName = getJobName(incidentId, level.levelOrder);
 
-        
+        // Create delayed job
         const job = await escalationQueue.add(
           jobName,
           jobData,
           {
             delay: cumulativeDelay,
-            jobId: jobName, 
+            jobId: jobName, // Use consistent job ID for easier removal
           }
         );
 
@@ -99,12 +102,15 @@ export class EscalationManager {
     }
   }
 
-  
+  /**
+   * Stop escalation for a monitor incident
+   * Removes/cancels all pending escalation jobs for the incident
+   */
   static async stopEscalation(monitorId: string, incidentId: string): Promise<void> {
     try {
       console.log(`Stopping escalation for monitor ${monitorId}, incident ${incidentId}`);
 
-      
+      // Get all jobs for this monitor-incident combination
       const jobs = await escalationQueue.getJobs(['waiting', 'delayed', 'active'], 0, -1);
       const jobsToCancel = jobs.filter(job => {
         if (!job.name) return false;
@@ -120,7 +126,7 @@ export class EscalationManager {
 
       console.log(`Found ${jobsToCancel.length} escalation jobs to cancel`);
 
-      
+      // Cancel all matching jobs
       const cancelPromises = jobsToCancel.map(async (job) => {
         try {
           await job.remove();
@@ -140,10 +146,12 @@ export class EscalationManager {
 
  
 
-  
+  /**
+   * Clean up old completed/failed jobs (for maintenance)
+   */
   static async cleanup(): Promise<void> {
     try {
-      await escalationQueue.clean(24 * 60 * 60 * 1000, 100); 
+      await escalationQueue.clean(24 * 60 * 60 * 1000, 100); // Clean jobs older than 24 hours, keep last 100
       console.log('Escalation queue cleanup completed');
     } catch (error) {
       console.error('Error during escalation queue cleanup:', error);
