@@ -46,7 +46,7 @@ export default async function AcknowledgePage({
   let escalationData: EscalationData | null = null;
 
   try {
-    // Find the escalation log and get related data
+    
     escalationData = await prisma.escalationLog.findUnique({
       where: { id: escalationLogId },
       include: {
@@ -84,7 +84,7 @@ export default async function AcknowledgePage({
         message += ` by ${escalationData.acknowledgedBy}`;
       }
     } else {
-      // Find the related incident to acknowledge
+      
       const incident = await prisma.incident.findFirst({
         where: {
           monitorId: escalationData.Alert.monitor.id,
@@ -93,9 +93,9 @@ export default async function AcknowledgePage({
         orderBy: { createdAt: 'desc' }
       });
 
-      // Acknowledge the escalation log and incident
+      
       await prisma.$transaction(async (tx) => {
-        // Update escalation log
+        
         await tx.escalationLog.update({
           where: { id: escalationLogId },
           data: {
@@ -106,14 +106,14 @@ export default async function AcknowledgePage({
           }
         });
 
-        // If there's an ongoing incident, acknowledge it
+        
         if (incident && incident.status === 'ONGOING') {
           await tx.incident.update({
             where: { id: incident.id },
             data: { status: 'ACKNOWLEDGED' }
           });
 
-          // Create timeline event
+          
           const acknowledgedBy = contact || 'Unknown';
           const viaText = via === 'email' ? 'email' : via === 'slack' ? 'Slack' : 'web';
           
@@ -125,7 +125,7 @@ export default async function AcknowledgePage({
             }
           });
 
-          // Stop any pending escalations for this incident
+          
           if (escalationData) {
             try {
               await stopEscalation(escalationData.Alert.monitor.id, incident.id);

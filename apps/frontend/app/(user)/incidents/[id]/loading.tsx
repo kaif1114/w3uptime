@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 export default function IncidentDetailLoading() {
   return (
     <div className="space-y-6 p-6">
-      {/* Header Skeleton */}
+      
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -21,7 +21,7 @@ export default function IncidentDetailLoading() {
         <Skeleton className="h-8 w-24" />
       </div>
 
-      {/* Action Buttons Skeleton */}
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-24" />
@@ -34,7 +34,7 @@ export default function IncidentDetailLoading() {
         </div>
       </div>
 
-      {/* Incident Details Grid Skeleton */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
@@ -48,7 +48,7 @@ export default function IncidentDetailLoading() {
         ))}
       </div>
 
-      {/* Additional Information Skeleton */}
+      
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
@@ -64,11 +64,11 @@ export default function IncidentDetailLoading() {
 
       <Separator />
 
-      {/* Timeline Skeleton */}
+      
       <div className="space-y-4">
         <Skeleton className="h-6 w-24" />
         
-        {/* Comment Input Skeleton */}
+        
         <Card>
           <CardContent className="p-4">
             <div className="flex gap-3">
@@ -83,7 +83,7 @@ export default function IncidentDetailLoading() {
           </CardContent>
         </Card>
 
-        {/* Timeline Events Skeleton */}
+        
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex gap-4">

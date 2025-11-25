@@ -33,10 +33,10 @@ export function WalletContent() {
 
   const handleDepositSuccess = (transactionHash: string) => {
     console.log('Deposit successful:', transactionHash);
-    // Refresh data after successful deposit
+    
     setTimeout(() => {
       refreshDeposits();
-    }, 5000); // Wait 5 seconds for event processing
+    }, 5000); 
   };
 
   const handleDepositError = (error: string) => {
@@ -68,11 +68,11 @@ export function WalletContent() {
   }
 
   const userBalance = session.user?.balance || 0;
-  const balanceInEth = userBalance / 1000; // Convert from stored balance (1000 = 1 SepoliaETH)
+  const balanceInEth = userBalance / 1000; 
 
   return (
     <div className="space-y-8">
-      {/* Total Balance Card - Following design layout */}
+      
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-0 shadow-lg">
         <CardContent className="p-8">
           <div className="space-y-6">
@@ -107,7 +107,7 @@ export function WalletContent() {
         </CardContent>
       </Card>
 
-      {/* Transaction History - Following design layout */}
+      
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">

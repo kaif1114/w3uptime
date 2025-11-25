@@ -56,12 +56,12 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections, render
 
   return (
     <div className="space-y-6 mb-4">
-      {/* Last Updated */}
+      
       <div className="text-sm text-muted-foreground">
         Last updated on {format(new Date(), 'MMM dd \'at\' h:mm a')} PKT
       </div>
 
-      {/* Main Status Card */}
+      
    
         <div>
           <div className="flex items-center justify-between">
@@ -89,7 +89,7 @@ export const StatusOverview: React.FC<StatusOverviewProps> = ({ sections, render
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    {/* Status Bars */}
+                    
                     {renderStatusBars && (
                       <div className="flex-shrink-0">
                         {renderStatusBars(monitor.id)}

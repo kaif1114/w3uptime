@@ -1,7 +1,7 @@
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-// Generate sample data for response times
+
 
 interface ProcessedDataPoint {
   time: string;
@@ -24,15 +24,15 @@ const generateResponseTimeData = (): ProcessedDataPoint[] => {
   const startTime = new Date();
   startTime.setHours(12, 0, 0, 0); 
   
-  for (let i = 0; i < 480; i++) { // 480 points for 20 hours (every 2.5 minutes)
+  for (let i = 0; i < 480; i++) { 
     const time = new Date(startTime.getTime() + i * 2.5 * 60 * 1000);
     const hours = time.getHours();
     const minutes = time.getMinutes();
     
-    // Create realistic response time pattern with some spikes
+    
     let baseTime = 0.6;
-    if (hours >= 2 && hours <= 6) baseTime = 0.4; // Lower at night
-    if (hours >= 18 && hours <= 22) baseTime = 0.8; // Higher in evening
+    if (hours >= 2 && hours <= 6) baseTime = 0.4; 
+    if (hours >= 18 && hours <= 22) baseTime = 0.8; 
     
     const responseTime = baseTime + Math.random() * 0.4 + (Math.random() > 0.95 ? 1.5 : 0);
     
@@ -63,7 +63,7 @@ const generateResponseTimeData = (): ProcessedDataPoint[] => {
   return data;
 };
 
-// Generate status bar data (green = good, yellow = warning, red = error)
+
 const generateStatusData = () => {
   const statuses = [];
   for (let i = 0; i < 100; i++) {
@@ -77,7 +77,7 @@ const generateStatusData = () => {
   return statuses;
 };
 
-// Status bar component
+
 const StatusBar = ({ data }: { data: string[] }) => {
   const getColor = (status: string) => {
     switch (status) {
@@ -101,7 +101,7 @@ const StatusBar = ({ data }: { data: string[] }) => {
   );
 };
 
-// Custom tooltip component
+
 const CustomTooltip = ({ active, payload}: TooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -142,7 +142,7 @@ const ResponseTimeCharts = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#64748b' }}
-                  interval={47} // Show every 48th tick
+                  interval={47} 
                 />
                 <YAxis 
                   domain={[0, 3]}

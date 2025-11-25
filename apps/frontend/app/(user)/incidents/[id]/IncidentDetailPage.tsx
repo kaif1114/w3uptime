@@ -108,7 +108,7 @@ export default function IncidentDetailPage({
 
   return (
     <div className="space-y-6 px-6">
-      {/* Header - Aligned like reference UI */}
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -162,7 +162,7 @@ export default function IncidentDetailPage({
         </div>
       </div>
 
-      {/* Date/Time and acknowledgment status */}
+      
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           {format(
@@ -179,7 +179,7 @@ export default function IncidentDetailPage({
         </div>
       </div>
 
-      {/* Incident Details - Three side-by-side boxes */}
+      
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardHeader className="">
@@ -229,7 +229,7 @@ export default function IncidentDetailPage({
         </Card>
       </div>
 
-      {/* Checked URL */}
+      
       <div className="space-y-2">
         <h3 className="text-md font-medium">Checked URL</h3>
         <div className="bg-muted p-3 rounded-md flex items-center justify-between">
@@ -249,7 +249,7 @@ export default function IncidentDetailPage({
         </div>
       </div>
 
-      {/* Escalation */}
+      
       <div className="space-y-2">
         <h3 className="text-md font-medium">Escalation</h3>
         <p className="text-xl">
@@ -260,7 +260,7 @@ export default function IncidentDetailPage({
 
       <Separator />
 
-      {/* Timeline */}
+      
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Timeline</h2>
         <IncidentTimeline incidentId={incidentId} />

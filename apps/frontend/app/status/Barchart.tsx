@@ -5,13 +5,13 @@ import React from 'react';
 
 interface DailyStatusBarChartProps {
   data: DailyStatusData[];
-  period?: number; // Number of days to show (default: 30)
+  period?: number; 
   title?: string;
   showLegend?: boolean;
   className?: string;
 }
 
-// Generate sample data for demonstration
+
 const generateSampleDailyData = (days: number = 30 ): DailyStatusData[] => {
   const data: DailyStatusData[] = [];
   const today = new Date();
@@ -23,19 +23,19 @@ const generateSampleDailyData = (days: number = 30 ): DailyStatusData[] => {
     let status: DailyStatus;
     let uptime: number;
     let successfulChecks: number;
-    const totalChecks = 288; // Every 5 minutes = 288 checks per day
+    const totalChecks = 288; 
     
     if (random > 0.98) {
       status = 'down';
-      uptime = Math.random() * 30; // 0-30% uptime
+      uptime = Math.random() * 30; 
       successfulChecks = Math.floor(totalChecks * (uptime / 100));
     } else if (random > 0.92) {
       status = 'maintenance';
-      uptime = 85 + Math.random() * 10; // 85-95% uptime during maintenance
+      uptime = 85 + Math.random() * 10; 
       successfulChecks = Math.floor(totalChecks * (uptime / 100));
     } else {
       status = 'up';
-      uptime = 98 + Math.random() * 2; // 98-100% uptime
+      uptime = 98 + Math.random() * 2; 
       successfulChecks = Math.floor(totalChecks * (uptime / 100));
     }
     
@@ -139,9 +139,9 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
   showLegend = true,
   className = ""
 }) => {
-  // Use sample data if no data provided
+  
   const statusData = data.length > 0 ? data : generateSampleDailyData(period);
-  // Calculate overall statistics
+  
   const totalDays = statusData.length;
   const overallUptime = statusData.reduce((sum, day) => sum + day.uptime, 0) / totalDays;
 
@@ -162,7 +162,7 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
           </div>
         </div>
         <div className="space-y-6">
-          {/* Status bars grid */}
+          
           <div className="space-y-4">
             <div className="flex gap-1">
               {statusData.map((day, index) => {
@@ -189,7 +189,7 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
               })}
             </div>
             
-            {/* Date labels */}
+            
             <div className="flex justify-between text-xs text-muted-foreground mt-2">
               <span>{formatDate(statusData[0]?.date || '')}</span>
               <span>← {period} days ago</span>
@@ -198,7 +198,7 @@ const DailyStatusBarChart: React.FC<DailyStatusBarChartProps> = ({
             </div>
           </div>
 
-          {/* Legend */}
+          
           {showLegend && (
             <div className="pt-4 border-t">
               <div className="text-sm font-medium mb-3">Status Legend</div>

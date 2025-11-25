@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function Loading() {
   return (
     <div className="space-y-6">
-      {/* Header Skeleton */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Skeleton className="h-8 w-32" />
 
@@ -14,13 +14,13 @@ export default function Loading() {
         </div>
       </div>
 
-      {/* Tabs Skeleton */}
+      
       <div className="flex space-x-6 border-b">
         <Skeleton className="h-8 w-20" />
         <Skeleton className="h-8 w-24" />
       </div>
 
-      {/* Table Skeleton */}
+      
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -76,7 +76,7 @@ export default function Loading() {
         </CardContent>
       </Card>
 
-      {/* Pagination Skeleton */}
+      
       <div className="flex items-center justify-center gap-2">
         <Skeleton className="h-8 w-16" />
         <div className="flex items-center gap-1">
@@ -87,7 +87,7 @@ export default function Loading() {
         <Skeleton className="h-8 w-16" />
       </div>
 
-      {/* Footer Skeleton */}
+      
       <div className="text-center py-8">
         <div className="flex items-center justify-center gap-2">
           <Skeleton className="h-4 w-4" />

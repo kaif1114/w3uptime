@@ -29,7 +29,7 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   if (isLoading) {
-    // Show exactly 30 skeleton bars for loading state
+    
     return (
       <div className="flex items-center justify-center w-full space-x-px">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -43,7 +43,7 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   }
 
   if (error || !statusBars) {
-    // Show exactly 30 grey bars on error
+    
     return (
       <div className="flex items-center justify-center w-full space-x-px">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -58,9 +58,9 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
   }
 
   const getBarColor = (bar: StatusBar) => {
-    if (bar.status === 'no-data') return 'bg-muted'; // Grey for no data
-    if (bar.status === 'up') return 'bg-green-500'; // Green for operational
-    return 'bg-red-500'; // Red for down
+    if (bar.status === 'no-data') return 'bg-muted'; 
+    if (bar.status === 'up') return 'bg-green-500'; 
+    return 'bg-red-500'; 
   };
 
   const formatTooltipDate = (timestamp: string) => {
@@ -116,12 +116,12 @@ export const UptimeStatusBars: React.FC<UptimeStatusBarsProps> = ({
         ))}
       </div>
       
-      {/* Tooltip */}
+      
       {tooltip && (
         <div 
           className="fixed z-50 px-3 py-2 bg-card border border-border rounded-lg shadow-lg"
           style={{
-            left: tooltip.position.x - 50, // Center the tooltip
+            left: tooltip.position.x - 50, 
             top: tooltip.position.y - 80,
           }}
         >

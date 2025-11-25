@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CommunityGovernanceLoading() {
   return (
     <div className="space-y-4">
-      {/* Header skeleton */}
+      
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -15,19 +15,19 @@ export default function CommunityGovernanceLoading() {
         </div>
       </div>
 
-      {/* Separator */}
+      
       <div className="border-t border-border/50 my-6" />
 
-      {/* Search and Filter skeleton */}
+      
       <div className="flex items-center space-x-4">
         <Skeleton className="h-10 flex-1" />
         <Skeleton className="h-10 w-[180px]" />
       </div>
 
-      {/* Results count skeleton */}
+      
       <Skeleton className="h-4 w-48" />
 
-      {/* Proposals list skeleton */}
+      
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, index) => (
           <Card key={index}>
@@ -69,7 +69,7 @@ export default function CommunityGovernanceLoading() {
                 </div>
               </div>
 
-              {/* Voting buttons skeleton */}
+              
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex space-x-3">
                   <Skeleton className="h-8 w-20" />
@@ -82,7 +82,7 @@ export default function CommunityGovernanceLoading() {
         ))}
       </div>
 
-      {/* Pagination skeleton */}
+      
       <div className="flex items-center justify-center gap-2">
         <Skeleton className="h-8 w-20" />
         <div className="flex items-center gap-1">

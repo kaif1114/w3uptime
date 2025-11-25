@@ -21,8 +21,8 @@ const getTrendIcon = (direction: 'up' | 'down' | 'stable') => {
 };
 
 const getTrendColor = (direction: 'up' | 'down' | 'stable', metricName: string) => {
-  // For latency, down is good (lower latency is better)
-  // For uptime and checks, up is good
+  
+  
   const isLatency = metricName.toLowerCase().includes('latency');
   
   if (direction === 'stable') return 'text-gray-600';
@@ -102,7 +102,7 @@ export function WeeklyComparisonTable({ comparisons }: WeeklyComparisonTableProp
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Table */}
+          
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -154,7 +154,7 @@ export function WeeklyComparisonTable({ comparisons }: WeeklyComparisonTableProp
             </table>
           </div>
 
-          {/* Summary Insights */}
+          
           <div className="bg-muted/30 p-4 rounded-lg">
             <h4 className="text-sm font-medium mb-3">Week-over-Week Summary:</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -187,7 +187,7 @@ export function WeeklyComparisonTable({ comparisons }: WeeklyComparisonTableProp
             </div>
           </div>
 
-          {/* Key Insights */}
+          
           <div className="space-y-2 text-xs text-muted-foreground">
             {comparisons.length > 0 && (
               <div>

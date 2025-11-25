@@ -1,16 +1,16 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-// Skeleton for StatusOverview component
+
 export const StatusOverviewSkeleton = () => {
   return (
     <div className="space-y-6 mb-4">
-      {/* Last Updated */}
+      
       <div className="text-sm">
         <Skeleton className="h-4 w-48" />
       </div>
 
-      {/* Main Status Card */}
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -50,7 +50,7 @@ export const StatusOverviewSkeleton = () => {
   );
 };
 
-// Skeleton for Performance Metrics section
+
 export const PerformanceMetricsSkeleton = () => {
   return (
     <div>
@@ -69,7 +69,7 @@ export const PerformanceMetricsSkeleton = () => {
   );
 };
 
-// Skeleton for Bar Chart
+
 export const BarChartSkeleton = () => {
   return (
     <div className="h-64 flex items-center justify-center">
@@ -94,7 +94,7 @@ export const BarChartSkeleton = () => {
   );
 };
 
-// Skeleton for Response Time Charts
+
 export const ResponseTimeChartsSkeleton = () => {
   return (
     <div className="space-y-6">
@@ -102,14 +102,14 @@ export const ResponseTimeChartsSkeleton = () => {
         <Skeleton className="h-6 w-36" />
       </CardHeader>
       
-      {/* Status Bar Skeleton */}
+      
       <div className="flex h-6 w-full rounded overflow-hidden mb-4">
         {Array.from({ length: 100 }).map((_, i) => (
           <Skeleton key={i} className="flex-1 h-full mx-px" />
         ))}
       </div>
       
-      {/* Chart Skeleton */}
+      
       <div className="h-64">
         <div className="w-full h-full flex items-end justify-between px-8 pb-8">
           {Array.from({ length: 50 }).map((_, i) => (
@@ -129,7 +129,7 @@ export const ResponseTimeChartsSkeleton = () => {
   );
 };
 
-// Skeleton for MaintenanceList (improved version)
+
 export const MaintenanceListSkeleton = () => {
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -154,11 +154,11 @@ export const MaintenanceListSkeleton = () => {
   );
 };
 
-// Skeleton for IncidentsList navigation and month cards
+
 export const IncidentsListSkeleton = () => {
   return (
     <>
-      {/* Range Navigation Skeleton */}
+      
       <div className="flex items-center justify-center gap-4 mb-8">
         <Skeleton className="h-10 w-10 rounded-md" />
         <div className="px-6 py-2 bg-muted rounded-lg">
@@ -167,7 +167,7 @@ export const IncidentsListSkeleton = () => {
         <Skeleton className="h-10 w-10 rounded-md" />
       </div>
 
-      {/* Month Cards Skeleton */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="shadow-sm">
@@ -187,7 +187,7 @@ export const IncidentsListSkeleton = () => {
         ))}
       </div>
 
-      {/* Summary Skeleton */}
+      
       <div className="mt-8 text-center">
         <Skeleton className="h-4 w-64 mx-auto" />
       </div>

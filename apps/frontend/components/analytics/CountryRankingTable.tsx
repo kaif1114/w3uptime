@@ -34,7 +34,7 @@ interface CountryRankingTableProps {
 type SortField = 'performance' | 'latency' | 'uptime' | 'checks' | 'country';
 type SortDirection = 'asc' | 'desc';
 
-// Country flags mapping (subset - add more as needed)
+
 const COUNTRY_FLAGS = {
   'US': '🇺🇸', 'GB': '🇬🇧', 'CA': '🇨🇦', 'AU': '🇦🇺', 'DE': '🇩🇪',
   'FR': '🇫🇷', 'IT': '🇮🇹', 'ES': '🇪🇸', 'NL': '🇳🇱', 'SE': '🇸🇪',
@@ -58,18 +58,18 @@ export function CountryRankingTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showAll, setShowAll] = useState(false);
 
-  // Enhanced country data with performance scoring
+  
   const enhancedCountries = useMemo(() => {
     return countries.map(country => {
-      // Calculate performance score (weighted combination of latency and uptime)
-      const latencyScore = Math.max(0, 100 - (country.avg_latency / 10)); // Lower latency = higher score
+      
+      const latencyScore = Math.max(0, 100 - (country.avg_latency / 10)); 
       const uptimeScore = country.success_rate;
-      const dataReliabilityScore = Math.min(100, (country.total_checks / 100) * 10); // More data = more reliable
+      const dataReliabilityScore = Math.min(100, (country.total_checks / 100) * 10); 
       
       const performanceScore = (
-        uptimeScore * 0.5 +           // 50% uptime
-        latencyScore * 0.35 +         // 35% latency  
-        dataReliabilityScore * 0.15   // 15% data reliability
+        uptimeScore * 0.5 +           
+        latencyScore * 0.35 +         
+        dataReliabilityScore * 0.15   
       );
 
       return {
@@ -80,7 +80,7 @@ export function CountryRankingTable({
     });
   }, [countries]);
 
-  // Sorted and filtered countries
+  
   const sortedCountries = useMemo(() => {
     const sorted = [...enhancedCountries].sort((a, b) => {
       let aValue: number | string;
@@ -131,7 +131,7 @@ export function CountryRankingTable({
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection(field === 'latency' ? 'asc' : 'desc'); // Lower latency is better
+      setSortDirection(field === 'latency' ? 'asc' : 'desc'); 
     }
   };
 

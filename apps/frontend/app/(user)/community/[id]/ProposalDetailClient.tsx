@@ -57,7 +57,7 @@ export function ProposalDetailClient({
     }
   };
 
-  // Comments temporarily disabled
+  
 
   const getProposalTypeIcon = (type: ProposalType) => {
     return type === ProposalType.FEATURE_REQUEST ? (
@@ -110,12 +110,12 @@ export function ProposalDetailClient({
     return userVote ? userVote.vote : null;
   };
 
-  // Show loading state
+  
   if (isLoading) {
     return <ProposalDetailSkeleton />;
   }
 
-  // Show error state
+  
   if (error) {
     return (
       <div className="space-y-4">
@@ -137,7 +137,7 @@ export function ProposalDetailClient({
     );
   }
 
-  // Show not found state if no proposal data
+  
   if (!proposal) {
     return (
       <div className="space-y-4">
@@ -161,7 +161,7 @@ export function ProposalDetailClient({
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
+      
       <div className="flex items-center space-x-2">
         <Link href="/community">
           <Button variant="ghost" size="sm">
@@ -171,7 +171,7 @@ export function ProposalDetailClient({
         </Link>
       </div>
 
-      {/* Proposal Header */}
+      
       <Card>
         <CardHeader>
           <div className="space-y-4">
@@ -215,7 +215,7 @@ export function ProposalDetailClient({
               </CardDescription>
             </div>
 
-            {/* Tags */}
+            
             {proposal.tags && proposal.tags.length > 0 && (
               <div className="flex items-center space-x-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
@@ -229,7 +229,7 @@ export function ProposalDetailClient({
               </div>
             )}
 
-            {/* Meta Information */}
+            
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-1">
@@ -260,7 +260,7 @@ export function ProposalDetailClient({
         </CardHeader>
       </Card>
 
-      {/* Voting Section */}
+      
       <Card>
         <CardHeader>
           <CardTitle>Community Feedback</CardTitle>
@@ -303,7 +303,7 @@ export function ProposalDetailClient({
         </CardContent>
       </Card>
 
-      {/* Comments Section */}
+      
       <ProposalComments proposalId={proposalId} />
     </div>
   );

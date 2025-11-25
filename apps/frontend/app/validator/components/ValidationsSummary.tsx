@@ -40,7 +40,7 @@ export default function ValidationsSummary({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Success Rate */}
+        
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Success Rate</span>
@@ -50,9 +50,9 @@ export default function ValidationsSummary({
           </div>
         </div>
 
-        {/* Validation Stats Grid */}
+        
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Total Validations */}
+          
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
               <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -65,7 +65,7 @@ export default function ValidationsSummary({
             </div>
           </div>
 
-          {/* Successful Validations */}
+          
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -78,7 +78,7 @@ export default function ValidationsSummary({
             </div>
           </div>
 
-          {/* Failed Validations */}
+          
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
               <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -92,7 +92,7 @@ export default function ValidationsSummary({
           </div>
         </div>
 
-        {/* Last Validation */}
+        
         <div className="flex items-center space-x-3 pt-4 border-t">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div>

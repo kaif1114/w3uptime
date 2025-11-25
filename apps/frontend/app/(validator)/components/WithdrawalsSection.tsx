@@ -110,7 +110,7 @@ export default function WithdrawalsSection({
 
   return (
     <div className="space-y-6">
-      {/* Withdrawal Request Card */}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export default function WithdrawalsSection({
         </CardContent>
       </Card>
 
-      {/* Withdrawals History */}
+      
       <Card>
         <CardHeader>
           <CardTitle>Withdrawal History</CardTitle>

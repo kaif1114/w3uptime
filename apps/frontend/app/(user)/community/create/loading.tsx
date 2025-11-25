@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export default function CreateProposalLoading() {
   return (
     <div className="space-y-6">
-      {/* Header Skeleton */}
+      
       <div className="space-y-2">
         <Skeleton className="h-9 w-64" />
         <Skeleton className="h-5 w-96" />
       </div>
 
-      {/* Proposal Type Selection Skeleton */}
+      
       <Card>
         <CardHeader>
           <Skeleton className="h-6 w-32" />
@@ -21,7 +21,7 @@ export default function CreateProposalLoading() {
         </CardContent>
       </Card>
 
-      {/* Type Information Skeleton */}
+      
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-2">
@@ -45,28 +45,28 @@ export default function CreateProposalLoading() {
         </CardContent>
       </Card>
 
-      {/* Proposal Form Skeleton */}
+      
       <Card>
         <CardHeader>
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-4 w-64" />
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Title */}
+          
           <div className="space-y-2">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-3 w-24" />
           </div>
 
-          {/* Description */}
+          
           <div className="space-y-2">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-3 w-32" />
           </div>
 
-          {/* Tags */}
+          
           <div className="space-y-2">
             <Skeleton className="h-4 w-16" />
             <div className="flex space-x-2">
@@ -76,7 +76,7 @@ export default function CreateProposalLoading() {
             <Skeleton className="h-3 w-48" />
           </div>
 
-          {/* Submit Button */}
+          
           <div className="flex justify-between">
             <Skeleton className="h-10 w-24" />
             <Skeleton className="h-10 w-32" />

@@ -14,7 +14,7 @@ interface AnalyticsOverviewProps {
 function formatDuration(intervalString: string): string {
   if (!intervalString) return 'N/A';
   
-  // Parse PostgreSQL interval string (e.g., "2 days 14:30:00")
+  
   const match = intervalString.match(/(?:(\d+) days?\s*)?(?:(\d+):(\d+):(\d+))?/);
   if (!match) return intervalString;
 
@@ -83,7 +83,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* Uptime Overview */}
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Uptime</CardTitle>
@@ -109,7 +109,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardContent>
       </Card>
 
-      {/* Latency Overview */}
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Latency</CardTitle>
@@ -129,7 +129,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </CardContent>
       </Card>
 
-      {/* Worst Performing Region */}
+      
       {worstRegion && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -152,7 +152,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </Card>
       )}
 
-      {/* Best Performing Region */}
+      
       {bestRegion && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -175,7 +175,7 @@ export function AnalyticsOverview({ monitorId, period }: AnalyticsOverviewProps)
         </Card>
       )}
 
-      {/* Regional Distribution */}
+      
       <Card className="md:col-span-2">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Top Performing Countries</CardTitle>

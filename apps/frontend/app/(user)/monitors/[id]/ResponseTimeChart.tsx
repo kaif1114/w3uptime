@@ -19,7 +19,7 @@ interface MultiMetricData {
 export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
   const [timeRange, setTimeRange] = useState<"Day" | "Week" | "Month">("Day");
 
-  // Generate sample multi-metric data for visualization
+  
   const generateSampleData = (): MultiMetricData[] => {
     const now = new Date();
     const points = [];
@@ -28,11 +28,11 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
     for (let i = intervals; i >= 0; i--) {
       const timestamp = new Date(now.getTime() - (i * (timeRange === "Day" ? 30 : 60) * 60 * 1000));
       
-      // Generate realistic response time components
-      const nameLookup = 50 + Math.random() * 100; // 50-150ms
-      const connection = 100 + Math.random() * 200; // 100-300ms
-      const tlsHandshake = 200 + Math.random() * 300; // 200-500ms
-      const dataTransfer = 300 + Math.random() * 400; // 300-700ms
+      
+      const nameLookup = 50 + Math.random() * 100; 
+      const connection = 100 + Math.random() * 200; 
+      const tlsHandshake = 200 + Math.random() * 300; 
+      const dataTransfer = 300 + Math.random() * 400; 
       
       points.push({
         timestamp: timestamp.toISOString(),
@@ -48,12 +48,12 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
 
   const chartData = generateSampleData();
   
-  // Chart configuration
+  
   const chartHeight = 400;
   const chartWidth = 1000;
   const padding = 60;
 
-  // Calculate max and min values across all metrics
+  
   const allValues = chartData.flatMap(d => [d.nameLookup, d.connection, d.tlsHandshake, d.dataTransfer]);
   const maxResponseTime = Math.max(...allValues);
   const minResponseTime = Math.min(...allValues);
@@ -62,7 +62,7 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
   const getY = (responseTime: number) => 
     padding + ((maxResponseTime - responseTime) * (chartHeight - 2 * padding)) / (maxResponseTime - minResponseTime);
 
-  // Generate path data for each metric
+  
   const generatePath = (metric: keyof Pick<MultiMetricData, 'nameLookup' | 'connection' | 'tlsHandshake' | 'dataTransfer'>) => {
     return chartData
       .map((point, index) => `${index === 0 ? 'M' : 'L'} ${getX(index)} ${getY(point[metric])}`)
@@ -93,10 +93,10 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
       
       <div className="w-full overflow-x-auto">
         <svg width={chartWidth} height={chartHeight + 40} className="bg-background rounded-lg max-w-full">
-          {/* Background */}
+          
           <rect width={chartWidth} height={chartHeight + 40} fill="currentColor" className="fill-background" />
           
-          {/* Grid lines */}
+          
           {Array.from({ length: 6 }).map((_, i) => {
             const y = padding + (i * (chartHeight - 2 * padding)) / 5;
             return (
@@ -125,7 +125,7 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
             );
           })}
           
-          {/* Time axis */}
+          
           {chartData.map((point, index) => {
             if (index % Math.ceil(chartData.length / 6) === 0) {
               const x = getX(index);
@@ -161,7 +161,7 @@ export function ResponseTimeChart({ data }: ResponseTimeChartProps) {
             return null;
           })}
 
-          {/* Metric lines */}
+          
           {metrics.map((metric) => (
             <path
               key={metric.key}

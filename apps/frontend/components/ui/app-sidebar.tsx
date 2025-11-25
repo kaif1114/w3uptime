@@ -32,7 +32,7 @@ import {
 import { ModeToggle } from "@/components/mode-toggle";
 import { logout } from "@/lib/auth";
 
-// Menu items.
+
 const items = [
   {
     title: "Monitors",
@@ -87,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleLogout = async () => {
     try {
       await logout()
-      router.push("/login")
+      router.push("/")
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -114,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {/* main */}
+        
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>

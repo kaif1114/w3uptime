@@ -46,7 +46,7 @@ export function CustomPeriodSelector({
   const [endDate, setEndDate] = useState<Date>();
   const [tempError, setTempError] = useState<string>();
 
-  // Initialize dates if value is custom period
+  
   useEffect(() => {
     if (typeof value === "object" && value.type === "custom") {
       setStartDate(new Date(value.startDate));
@@ -121,7 +121,7 @@ export function CustomPeriodSelector({
       <Clock className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm font-medium">Period:</span>
 
-      {/* Standard Period Buttons */}
+      
       <div className="flex gap-1">
         {PRESET_PERIODS.slice(0, -1).map((period) => (
           <Button
@@ -135,7 +135,7 @@ export function CustomPeriodSelector({
         ))}
       </div>
 
-      {/* Custom Range Selector */}
+      
       <Popover open={isCustomOpen} onOpenChange={setIsCustomOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -264,7 +264,7 @@ export function CustomPeriodSelector({
         </PopoverContent>
       </Popover>
 
-      {/* Current Selection Display */}
+      
       {currentPeriod === "custom" && typeof value === "object" && (
         <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
           {formatSelectedPeriod()}

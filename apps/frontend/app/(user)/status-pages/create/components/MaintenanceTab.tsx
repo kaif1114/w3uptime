@@ -41,7 +41,7 @@ export function MaintenanceTab({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [dummyAffectedIds, setDummyAffectedIds] = useState<string[]>([]);
 
-  // Maintenance state
+  
   const [maintenanceDraft, setMaintenanceDraft] = useState({
     title: "",
     description: "",
@@ -87,7 +87,7 @@ export function MaintenanceTab({
 
     await onCreateMaintenance(maintenanceData);
 
-    // Reset draft after successful schedule
+    
     setMaintenanceDraft({
       title: "",
       description: "",
@@ -416,7 +416,7 @@ export function MaintenanceTab({
         </div>
       </div>
 
-      {/* Display existing maintenances */}
+      
       {maintenances.length > 0 && (
         <div className="flex gap-12">
           <div className="w-1/3 space-y-4">

@@ -15,7 +15,7 @@ interface NavbarProps {
   serviceId?: string;
 }
 
-// Helper function to determine current page from pathname
+
 function getCurrentPage(pathname: string): string {
   if (pathname.includes('/maintenance')) return 'maintenance';
   if (pathname.includes('/previousincident')) return 'previousincident';
@@ -27,10 +27,10 @@ const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, serviceId }: NavbarPro
   const currentPage = getCurrentPage(pathname);
   return (
     <div className="w-full">
-      {/* Main navbar */}
+      
       <div className="bg-background px-6 py-4 border-b">
         <div className="flex items-center justify-between">
-          {/* Logo */}
+          
           <div className="flex items-center">
             {logoUrl ? (
               <div className="flex items-center">
@@ -61,7 +61,7 @@ const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, serviceId }: NavbarPro
             )}
           </div>
           
-          {/* Navigation */}
+          
           <nav className="flex items-center space-x-4">
             <Link 
               href={serviceId ? `/status/${serviceId}` : "/status"} 
@@ -101,7 +101,7 @@ const Navbar = ({ logoUrl, companyName = "", logoLinkUrl, serviceId }: NavbarPro
         </div>
       </div>
       
-      {/* Separator line */}
+      
       <Separator />
     </div>
   )

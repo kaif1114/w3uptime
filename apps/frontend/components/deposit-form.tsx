@@ -54,14 +54,14 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
     if (!window.ethereum) return false;
 
     try {
-      // Try to switch to Sepolia
+      
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0xaa36a7' }], // Sepolia chain ID
+        params: [{ chainId: '0xaa36a7' }], 
       });
       return true;
     } catch (switchError: unknown) {
-      // If Sepolia is not added, add it
+      
       if (switchError && typeof switchError === 'object' && 'code' in switchError && switchError.code === 4902) {
         try {
           await window.ethereum.request({
@@ -99,7 +99,7 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
     setError(null);
 
     try {
-      // First, switch to Sepolia network
+      
       const switchSuccess = await switchToSepolia();
       if (!switchSuccess) {
         setError('Please switch to Sepolia testnet to continue');
@@ -142,7 +142,7 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
       const provider = new ethers.BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
       
-      // Verify we're on Sepolia (chain ID 11155111)
+      
       if (network.chainId !== BigInt(11155111)) {
         setError('Please switch to Sepolia testnet before depositing');
         return;

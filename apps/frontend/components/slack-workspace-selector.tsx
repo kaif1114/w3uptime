@@ -62,11 +62,11 @@ export default function SlackWorkspaceSelector({
     );
 
     if (existingIndex >= 0) {
-      // Remove workspace
+      
       const newWorkspaces = selectedWorkspaces.filter((_, index) => index !== existingIndex);
       onWorkspacesChange(newWorkspaces);
     } else {
-      // Add workspace
+      
       const newWorkspace: SelectedSlackWorkspace = {
         teamId: integration.teamId,
         teamName: integration.teamName,
@@ -75,10 +75,10 @@ export default function SlackWorkspaceSelector({
       };
       
       if (maxSelections === 1) {
-        // Replace existing selection with new one for single selection mode
+        
         onWorkspacesChange([newWorkspace]);
       } else if (!maxSelections || selectedWorkspaces.length < maxSelections) {
-        // Add to existing selections if under limit
+        
         onWorkspacesChange([...selectedWorkspaces, newWorkspace]);
       }
     }
