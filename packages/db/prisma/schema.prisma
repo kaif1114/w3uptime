@@ -30,6 +30,11 @@ model User {
   timelineEvents     TimelineEvent[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
   transactions       Transaction[]
+
+  goodTicks         Int                @default(0)
+  badTicks          Int                @default(0)
+
+  reputationScore     Int                @default(0)
 }
 
 model GeoLocation {
