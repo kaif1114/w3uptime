@@ -5,6 +5,8 @@ const { prisma } = require("db/client");
 import { MonitorTickBatchResponse } from "common/types";
 import { Request, Response } from "express";
 import z from "zod";
+import { computeReputationScore } from "hub/src/services/reputation";
+import { Prisma } from "@prisma/client";
 
 const monitorTickItemSchema = z.object({
   monitorId: z.string().uuid(),
@@ -67,7 +69,52 @@ export async function receiveBatch(req: Request, res: Response) {
         skipDuplicates: true,
       });
 
+
       processedCount = result.count;
+// --- NEW: update validator reputation counters ---
+      // Group ticks by validatorId and good/bad
+      const perValidator: Record<
+        string,
+        { good: number; bad: number }
+      > = {};
+
+      for (const item of batch) {
+        const entry =
+          perValidator[item.validatorId] ||
+          (perValidator[item.validatorId] = { good: 0, bad: 0 });
+
+        if (item.status === "GOOD") entry.good += 1;
+        else entry.bad += 1;
+      }
+
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        for (const [validatorId, { good, bad }] of Object.entries(
+          perValidator
+        )) {
+          // Update counters first
+          const updatedUser = await tx.user.update({
+            where: { id: validatorId },
+            data: {
+              goodTicks: { increment: good },
+              badTicks: { increment: bad },
+            },
+          });
+
+          // Compute and persist score (optional—can also be derived in APIs)
+          const reputationScore = computeReputationScore({
+            goodTicks: updatedUser.goodTicks,
+            badTicks: updatedUser.badTicks,
+          });
+
+          await tx.user.update({
+            where: { id: validatorId },
+            data: {
+              reputationScore,
+            },
+          });
+        }
+      });
+      // --- END NEW ---
     } catch (error) {
       console.error("Batch processing error:", error);
       const response: MonitorTickBatchResponse = {
