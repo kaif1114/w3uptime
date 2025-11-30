@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { withAuth } from '@/lib/auth';
-
+import { computeReputationScore } from 'hub/src/services/reputation';
 export const GET = withAuth(async (_request: NextRequest, user) => {
   try {
     const userId = user.id;
     
-    
     const userWithBalance = await prisma.user.findUnique({
       where: { id: userId },
-      select: { balance: true }
+      select: { 
+        balance: true,
+        goodTicks: true,
+        badTicks: true,
+      }
     });
 
     if (!userWithBalance) {
@@ -54,10 +57,13 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
     const pendingWithdrawalsEth = Number(pendingWithdrawalAmount) / Math.pow(10, 18);
     const availableBalanceEth = userBalance / 1000; 
 
-    
-    
     const totalEarnings = totalDepositsEth;
-
+    const reputationScore = computeReputationScore(
+      {
+        goodTicks: userWithBalance.goodTicks,
+        badTicks: userWithBalance.badTicks
+      }
+    );
     
     const recentTransactions = allTransactions.slice(0, 5).map(tx => ({
       id: tx.id,
@@ -90,6 +96,11 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
         currency: 'ETH'
       },
       validationSummary,
+      reputation: {
+        score: reputationScore,
+        goodTicks: userWithBalance.goodTicks,
+        badTicks: userWithBalance.badTicks,
+      },
       recentTransactions
     };
 
