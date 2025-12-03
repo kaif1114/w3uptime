@@ -116,4 +116,4 @@ export const GET = withAuth(async (_request: NextRequest, user) => {
       error: 'Failed to fetch dashboard data'
     }, { status: 500 });
   }
-});
+}); 

@@ -15,6 +15,7 @@ export function startMonitorDistribution() {
       where: {
         status: {
           not: "PAUSED",
+          
         },
       },
     });
