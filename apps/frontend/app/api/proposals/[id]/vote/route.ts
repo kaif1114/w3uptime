@@ -3,6 +3,10 @@ import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 import { VoteType } from "@prisma/client";
+import {
+  requireReputation,
+  MIN_REP_FOR_VOTE,
+} from "../../ReputationGuard";
 
 const voteSchema = z.object({
   vote: z.nativeEnum(VoteType),
@@ -21,6 +25,13 @@ export const POST = withAuth(
     { params }: RouteParams
   ): Promise<NextResponse> => {
     try {
+      const repCheck = await requireReputation(user.id, MIN_REP_FOR_VOTE);
+      if (!repCheck.ok) {
+        return NextResponse.json(
+          { error: "Insufficient reputation to vote on proposals" },
+          { status: 403 }
+        );
+      }
       const { id: proposalId } = await params;
       const body = await req.json();
       const validation = voteSchema.safeParse(body);

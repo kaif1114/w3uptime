@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import {
+  requireReputation,
+  MIN_REP_FOR_PROPOSAL,
+} from "./ReputationGuard";
 
 const createProposalSchema = z.object({
   title: z.string().min(1),
@@ -13,6 +17,15 @@ const createProposalSchema = z.object({
 
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
+    const repCheck = await requireReputation(user.id, MIN_REP_FOR_PROPOSAL);
+    if (!repCheck.ok) {
+      return NextResponse.json(
+        {
+          error: "Insufficient reputation to create proposals",
+        },
+        { status: 403 }
+      );
+    }
     const body = await req.json();
     const validation = createProposalSchema.safeParse(body);
 

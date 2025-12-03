@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { z } from "zod";
 import { withAuth } from "@/lib/auth";
+import {
+  requireReputation,
+  MIN_REP_FOR_COMMENT,
+} from "../../ReputationGuard";
 
 const createCommentSchema = z.object({
   content: z.string().min(1, "Comment content is required"),
@@ -20,6 +24,15 @@ export const GET = withAuth(
     { params }: RouteParams
   ): Promise<NextResponse> => {
     try {
+        // Reputation gate:
+        const repCheck = await requireReputation(_user.id, MIN_REP_FOR_COMMENT);
+        if (!repCheck.ok) {
+          return NextResponse.json(
+            { error: "Insufficient reputation to comment on proposals" },
+            { status: 403 }
+          );
+        }
+  
       const { id: proposalId } = await params;
       const comments = await prisma.proposalComment.findMany({
         where: { proposalId },
