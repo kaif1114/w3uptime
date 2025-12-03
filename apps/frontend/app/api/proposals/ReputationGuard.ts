@@ -2,9 +2,9 @@
 import { prisma } from "db/client";
 import { computeReputationScore } from "hub/src/services/reputation";
 
-export const MIN_REP_FOR_PROPOSAL = 10;
-export const MIN_REP_FOR_COMMENT = 5;
-export const MIN_REP_FOR_VOTE = 3;
+export const MIN_REP_FOR_PROPOSAL = 1000;
+export const MIN_REP_FOR_COMMENT = 500;
+export const MIN_REP_FOR_VOTE = 300;
 
 const WEI_PER_ETH = BigInt("1000000000000000000"); // 1 ETH in wei
 function scoreFromMonitors(count: number): number {
@@ -27,10 +27,17 @@ function scoreFromAge(days: number): number {
   if (days < 180) return 2;
   return 3;
 }
-export async function requireReputation(
-  userId: string,
-  minScore: number
-): Promise<{ ok: true } | { ok: false; score: number }> {
+
+export interface ReputationBreakdown {
+  totalScore: number;
+  validatorScore: number;
+  customerScore: number;
+  monitorScore: number;
+  depositScore: number;
+  ageScore: number;
+}
+
+async function computeReputation(userId: string): Promise<ReputationBreakdown> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -41,7 +48,16 @@ export async function requireReputation(
     },
   });
 
-  if (!user) return { ok: false, score: 0 };
+  if (!user) {
+    return {
+      totalScore: 0,
+      validatorScore: 0,
+      customerScore: 0,
+      monitorScore: 0,
+      depositScore: 0,
+      ageScore: 0,
+    };
+  }
 
   const confirmedDeposits = await prisma.transaction.findMany({
     where: {
@@ -66,13 +82,33 @@ export async function requireReputation(
 
   // Account age
   const ageDays =
-    (Date.now() - user.createdAt.getTime()) /
-    (1000 * 60 * 60 * 24);
+    (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24);
   const ageScore = scoreFromAge(ageDays);
 
   const customerScore = monitorScore + depositScore + ageScore;
-
   const totalScore = validatorScore + customerScore;
+
+  return {
+    totalScore,
+    validatorScore,
+    customerScore,
+    monitorScore,
+    depositScore,
+    ageScore,
+  };
+}
+
+export async function getReputation(
+  userId: string
+): Promise<ReputationBreakdown> {
+  return computeReputation(userId);
+}
+
+export async function requireReputation(
+  userId: string,
+  minScore: number
+): Promise<{ ok: true } | { ok: false; score: number }> {
+  const { totalScore } = await computeReputation(userId);
 
   if (totalScore < minScore) {
     return { ok: false, score: totalScore };

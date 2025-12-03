@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useProposals, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
+import { useReputation } from "@/hooks/useReputation";
 import {
   Proposal,
   ProposalType,
@@ -89,6 +90,11 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   } = useProposals(getApiFilters());
   const voteProposal = useVoteProposal();
   const { data: session } = useSession();
+  const {
+    data: reputation,
+    isLoading: isReputationLoading,
+    error: reputationError,
+  } = useReputation();
 
   
   const proposals = proposalsData?.data || [];
@@ -347,10 +353,52 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
 
   return (
     <div className="space-y-4">
-      
       <div className="border-t border-border/50 my-6" />
 
-      
+      {session?.user && !reputationError && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your community reputation</CardTitle>
+            <CardDescription>
+              This score influences your ability to create, comment on, and vote
+              on proposals.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <div className="flex items-baseline space-x-2">
+              <span className="text-3xl font-semibold">
+                {isReputationLoading || !reputation
+                  ? "—"
+                  : reputation.totalScore}
+              </span>
+              <span className="text-sm text-muted-foreground">points</span>
+            </div>
+            {reputation && (
+              <div className="text-xs text-muted-foreground space-y-1 text-right">
+                <div>
+                  Create proposal:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.createProposal}+ points required
+                  </span>
+                </div>
+                <div>
+                  Comment:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.comment}+ points required
+                  </span>
+                </div>
+                <div>
+                  Vote:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.vote}+ points required
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Input
