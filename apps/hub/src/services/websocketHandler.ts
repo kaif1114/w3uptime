@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage } from "common/types";
 import { verifyMessage } from "../services/signature";
 import { handleSignup, removeValidator } from "../services/validatorManager";
+import { applyGoodTick, applyBadTick } from "../services/reputation";
 import { CALLBACKS } from "../services/monitorDistribution";
 import http from "http";
 
@@ -10,7 +11,7 @@ export function createWebSocketServer(httpServer: http.Server): WebSocketServer 
 
   ws.on("connection", (socket: WebSocket) => {
     console.log("Client connected");
-    socket.on("message", (messageRaw) => {
+    socket.on("message", async (messageRaw) => {
       const message: IncomingMessage = JSON.parse(messageRaw.toString());
 
       const verified = verifyMessage(
@@ -19,6 +20,8 @@ export function createWebSocketServer(httpServer: http.Server): WebSocketServer 
         message.data.publicKey
       );
       if (!verified) {
+      
+        await applyBadTick(message.data.publicKey);
         socket.send(
           JSON.stringify({
             type: "error",
@@ -27,6 +30,7 @@ export function createWebSocketServer(httpServer: http.Server): WebSocketServer 
         );
         return;
       }
+      await applyGoodTick(message.data.publicKey);
 
       if (message.type === "signup") {
         handleSignup(message.data, socket);
