@@ -183,11 +183,21 @@ export function useProposalComments(proposalId: string) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch comments");
+        // Bubble up backend error message (e.g. insufficient reputation)
+        let message = "Failed to fetch comments";
+        try {
+          const body = await response.json();
+          if (body?.error) {
+            message = body.error;
+          }
+        } catch {
+          // ignore JSON parse errors and fall back to default message
+        }
+        throw new Error(message);
       }
 
       const data = await response.json();
-      return data.comments; 
+      return data.comments;
     },
     enabled: !!proposalId,
   });

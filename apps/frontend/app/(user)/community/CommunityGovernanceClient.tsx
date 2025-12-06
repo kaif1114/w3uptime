@@ -61,6 +61,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     null
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [voteErrorMessage, setVoteErrorMessage] = useState<string | null>(null);
 
   
   const getApiFilters = (): ProposalFilters => {
@@ -125,8 +126,19 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
         proposalId,
         vote: { vote },
       });
+      setVoteErrorMessage(null);
     } catch (error) {
       console.error("Failed to vote:", error);
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      if (message.includes("Insufficient reputation to vote on proposals")) {
+        setVoteErrorMessage(
+          "Your reputation score is too low to vote on proposals."
+        );
+      } else {
+        setVoteErrorMessage("Failed to vote. Please try again later.");
+      }
     }
   };
 
@@ -196,6 +208,15 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
             Back to Proposals
           </Button>
         </div>
+
+        {voteErrorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-gray-200">
+              {voteErrorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {isLoading ? (
           <ProposalDetailSkeleton />
@@ -397,6 +418,15 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {voteErrorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-gray-200">
+            {voteErrorMessage}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="flex items-center space-x-4">

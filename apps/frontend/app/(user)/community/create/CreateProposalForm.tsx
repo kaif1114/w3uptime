@@ -113,7 +113,19 @@ export function CreateProposalForm() {
       setIsSuccess(true);
     } catch (error) {
       console.error("Failed to create proposal:", error);
-      setErrors({ submit: "Failed to create proposal. Please try again." });
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      if (message.includes("Insufficient reputation to create proposals")) {
+        setErrors({
+          submit:
+            "Your reputation score is too low to create proposals. Keep validating and depositing to increase it, then try again.",
+        });
+      } else {
+        setErrors({
+          submit: "Failed to create proposal. Please try again.",
+        });
+      }
     }
   };
 
@@ -325,7 +337,9 @@ export function CreateProposalForm() {
             {errors.submit && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errors.submit}</AlertDescription>
+                <AlertDescription className="text-gray-200">
+                  {errors.submit}
+                </AlertDescription>
               </Alert>
             )}
 
