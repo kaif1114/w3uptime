@@ -2,16 +2,19 @@
 import { prisma } from "db/client";
 import { computeReputationScore } from "hub/src/services/reputation";
 
-export const MIN_REP_FOR_PROPOSAL = 1000;
-export const MIN_REP_FOR_COMMENT = 500;
-export const MIN_REP_FOR_VOTE = 300;
+export const MIN_REP_FOR_PROPOSAL = 200;
+export const MIN_REP_FOR_COMMENT = 100;
+export const MIN_REP_FOR_VOTE = 50;
 
 const WEI_PER_ETH = BigInt("1000000000000000000"); // 1 ETH in wei
 function scoreFromMonitors(count: number): number {
-  if (count === 0) return 0;
-  if (count <= 2) return 1;
-  if (count <= 5) return 2;
-  return 3;
+  let score = 0;
+
+  for (let i = 0; i < count; i++) {
+    score += 20;
+  }
+
+  return score;
 }
 
 function scoreFromDepositsWei(totalWei: bigint): number {
@@ -22,10 +25,14 @@ function scoreFromDepositsWei(totalWei: bigint): number {
 }
 
 function scoreFromAge(days: number): number {
-  if (days < 7) return 0;
-  if (days < 30) return 1;
-  if (days < 180) return 2;
-  return 3;
+  const fullDays = Math.floor(days);
+  let score = 0;
+
+  for (let i = 0; i < fullDays; i++) {
+    score += 5; // +5 points for each day
+  }
+
+  return score;
 }
 
 export interface ReputationBreakdown {
