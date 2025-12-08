@@ -30,6 +30,7 @@ model User {
   timelineEvents     TimelineEvent[]
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
   transactions       Transaction[]
+  conversations      Conversation[]
 }
 
 model GeoLocation {
@@ -200,6 +201,33 @@ model Session {
   @@index([sessionId])
   @@index([userId])
   @@index([walletAddress])
+}
+
+model Conversation {
+  id          String               @id @default(uuid())
+  userId      String
+  title       String?
+  contextType ConversationContext?
+  contextId   String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id])
+  messages    ConversationMessage[]
+
+  @@index([userId, createdAt])
+  @@index([contextType, contextId])
+}
+
+model ConversationMessage {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
 
 model SlackIntegration {
@@ -401,6 +429,21 @@ enum ProposalStatus {
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+enum ConversationContext {
+  GENERAL
+  MONITOR
+  INCIDENT
+  ANALYTICS
+  ALERT
+  ESCALATION
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
 model Transaction {

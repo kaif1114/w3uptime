@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
+import { ChatAssistant } from "@/components/assistant/chat-assistant";
 
 export default async function UserLayout({
   children,
@@ -29,10 +30,9 @@ export default async function UserLayout({
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
-              <div className="max-w-6xl mx-auto p-6 container">
-              {children}
-              </div>
+              <div className="max-w-6xl mx-auto p-6 container">{children}</div>
               <Toaster richColors closeButton />
+              <ChatAssistant />
             </div>
           </div>
         </div>
