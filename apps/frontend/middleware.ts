@@ -5,7 +5,6 @@ import type { NextRequest } from "next/server";
 
 const publicRoutes: string[] = [
   "/",
-  "/login",
   "/favicon.ico",
   "/api/auth/nonce",
   "/api/auth/verify",
@@ -56,10 +55,10 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = "/login";
-  loginUrl.searchParams.set("from", pathname);
-  return NextResponse.redirect(loginUrl);
+  const homeUrl = request.nextUrl.clone();
+  homeUrl.pathname = "/";
+  homeUrl.searchParams.set("from", pathname);
+  return NextResponse.redirect(homeUrl);
 }
 
 
