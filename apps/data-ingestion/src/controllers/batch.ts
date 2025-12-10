@@ -12,8 +12,8 @@ import { Prisma } from "@prisma/client";
 const REWARD_PER_VALIDATION = 1;
 
 const monitorTickItemSchema = z.object({
-  monitorId: z.string().uuid(),
-  validatorId: z.string().uuid(),
+  monitorId: z.uuid(),
+  validatorId: z.uuid(),
   status: z.enum(["GOOD", "BAD"]),
   latency: z.number().min(0),
   longitude: z.number().min(-180).max(180),
@@ -27,7 +27,7 @@ const monitorTickItemSchema = z.object({
 const batchRequestSchema = z.object({
   batch: z.array(monitorTickItemSchema).min(1).max(100),
   batchId: z.uuid(),
-  timestamp: z.string().datetime(),
+  timestamp: z.coerce.date(),
 });
 
 export async function receiveBatch(req: Request, res: Response) {
@@ -38,8 +38,7 @@ export async function receiveBatch(req: Request, res: Response) {
       const response: MonitorTickBatchResponse = {
         success: false,
         message: "Validation failed",
-        errors: validationResult.error.issues.map(
-          (err: z.ZodIssue, index: number) => ({
+        errors: validationResult.error.issues.map((err, index) => ({
             index,
             error: `${err.path.join(".")}: ${err.message}`,
           })
