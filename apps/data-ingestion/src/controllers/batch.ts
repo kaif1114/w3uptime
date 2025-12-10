@@ -7,9 +7,8 @@ import { Request, Response } from "express";
 import z from "zod";
 import { Prisma } from "@prisma/client";
 
-// Reward in internal balance units per validation performed
-// 1 internal unit = 0.001 ETH
-const REWARD_PER_VALIDATION = 1;
+// Reward per validation in wei (1 gwei).
+const REWARD_PER_VALIDATION_WEI = 1_000_000_000n;
 
 const monitorTickItemSchema = z.object({
   monitorId: z.uuid(),
@@ -87,12 +86,14 @@ export async function receiveBatch(req: Request, res: Response) {
         for (const [validatorId, validationCount] of Object.entries(
           validationsPerValidator
         )) {
-          const balanceReward = validationCount * REWARD_PER_VALIDATION;
+          const balanceRewardWei =
+            new Prisma.Decimal(validationCount.toString()).mul(new Prisma.Decimal(REWARD_PER_VALIDATION_WEI.toString()));
 
           await tx.user.update({
             where: { id: validatorId },
             data: {
-              balance: { increment: balanceReward },
+              //@ts-ignore
+              balance: { increment: balanceRewardWei },
             },
           });
         }

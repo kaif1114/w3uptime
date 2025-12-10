@@ -45,8 +45,8 @@ export const POST = withAuth(async (_request: NextRequest, user, _session, { par
     }
 
     
-    const amountInternalUnits = Math.floor(Number(BigInt(withdrawal.amount)) / Math.pow(10, 15)); 
-    if (userWithBalance.balance < amountInternalUnits) {
+    const amountWei = BigInt(withdrawal.amount.toString());
+    if (BigInt(userWithBalance.balance.toString()) < amountWei) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
+import { ethers } from 'ethers';
 import { withAuth } from '@/lib/auth';
 
 interface RouteParams {
@@ -38,10 +39,9 @@ export const GET = withAuth(async (request: NextRequest, user, session, { params
       }, { status: 404 });
     }
 
-    
     const formattedWithdrawal = {
       id: withdrawal.id,
-      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, 
+      amount: parseFloat(ethers.formatEther(BigInt(withdrawal.amount))), 
       status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
       requestedAt: withdrawal.createdAt.toISOString(),
       processedAt: withdrawal.processedAt?.toISOString(),

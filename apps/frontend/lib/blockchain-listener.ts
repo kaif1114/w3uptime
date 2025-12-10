@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
-
+import { Prisma } from "@prisma/client";
 
 class BlockchainListener {
   private provider: ethers.Provider | null = null;
@@ -251,18 +251,15 @@ class BlockchainListener {
           }
         });
 
-        
-        const amountWei = BigInt(amount.toString());
-        const amountEth = Number(amountWei) / Math.pow(10, 18);
-        const balanceIncrement = Math.floor(amountEth * 1000); 
-
+        const amountDecimal = new Prisma.Decimal(amount.toString());
         await tx.user.update({
           where: { walletAddress: normalizedAddress },
           data: {
             balance: {
-              increment: balanceIncrement
-            }
-          }
+              //@ts-ignore
+              increment: amountDecimal,
+            },
+          },
         });
       });
 
@@ -420,18 +417,15 @@ class BlockchainListener {
           });
         }
 
-        
-        const amountWei = BigInt(amount.toString());
-        const amountEth = Number(amountWei) / Math.pow(10, 18);
-        const balanceDecrement = Math.floor(amountEth * 1000); 
-
+        const amountDecimal = new Prisma.Decimal(amount.toString());
         await tx.user.update({
           where: { walletAddress: normalizedAddress },
           data: {
             balance: {
-              decrement: balanceDecrement
-            }
-          }
+              //@ts-ignore
+              decrement: amountDecimal,
+            },
+          },
         });
       });
 

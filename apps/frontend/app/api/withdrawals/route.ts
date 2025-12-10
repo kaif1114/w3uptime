@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { z } from 'zod';
+import { ethers } from 'ethers';
 import { withAuth } from '@/lib/auth';
 
 const WithdrawalRequestSchema = z.object({
@@ -44,15 +45,25 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       }
     });
 
+    const userBalance = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true }
+    });
+
     
-    const formattedWithdrawals = withdrawals.map(withdrawal => ({
-      id: withdrawal.id,
-      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, 
-      status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
-      requestedAt: withdrawal.createdAt.toISOString(),
-      processedAt: withdrawal.processedAt?.toISOString(),
-      transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
-    }));
+    const formattedWithdrawals = withdrawals.map(withdrawal => {
+      const amountWei = BigInt(withdrawal.amount);
+      const amountEth = parseFloat(ethers.formatEther(amountWei));
+
+      return {
+        id: withdrawal.id,
+        amount: amountEth,
+        status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
+        requestedAt: withdrawal.createdAt.toISOString(),
+        processedAt: withdrawal.processedAt?.toISOString(),
+        transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -64,7 +75,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: 0 
+        userBalance: userBalance ? parseFloat(ethers.formatEther(BigInt(userBalance.balance.toString()))) : 0
       }
     });
 
@@ -95,8 +106,15 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     const body = await request.json();
     const { amount } = WithdrawalRequestSchema.parse(body);
     
-    const amountWei = BigInt(parseFloat(amount) * Math.pow(10, 18));
-    const amountInternalUnits = Math.floor(parseFloat(amount) * 1000); 
+    let amountWei: bigint;
+    try {
+      amountWei = ethers.parseEther(amount);
+    } catch {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid amount format'
+      }, { status: 400 });
+    }
 
     
     if (amountWei <= 0) {
@@ -107,7 +125,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     }
 
     
-    if (userWithBalance.balance < amountInternalUnits) {
+    if (BigInt(userWithBalance.balance.toString()) < amountWei) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'
@@ -133,7 +151,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       success: true,
       data: {
         withdrawalId: withdrawal.id,
-        amount: parseFloat(amount),
+          amount: parseFloat(ethers.formatEther(amountWei)),
         status: 'pending'
       }
     });

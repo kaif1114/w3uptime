@@ -133,14 +133,12 @@ export async function POST(request: NextRequest) {
       });
 
       const amountWei = BigInt(amount);
-      const amountEth = Number(amountWei) / Math.pow(10, 18);
-      const balanceIncrement = Math.floor(amountEth * 1000);
 
       await tx.user.update({
         where: { walletAddress: normalizedAddress },
         data: {
           balance: {
-            increment: balanceIncrement
+            increment: amountWei
           }
         }
       });

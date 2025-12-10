@@ -14,7 +14,7 @@ model User {
   nonceExpiry        DateTime?
   updatedAt          DateTime           @updatedAt
   walletAddress      String             @unique
-  balance            Int                @default(0)
+  balance            Decimal            @default(0) @db.Decimal(78, 0)
   type               UserType           @default(USER)
   publicKey          String?            @unique
   geoLocationId      String?            @unique

@@ -69,10 +69,15 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    const sanitizedUser = {
+      ...session.user,
+      balance: session.user.balance ? BigInt(session.user.balance.toString()).toString() : "0"
+    };
+    console.log("sanitizedUser", sanitizedUser);
     return NextResponse.json({
       success: true,
       authenticated: true,
-      user: session.user,
+      user: sanitizedUser,
       session: {
         id: session.id,
         walletAddress: session.walletAddress,
