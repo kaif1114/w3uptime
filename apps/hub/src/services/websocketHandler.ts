@@ -20,8 +20,7 @@ export function createWebSocketServer(httpServer: http.Server): WebSocketServer 
         message.data.publicKey
       );
       if (!verified) {
-      
-        await applyBadTick(message.data.publicKey);
+        message.type === "validate" && (await applyBadTick(message.data.publicKey));
         socket.send(
           JSON.stringify({
             type: "error",

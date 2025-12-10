@@ -5,8 +5,11 @@ const { prisma } = require("db/client");
 import { MonitorTickBatchResponse } from "common/types";
 import { Request, Response } from "express";
 import z from "zod";
-import { computeReputationScore } from "hub/src/services/reputation";
 import { Prisma } from "@prisma/client";
+
+// Reward in internal balance units per validation performed
+// 1 internal unit = 0.001 ETH
+const REWARD_PER_VALIDATION = 1;
 
 const monitorTickItemSchema = z.object({
   monitorId: z.string().uuid(),
@@ -36,7 +39,7 @@ export async function receiveBatch(req: Request, res: Response) {
         success: false,
         message: "Validation failed",
         errors: validationResult.error.issues.map(
-          (err: any, index: number) => ({
+          (err: z.ZodIssue, index: number) => ({
             index,
             error: `${err.path.join(".")}: ${err.message}`,
           })
@@ -71,50 +74,31 @@ export async function receiveBatch(req: Request, res: Response) {
 
 
       processedCount = result.count;
-// --- NEW: update validator reputation counters ---
-      // Group ticks by validatorId and good/bad
-      const perValidator: Record<
-        string,
-        { good: number; bad: number }
-      > = {};
+// --- Reward validators for performing validations ---
+      // Count total validations per validator (regardless of website status)
+      const validationsPerValidator: Record<string, number> = {};
 
       for (const item of batch) {
-        const entry =
-          perValidator[item.validatorId] ||
-          (perValidator[item.validatorId] = { good: 0, bad: 0 });
-
-        if (item.status === "GOOD") entry.good += 1;
-        else entry.bad += 1;
+        validationsPerValidator[item.validatorId] =
+          (validationsPerValidator[item.validatorId] || 0) + 1;
       }
 
+      // Increment balance for each validator based on validations performed
       await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        for (const [validatorId, { good, bad }] of Object.entries(
-          perValidator
+        for (const [validatorId, validationCount] of Object.entries(
+          validationsPerValidator
         )) {
-          // Update counters first
-          const updatedUser = await tx.user.update({
-            where: { id: validatorId },
-            data: {
-              goodTicks: { increment: good },
-              badTicks: { increment: bad },
-            },
-          });
-
-          // Compute and persist score (optional—can also be derived in APIs)
-          const reputationScore = computeReputationScore({
-            goodTicks: updatedUser.goodTicks,
-            badTicks: updatedUser.badTicks,
-          });
+          const balanceReward = validationCount * REWARD_PER_VALIDATION;
 
           await tx.user.update({
             where: { id: validatorId },
             data: {
-              reputationScore,
+              balance: { increment: balanceReward },
             },
           });
         }
       });
-      // --- END NEW ---
+      // --- END: Validator rewards ---
     } catch (error) {
       console.error("Batch processing error:", error);
       const response: MonitorTickBatchResponse = {
