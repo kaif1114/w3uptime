@@ -1,11 +1,12 @@
 # W3Uptime On-Chain Governance Transparency Feature
-# Product Requirements Document (PRD)
+# Product/Feature Requirements Document (PRD)
 
 ---
 
 ## Problem Statement
 
-W3Uptime currently has a centralized governance system where users create proposals, vote, and comment on community decisions. However, there is no verifiable proof that votes are counted accurately or that governance decisions are authentic. This lack of transparency undermines trust in what should be a trustless Web3 platform.
+W3Uptime currently has a centralized governance system where users create proposals, vote, and comment on community decisions. However, there is no verifiable proof that votes are counted accurately or that governance decisions are authentic. This lack of transparency undermines trust in what should be a trustless Web3 platform. 
+We need to add this new feature "On-Chain Governance Transparency Feature" in the existing project/codebase.
 
 ### Pain Points
 - Users cannot verify their votes were counted correctly
@@ -131,7 +132,7 @@ Platform batches signatures and submits final results on-chain when voting ends.
 - **Behavior**: Calculate end time (creation + 7 days), reject votes after deadline
 
 #### Feature: Quorum Calculation
-- **Description**: Check if 60% of platform users participated in voting
+- **Description**: Check if 50% of platform users participated in voting
 - **Inputs**: Total user count, unique voters count
 - **Outputs**: Boolean hasQuorum, participation percentage
 - **Behavior**: Query total eligible users, compare to voter count, return quorum status
@@ -334,19 +335,15 @@ No dependencies - these are built first.
 **Tasks**:
 - [ ] Create EIP-712 typed data definitions for vote signatures (depends on: none)
   - Acceptance criteria: TypeScript types compile, can be used in signing
-  - Test strategy: Unit tests for message construction
 
 - [ ] Develop W3Governance.sol smart contract (depends on: none)
   - Acceptance criteria: All functions implemented, compiles without errors
-  - Test strategy: Hardhat/Foundry unit tests for all functions
 
 - [ ] Deploy contract to Sepolia and verify on Etherscan (depends on: W3Governance.sol)
   - Acceptance criteria: Contract deployed, source verified, address documented
-  - Test strategy: Manual verification on Etherscan
 
 - [ ] Create governance-contract.ts with ABI and helpers (depends on: deployment)
   - Acceptance criteria: Contract instance can be created, functions callable
-  - Test strategy: Integration test calling read functions
 
 **Exit Criteria**: Contract deployed on Sepolia, ABI exported, TypeScript helpers working
 

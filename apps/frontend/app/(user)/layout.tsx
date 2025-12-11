@@ -12,7 +12,7 @@ export default async function UserLayout({
 }>) {
   const session = await getSessionOnServer();
   if (!session?.authenticated) {
-    redirect("/login");
+    redirect("/");
   }
   return (
     <SidebarProvider
