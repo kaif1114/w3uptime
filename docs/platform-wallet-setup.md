@@ -8,30 +8,22 @@ The platform wallet is used to pay gas fees for automatically finalizing proposa
 
 ## Initial Setup
 
-### 1. Generate Platform Wallet
+### 1. Export Private Key from MetaMask
 
-Run the following script to generate a new wallet:
+To use your existing MetaMask wallet for platform finalization:
 
-```bash
-npm run generate-wallet
-```
+1. Open MetaMask extension
+2. Click on the three dots menu (⋮) next to your account
+3. Select "Account Details"
+4. Click "Show Private Key"
+5. Enter your MetaMask password
+6. Copy the private key (starts with 0x...)
 
-Or use Node.js directly:
-
-```javascript
-const { Wallet } = require('ethers');
-
-// Generate new random wallet
-const wallet = Wallet.createRandom();
-
-console.log('Platform Wallet Generated:');
-console.log('Address:', wallet.address);
-console.log('Private Key:', wallet.privateKey);
-console.log('Mnemonic:', wallet.mnemonic.phrase);
-
-// IMPORTANT: Save the mnemonic in a secure location!
-// Store private key in .env file for operational use
-```
+**⚠️ SECURITY WARNING:**
+- NEVER share your private key with anyone
+- Only export the private key for a dedicated wallet used solely for platform operations
+- Consider creating a new MetaMask account specifically for this purpose
+- The wallet with this private key will pay gas fees for finalization transactions
 
 ### 2. Configure Environment Variables
 
@@ -39,8 +31,8 @@ Add the following to your `.env` file (NEVER commit this file to git):
 
 ```bash
 # Platform Wallet Configuration
-PLATFORM_SIGNER_PRIVATE_KEY=0x...  # Private key from step 1
-PLATFORM_SIGNER_ADDRESS=0x...      # Wallet address from step 1
+PLATFORM_SIGNER_PRIVATE_KEY=0x...  # Private key from MetaMask
+PLATFORM_SIGNER_ADDRESS=0x...      # Wallet address from MetaMask
 ```
 
 ### 3. Fund the Wallet
@@ -129,23 +121,25 @@ When balance drops below threshold:
 
 ### Key Rotation (Every 90 Days)
 
-1. Generate new wallet (see Initial Setup)
-2. Update environment variables with new private key
+1. Create new MetaMask account or use different existing account
+2. Export private key from new MetaMask account (see Initial Setup)
 3. Transfer remaining balance from old wallet to new wallet
-4. Test finalization with new wallet
-5. Archive old wallet private key securely
-6. Update documentation with new wallet address
+4. Update environment variables with new private key and address
+5. Test finalization with new wallet
+6. Archive old wallet private key securely
+7. Update documentation with new wallet address
 
 ### Emergency Procedures
 
 **If Private Key is Compromised:**
 
-1. Immediately generate new wallet
-2. Transfer all funds from compromised wallet to new wallet
-3. Update environment variables
-4. Restart all services using the platform wallet
-5. Review all recent transactions for suspicious activity
-6. Document incident in security log
+1. Immediately create new MetaMask account
+2. Export private key from new MetaMask account
+3. Transfer all funds from compromised wallet to new wallet
+4. Update environment variables with new credentials
+5. Restart all services using the platform wallet
+6. Review all recent transactions for suspicious activity
+7. Document incident in security log
 
 **If Wallet Runs Out of Gas:**
 
