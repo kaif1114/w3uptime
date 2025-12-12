@@ -480,6 +480,7 @@ All foundation tasks (1-5) have been successfully completed:
 - Exponential backoff reconnection (max 5 attempts)
 - Historical event processing (last 50 blocks)
 - Singleton pattern with start/stop methods
+- **Service Initialization**: Automatically started via `apps/frontend/instrumentation.ts` on application startup
 
 ---
 
@@ -597,6 +598,21 @@ class VoteCacheListener {
 - `startVoteCacheListener()`: Safe to call multiple times
 - `stopVoteCacheListener()`: Cleanup helper
 
+**Service Initialization**:
+Added to `apps/frontend/instrumentation.ts` for automatic startup:
+```typescript
+// Start vote cache listener
+try {
+  console.log("Initializing vote cache listener...");
+  const { startVoteCacheListener } = await import("@/lib/services/vote-cache-listener");
+  
+  await startVoteCacheListener();
+  console.log("Vote cache listener initialized successfully");
+} catch (error) {
+  console.error("Failed to initialize vote cache listener:", error);
+}
+```
+
 **Environment Variables**:
 - `ETHEREUM_RPC_URL`: Sepolia RPC endpoint (already configured)
 
@@ -604,6 +620,8 @@ class VoteCacheListener {
 - Uses `createGovernanceContract()` from `common/governance-contract.ts`
 - Writes to `VoteCache` model (created in Task 6)
 - VoteType enum: `UPVOTE` | `DOWNVOTE` from Prisma schema
+- Automatically initialized via `instrumentation.ts` on application startup
+- Runs alongside `proposal-listener` for complete event coverage
 
 **Why This Approach**:
 - NO signature verification needed - events are blockchain-verified
@@ -1062,15 +1080,16 @@ private async handleProposalFinalized(
 3. `apps/frontend/app/api/proposals/[id]/finalize/route.ts` (382 lines)
 
 **Modified Files**:
-- None (Task 14 was already complete from Phase 2)
+- `apps/frontend/instrumentation.ts` (added governance listeners initialization)
 
-**Total Code Added**: ~1,148 lines
+**Total Code Added**: ~1,148 lines + instrumentation setup
 
 **Architecture Highlights**:
 
 1. **Dual Event Listener System**:
    - `vote-cache-listener.ts`: Monitors VoteCast events
    - `proposal-listener.ts`: Monitors ProposalCreated & ProposalFinalized events
+   - Both automatically initialized via `instrumentation.ts` on application startup
    - Independent services can be started/stopped separately
    - Shared error handling and reconnection patterns
 

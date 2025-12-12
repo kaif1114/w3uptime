@@ -31,5 +31,27 @@ export async function register() {
     } catch (error) {
       console.error("Failed to initialize blockchain listener:", error);
     }
+
+    // Start governance proposal listener
+    try {
+      console.log("Initializing governance proposal listener...");
+      const { startProposalListener } = await import("@/lib/services/proposal-listener");
+      
+      await startProposalListener();
+      console.log("Governance proposal listener initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize governance proposal listener:", error);
+    }
+
+    // Start vote cache listener
+    try {
+      console.log("Initializing vote cache listener...");
+      const { startVoteCacheListener } = await import("@/lib/services/vote-cache-listener");
+      
+      await startVoteCacheListener();
+      console.log("Vote cache listener initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize vote cache listener:", error);
+    }
   }
 }
