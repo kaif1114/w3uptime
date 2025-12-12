@@ -16,7 +16,9 @@
     "pgadmin:start": "docker-compose up pgadmin -d",
     "dev:services": "docker-compose -f docker-compose.yml up -d",
     "dev:services:stop": "docker-compose down",
-    "finalize-proposals": "tsx scripts/finalize-proposals.ts"
+    "finalize-proposals": "tsx scripts/finalize-proposals.ts",
+    "check-wallet-balance": "tsx scripts/check-wallet-balance.ts",
+    "generate-wallet": "tsx scripts/generate-wallet.ts"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
