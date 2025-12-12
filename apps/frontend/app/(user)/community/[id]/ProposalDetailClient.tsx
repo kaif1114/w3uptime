@@ -13,6 +13,7 @@ import {
 import { ProposalComments } from "@/components/ui/proposal-comments";
 import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
 import { useProposal, useVoteProposal } from "@/hooks/useProposals";
+import { useVote } from "@/hooks/useVote";
 import { useSession } from "@/hooks/useSession";
 import {
   ProposalType,
@@ -30,6 +31,9 @@ import {
   Tag,
   Trash2,
   User,
+  Shield,
+  Loader2,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -42,18 +46,53 @@ export function ProposalDetailClient({
 }: ProposalDetailClientProps) {
   const { data: proposalData, isLoading, error } = useProposal(proposalId);
   const voteProposal = useVoteProposal();
+  const {
+    vote: onChainVote,
+    isLoading: isVotingOnChain,
+    error: voteError,
+    isSuccess: voteSuccess,
+    data: voteData,
+  } = useVote();
   const { data: session } = useSession();
 
   const proposal = proposalData?.proposal;
 
   const handleVote = async (vote: VoteType) => {
     try {
-      await voteProposal.mutateAsync({
-        proposalId,
-        vote: { vote },
-      });
+      const isOnChainProposal =
+        proposal?.onChainStatus === "ACTIVE" ||
+        proposal?.onChainStatus === "PASSED" ||
+        proposal?.onChainStatus === "FAILED";
+
+      if (isOnChainProposal) {
+        // On-chain voting via MetaMask
+        if (!proposal?.onChainId) {
+          throw new Error("On-chain proposal ID not found");
+        }
+
+        console.log(`Voting on-chain for proposal ${proposal.onChainId}: ${vote}`);
+
+        const support = vote === VoteType.UPVOTE;
+        await onChainVote({
+          proposalId: proposal.onChainId,
+          support,
+        });
+
+        console.log("✅ On-chain vote successful");
+      } else {
+        // Database voting for DRAFT proposals
+        console.log(`Voting in database for proposal ${proposalId}: ${vote}`);
+
+        await voteProposal.mutateAsync({
+          proposalId,
+          vote: { vote },
+        });
+
+        console.log("✅ Database vote successful");
+      }
     } catch (error) {
       console.error("Failed to vote:", error);
+      // Error handling is done by the hook
     }
   };
 
@@ -110,7 +149,68 @@ export function ProposalDetailClient({
     return userVote ? userVote.vote : null;
   };
 
-  
+  const canVote = () => {
+    if (!proposal) return false;
+    if (!session?.user) return false;
+
+    // Can't vote on finalized proposals
+    if (
+      proposal.onChainStatus === "PASSED" ||
+      proposal.onChainStatus === "FAILED"
+    ) {
+      return false;
+    }
+
+    // Can't vote while transaction is pending
+    if (proposal.onChainStatus === "PENDING_ONCHAIN") {
+      return false;
+    }
+
+    // Can vote on DRAFT (database) or ACTIVE (on-chain)
+    return (
+      proposal.onChainStatus === "DRAFT" || proposal.onChainStatus === "ACTIVE"
+    );
+  };
+
+  const getVoteDisabledReason = () => {
+    if (!session?.user) return "Please sign in to vote";
+    if (!proposal) return null;
+
+    if (proposal.onChainStatus === "PASSED") {
+      return "This proposal has passed and voting is closed";
+    }
+    if (proposal.onChainStatus === "FAILED") {
+      return "This proposal has failed and voting is closed";
+    }
+    if (proposal.onChainStatus === "PENDING_ONCHAIN") {
+      return "Waiting for on-chain confirmation. Voting will be available shortly.";
+    }
+
+    // Check if voting period ended for ACTIVE proposals
+    if (proposal.onChainStatus === "ACTIVE" && proposal.votingEndsAt) {
+      const now = new Date();
+      const endsAt = new Date(proposal.votingEndsAt);
+      if (now >= endsAt) {
+        return "Voting period has ended. Waiting for finalization.";
+      }
+    }
+
+    return null;
+  };
+
+  const getVotingMethod = () => {
+    if (!proposal) return "Unknown";
+
+    if (proposal.onChainStatus === "DRAFT") {
+      return "Database Voting";
+    }
+    if (proposal.onChainStatus === "ACTIVE") {
+      return "On-Chain Voting (MetaMask)";
+    }
+    return "Voting Closed";
+  };
+
+
   if (isLoading) {
     return <ProposalDetailSkeleton />;
   }
@@ -260,45 +360,129 @@ export function ProposalDetailClient({
         </CardHeader>
       </Card>
 
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Community Feedback</CardTitle>
           <CardDescription>
-            Vote on this proposal to show your support or concerns
+            {proposal?.onChainStatus === "ACTIVE"
+              ? "Vote directly on the Sepolia blockchain via MetaMask (gas fees apply)"
+              : proposal?.onChainStatus === "DRAFT"
+              ? "Vote on this proposal to show your support or concerns"
+              : "Voting has ended for this proposal"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex space-x-4">
-              <Button
-                variant={
-                  getUserVote() === VoteType.UPVOTE ? "default" : "outline"
-                }
-                size="lg"
-                onClick={() => handleVote(VoteType.UPVOTE)}
-                disabled={voteProposal.isPending}
-                className="flex items-center space-x-2"
-              >
-                <ArrowUp className="h-5 w-5" />
-                <span>Upvote ({getUpvotes()})</span>
-              </Button>
-              <Button
-                variant={
-                  getUserVote() === VoteType.DOWNVOTE ? "default" : "outline"
-                }
-                size="lg"
-                onClick={() => handleVote(VoteType.DOWNVOTE)}
-                disabled={voteProposal.isPending}
-                className="flex items-center space-x-2"
-              >
-                <ArrowDown className="h-5 w-5" />
-                <span>Downvote ({getDownvotes()})</span>
-              </Button>
+          <div className="space-y-4">
+            {/* On-chain voting indicator */}
+            {proposal?.onChainStatus === "ACTIVE" && (
+              <Alert className="border-blue-200 bg-blue-50">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>On-Chain Voting:</strong> Your vote will be
+                  permanently recorded on the Sepolia blockchain. Transaction
+                  requires gas fees (~0.001 ETH).
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Voting error display */}
+            {voteError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{voteError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Voting success display */}
+            {voteSuccess && voteData && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Vote recorded successfully!{" "}
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${voteData.transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-mono"
+                  >
+                    View transaction
+                  </a>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Vote buttons */}
+            <div className="flex items-center justify-between">
+              <div className="flex space-x-4">
+                <Button
+                  variant={
+                    getUserVote() === VoteType.UPVOTE ? "default" : "outline"
+                  }
+                  size="lg"
+                  onClick={() => handleVote(VoteType.UPVOTE)}
+                  disabled={
+                    voteProposal.isPending || isVotingOnChain || !canVote()
+                  }
+                  className="flex items-center space-x-2"
+                >
+                  {isVotingOnChain && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  <ArrowUp className="h-5 w-5" />
+                  <span>Upvote ({getUpvotes()})</span>
+                </Button>
+
+                <Button
+                  variant={
+                    getUserVote() === VoteType.DOWNVOTE ? "default" : "outline"
+                  }
+                  size="lg"
+                  onClick={() => handleVote(VoteType.DOWNVOTE)}
+                  disabled={
+                    voteProposal.isPending || isVotingOnChain || !canVote()
+                  }
+                  className="flex items-center space-x-2"
+                >
+                  {isVotingOnChain && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  <ArrowDown className="h-5 w-5" />
+                  <span>Downvote ({getDownvotes()})</span>
+                </Button>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                Total votes: {getUpvotes() + getDownvotes()}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Total votes: {getUpvotes() + getDownvotes()}
+
+            {/* Disabled reason tooltip */}
+            {getVoteDisabledReason() && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{getVoteDisabledReason()}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Voting method info */}
+            <div className="text-xs text-muted-foreground flex items-center space-x-2">
+              <span>Method:</span>
+              <Badge variant="outline" className="text-xs">
+                {getVotingMethod()}
+              </Badge>
             </div>
+
+            {/* Transaction pending state */}
+            {isVotingOnChain && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <Loader2 className="h-4 w-4 animate-spin text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <strong>Transaction Pending...</strong> Please confirm the
+                  transaction in MetaMask. Do not close this window.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </CardContent>
       </Card>
