@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth';
 
@@ -133,12 +134,13 @@ export async function POST(request: NextRequest) {
       });
 
       const amountWei = BigInt(amount);
+      const amountDecimal = new Prisma.Decimal(amountWei.toString());
 
       await tx.user.update({
         where: { walletAddress: normalizedAddress },
         data: {
           balance: {
-            increment: amountWei
+            increment: amountDecimal
           }
         }
       });

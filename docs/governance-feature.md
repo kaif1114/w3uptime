@@ -1171,5 +1171,520 @@ private async handleProposalFinalized(
 
 ---
 
-**Next Phase**: Frontend Integration & Testing (Tasks 15+)
+## Phase 4: Frontend Integration (Tasks 15-19)
+
+### Task 15: Build Transparency Dashboard API ✅
+
+**Objective**: Create public API endpoint for comprehensive governance data with on-chain verification links.
+
+**Implementation**:
+- **File**: `apps/frontend/app/api/proposals/dashboard/route.ts`
+- **Route**: `GET /api/proposals/dashboard`
+- **Access**: Public (no authentication required)
+
+**Key Features**:
+1. **Comprehensive Proposal Data**:
+   - Fetches all proposals (or filtered by on-chain status)
+   - Includes on-chain and off-chain vote counts
+   - Provides Etherscan transaction links
+   - Returns proposal metadata and status
+
+2. **Query Parameters**:
+   - `includeOffChain`: Include DRAFT/off-chain proposals (default: false)
+
+3. **Platform Statistics**:
+   - Total proposals count
+   - On-chain proposals count
+   - Finalized proposals count
+   - Active voting proposals count
+
+4. **Performance Optimization**:
+   - Cache-Control headers: `public, max-age=60`
+   - Parallel blockchain queries for vote counts
+
+**Response Format**:
+```typescript
+{
+  proposals: [
+    {
+      id: string,
+      title: string,
+      type: string,
+      status: string,
+      onChainStatus: OnChainStatus,
+      proposer: string,
+      createdAt: Date,
+      onChainId: number | null,
+      contentHash: string | null,
+      creationTxHash: string | null,
+      creationTxUrl: string | null,
+      finalizationTxHash: string | null,
+      finalizationTxUrl: string | null,
+      votingEndsAt: Date | null,
+      onChainVotes: {
+        upvotes: number,
+        downvotes: number,
+        total: number
+      },
+      legacyVotes: {
+        upvotes: number,
+        downvotes: number
+      }
+    }
+  ],
+  stats: {
+    totalProposals: number,
+    onChainProposals: number,
+    finalizedProposals: number,
+    activeVoting: number
+  }
+}
+```
+
+**Technical Details**:
+- Uses `ethers.JsonRpcProvider` to query blockchain
+- Calls `contract.getProposal(onChainId)` for live vote counts
+- Constructs Etherscan URLs for transaction verification
+- Compares on-chain votes with legacy off-chain votes
+
+**Testing Recommendations**:
+1. Verify all on-chain proposals are returned with verification links
+2. Test `includeOffChain=true` returns DRAFT proposals
+3. Validate stats calculations
+4. Confirm Etherscan URLs are valid format
+5. Load test with 100+ proposals (target: <2s response time)
+
+---
+
+### Task 16: Create Vote Verification API Endpoint ✅
+
+**Objective**: Build endpoint for users to verify their vote was included on-chain.
+
+**Implementation**:
+- **File**: `apps/frontend/app/api/proposals/[id]/verify-vote/route.ts`
+- **Route**: `GET /api/proposals/{id}/verify-vote`
+- **Access**: Authenticated (requires user session)
+
+**Key Features**:
+1. **Direct Contract Verification**:
+   - Calls `contract.getVote(proposalId, voterAddress)` to check on-chain status
+   - Returns `hasVoted` and `support` (vote type) directly from blockchain
+
+2. **Transaction Discovery**:
+   - Queries `VoteCast` events filtered by proposalId and voter address
+   - Finds the transaction hash where the vote was cast
+   - Retrieves block timestamp for vote
+
+3. **Etherscan Integration**:
+   - Provides direct link to transaction on Etherscan
+   - Allows independent verification by users
+
+**Response Formats**:
+
+**Voted**:
+```typescript
+{
+  voted: true,
+  voteType: 'UPVOTE' | 'DOWNVOTE',
+  onChain: true,
+  transactionHash: string,
+  transactionUrl: string,
+  blockNumber: number,
+  timestamp: string (ISO 8601)
+}
+```
+
+**Not Voted**:
+```typescript
+{
+  voted: false,
+  message: 'No on-chain vote found for this proposal'
+}
+```
+
+**Technical Details**:
+- Authenticates user via `withAuth` middleware
+- Retrieves `onChainId` from database
+- Uses `contract.filters.VoteCast(proposalId, voterAddress)` for event filtering
+- Handles cases where vote exists but event not found
+
+**Error Handling**:
+- Returns 404 if proposal not found or not on-chain
+- Returns 500 if RPC connection fails
+- Provides detailed error messages
+
+**Testing Recommendations**:
+1. User who voted sees `voted=true` with correct vote type
+2. User who didn't vote sees `voted=false`
+3. Transaction hash links to valid Etherscan page showing VoteCast event
+4. Verify `getVote()` response matches actual on-chain state
+5. Test with multiple voters on same proposal
+6. Test error handling when RPC fails
+7. Verify timestamp matches block timestamp
+
+---
+
+### Task 17: Create Governance Data Export Endpoint ✅
+
+**Objective**: Build API endpoint to export complete governance data as JSON for independent verification.
+
+**Implementation**:
+- **File**: `apps/frontend/app/api/proposals/export/route.ts`
+- **Route**: `GET /api/proposals/export`
+- **Access**: Public (no authentication required)
+
+**Key Features**:
+1. **Comprehensive Data Export**:
+   - All on-chain proposals with complete metadata
+   - Individual voter data with transaction hashes
+   - On-chain verification information
+   - Platform configuration details
+
+2. **Query Parameters**:
+   - `proposalId`: Filter by specific proposal ID
+   - `from`: Filter proposals created after date (ISO 8601)
+   - `to`: Filter proposals created before date (ISO 8601)
+
+3. **File Download**:
+   - Response formatted as downloadable JSON file
+   - Filename: `w3uptime-governance-export-{date}.json`
+   - Pretty-printed JSON (2-space indentation)
+
+**Export Format**:
+```typescript
+{
+  exportedAt: string (ISO 8601),
+  exportVersion: '2.0',
+  votingModel: 'direct-onchain',
+  network: 'sepolia',
+  contractAddress: string,
+  totalProposals: number,
+  proposals: [
+    {
+      id: string,
+      onChainId: number | null,
+      title: string,
+      description: string,
+      contentHash: string | null,
+      type: string,
+      status: string,
+      onChainStatus: OnChainStatus,
+      proposer: string,
+      createdAt: Date,
+      votingEndsAt: Date | null,
+      creationTransaction: {
+        hash: string | null,
+        blockNumber: number | null,
+        etherscanUrl: string | null
+      },
+      finalizationTransaction: {
+        hash: string,
+        etherscanUrl: string
+      } | null,
+      onChainVotes: {
+        upvotes: number,
+        downvotes: number,
+        voters: [
+          {
+            address: string,
+            support: boolean,
+            voteType: 'UPVOTE' | 'DOWNVOTE',
+            transactionHash: string,
+            blockNumber: number,
+            timestamp: string (ISO 8601)
+          }
+        ]
+      } | null
+    }
+  ]
+}
+```
+
+**Technical Details**:
+- Queries proposals with on-chain status filter
+- For each proposal, fetches complete vote history from blockchain
+- Uses `contract.filters.VoteCast(proposalId)` to get all voters
+- Parses each VoteCast event to extract voter details
+- Retrieves block timestamps for all votes
+
+**Performance Considerations**:
+- Rate limiting recommended: 10 requests per minute per IP
+- Large exports may take time due to blockchain queries
+- Target file size: <20MB for 100+ proposals
+
+**Testing Recommendations**:
+1. Export all proposals returns valid JSON
+2. Filter by proposalId returns single proposal
+3. Date range filtering works correctly
+4. File downloads with correct filename
+5. JSON structure is valid and parseable
+6. All vote transaction hashes link to valid Etherscan pages
+7. Test file size with 100+ proposals
+
+---
+
+### Task 18: Create useGovernanceContract React Hook ✅
+
+**Objective**: Build React hook for interacting with governance smart contract from frontend.
+
+**Implementation**:
+- **File**: `apps/frontend/hooks/useGovernanceContract.ts`
+- **Type**: Custom React Hook
+
+**Key Features**:
+1. **Automatic Contract Initialization**:
+   - Connects to MetaMask on mount
+   - Initializes contract instance with BrowserProvider
+   - Validates network (Sepolia only)
+
+2. **Network Monitoring**:
+   - Listens for `chainChanged` events
+   - Automatically reinitializes contract on network switch
+   - Cleans up event listeners on unmount
+
+3. **Contract Method Wrappers**:
+
+   **createProposal(contentHash, votingDuration)**:
+   - Creates new proposal on-chain
+   - Parses `ProposalCreated` event from receipt
+   - Returns: `{ proposalId, txHash, blockNumber }`
+
+   **vote(proposalId, support)**:
+   - Casts vote on-chain
+   - Returns: `{ txHash, blockNumber }`
+
+   **getProposal(proposalId)**:
+   - Fetches proposal data from blockchain
+   - Returns: `ProposalData` object
+
+   **getVote(proposalId, voter)**:
+   - Checks vote status for specific voter
+   - Returns: `{ hasVoted, support }`
+
+**Hook Interface**:
+```typescript
+interface UseGovernanceContractReturn {
+  contract: Contract | null;
+  provider: BrowserProvider | null;
+  isConnected: boolean;
+  error: string | null;
+  createProposal: (contentHash: string, votingDuration?: number) => Promise<ProposalCreationResult>;
+  vote: (proposalId: number, support: boolean) => Promise<VoteResult>;
+  getProposal: (proposalId: number) => Promise<ProposalData>;
+  getVote: (proposalId: number, voter: string) => Promise<VoteData>;
+}
+```
+
+**Error Handling**:
+- Sets `error` if MetaMask not installed
+- Sets `error` if wrong network (not Sepolia)
+- Throws errors for failed transactions
+- Provides clear error messages
+
+**Usage Example**:
+```typescript
+const { isConnected, error, createProposal, vote } = useGovernanceContract();
+
+if (!isConnected) {
+  return <div>Error: {error}</div>;
+}
+
+// Create proposal
+const result = await createProposal(contentHash, 7 * 24 * 60 * 60);
+console.log('Proposal created:', result.proposalId);
+
+// Vote on proposal
+await vote(1, true); // true = upvote
+```
+
+**Testing Recommendations**:
+1. Hook initializes contract when MetaMask available
+2. Error set when wrong network
+3. `createProposal()` calls contract and returns proposalId
+4. `vote()` calls contract and returns txHash
+5. `getProposal()` fetches on-chain data correctly
+6. `getVote()` returns voter's vote status
+7. Integration test: Connect MetaMask to Sepolia, call createProposal(), verify transaction succeeds
+
+---
+
+### Task 19: Create useVote React Hook ✅
+
+**Objective**: Build React hook for direct on-chain voting via MetaMask transaction.
+
+**Implementation**:
+- **File**: `apps/frontend/hooks/useVote.ts`
+- **Type**: Custom React Hook (using React Query mutation)
+
+**Key Features**:
+1. **Direct On-Chain Voting**:
+   - Users pay gas to vote directly via MetaMask
+   - No backend signatures required
+   - Eliminates need for EIP-712 typed data
+
+2. **Comprehensive Error Handling**:
+   - User rejection (code 4001 / ACTION_REJECTED)
+   - Wrong network detection
+   - Insufficient gas errors
+   - Contract-specific errors:
+     - Proposal not found
+     - Voting period ended
+     - Already voted
+     - Proposal finalized
+
+3. **Automatic Query Invalidation**:
+   - Invalidates `proposals` query
+   - Invalidates `proposal/{id}` query
+   - Invalidates `proposalVotes/{id}` query
+   - Invalidates `userVote/{id}` query
+   - Ensures UI updates after vote
+
+4. **Network Validation**:
+   - Verifies Sepolia network (chainId 11155111)
+   - Throws error if wrong network
+
+**Hook Interface**:
+```typescript
+interface VoteParams {
+  proposalId: number;
+  support: boolean; // true = upvote, false = downvote
+}
+
+interface UseVoteReturn {
+  vote: (params: VoteParams) => void;
+  voteAsync: (params: VoteParams) => Promise<VoteResult>;
+  isLoading: boolean;
+  error: string | null;
+  rawError: Error | null;
+  isSuccess: boolean;
+  data: VoteResult | undefined;
+  reset: () => void;
+}
+```
+
+**Voting Flow**:
+1. Check MetaMask availability
+2. Request account access (`eth_requestAccounts`)
+3. Get provider and signer from MetaMask
+4. Verify network is Sepolia
+5. Get contract instance with signer
+6. Call `contract.vote(proposalId, support)`
+7. Wait for transaction confirmation
+8. Return transaction hash and block number
+9. Invalidate queries to refresh UI
+
+**Error Parsing**:
+```typescript
+function parseVoteError(error: any): string {
+  // User rejection
+  if (error.code === 4001) return 'Transaction rejected by user';
+  
+  // Wrong network
+  if (error.message?.includes('network')) return 'Please connect to Sepolia testnet';
+  
+  // Insufficient gas
+  if (error.message?.includes('gas')) return 'Insufficient funds for gas. Please ensure you have enough ETH.';
+  
+  // Contract-specific errors
+  if (error.message?.includes('Already voted')) return 'You have already voted on this proposal';
+  
+  return error.message || 'Failed to submit vote transaction';
+}
+```
+
+**Usage Example**:
+```typescript
+const { vote, isLoading, error, isSuccess } = useVote();
+
+const handleVote = async (support: boolean) => {
+  try {
+    await vote({ proposalId: 1, support });
+    toast.success('Vote submitted successfully!');
+  } catch (err) {
+    toast.error(error || 'Failed to vote');
+  }
+};
+
+// In component
+<button onClick={() => handleVote(true)} disabled={isLoading}>
+  {isLoading ? 'Voting...' : 'Upvote'}
+</button>
+```
+
+**Testing Recommendations**:
+1. Hook connects to MetaMask when called
+2. Verifies network is Sepolia
+3. Calls `contract.vote(proposalId, support)` successfully
+4. Waits for transaction confirmation
+5. Returns transaction hash and block number
+6. Invalidates relevant queries on success
+7. Test error scenarios:
+   - User rejection (code 4001)
+   - Wrong network
+   - Insufficient gas
+   - Proposal not found
+   - Already voted
+8. Integration test: Connect MetaMask to Sepolia, vote on active proposal, verify transaction on Etherscan, check vote recorded via `contract.getVote()`
+
+---
+
+## Phase 4 Summary
+
+**Completion Status**: All tasks (15-19) completed ✅
+
+**Files Created**:
+1. `apps/frontend/app/api/proposals/dashboard/route.ts` - Transparency dashboard API
+2. `apps/frontend/app/api/proposals/[id]/verify-vote/route.ts` - Vote verification API
+3. `apps/frontend/app/api/proposals/export/route.ts` - Data export API
+4. `apps/frontend/hooks/useGovernanceContract.ts` - Contract interaction hook
+5. `apps/frontend/hooks/useVote.ts` - Direct voting hook
+
+**Key Architectural Patterns**:
+
+1. **API Endpoints**:
+   - All use Next.js App Router pattern (`route.ts`)
+   - Public endpoints for transparency (dashboard, export)
+   - Authenticated endpoint for user-specific data (verify-vote)
+   - Consistent error handling and response formats
+
+2. **React Hooks**:
+   - Follow React Query patterns for async state
+   - Automatic query invalidation for data consistency
+   - Comprehensive error handling with user-friendly messages
+   - TypeScript types for all interfaces
+
+3. **Blockchain Integration**:
+   - Direct contract calls via ethers.js v6
+   - MetaMask integration for transactions
+   - Network validation (Sepolia only)
+   - Event parsing for transaction verification
+
+4. **User Experience**:
+   - Direct on-chain voting (no backend signatures)
+   - Transaction verification via Etherscan links
+   - Real-time vote counts from blockchain
+   - Transparent data export for auditing
+
+**Integration Points**:
+- Dashboard API → Frontend dashboard component
+- Verify-vote API → User profile / vote history
+- Export API → Admin tools / auditing
+- useGovernanceContract → Proposal creation forms
+- useVote → Proposal voting components
+
+**Performance Considerations**:
+- Caching headers on public endpoints (60s)
+- Parallel blockchain queries where possible
+- Rate limiting on export endpoint
+- Query invalidation to maintain data freshness
+
+**Security Considerations**:
+- Direct MetaMask transactions (no private key handling)
+- Network validation before all transactions
+- Authentication on user-specific endpoints
+- Public read-only access for transparency
+
+---
+
+**Next Phase**: Complete remaining tasks and comprehensive testing
 

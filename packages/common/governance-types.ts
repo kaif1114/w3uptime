@@ -214,9 +214,9 @@ export function getTotalVotes(proposal: OnChainProposal): bigint {
  */
 export function getPassPercentage(proposal: OnChainProposal): number {
   const total = getTotalVotes(proposal);
-  if (total === 0n) return 0;
+  if (total === BigInt(0)) return 0;
 
-  return Number((proposal.upvotes * 100n) / total);
+  return Number((proposal.upvotes * BigInt(100)) / total);
 }
 
 /**
@@ -227,10 +227,10 @@ export function getPassPercentage(proposal: OnChainProposal): number {
  */
 export function meetsPassThreshold(proposal: OnChainProposal): boolean {
   const total = getTotalVotes(proposal);
-  if (total === 0n) return false;
+  if (total === BigInt(0)) return false;
 
   // 2/3 majority: upvotes >= total * 2/3
-  return proposal.upvotes * 3n >= total * 2n;
+  return proposal.upvotes * BigInt(3) >= total * BigInt(2);
 }
 
 /**
@@ -251,7 +251,7 @@ export function isVotingEnded(proposal: OnChainProposal): boolean {
  * @returns Seconds remaining, or 0 if voting has ended
  */
 export function getTimeRemaining(proposal: OnChainProposal): bigint {
-  if (isVotingEnded(proposal)) return 0n;
+  if (isVotingEnded(proposal)) return BigInt(0);
 
   const now = BigInt(Math.floor(Date.now() / 1000));
   return proposal.votingEndsAt - now;

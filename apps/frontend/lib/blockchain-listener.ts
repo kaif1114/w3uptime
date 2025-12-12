@@ -256,7 +256,6 @@ class BlockchainListener {
           where: { walletAddress: normalizedAddress },
           data: {
             balance: {
-              //@ts-ignore
               increment: amountDecimal,
             },
           },
@@ -422,7 +421,7 @@ class BlockchainListener {
           where: { walletAddress: normalizedAddress },
           data: {
             balance: {
-              //@ts-ignore
+        
               decrement: amountDecimal,
             },
           },

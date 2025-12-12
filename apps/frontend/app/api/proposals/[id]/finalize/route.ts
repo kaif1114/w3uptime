@@ -44,11 +44,11 @@ const finalizeRequestSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Parse proposal ID
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
 
     // Validate request body
     const body = await request.json();
@@ -310,9 +310,9 @@ export async function POST(
  *
  * Check if a proposal can be finalized (eligibility check)
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
 
     // Fetch proposal from database
     const proposal = await prisma.proposal.findUnique({
