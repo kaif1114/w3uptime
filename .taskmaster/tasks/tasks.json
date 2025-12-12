@@ -343,7 +343,7 @@
         "testStrategy": "Component test: (1) Progress bar shows correct percentage. (2) Quorum threshold line at 50%. (3) 'Quorum Met' badge appears when >= 50%. (4) Remaining voters calculated correctly. (5) Edge cases: 0 voters, exactly at threshold, over 100%. Visual test: verify yellow line position, green color when met.",
         "priority": "low",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
