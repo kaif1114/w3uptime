@@ -15,7 +15,8 @@
     "db:shell": "docker-compose exec timescaledb psql -U postgres -d myapp",
     "pgadmin:start": "docker-compose up pgadmin -d",
     "dev:services": "docker-compose -f docker-compose.yml up -d",
-    "dev:services:stop": "docker-compose down"
+    "dev:services:stop": "docker-compose down",
+    "finalize-proposals": "tsx scripts/finalize-proposals.ts"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
