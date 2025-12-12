@@ -1,0 +1,18 @@
+{
+  "contractName": "W3Governance",
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contractAddress": "0xe74cedb2ec8ca7607f95297e938078e4ebae304f",
+  "deploymentTxHash": "0x185a70ebd378aa254fe473f5244be9f9e97fe2b19fd512eb905176bfd802ff63",
+  "blockNumber": 9825346,
+  "deployer": "0xB75303F2F181E5C0693fee41342eb979df5408A2",
+  "deployedAt": "2025-12-12T00:00:00Z",
+  "compiler": {
+    "version": "0.8.20",
+    "optimizationEnabled": true,
+    "optimizationRuns": 200
+  },
+  "verified": true,
+  "etherscanUrl": "https://sepolia.etherscan.io/address/0xe74cedb2ec8ca7607f95297e938078e4ebae304f",
+  "notes": "Deployed via Remix IDE on December 12, 2025. Contract successfully verified on Sepolia Etherscan."
+}

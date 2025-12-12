@@ -294,3 +294,140 @@ event ProposalFinalized(uint256 indexed proposalId, uint256 upvotes, uint256 dow
 
 ---
 
+### Task 4: Deploy W3Governance to Sepolia Testnet ✅
+
+**Date Completed**: December 12, 2025
+**Deployment Method**: Remix IDE with MetaMask
+
+**Deployment Details**:
+- **Contract Address**: `0xe74cedb2ec8ca7607f95297e938078e4ebae304f`
+- **Transaction Hash**: `0x185a70ebd378aa254fe473f5244be9f9e97fe2b19fd512eb905176bfd802ff63`
+- **Block Number**: 9825346
+- **Deployer Address**: `0xB75303F2F181E5C0693fee41342eb979df5408A2`
+- **Network**: Sepolia Testnet (Chain ID: 11155111)
+- **Compiler**: Solidity 0.8.20 with optimization (200 runs)
+- **Etherscan URL**: https://sepolia.etherscan.io/address/0xe74cedb2ec8ca7607f95297e938078e4ebae304f
+
+**Verification Status**: ✅ Verified on Sepolia Etherscan
+- Source code publicly visible and verified
+- ABI extracted and saved to `deployments/W3Governance.abi.json`
+- Contract functions visible on Etherscan "Read Contract" and "Write Contract" tabs
+
+**Files Created/Updated**:
+- `deployments/sepolia-governance.json` - Deployment metadata
+- `deployments/W3Governance.abi.json` - Contract ABI (599 lines)
+- `deployments/README.md` - Deployment instructions
+
+**Contract Constants Verified**:
+- `MIN_VOTING_DURATION`: 86400 (1 day in seconds)
+- `MAX_VOTING_DURATION`: 2592000 (30 days in seconds)
+- `proposalCount`: 0 (no proposals created yet)
+
+**Next Steps**:
+- Use contract address in environment variables
+- Import ABI for TypeScript integration (Task 5)
+- Test contract functions via Etherscan or frontend
+
+---
+
+### Task 5: Create Governance Contract Integration Module ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**:
+- `packages/common/governance-contract.ts` (391 lines)
+- `packages/common/governance-abi.json` (copied from deployments/)
+- `packages/common/package.json` (updated exports)
+
+**Purpose**: Provide TypeScript helpers for interacting with W3Governance contract using ethers.js v6
+
+**Exported Functions**:
+
+**1. Contract Instance Creation**:
+- `createGovernanceContract(provider)` - Read-only contract instance
+- `createGovernanceContractWithSigner(signer)` - Writable instance for transactions
+
+**2. Data Fetching**:
+- `getProposalFromChain(proposalId, provider)` - Fetch typed OnChainProposal
+- `getVoteStatus(proposalId, voter, provider)` - Check if address voted
+- `getVoteCounts(proposalId, provider)` - Get upvotes, downvotes, total
+- `isVotingActive(proposalId, provider)` - Check if voting is open
+- `getProposalCount(provider)` - Get total proposal count
+- `getContractConstants(provider)` - Get MIN/MAX voting durations
+
+**3. Event Listeners** (for real-time updates):
+- `listenForProposalCreated(provider, callback)` - ProposalCreated events
+- `listenForVoteCast(provider, callback)` - VoteCast events
+- `listenForProposalFinalized(provider, callback)` - ProposalFinalized events
+
+**4. Historical Event Queries**:
+- `queryProposalCreatedEvents(provider, fromBlock, toBlock)` - Past proposal creations
+- `queryVoteCastEvents(proposalId, provider, fromBlock, toBlock)` - Past votes for proposal
+
+**Constants Exported**:
+- `GOVERNANCE_CONTRACT_ADDRESS` - Contract address on Sepolia
+- `SEPOLIA_CHAIN_ID` - 11155111
+- `GOVERNANCE_CONTRACT_ABI` - Full contract ABI
+
+**Type Safety**:
+- All functions fully typed with TypeScript
+- Listener callback types defined
+- Integration with governance-types.ts for OnChainProposal interface
+
+**Usage Examples Documented**:
+```typescript
+// Read proposal data
+const provider = new AlchemyProvider('sepolia', API_KEY);
+const proposal = await getProposalFromChain(1, provider);
+
+// Vote on proposal
+const signer = await browserProvider.getSigner();
+const contract = createGovernanceContractWithSigner(signer);
+const tx = await contract.vote(1, true);
+await tx.wait();
+
+// Listen for votes
+const cleanup = listenForVoteCast(provider, async (proposalId, voter, support) => {
+  console.log(`Vote cast on proposal ${proposalId}`);
+  // Update database cache
+});
+```
+
+**Package Export**:
+- Added `"./governance-contract": "./governance-contract.ts"` to package.json
+- Import via: `import { createGovernanceContract } from 'common/governance-contract'`
+
+**Key Design Decisions**:
+✅ Ethers.js v6 compatibility (matches existing codebase)
+✅ Separate read-only and writable contract instances
+✅ Helper functions for common operations
+✅ Event listeners for real-time blockchain sync
+✅ Historical event queries for backfilling data
+✅ Comprehensive JSDoc comments with examples
+
+---
+
+## Phase 1 Complete! 🎉
+
+All foundation tasks (1-5) have been successfully completed:
+- ✅ Task 1: Contract pattern review
+- ✅ Task 2: Shared governance types
+- ✅ Task 3: W3Governance smart contract development
+- ✅ Task 4: Sepolia deployment and verification
+- ✅ Task 5: TypeScript contract integration
+
+**Total Code Written**: ~1500 lines
+- Smart contract: 383 lines
+- TypeScript types: 293 lines
+- Contract integration: 391 lines
+- Documentation: 400+ lines
+
+**Blockchain Integration Complete**:
+- Contract deployed to Sepolia: `0xe74cedb2ec8ca7607f95297e938078e4ebae304f`
+- Source verified on Etherscan
+- Full TypeScript integration ready
+- Event listeners configured
+
+**Next Phase**: Database & Backend APIs (Tasks 6-14)
+
+---
+
