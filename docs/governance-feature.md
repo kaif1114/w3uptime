@@ -175,3 +175,122 @@
 
 ---
 
+### Task 3: Develop W3Governance Smart Contract ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**:
+- `E:\FYP\w3uptime\contracts\W3Governance.sol` (new file, 383 lines)
+
+**Purpose**: Create Solidity smart contract for on-chain governance with direct voting mechanism where users pay gas to vote via MetaMask transactions.
+
+**Contract Architecture**:
+
+**1. State Variables**:
+- `mapping(uint256 => Proposal) public proposals` - Stores all proposals by ID
+- `mapping(uint256 => mapping(address => uint8)) public votes` - Tracks votes (0=not voted, 1=upvote, 2=downvote)
+- `uint256 public proposalCount` - Counter for proposal IDs
+- `MIN_VOTING_DURATION = 1 days` - Minimum allowed voting period
+- `MAX_VOTING_DURATION = 30 days` - Maximum allowed voting period
+
+**2. Proposal Struct**:
+```solidity
+struct Proposal {
+    uint256 id;
+    address proposer;
+    bytes32 contentHash;      // keccak256 of title + description
+    uint256 createdAt;
+    uint256 votingEndsAt;
+    uint256 upvotes;
+    uint256 downvotes;
+    bool finalized;
+    bool passed;
+}
+```
+
+**3. Core Functions**:
+
+a. **createProposal(bytes32 contentHash, uint256 votingDuration)**:
+   - Creates new proposal on-chain
+   - Validates content hash and voting duration
+   - Emits ProposalCreated event
+   - Returns proposal ID
+   - Protected with `whenNotPaused` modifier
+
+b. **vote(uint256 proposalId, bool support)**:
+   - Records vote directly on-chain (user pays gas)
+   - Prevents double voting via mapping check
+   - Updates upvote/downvote counters
+   - Emits VoteCast event
+   - Protected with `nonReentrant` and `whenNotPaused`
+
+c. **finalizeProposal(uint256 proposalId)**:
+   - Anyone can call after voting period ends
+   - Calculates pass/fail (2/3 majority required)
+   - Marks proposal as finalized
+   - Emits ProposalFinalized event
+   - Protected with `nonReentrant`
+
+**4. View Functions**:
+- `getProposal(uint256 proposalId)` - Returns full proposal details
+- `getVote(uint256 proposalId, address voter)` - Checks if address voted and how
+- `isVotingActive(uint256 proposalId)` - Returns voting status
+- `getVoteCounts(uint256 proposalId)` - Returns upvotes, downvotes, total
+
+**5. Events** (comprehensive for transparency):
+```solidity
+event ProposalCreated(uint256 indexed proposalId, address indexed proposer, bytes32 contentHash, uint256 votingEndsAt, uint256 timestamp);
+event VoteCast(uint256 indexed proposalId, address indexed voter, bool support, uint256 timestamp);
+event ProposalFinalized(uint256 indexed proposalId, uint256 upvotes, uint256 downvotes, bool passed, uint256 timestamp);
+```
+
+**6. Custom Errors** (gas efficient):
+- `InvalidProposalId()` - Proposal doesn't exist
+- `VotingEnded()` - Voting period has closed
+- `AlreadyVoted()` - User already voted on this proposal
+- `ProposalNotFound()` - Proposal ID not found
+- `VotingNotEnded()` - Trying to finalize before voting ends
+- `AlreadyFinalized()` - Proposal already finalized
+- `InvalidVotingDuration()` - Duration outside allowed range
+- `EmptyContentHash()` - Content hash is zero
+
+**7. Security Features**:
+✅ ReentrancyGuard on vote() and finalizeProposal()
+✅ Pausable for emergency situations
+✅ Double vote prevention via mapping
+✅ Input validation with custom errors
+✅ onlyOwner for pause/unpause functions
+
+**Key Implementation Details**:
+
+- **Direct On-Chain Voting**: NO signature verification, users call vote() directly via MetaMask
+- **Gas Payment**: Users pay their own gas fees for voting (platform doesn't pay)
+- **Vote Counting**: Stored on-chain in Proposal struct (upvotes, downvotes counters)
+- **Finalization Logic**: `upvotes * 3 >= totalVotes * 2` (integer math for 2/3 majority)
+- **No Quorum Check in Contract**: Quorum will be checked off-chain before calling finalize
+- **Vote Storage**: `mapping(uint256 => mapping(address => uint8))` - efficient storage (0/1/2)
+- **Immutable Votes**: Once cast, votes cannot be changed (no vote change functionality)
+
+**Differences from UserTransactions.sol**:
+- ✅ NO ECDSA signature verification (direct transactions instead)
+- ✅ NO MessageHashUtils imports (not needed for direct voting)
+- ✅ Different state structure (proposals instead of withdrawals)
+- ✅ Vote counting logic instead of nonce tracking
+- ✅ Same security patterns (ReentrancyGuard, Pausable, custom errors)
+
+**Testing Plan** (for Task 4 deployment):
+1. Compile in Remix IDE with Solidity ^0.8.20
+2. Deploy to Sepolia testnet
+3. Create test proposal and verify ProposalCreated event
+4. Vote from multiple addresses and verify VoteCast events
+5. Test double vote prevention
+6. Test voting after deadline (should revert)
+7. Finalize proposal and verify result calculation
+8. Test pause/unpause functionality
+
+**Next Steps**:
+- Deploy contract to Sepolia via Remix IDE (Task 4)
+- Verify source code on Sepolia Etherscan
+- Extract ABI for TypeScript integration (Task 5)
+
+---
+
