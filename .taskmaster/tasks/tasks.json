@@ -139,7 +139,7 @@
         "id": "11",
         "title": "Create VoteCast Event Listener Service",
         "description": "Build service to sync on-chain votes to database cache",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "2",
           "6",
@@ -148,13 +148,14 @@
         "priority": "high",
         "details": "Create a new governance event listener service following the existing blockchain-listener.ts pattern (apps/frontend/lib/blockchain-listener.ts:1-524).\n\n**1. Create VoteCache Database Table**\nAdd to packages/db/prisma/schema.prisma:\n```prisma\nmodel VoteCache {\n  id           String   @id @default(uuid())\n  proposalId   Int\n  voter        String   // Ethereum address\n  support      Boolean  // true = upvote, false = downvote\n  txHash       String   @unique\n  blockNumber  Int\n  timestamp    DateTime\n  createdAt    DateTime @default(now())\n  updatedAt    DateTime @updatedAt\n\n  @@unique([proposalId, voter])\n  @@index([proposalId])\n  @@index([voter])\n  @@index([blockNumber])\n}\n```\nRun: `npx prisma migrate dev --name add_vote_cache`\n\n**2. Create Governance Contract Configuration**\nCreate packages/common/governance-contract.ts:\n```typescript\nimport { ethers } from 'ethers';\n\nexport const GOVERNANCE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS || '0x...';\n\nexport const GOVERNANCE_ABI = [\n  'event VoteCast(uint256 indexed proposalId, address indexed voter, bool support)',\n  'function getProposal(uint256 proposalId) view returns (tuple(uint256 id, address proposer, bytes32 contentHash, uint256 createdAt, uint256 votingEndsAt, uint256 upvotes, uint256 downvotes, bool finalized, bool passed))',\n] as const;\n\nexport function createGovernanceContractInstance(provider: ethers.Provider) {\n  return new ethers.Contract(GOVERNANCE_CONTRACT_ADDRESS, GOVERNANCE_ABI, provider);\n}\n```\n\n**3. Create Governance Listener Service**\nCreate apps/frontend/lib/governance-listener.ts based on blockchain-listener.ts pattern:\n\n- Class GovernanceListener with similar structure to BlockchainListener\n- Connect to ETHEREUM_RPC_URL provider\n- Listen for VoteCast events from governance contract\n- Implement handleVoteCastEvent() method\n- Process past events on startup (last 50 blocks in chunks)\n- Handle reconnection with exponential backoff (same as blockchain-listener.ts:445-460)\n- Implement error handling and duplicate detection\n\n**4. Event Processing Logic**\nprocessVoteCastEvent() implementation:\n```typescript\nprivate async processVoteCastEvent(event: ethers.Log, precomputedArgs?: unknown[]) {\n  // Parse event: proposalId, voter, support\n  // Check if vote already cached by txHash\n  // If exists: log and return (idempotency)\n  // If new: upsert VoteCache record using [proposalId, voter] unique constraint\n  // Handle vote changes: if voter changes vote, update support, txHash, blockNumber, timestamp, updatedAt\n  // Log successful cache update\n}\n```\n\n**5. Startup Integration**\nUpdate apps/frontend/lib/blockchain-listener.ts or create new startup hook:\n- Export startGovernanceListener() function\n- Call from same location where startBlockchainListener() is called\n- Ensure governance listener starts alongside existing listener\n\n**Architecture Notes:**\n- NO signature verification - events are already verified by blockchain\n- NO vote submission endpoints - votes happen directly on-chain\n- Database is read-only cache for fast queries\n- Upsert pattern ensures idempotency and handles vote changes\n- Event listener syncs blockchain state to VoteCache table\n- Frontend queries VoteCache for vote counts instead of ProposalVote\n\n**Environment Variables:**\nAdd to .env and .env.example:\n```\nNEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS=0x...\nETHEREUM_RPC_URL=https://sepolia.infura.io/v3/...\n```",
         "testStrategy": "Integration tests:\n1. Deploy test governance contract to Sepolia\n2. Start governance listener service\n3. Verify connection to RPC provider and contract\n4. Cast vote on-chain via MetaMask (UPVOTE)\n5. Verify VoteCast event detected and VoteCache record created with correct data (proposalId, voter, support=true, txHash, blockNumber)\n6. Cast second vote from same wallet (change to DOWNVOTE)\n7. Verify VoteCache record updated (support=false, new txHash, updated timestamp)\n8. Stop listener and restart - verify past events processed correctly\n9. Simulate provider error - verify reconnection with exponential backoff\n10. Check duplicate events don't create duplicate cache entries (idempotency)\n11. Query VoteCache table grouped by proposalId - verify vote counts match blockchain\n12. Test with 10+ votes from different wallets - verify all cached correctly\n13. Monitor logs for proper error handling and event processing messages\n\nManual testing:\n- Use Sepolia Etherscan to emit VoteCast events\n- Verify listener picks up events within 1-2 blocks\n- Check database matches on-chain state\n- Test listener resilience to network interruptions",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-12T18:45:42.497Z"
       },
       {
         "id": "12",
         "title": "Create Finalization Eligibility Checker",
         "description": "Build utility to check if proposal can be finalized based on on-chain vote data",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "6",
           "11"
@@ -162,13 +163,14 @@
         "priority": "high",
         "details": "Create apps/frontend/lib/governance/finalization.ts. This utility checks finalization eligibility by reading vote data directly from the W3Governance smart contract on Sepolia.\n\nImplement checkFinalizationEligibility(proposalId: number): Promise<FinalizationEligibility>\n\ninterface FinalizationEligibility {\n  proposalId: number;\n  canFinalize: boolean;\n  votingEnded: boolean;\n  alreadyFinalized: boolean;\n  upvoteCount: bigint;\n  downvoteCount: bigint;\n  totalVotes: bigint;\n  passThresholdMet: boolean; // 2/3 majority (upvotes >= totalVotes * 2/3)\n  votingEndsAt: bigint; // Unix timestamp from contract\n  currentTime: bigint; // Current Unix timestamp\n  reason?: string; // If canFinalize is false, explain why\n}\n\nasync function checkFinalizationEligibility(proposalId: number): Promise<FinalizationEligibility> {\n  // 1. Create contract instance (follow pattern from packages/common/contract.ts)\n  //    Use packages/common/governance-contract.ts (to be created in Task 5)\n  //    Connect to Sepolia RPC provider (no signer needed for read-only)\n  \n  // 2. Call contract.getProposal(proposalId) to retrieve on-chain data\n  //    Returns OnChainProposal (defined in Task 2: packages/common/governance-types.ts)\n  //    OnChainProposal has: id, proposer, contentHash, createdAt, votingEndsAt,\n  //                         upvotes, downvotes, finalized, passed\n  \n  // 3. Get current block timestamp:\n  //    const block = await provider.getBlock('latest');\n  //    const currentTime = BigInt(block.timestamp);\n  \n  // 4. Calculate eligibility:\n  const votingEnded = currentTime >= proposal.votingEndsAt;\n  const alreadyFinalized = proposal.finalized;\n  const totalVotes = proposal.upvotes + proposal.downvotes;\n  const passThresholdMet = proposal.upvotes >= (totalVotes * BigInt(2) / BigInt(3));\n  \n  // 5. Determine canFinalize and reason:\n  let canFinalize = false;\n  let reason: string | undefined;\n  \n  if (alreadyFinalized) {\n    reason = 'Proposal already finalized';\n  } else if (!votingEnded) {\n    const timeRemaining = proposal.votingEndsAt - currentTime;\n    reason = `Voting period ends in ${timeRemaining} seconds`;\n  } else if (totalVotes === BigInt(0)) {\n    reason = 'No votes cast';\n  } else {\n    canFinalize = true;\n  }\n  \n  return {\n    proposalId,\n    canFinalize,\n    votingEnded,\n    alreadyFinalized,\n    upvoteCount: proposal.upvotes,\n    downvoteCount: proposal.downvotes,\n    totalVotes,\n    passThresholdMet,\n    votingEndsAt: proposal.votingEndsAt,\n    currentTime,\n    reason\n  };\n}\n\nAdd helper functions:\n- formatTimeRemaining(seconds: bigint): string - converts seconds to human-readable format (\"2 hours\", \"5 minutes\")\n- calculatePassPercentage(upvotes: bigint, totalVotes: bigint): number - returns percentage (0-100)\n\nError handling:\n- Proposal doesn't exist: throw error 'Proposal not found'\n- RPC connection failures: retry up to 3 times with exponential backoff\n- Invalid proposalId (< 1): throw error 'Invalid proposal ID'\n\nNO signature aggregation. NO voter arrays. NO database queries for votes. All vote data comes from the smart contract via contract.getProposal().",
         "testStrategy": "Unit tests with mocked contract:\n(1) canFinalize=true when voting ended, not finalized, has votes\n(2) canFinalize=false when alreadyFinalized=true, reason='Proposal already finalized'\n(3) canFinalize=false when votingEnded=false, reason includes time remaining\n(4) canFinalize=false when totalVotes=0, reason='No votes cast'\n(5) passThresholdMet=true when upvotes >= 2/3 of totalVotes (boundary test: 67 upvotes, 33 downvotes)\n(6) passThresholdMet=false when upvotes < 2/3 (test: 66 upvotes, 34 downvotes)\n(7) votingEnded=true when currentTime >= votingEndsAt\n(8) votingEnded=false when currentTime < votingEndsAt\n(9) formatTimeRemaining() returns correct format for various durations\n(10) calculatePassPercentage() returns accurate percentage\n\nIntegration test:\n- Deploy test proposal to Sepolia with 7-day voting period\n- Cast 10 upvotes and 4 downvotes on-chain\n- Call checkFinalizationEligibility() before voting ends, verify canFinalize=false\n- Wait until voting period ends\n- Call checkFinalizationEligibility() after voting ends, verify canFinalize=true, passThresholdMet=true\n- Call contract.finalizeProposal()\n- Call checkFinalizationEligibility() again, verify alreadyFinalized=true, canFinalize=false",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-12T18:46:26.594Z"
       },
       {
         "id": "13",
         "title": "Implement Proposal Finalization API Endpoint",
         "description": "Create endpoint to trigger proposal finalization on-chain",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "5",
           "6",
@@ -177,7 +179,8 @@
         "priority": "high",
         "details": "Create apps/frontend/app/api/proposals/[id]/finalize/route.ts. POST endpoint restricted to platform admin or automated service.\n\nThe endpoint should:\n\n1. Validate proposal can be finalized:\n   - Proposal exists and has onChainId\n   - Voting period has ended (check proposal.votingEndsAt)\n   - Not already finalized (onChainStatus not FINALIZED, PASSED, or FAILED)\n\n2. Verify quorum from on-chain data:\n   - Call contract.getProposal(onChainId) to get vote counts\n   - Calculate participation: voterCount / totalUsers\n   - Require >= 60% participation for quorum\n\n3. Call simple finalization:\n   - NO voter arrays, vote arrays, or signature arrays\n   - Simple call: contract.finalizeProposal(onChainId)\n   - Contract internally tallies its own stored votes\n\n4. Transaction handling:\n   - Initialize provider: new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL)\n   - Create wallet: new Wallet(process.env.PLATFORM_SIGNER_PRIVATE_KEY, provider)\n   - Create contract instance using createGovernanceContractWithSigner(wallet)\n   - Wait for transaction confirmation: await tx.wait()\n\n5. Update database after confirmation:\n   - Set proposal.onChainStatus to PASSED or FAILED based on contract event\n   - Store finalizationTxHash\n   - Update legacy status field for backward compatibility\n\n6. Error handling:\n   - Gas estimation failures\n   - Transaction reverts\n   - Network issues\n   - Use try-catch with transaction rollback on failure\n\nImplementation pattern follows apps/frontend/lib/blockchain-listener.ts:1-50 for provider/contract setup.\n\nEnvironment variables required:\n- PLATFORM_SIGNER_PRIVATE_KEY - Private key for platform signer\n- ETHEREUM_RPC_URL - RPC endpoint (e.g., Alchemy Sepolia)\n\nDatabase schema reference: packages/db/prisma/schema.prisma:293-309 (Proposal model)",
         "testStrategy": "Integration test on Sepolia:\n1. Create on-chain proposal and cast votes\n2. Attempt finalization before voting ends - expect 400 error\n3. Attempt finalization without quorum - expect 400 with participation percentage\n4. Finalize successfully after voting period with quorum met\n5. Verify transaction appears on Sepolia Etherscan\n6. Verify database updated: onChainStatus set correctly, finalizationTxHash stored\n7. Attempt finalization of already-finalized proposal - expect 400 error\n8. Test gas costs for finalization (should be minimal since no batch data)\n9. Test error handling: invalid onChainId, network failures, insufficient gas",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-12T18:47:09.469Z"
       },
       {
         "id": "14",
@@ -190,8 +193,9 @@
           "9",
           "13"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-12T18:47:33.533Z"
       },
       {
         "id": "15",
@@ -644,9 +648,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-12T18:40:36.014Z",
+      "lastModified": "2025-12-12T18:47:33.538Z",
       "taskCount": 47,
-      "completedCount": 5,
+      "completedCount": 9,
       "tags": [
         "master"
       ]
