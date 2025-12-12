@@ -5,7 +5,7 @@
         "id": "1",
         "title": "Setup",
         "description": "Review existing contracts directory structure and understand the UserTransactions.sol contract pattern. Verify Remix IDE deployment approach for Sepolia testnet.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "The project already has a contracts/ directory at the root level (E:\\FYP\\w3uptime\\contracts\\) containing UserTransactions.sol, which demonstrates the existing contract patterns.\n\nUserTransactions.sol Analysis:\n- Uses Solidity ^0.8.20 (same version needed for W3Governance)\n- Imports OpenZeppelin contracts: Ownable, ReentrancyGuard, Pausable, ECDSA, MessageHashUtils\n- Implements signature verification pattern using ECDSA.recover() and MessageHashUtils.toEthSignedMessageHash()\n- Uses custom errors (InvalidAmount, InsufficientContractBalance, etc.) instead of require statements\n- Follows modern Solidity patterns with events for all state changes\n- Includes owner-only administrative functions with proper access control\n\nKey Files to Review:\n- contracts/UserTransactions.sol:1-173 - Primary reference for contract structure\n- Reference in PRD: scripts/prd.txt:192-238 describes expected contracts/ directory structure for W3Governance.sol\n\nDeployment Approach:\n- Remix IDE will be used for deployment to Sepolia (no Hardhat setup needed)\n- Contract artifacts (ABI, address) will need to be manually extracted from Remix\n- Similar to UserTransactions.sol pattern, W3Governance.sol should use OpenZeppelin ^0.8.20 imports\n\nReview Tasks:\n1. Document the signature verification pattern used in UserTransactions.sol (lines 102-106, 122-133)\n2. Understand the custom error pattern (lines 51-59) for gas efficiency\n3. Note the event emission pattern (lines 19-48) for transparency\n4. Review constructor pattern (lines 61-73) with validation\n5. Understand Ownable pattern from OpenZeppelin (inherited on line 9)\n6. Plan W3Governance.sol to follow similar patterns: EIP-712 signatures, custom errors, comprehensive events",
@@ -16,7 +16,7 @@
         "id": "2",
         "title": "Create Shared Governance Types",
         "description": "Define shared TypeScript types for governance system in packages/common",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Create packages/common/governance-types.ts file and add export to packages/common/package.json. This file will define shared types for the on-chain governance system where users vote directly via blockchain transactions (no gasless signatures).\n\nThe project uses ethers.js v6 (^6.15.0 in frontend, ^6.13.4 in validator) and follows existing patterns in packages/common/contract.ts and packages/common/types.ts for type definitions and helper functions.\n\nCreate packages/common/governance-types.ts with the following:\n\n1. OnChainStatus enum:\n```typescript\nexport enum OnChainStatus {\n  DRAFT = 'DRAFT',                    // Not yet submitted to blockchain\n  PENDING_ONCHAIN = 'PENDING_ONCHAIN', // Transaction submitted, awaiting confirmation\n  ACTIVE = 'ACTIVE',                   // On-chain and accepting votes\n  PASSED = 'PASSED',                   // Voting ended, proposal passed\n  FAILED = 'FAILED'                    // Voting ended, proposal failed\n}\n```\n\n2. VoteType enum:\n```typescript\nexport enum VoteType {\n  UPVOTE = 'UPVOTE',\n  DOWNVOTE = 'DOWNVOTE'\n}\n```\n\n3. OnChainProposal interface matching the governance smart contract struct:\n```typescript\nexport interface OnChainProposal {\n  id: number;                    // On-chain proposal ID\n  proposer: string;              // Ethereum address of proposer\n  contentHash: string;           // IPFS hash or content identifier\n  createdAt: bigint;             // Unix timestamp from blockchain\n  votingEndsAt: bigint;          // Unix timestamp when voting closes\n  upvotes: bigint;               // Total upvote count\n  downvotes: bigint;             // Total downvote count\n  finalized: boolean;            // Whether voting has been finalized\n  passed: boolean;               // Whether proposal passed (only valid if finalized)\n}\n```\n\n4. VoteCastEvent interface for tracking individual votes:\n```typescript\nexport interface VoteCastEvent {\n  proposalId: number;            // On-chain proposal ID\n  voter: string;                 // Ethereum address of voter\n  support: boolean;              // true = upvote, false = downvote\n  txHash: string;                // Transaction hash\n  blockNumber: number;           // Block number where vote was recorded\n  timestamp?: bigint;            // Optional: block timestamp\n}\n```\n\n5. Helper function to convert contract response to OnChainProposal:\n```typescript\nexport function convertContractToProposal(contractData: unknown): OnChainProposal {\n  // Assumes contractData is tuple/array from contract call\n  // Add proper type guards and validation\n  // Convert contract response format to OnChainProposal interface\n}\n```\n\n6. Helper function to convert VoteType to boolean for contract calls:\n```typescript\nexport function voteTypeToSupport(voteType: VoteType): boolean {\n  return voteType === VoteType.UPVOTE;\n}\n```\n\n7. Helper function to convert contract boolean to VoteType:\n```typescript\nexport function supportToVoteType(support: boolean): VoteType {\n  return support ? VoteType.UPVOTE : VoteType.DOWNVOTE;\n}\n```\n\nUpdate packages/common/package.json to add export:\n```json\n\"./governance-types\": \"./governance-types.ts\"\n```\n\nFollow the pattern established in packages/common/contract.ts for helper functions and type definitions. Add comprehensive JSDoc comments explaining each type and its purpose in the on-chain governance system.\n\nNO EIP-712 types, NO signature-related code, NO nonces, NO VOTE_DOMAIN, NO VOTE_TYPES - this is purely for direct on-chain voting via MetaMask transactions.",
@@ -27,7 +27,7 @@
         "id": "3",
         "title": "Develop W3Governance Smart Contract",
         "description": "Create W3Governance Solidity contract with direct on-chain voting",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "2"
         ],
@@ -40,7 +40,7 @@
         "id": "4",
         "title": "Create Smart Contract Deployment Script",
         "description": "Deploy W3Governance contract to Sepolia testnet via Remix IDE and save deployment information",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "3"
         ],
@@ -53,7 +53,7 @@
         "id": "5",
         "title": "Create Governance Contract Integration Module",
         "description": "Build TypeScript module in packages/common for contract ABI and helper functions",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "4"
         ],
@@ -281,14 +281,14 @@
           "18",
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
         "id": "21",
         "title": "Update Voting UI for Direct On-Chain Voting",
         "description": "Enhance proposal voting interface to support direct on-chain voting with gas payment",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "19",
           "11"
@@ -310,7 +310,7 @@
           "16",
           "17"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -321,7 +321,7 @@
         "testStrategy": "Component test: (1) DRAFT status shows gray badge. (2) ACTIVE shows blue shield. (3) PASSED shows green checkmark. (4) FAILED shows red X. (5) Tooltip appears on hover with correct text. (6) Etherscan link rendered when txHash provided. (7) Different sizes render correctly. Visual regression test for all variants.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -332,7 +332,7 @@
         "testStrategy": "Component test: (1) Displays correct time format for various durations. (2) Updates every second. (3) Shows 'Voting Ended' when time past. (4) Progress bar moves from 0 to 100%. (5) Handles invalid dates gracefully. Test with future date (7 days), near future (1 hour), past date. Visual test for formatting consistency.",
         "priority": "low",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
