@@ -208,14 +208,15 @@
           "6",
           "13"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-12T19:39:03.613Z"
       },
       {
         "id": "16",
         "title": "Create Vote Verification API Endpoint",
         "description": "Build endpoint for users to verify their vote was included on-chain",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "13",
           "15"
@@ -223,7 +224,8 @@
         "priority": "medium",
         "details": "Create apps/frontend/app/api/proposals/[id]/verify-vote/route.ts. GET endpoint that reads directly from the W3Governance contract to verify on-chain votes.\n\nIMPORTANT: This task assumes the W3Governance contract has been updated to include:\n- function vote(uint256 proposalId, bool support) external\n- function getVote(uint256 proposalId, address voter) external view returns (bool hasVoted, bool support)\n- event VoteCast(uint256 indexed proposalId, address indexed voter, bool support, uint256 timestamp)\n\nImplementation:\n\nexport const GET = withAuth(async (req: NextRequest, user) => {\n  const proposalId = req.nextUrl.pathname.split('/')[3];\n  \n  try {\n    // Get proposal to get onChainId\n    const proposal = await prisma.proposal.findUnique({\n      where: { id: proposalId },\n      select: { onChainId: true }\n    });\n    \n    if (!proposal?.onChainId) {\n      return NextResponse.json({ error: 'Proposal not found or not on-chain' }, { status: 404 });\n    }\n    \n    // Connect to Sepolia network\n    const provider = new AlchemyProvider('sepolia', process.env.ALCHEMY_API_KEY);\n    const contract = createGovernanceContract(provider);\n    \n    // Call getVote(proposalId, voterAddress) to check on-chain vote status\n    const [hasVoted, support] = await contract.getVote(BigInt(proposal.onChainId), user.walletAddress);\n    \n    if (!hasVoted) {\n      return NextResponse.json({\n        voted: false,\n        message: 'No on-chain vote found for this proposal'\n      });\n    }\n    \n    // Find the VoteCast event transaction for this voter\n    const filter = contract.filters.VoteCast(BigInt(proposal.onChainId), user.walletAddress);\n    const events = await contract.queryFilter(filter);\n    \n    if (events.length === 0) {\n      return NextResponse.json({\n        voted: true,\n        voteType: support ? 'UPVOTE' : 'DOWNVOTE',\n        transactionHash: null,\n        message: 'Vote found on-chain but event not found (this should not happen)'\n      });\n    }\n    \n    // Get the most recent VoteCast event for this voter\n    const latestEvent = events[events.length - 1];\n    const txHash = latestEvent.transactionHash;\n    const blockNumber = latestEvent.blockNumber;\n    \n    // Get block timestamp\n    const block = await provider.getBlock(blockNumber);\n    \n    return NextResponse.json({\n      voted: true,\n      voteType: support ? 'UPVOTE' : 'DOWNVOTE',\n      onChain: true,\n      transactionHash: txHash,\n      transactionUrl: `https://sepolia.etherscan.io/tx/${txHash}`,\n      blockNumber,\n      timestamp: new Date(block!.timestamp * 1000).toISOString()\n    });\n  } catch (error) {\n    console.error('Vote verification error:', error);\n    return NextResponse.json(\n      { error: 'Failed to verify vote on-chain', details: error instanceof Error ? error.message : 'Unknown error' },\n      { status: 500 }\n    );\n  }\n});\n\nOptimizations:\n- Cache contract query results for 30 seconds to reduce RPC calls\n- Handle network errors gracefully with retry logic",
         "testStrategy": "Integration test on Sepolia: (1) User who voted on-chain sees voted=true with correct vote type. (2) User who didn't vote sees voted=false. (3) Transaction hash links to valid Etherscan page showing VoteCast event. (4) Verify getVote() response matches actual on-chain state. (5) Test with multiple voters on same proposal. (6) Test error handling when RPC fails. (7) Verify timestamp matches block timestamp.",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-12T19:39:03.636Z"
       },
       {
         "id": "17",
@@ -235,8 +237,9 @@
         "dependencies": [
           "15"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-12T19:39:03.648Z"
       },
       {
         "id": "18",
@@ -248,14 +251,15 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-12T19:39:03.660Z"
       },
       {
         "id": "19",
         "title": "Create useVote React Hook",
         "description": "Build React hook for direct on-chain voting via MetaMask transaction",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "18",
           "5"
@@ -263,7 +267,8 @@
         "priority": "high",
         "details": "Create apps/frontend/hooks/useVote.ts:\n\nIMPORTANT: This hook requires the W3Governance contract to have a vote() function:\n\nfunction vote(uint256 proposalId, bool support) external whenNotPaused\n\nImplementation:\n\nimport { useMutation, useQueryClient } from '@tanstack/react-query';\nimport { BrowserProvider } from 'ethers';\nimport { createGovernanceContractWithSigner } from 'common/governance-contract';\n\ninterface VoteParams {\n  proposalId: number;\n  support: boolean; // true = upvote, false = downvote\n}\n\nexport function useVote() {\n  const queryClient = useQueryClient();\n  \n  const voteMutation = useMutation({\n    mutationFn: async ({ proposalId, support }: VoteParams) => {\n      // Check MetaMask availability\n      if (typeof window === 'undefined' || !window.ethereum) {\n        throw new Error('MetaMask not installed');\n      }\n      \n      // Request account access\n      await window.ethereum.request({ method: 'eth_requestAccounts' });\n      \n      // Get provider and signer\n      const provider = new BrowserProvider(window.ethereum);\n      const signer = await provider.getSigner();\n      \n      // Verify network (Sepolia = chainId 11155111)\n      const network = await provider.getNetwork();\n      if (network.chainId !== 11155111n) {\n        throw new Error('Please connect to Sepolia testnet');\n      }\n      \n      // Get contract instance with signer\n      const contract = createGovernanceContractWithSigner(signer);\n      \n      // Call vote function on contract\n      const tx = await contract.vote(BigInt(proposalId), support);\n      \n      // Wait for transaction confirmation\n      const receipt = await tx.wait(1);\n      \n      if (!receipt) {\n        throw new Error('Transaction receipt not available');\n      }\n      \n      return {\n        transactionHash: receipt.hash,\n        blockNumber: receipt.blockNumber,\n        proposalId,\n        support\n      };\n    },\n    onSuccess: (data) => {\n      // Invalidate queries to refresh proposal data\n      queryClient.invalidateQueries({ queryKey: ['proposals'] });\n      queryClient.invalidateQueries({ queryKey: ['proposal', String(data.proposalId)] });\n    },\n    onError: (error: Error) => {\n      console.error('Vote transaction error:', error);\n    }\n  });\n  \n  return {\n    vote: voteMutation.mutate,\n    voteAsync: voteMutation.mutateAsync,\n    isLoading: voteMutation.isPending,\n    error: voteMutation.error,\n    isSuccess: voteMutation.isSuccess,\n    data: voteMutation.data,\n  };\n}\n\nError Handling:\n- Handle user rejection (error code 4001)\n- Handle wrong network errors\n- Handle insufficient gas errors\n- Handle contract revert errors (proposal not found, voting ended, already voted, etc.)\n- Provide user-friendly error messages\n\nPattern follows useWithdrawalExecution.ts for MetaMask integration and transaction handling.",
         "testStrategy": "Component test with mocked MetaMask provider: (1) Hook connects to MetaMask when called. (2) Verifies network is Sepolia. (3) Calls contract.vote(proposalId, support). (4) Waits for transaction confirmation. (5) Returns transaction hash and block number. (6) Invalidates relevant queries on success. (7) Test error scenarios: user rejection (code 4001), wrong network, insufficient gas, proposal not found. Integration test in browser: Connect MetaMask to Sepolia, vote on active proposal, verify transaction on Etherscan, check vote recorded on-chain via contract.getVote().",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-12T19:39:03.673Z"
       },
       {
         "id": "20",
@@ -648,9 +653,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-12T18:47:33.538Z",
+      "lastModified": "2025-12-12T19:39:03.674Z",
       "taskCount": 47,
-      "completedCount": 9,
+      "completedCount": 14,
       "tags": [
         "master"
       ]
