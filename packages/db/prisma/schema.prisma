@@ -300,12 +300,25 @@ model Proposal {
   userId      String
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  
+  // On-chain tracking fields
+  onChainId           Int?              @unique
+  contentHash         String?
+  creationTxHash      String?           @unique
+  finalizationTxHash  String?           @unique
+  votingEndsAt        DateTime?
+  onChainStatus       OnChainStatus     @default(DRAFT)
+  
   user        User              @relation(fields: [userId], references: [id])
   comments    ProposalComment[]
   votes       ProposalVote[]
+  voteCaches  VoteCache[]
 
   @@index([userId])
   @@index([createdAt])
+  @@index([onChainId])
+  @@index([onChainStatus])
+  @@index([votingEndsAt])
 }
 
 model ProposalComment {
@@ -332,6 +345,25 @@ model ProposalVote {
 
   @@unique([proposalId, userId])
   @@index([proposalId])
+}
+
+model VoteCache {
+  id                  String    @id @default(uuid())
+  proposalId          String
+  onChainProposalId   Int
+  voterAddress        String
+  voteType            VoteType
+  txHash              String    @unique
+  blockNumber         Int
+  createdAt           DateTime  @default(now())
+
+  proposal            Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterAddress])
+  @@index([proposalId])
+  @@index([onChainProposalId])
+  @@index([voterAddress])
+  @@index([txHash])
 }
 
 enum MonitorStatus {
@@ -406,6 +438,14 @@ enum ProposalStatus {
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+enum OnChainStatus {
+  DRAFT              // Not yet submitted on-chain
+  PENDING_ONCHAIN    // Transaction submitted, awaiting confirmation
+  ACTIVE             // On-chain and voting active
+  PASSED             // Finalized and passed
+  FAILED             // Finalized but failed
 }
 
 model Transaction {

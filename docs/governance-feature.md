@@ -431,3 +431,85 @@ All foundation tasks (1-5) have been successfully completed:
 
 ---
 
+## Phase 2: Database & Backend APIs (Tasks 6-10)
+
+### Task 6: Extend Prisma Schema for On-Chain Governance ✅
+
+**Date Completed**: December 12, 2025
+**Files Modified**: `packages/db/prisma/schema.prisma`
+
+**Schema Changes**:
+1. Added OnChainStatus enum (DRAFT, PENDING_ONCHAIN, ACTIVE, PASSED, FAILED)
+2. Extended Proposal model with on-chain tracking fields (onChainId, contentHash, creationTxHash, finalizationTxHash, votingEndsAt, onChainStatus)
+3. Created VoteCache model for caching blockchain votes
+4. Added indexes for efficient queries
+
+---
+
+### Task 7: Create Content Hash Utility Function ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**: `apps/frontend/lib/governance.ts`
+
+**Functions**: generateContentHash(), verifyContentHash(), isValidContentHash()
+**Purpose**: Generate and verify keccak256 hashes for proposal content integrity
+
+---
+
+### Task 8: Implement On-Chain Proposal Creation API ✅
+
+**Date Completed**: December 12, 2025
+**Files Modified**: `apps/frontend/app/api/proposals/route.ts`
+
+**Features**:
+- Extended schema with createOnChain and txHash fields
+- Transaction verification on Sepolia blockchain
+- ProposalCreated event extraction and validation
+- Content hash and proposer address verification
+
+---
+
+### Task 9: Create Transaction Confirmation Listener Service ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**: `apps/frontend/lib/services/proposal-listener.ts`
+
+**Features**:
+- Real-time ProposalCreated and ProposalFinalized event listening
+- Automatic database synchronization
+- Exponential backoff reconnection (max 5 attempts)
+- Historical event processing (last 50 blocks)
+- Singleton pattern with start/stop methods
+
+---
+
+### Task 10: Create Vote Info API Endpoint ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**: `apps/frontend/app/api/proposals/[id]/vote-info/route.ts`
+
+**Response Data**:
+- Contract address and chain ID
+- Voting status and time remaining
+- User's existing vote
+- Current vote counts and percentages
+- Gas estimation for frontend
+
+---
+
+## Phase 2 Complete! 🎉
+
+All database and backend API tasks (6-10) completed:
+- Database schema extended with on-chain fields
+- Content hash utilities implemented
+- On-chain proposal creation with verification
+- Real-time event listener service
+- Vote info API for frontend integration
+
+**Total Code**: ~850 lines
+**Environment Variables**: ETHEREUM_RPC_URL, NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS, NEXT_PUBLIC_CHAIN_ID
+
+**Next Phase**: VoteCast Event Listener & Finalization (Tasks 11-14)
+
+---
+
