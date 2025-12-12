@@ -103,3 +103,75 @@
 
 ---
 
+### Task 2: Create Shared Governance Types ✅
+
+**Date Completed**: December 12, 2025
+**Files Created**:
+- `E:\FYP\w3uptime\packages\common\governance-types.ts` (new file, 293 lines)
+- `E:\FYP\w3uptime\packages\common\package.json` (updated exports)
+
+**Purpose**: Define shared TypeScript types for on-chain governance system that can be used across frontend, backend, and contract integration code.
+
+**Exports Created**:
+
+1. **OnChainStatus Enum** (5 states):
+   - `DRAFT` - Proposal in database only, not on blockchain
+   - `PENDING_ONCHAIN` - Transaction submitted, awaiting confirmation
+   - `ACTIVE` - Confirmed on-chain, accepting votes
+   - `PASSED` - Finalized with 2/3+ majority
+   - `FAILED` - Finalized without passing threshold or quorum
+
+2. **VoteType Enum** (re-exported for convenience):
+   - `UPVOTE` - Vote in favor
+   - `DOWNVOTE` - Vote against
+   - Note: Matches existing Prisma enum
+
+3. **OnChainProposal Interface**:
+   - Matches W3Governance.sol Proposal struct exactly
+   - All numeric fields use `bigint` (matches Solidity uint256)
+   - Fields: id, proposer, contentHash, createdAt, votingEndsAt, upvotes, downvotes, finalized, passed
+
+4. **VoteCastEvent Interface**:
+   - Data structure for VoteCast blockchain events
+   - Fields: proposalId, voter, support, txHash, blockNumber, timestamp
+
+5. **ProposalFinalizedEvent Interface**:
+   - Data structure for ProposalFinalized blockchain events
+   - Fields: proposalId, upvotes, downvotes, passed, txHash, blockNumber
+
+**Helper Functions**:
+
+- `voteTypeToSupport(voteType)` - Convert VoteType.UPVOTE/DOWNVOTE to boolean true/false
+- `supportToVoteType(support)` - Convert boolean to VoteType enum
+- `convertContractToProposal(contractData)` - Parse contract tuple response to typed interface
+- `isOnChainStatus(status)` - Type guard for OnChainStatus enum
+- `getTotalVotes(proposal)` - Calculate upvotes + downvotes
+- `getPassPercentage(proposal)` - Calculate upvote percentage (0-100)
+- `meetsPassThreshold(proposal)` - Check if proposal has 2/3+ majority
+- `isVotingEnded(proposal)` - Check if current time >= votingEndsAt
+- `getTimeRemaining(proposal)` - Seconds remaining until voting ends
+
+**Key Decisions**:
+
+✅ **NO EIP-712 types** - Confirming direct on-chain voting approach (no signatures)
+✅ **Use bigint for timestamps/counts** - Matches Solidity uint256, prevents overflow issues
+✅ **Comprehensive JSDoc comments** - All exports documented with examples
+✅ **Utility functions included** - Common calculations pre-built for reuse
+✅ **Type safety** - Proper TypeScript types with type guards
+
+**Package Export**:
+- Added `"./governance-types": "./governance-types.ts"` to `packages/common/package.json`
+- Can now import via: `import { OnChainStatus, VoteType } from 'common/governance-types'`
+
+**Testing**:
+- TypeScript compilation verified (no errors)
+- All types align with planned Prisma schema extensions
+- Helper functions use safe bigint arithmetic
+
+**Next Steps**:
+- Use these types in W3Governance.sol development (Task 3)
+- Import in Prisma schema for OnChainStatus enum (Task 6)
+- Use in frontend hooks and components (Tasks 18-26)
+
+---
+

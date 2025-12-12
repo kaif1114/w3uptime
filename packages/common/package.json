@@ -5,7 +5,8 @@
   "main": "index.js",
   "exports": {
     "./types": "./types.ts",
-    "./contract": "./contract.ts"
+    "./contract": "./contract.ts",
+    "./governance-types": "./governance-types.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
