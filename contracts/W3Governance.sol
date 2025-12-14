@@ -388,6 +388,15 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
      *
      * Pass criteria:
      * - upvotes >= (upvotes + downvotes) * 2/3
+     *
+     * Gas Optimization Notes:
+     * - O(1) complexity: No loops or array processing
+     * - Vote tallies maintained in storage during vote() calls
+     * - No duplicate checks needed (handled by voteNonces mapping in vote())
+     * - No voter array processing (direct on-chain voting architecture)
+     * - Efficient integer math for 2/3 calculation (no division)
+     * - Custom errors save ~50 gas per revert vs require()
+     * - Estimated gas: ~50,000 regardless of voter count
      */
     function finalizeProposal(uint256 proposalId) external nonReentrant {
         // Validate proposal exists
