@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title W3Governance
@@ -25,6 +27,8 @@ import "@openzeppelin/contracts/security/Pausable.sol";
  * - Input validation with custom errors
  */
 contract W3Governance is Ownable, ReentrancyGuard, Pausable {
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
@@ -60,6 +64,15 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Maximum voting duration (30 days)
     uint256 public constant MAX_VOTING_DURATION = 30 days;
+
+    /// @notice Reputation points balance for each user
+    mapping(address => uint256) public reputationPoints;
+
+    /// @notice Backend authorized signer for reputation claims
+    address public platformSigner;
+
+    /// @notice Tracks used nonces to prevent replay attacks
+    mapping(uint256 => bool) public usedReputationNonces;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -111,6 +124,32 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         uint256 timestamp
     );
 
+    /**
+     * @notice Emitted when reputation is claimed by a user
+     * @param user Address claiming reputation
+     * @param amount Amount of reputation points claimed
+     * @param nonce Unique nonce for this claim
+     * @param timestamp Block timestamp of claim
+     */
+    event ReputationClaimed(
+        address indexed user,
+        uint256 amount,
+        uint256 nonce,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when platform signer address is updated
+     * @param oldSigner Previous platform signer address
+     * @param newSigner New platform signer address
+     * @param timestamp Block timestamp of update
+     */
+    event PlatformSignerUpdated(
+        address indexed oldSigner,
+        address indexed newSigner,
+        uint256 timestamp
+    );
+
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -139,15 +178,34 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
     /// @notice Thrown when content hash is empty
     error EmptyContentHash();
 
+    /// @notice Thrown when reputation amount is invalid (zero or negative)
+    error InvalidReputationAmount();
+
+    /// @notice Thrown when reputation nonce has already been used
+    error ReputationNonceAlreadyUsed();
+
+    /// @notice Thrown when reputation signature is invalid
+    error InvalidReputationSignature();
+
+    /// @notice Thrown when reputation authorization has expired
+    error ReputationAuthorizationExpired();
+
+    /// @notice Thrown when address is zero/invalid
+    error InvalidAddress();
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initialize the governance contract
-     * @dev Sets deployer as initial owner
+     * @dev Sets deployer as initial owner and platform signer
+     * @param _platformSigner Backend authorized signer for reputation claims
      */
-    constructor() Ownable(msg.sender) {}
+    constructor(address _platformSigner) Ownable(msg.sender) {
+        if (_platformSigner == address(0)) revert InvalidAddress();
+        platformSigner = _platformSigner;
+    }
 
     /*//////////////////////////////////////////////////////////////
                         PROPOSAL CREATION
@@ -391,5 +449,118 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
      */
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    REPUTATION CLAIMING FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Claim reputation points with backend authorization
+     * @dev Validates signature from platform signer, prevents replay attacks with nonce
+     * @param amount Amount of reputation points to claim
+     * @param nonce Unique identifier for this claim (prevents replay)
+     * @param expiry Timestamp when authorization expires
+     * @param signature ECDSA signature from platform signer
+     *
+     * Requirements:
+     * - amount must be greater than 0
+     * - expiry must be in the future
+     * - nonce must not have been used before
+     * - signature must be valid and from platform signer
+     */
+    function claimReputation(
+        uint256 amount,
+        uint256 nonce,
+        uint256 expiry,
+        bytes memory signature
+    ) external nonReentrant whenNotPaused {
+        // Validation checks
+        if (amount == 0) revert InvalidReputationAmount();
+        if (block.timestamp > expiry) revert ReputationAuthorizationExpired();
+        if (usedReputationNonces[nonce]) revert ReputationNonceAlreadyUsed();
+
+        // Verify signature from platform signer
+        bytes32 messageHash = getReputationMessageHash(msg.sender, amount, nonce, expiry);
+        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
+
+        address recoveredSigner = ethSignedMessageHash.recover(signature);
+        if (recoveredSigner != platformSigner) revert InvalidReputationSignature();
+
+        // Mark nonce as used
+        usedReputationNonces[nonce] = true;
+
+        // Update on-chain reputation balance
+        reputationPoints[msg.sender] += amount;
+
+        emit ReputationClaimed(msg.sender, amount, nonce, block.timestamp);
+    }
+
+    /**
+     * @notice Generate message hash for reputation claim verification
+     * @param user Address claiming reputation
+     * @param amount Amount of reputation points
+     * @param nonce Unique nonce for this claim
+     * @param expiry Expiration timestamp
+     * @return bytes32 Hash of the message
+     */
+    function getReputationMessageHash(
+        address user,
+        uint256 amount,
+        uint256 nonce,
+        uint256 expiry
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(user, amount, nonce, expiry));
+    }
+
+    /**
+     * @notice Verify reputation claim signature
+     * @param user Address claiming reputation
+     * @param amount Amount of reputation points
+     * @param nonce Unique nonce for this claim
+     * @param expiry Expiration timestamp
+     * @param signature ECDSA signature to verify
+     * @return bool true if signature is valid
+     */
+    function verifyReputationSignature(
+        address user,
+        uint256 amount,
+        uint256 nonce,
+        uint256 expiry,
+        bytes memory signature
+    ) public view returns (bool) {
+        bytes32 messageHash = getReputationMessageHash(user, amount, nonce, expiry);
+        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
+        address recoveredSigner = ethSignedMessageHash.recover(signature);
+        return recoveredSigner == platformSigner;
+    }
+
+    /**
+     * @notice Update platform signer address (owner only)
+     * @param newSigner New platform signer address
+     */
+    function setPlatformSigner(address newSigner) external onlyOwner {
+        if (newSigner == address(0)) revert InvalidAddress();
+        address oldSigner = platformSigner;
+        platformSigner = newSigner;
+        emit PlatformSignerUpdated(oldSigner, newSigner, block.timestamp);
+    }
+
+    /**
+     * @notice Check if a reputation nonce has been used
+     * @param nonce Nonce to check
+     * @return bool true if nonce has been used
+     */
+    function isReputationNonceUsed(uint256 nonce) external view returns (bool) {
+        return usedReputationNonces[nonce];
+    }
+
+    /**
+     * @notice Get reputation balance for a user
+     * @param user Address to check
+     * @return uint256 Reputation points balance
+     */
+    function getReputationBalance(address user) external view returns (uint256) {
+        return reputationPoints[user];
     }
 }
