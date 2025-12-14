@@ -74,6 +74,12 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
     /// @notice Tracks used nonces to prevent replay attacks
     mapping(uint256 => bool) public usedReputationNonces;
 
+    /// @notice Reputation cost to create a proposal
+    uint256 public constant PROPOSAL_REPUTATION_COST = 500;
+
+    /// @notice Reputation cost to cast a vote
+    uint256 public constant VOTE_REPUTATION_COST = 100;
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -150,6 +156,20 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         uint256 timestamp
     );
 
+    /**
+     * @notice Emitted when reputation is deducted for governance action
+     * @param user Address whose reputation was deducted
+     * @param amount Amount of reputation deducted
+     * @param action Action that triggered deduction (e.g., "createProposal", "vote")
+     * @param timestamp Block timestamp of deduction
+     */
+    event ReputationDeducted(
+        address indexed user,
+        uint256 amount,
+        string action,
+        uint256 timestamp
+    );
+
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -193,6 +213,11 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
     /// @notice Thrown when address is zero/invalid
     error InvalidAddress();
 
+    /// @notice Thrown when user has insufficient reputation for action
+    /// @param required Amount of reputation required
+    /// @param available Amount of reputation available
+    error InsufficientReputation(uint256 required, uint256 available);
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -226,6 +251,15 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         bytes32 contentHash,
         uint256 votingDuration
     ) external whenNotPaused returns (uint256) {
+        // Early revert pattern for reputation validation
+        uint256 userReputation = reputationPoints[msg.sender];
+        if (userReputation < PROPOSAL_REPUTATION_COST) {
+            revert InsufficientReputation(PROPOSAL_REPUTATION_COST, userReputation);
+        }
+
+        // Deduct reputation BEFORE processing proposal
+        reputationPoints[msg.sender] -= PROPOSAL_REPUTATION_COST;
+
         // Validate inputs
         if (contentHash == bytes32(0)) revert EmptyContentHash();
         if (votingDuration < MIN_VOTING_DURATION || votingDuration > MAX_VOTING_DURATION) {
@@ -252,12 +286,19 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
             passed: false
         });
 
-        // Emit event
+        // Emit events
         emit ProposalCreated(
             proposalId,
             msg.sender,
             contentHash,
             votingEndsAt,
+            block.timestamp
+        );
+
+        emit ReputationDeducted(
+            msg.sender,
+            PROPOSAL_REPUTATION_COST,
+            "createProposal",
             block.timestamp
         );
 
@@ -284,6 +325,12 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         uint256 proposalId,
         bool support
     ) external nonReentrant whenNotPaused {
+        // Early revert pattern for reputation validation
+        uint256 userReputation = reputationPoints[msg.sender];
+        if (userReputation < VOTE_REPUTATION_COST) {
+            revert InsufficientReputation(VOTE_REPUTATION_COST, userReputation);
+        }
+
         // Validate proposal exists
         if (proposalId == 0 || proposalId > proposalCount) revert InvalidProposalId();
 
@@ -295,6 +342,9 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         // Check if already voted
         if (votes[proposalId][msg.sender] != 0) revert AlreadyVoted();
 
+        // Deduct reputation BEFORE processing vote
+        reputationPoints[msg.sender] -= VOTE_REPUTATION_COST;
+
         // Record vote (1 = upvote, 2 = downvote)
         votes[proposalId][msg.sender] = support ? 1 : 2;
 
@@ -305,8 +355,15 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
             proposal.downvotes++;
         }
 
-        // Emit event
+        // Emit events
         emit VoteCast(proposalId, msg.sender, support, block.timestamp);
+
+        emit ReputationDeducted(
+            msg.sender,
+            VOTE_REPUTATION_COST,
+            "vote",
+            block.timestamp
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
