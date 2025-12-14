@@ -53,8 +53,11 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
     /// @notice Mapping from proposal ID to Proposal struct
     mapping(uint256 => Proposal) public proposals;
 
-    /// @notice Mapping from proposal ID => voter address => vote (0=not voted, 1=upvote, 2=downvote)
-    mapping(uint256 => mapping(address => uint8)) public votes;
+    /// @notice Nonce-based vote tracking for duplicate prevention (0 = not voted, >0 = voted)
+    mapping(uint256 => mapping(address => uint256)) public voteNonces;
+
+    /// @notice Separate vote type tracking for getVote() compatibility (0=not voted, 1=upvote, 2=downvote)
+    mapping(uint256 => mapping(address => uint8)) private _voteTypes;
 
     /// @notice Total number of proposals created
     uint256 public proposalCount;
@@ -339,14 +342,17 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
         // Check voting period
         if (block.timestamp > proposal.votingEndsAt) revert VotingEnded();
 
-        // Check if already voted
-        if (votes[proposalId][msg.sender] != 0) revert AlreadyVoted();
+        // Nonce-based duplicate check (O(1) gas cost)
+        if (voteNonces[proposalId][msg.sender] > 0) revert AlreadyVoted();
 
         // Deduct reputation BEFORE processing vote
         reputationPoints[msg.sender] -= VOTE_REPUTATION_COST;
 
-        // Record vote (1 = upvote, 2 = downvote)
-        votes[proposalId][msg.sender] = support ? 1 : 2;
+        // Record vote type for getVote() compatibility
+        _voteTypes[proposalId][msg.sender] = support ? 1 : 2;
+
+        // Increment nonce to mark as voted
+        voteNonces[proposalId][msg.sender] = 1;
 
         // Update vote counts
         if (support) {
@@ -447,11 +453,22 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
     ) external view returns (bool hasVoted, bool support) {
         if (proposalId == 0 || proposalId > proposalCount) revert InvalidProposalId();
 
-        uint8 voteValue = votes[proposalId][voter];
+        uint8 voteValue = _voteTypes[proposalId][voter];
         hasVoted = voteValue != 0;
         support = voteValue == 1; // 1 = upvote, 2 = downvote
 
         return (hasVoted, support);
+    }
+
+    /**
+     * @notice Check if an address has voted on a proposal
+     * @param proposalId ID of proposal
+     * @param voter Address of voter to check
+     * @return bool true if the voter has voted
+     */
+    function hasVoted(uint256 proposalId, address voter) external view returns (bool) {
+        if (proposalId == 0 || proposalId > proposalCount) revert InvalidProposalId();
+        return voteNonces[proposalId][voter] > 0;
     }
 
     /**
