@@ -123,6 +123,32 @@ yarn exec turbo link
 pnpm exec turbo link
 ```
 
+## On-Chain Governance
+
+W3Uptime features a fully transparent on-chain governance system where all proposals and votes are recorded on the Sepolia Ethereum testnet. Users vote directly via MetaMask transactions, ensuring complete transparency and verifiability.
+
+### Key Features
+
+- **Direct On-Chain Voting**: Each vote is a blockchain transaction
+- **Full Transparency**: All votes immediately visible on-chain
+- **Real-Time Verification**: Users can verify their votes on Etherscan
+- **No Trust Required**: Smart contract handles all vote counting
+
+### Documentation
+
+For detailed information about the governance system, see:
+- [Governance Transparency Guide](./docs/governance-transparency.md)
+- [Implementation Log](./docs/governance-feature.md)
+
+### Quick Start
+
+1. Connect MetaMask to Sepolia testnet
+2. Get Sepolia ETH from faucet: https://sepoliafaucet.com
+3. Navigate to Community > Governance
+4. Create or vote on proposals
+
+---
+
 ## Useful Links
 
 Learn more about the power of Turborepo:
