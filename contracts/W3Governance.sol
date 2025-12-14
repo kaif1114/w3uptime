@@ -453,20 +453,20 @@ contract W3Governance is Ownable, ReentrancyGuard, Pausable {
      * @notice Check if a specific address voted on a proposal and how they voted
      * @param proposalId ID of proposal
      * @param voter Address of voter to check
-     * @return hasVoted Whether the address has voted
+     * @return voted Whether the address has voted
      * @return support If voted, true = upvote, false = downvote
      */
     function getVote(
         uint256 proposalId,
         address voter
-    ) external view returns (bool hasVoted, bool support) {
+    ) external view returns (bool voted, bool support) {
         if (proposalId == 0 || proposalId > proposalCount) revert InvalidProposalId();
 
         uint8 voteValue = _voteTypes[proposalId][voter];
-        hasVoted = voteValue != 0;
+        voted = voteValue != 0;
         support = voteValue == 1; // 1 = upvote, 2 = downvote
 
-        return (hasVoted, support);
+        return (voted, support);
     }
 
     /**
