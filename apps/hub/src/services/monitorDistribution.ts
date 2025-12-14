@@ -6,6 +6,7 @@ import { v7 as uuidv7 } from "uuid";
 import { IncomingMessage } from "common/types";
 import { validators } from "./validatorManager";
 import { addToBatch } from "./batchProcessor";
+import { applyUptimeCheckReward, applyUptimeCheckPenalty } from "./reputation";
 
 export const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } = {};
 
@@ -55,6 +56,17 @@ export function startMonitorDistribution() {
             };
             
             addToBatch(monitorTick);
+
+            // Award reputation for uptime check
+            if (validatorData?.publicKey) {
+              if (status === 'GOOD') {
+                await applyUptimeCheckReward(validatorData.publicKey);
+              } else if (status === 'BAD') {
+                await applyUptimeCheckPenalty(validatorData.publicKey);
+              }
+            } else {
+              console.warn(`No publicKey found for validator: ${validatorId}`);
+            }
           }
         };
       });
