@@ -140,7 +140,7 @@ export async function POST(
 
     // 6. Initialize provider and signer
     const rpcUrl = process.env.ETHEREUM_RPC_URL;
-    const signerPrivateKey = process.env.PLATFORM_SIGNER_PRIVATE_KEY;
+    const signerPrivateKey = process.env.AUTHORIZED_SIGNER_KEY;
 
     if (!rpcUrl) {
       console.error('ETHEREUM_RPC_URL not configured');
@@ -151,7 +151,7 @@ export async function POST(
     }
 
     if (!signerPrivateKey) {
-      console.error('PLATFORM_SIGNER_PRIVATE_KEY not configured');
+      console.error('AUTHORIZED_SIGNER_KEY not configured');
       return NextResponse.json(
         { error: 'Server configuration error: Signer key not set' },
         { status: 500 }

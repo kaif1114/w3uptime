@@ -2,7 +2,7 @@ import { prisma } from 'db/client';
 import { Wallet, JsonRpcProvider } from 'ethers';
 import { createGovernanceContractWithSigner } from 'common/governance-contract';
 
-const PLATFORM_SIGNER_PRIVATE_KEY = process.env.PLATFORM_SIGNER_PRIVATE_KEY!;
+const AUTHORIZED_SIGNER_KEY = process.env.AUTHORIZED_SIGNER_KEY!;
 const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL!;
 const MIN_QUORUM = 0.5; // 50%
 
@@ -27,7 +27,7 @@ async function finalizeEligibleProposals() {
 
       // Connect to contract and fetch on-chain vote data
       const provider = new JsonRpcProvider(ETHEREUM_RPC_URL);
-      const wallet = new Wallet(PLATFORM_SIGNER_PRIVATE_KEY, provider);
+      const wallet = new Wallet(AUTHORIZED_SIGNER_KEY, provider);
       const contract = createGovernanceContractWithSigner(wallet);
 
       // Get current vote counts from contract

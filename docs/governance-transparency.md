@@ -283,7 +283,7 @@ NEXT_PUBLIC_CHAIN_ID=11155111
 ETHEREUM_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 
 # Platform Signer (for finalization)
-PLATFORM_SIGNER_PRIVATE_KEY=0x...
+AUTHORIZED_SIGNER_KEY=0x...
 
 # Alchemy API Key (optional, for enhanced RPC features)
 ALCHEMY_API_KEY=your_alchemy_key

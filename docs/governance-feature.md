@@ -812,7 +812,7 @@ Body: {
    // Initialize provider and signer
    const provider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
    const wallet = new ethers.Wallet(
-     process.env.PLATFORM_SIGNER_PRIVATE_KEY,
+     process.env.AUTHORIZED_SIGNER_KEY,
      provider
    );
    const contract = createGovernanceContractWithSigner(wallet);
@@ -946,7 +946,7 @@ Returns:
 **Environment Variables Required**:
 ```bash
 ETHEREUM_RPC_URL=https://sepolia.infura.io/v3/...
-PLATFORM_SIGNER_PRIVATE_KEY=0x...
+AUTHORIZED_SIGNER_KEY=0x...
 ```
 
 **Security Considerations**:
@@ -1127,7 +1127,7 @@ private async handleProposalFinalized(
 
 **Environment Variables**:
 - `ETHEREUM_RPC_URL`: Sepolia RPC endpoint (already set)
-- `PLATFORM_SIGNER_PRIVATE_KEY`: Private key for finalization transactions (needs to be set)
+- `AUTHORIZED_SIGNER_KEY`: Private key for finalization transactions (needs to be set)
 - `NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS`: Contract address (already set)
 
 **Security & Production Readiness**:

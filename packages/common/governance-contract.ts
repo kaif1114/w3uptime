@@ -21,8 +21,7 @@ import GOVERNANCE_ABI from './governance-abi.json';
  * Deployed at block 9825346
  */
 export const GOVERNANCE_CONTRACT_ADDRESS =
-  process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS ||
-  '0xe74cedb2ec8ca7607f95297e938078e4ebae304f';
+  process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS!
 
 /**
  * Sepolia testnet chain ID

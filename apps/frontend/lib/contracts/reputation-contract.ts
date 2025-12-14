@@ -4,8 +4,8 @@ const W3GOVERNANCE_ABI = [
   'function reputationPoints(address user) external view returns (uint256)'
 ];
 
-const CONTRACT_ADDRESS = process.env.W3GOVERNANCE_CONTRACT_ADDRESS!;
-const RPC_URL = process.env.SEPOLIA_RPC_URL!;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS!;
+const RPC_URL = process.env.ETHEREUM_RPC_URL!;
 
 let provider: JsonRpcProvider | null = null;
 let contract: Contract | null = null;

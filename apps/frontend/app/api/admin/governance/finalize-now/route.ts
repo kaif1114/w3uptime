@@ -91,7 +91,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     // Initialize contract
     const provider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
     const wallet = new ethers.Wallet(
-      process.env.PLATFORM_SIGNER_PRIVATE_KEY!,
+      process.env.AUTHORIZED_SIGNER_KEY!,
       provider
     );
     const contract = createGovernanceContractWithSigner(wallet);

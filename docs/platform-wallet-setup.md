@@ -31,7 +31,7 @@ Add the following to your `.env` file (NEVER commit this file to git):
 
 ```bash
 # Platform Wallet Configuration
-PLATFORM_SIGNER_PRIVATE_KEY=0x...  # Private key from MetaMask
+AUTHORIZED_SIGNER_KEY=0x...  # Private key from MetaMask
 PLATFORM_SIGNER_ADDRESS=0x...      # Wallet address from MetaMask
 ```
 
