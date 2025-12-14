@@ -15,6 +15,7 @@ import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
 import { useProposal, useVoteProposal } from "@/hooks/useProposals";
 import { useVote } from "@/hooks/useVote";
 import { useSession } from "@/hooks/useSession";
+import { useOnChainReputation } from "@/hooks/useOnChainReputation";
 import {
   ProposalType,
   VoteType
@@ -34,6 +35,7 @@ import {
   Shield,
   Loader2,
   CheckCircle,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +48,11 @@ export function ProposalDetailClient({
 }: ProposalDetailClientProps) {
   const { data: proposalData, isLoading, error } = useProposal(proposalId);
   const voteProposal = useVoteProposal();
+  const { data: session } = useSession();
+  const {
+    data: reputationData,
+    isLoading: isLoadingReputation,
+  } = useOnChainReputation();
   const {
     vote: onChainVote,
     isLoading: isVotingOnChain,
@@ -412,6 +419,38 @@ export function ProposalDetailClient({
               </Alert>
             )}
 
+            {/* Reputation Check Warning for On-Chain Voting */}
+            {proposal?.onChainStatus === "ACTIVE" &&
+              reputationData &&
+              !reputationData.canVote && (
+                <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="ml-2 space-y-2">
+                    <p className="font-medium text-orange-900 dark:text-orange-100">
+                      Insufficient On-Chain Reputation to Vote
+                    </p>
+                    <div className="text-sm text-orange-800 dark:text-orange-200">
+                      <p>
+                        Required: 50 REP | Your Balance:{" "}
+                        {reputationData.onChainBalance ?? 0} REP
+                      </p>
+                      {reputationData.availableToClaimPoints > 0 && (
+                        <p className="font-medium mt-1">
+                          Available to Claim:{" "}
+                          {reputationData.availableToClaimPoints} REP
+                        </p>
+                      )}
+                    </div>
+                    <Link
+                      href="/community/reputation"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
+                    >
+                      Claim Your Reputation <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              )}
+
             {/* Vote buttons */}
             <div className="flex items-center justify-between">
               <div className="flex space-x-4">
@@ -422,7 +461,13 @@ export function ProposalDetailClient({
                   size="lg"
                   onClick={() => handleVote(VoteType.UPVOTE)}
                   disabled={
-                    voteProposal.isPending || isVotingOnChain || !canVote()
+                    voteProposal.isPending ||
+                    isVotingOnChain ||
+                    !canVote() ||
+                    isLoadingReputation ||
+                    (proposal?.onChainStatus === "ACTIVE" &&
+                      reputationData &&
+                      !reputationData.canVote)
                   }
                   className="flex items-center space-x-2"
                 >
@@ -430,7 +475,9 @@ export function ProposalDetailClient({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   <ArrowUp className="h-5 w-5" />
-                  <span>Upvote ({getUpvotes()})</span>
+                  <span>
+                    {isLoadingReputation ? "..." : `Upvote (${getUpvotes()})`}
+                  </span>
                 </Button>
 
                 <Button
@@ -440,7 +487,13 @@ export function ProposalDetailClient({
                   size="lg"
                   onClick={() => handleVote(VoteType.DOWNVOTE)}
                   disabled={
-                    voteProposal.isPending || isVotingOnChain || !canVote()
+                    voteProposal.isPending ||
+                    isVotingOnChain ||
+                    !canVote() ||
+                    isLoadingReputation ||
+                    (proposal?.onChainStatus === "ACTIVE" &&
+                      reputationData &&
+                      !reputationData.canVote)
                   }
                   className="flex items-center space-x-2"
                 >
@@ -448,7 +501,9 @@ export function ProposalDetailClient({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   <ArrowDown className="h-5 w-5" />
-                  <span>Downvote ({getDownvotes()})</span>
+                  <span>
+                    {isLoadingReputation ? "..." : `Downvote (${getDownvotes()})`}
+                  </span>
                 </Button>
               </div>
 

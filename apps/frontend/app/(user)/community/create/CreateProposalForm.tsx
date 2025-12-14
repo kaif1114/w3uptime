@@ -23,6 +23,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateProposal } from "@/hooks/useProposals";
 import { useGovernanceContract } from "@/hooks/useGovernanceContract";
+import { useOnChainReputation } from "@/hooks/useOnChainReputation";
+import { useSession } from "@/hooks/useSession";
 import { generateContentHash } from "@/lib/governance";
 import { CreateProposalData, ProposalType } from "@/types/proposal";
 import {
@@ -33,6 +35,7 @@ import {
   Settings,
   Shield,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -63,6 +66,13 @@ export function CreateProposalForm() {
     error: contractError,
     createProposal: createOnChainProposal,
   } = useGovernanceContract();
+
+  // Reputation check for on-chain proposals
+  const { data: session } = useSession();
+  const {
+    data: reputationData,
+    isLoading: isLoadingReputation,
+  } = useOnChainReputation();
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -561,6 +571,34 @@ export function CreateProposalForm() {
               </Alert>
             )}
 
+            {/* Reputation Check Warning for On-Chain Proposals */}
+            {createOnChain && reputationData && !reputationData.canCreateProposal && (
+              <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="ml-2 space-y-2">
+                  <p className="font-medium text-orange-900 dark:text-orange-100">
+                    Insufficient On-Chain Reputation
+                  </p>
+                  <div className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
+                    <p>
+                      Required: 200 REP | Your Balance: {reputationData.onChainBalance ?? 0} REP
+                    </p>
+                    {reputationData.availableToClaimPoints > 0 && (
+                      <p className="font-medium">
+                        You have {reputationData.availableToClaimPoints} REP available to claim!
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href="/community/reputation"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
+                  >
+                    Claim Reputation <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </AlertDescription>
+              </Alert>
+            )}
+
             
             <div className="flex justify-between">
               <Link href="/community">
@@ -571,10 +609,20 @@ export function CreateProposalForm() {
               </Link>
               <Button
                 type="submit"
-                disabled={createProposal.isPending || txPending}
+                disabled={
+                  createProposal.isPending ||
+                  txPending ||
+                  isLoadingReputation ||
+                  (createOnChain && reputationData && !reputationData.canCreateProposal)
+                }
                 className="min-w-[160px]"
               >
-                {txPending ? (
+                {isLoadingReputation ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Checking Reputation...
+                  </>
+                ) : txPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {createOnChain ? "Creating On-Chain..." : "Submitting..."}
