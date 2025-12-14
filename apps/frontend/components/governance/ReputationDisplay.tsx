@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Info, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { ReputationClaimModal } from './ReputationClaimModal';
+import { useSession } from '@/hooks/useSession';
 
 interface ReputationData {
   earned: number;
@@ -51,6 +54,9 @@ export function ReputationDisplay({
   className,
   onClaim
 }: ReputationDisplayProps) {
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const { data: session } = useSession();
+
   const { data: reputation, isLoading, error } = useQuery({
     queryKey: ['reputation-with-claiming'],
     queryFn: fetchReputationData,
@@ -159,7 +165,13 @@ export function ReputationDisplay({
         {showClaimButton && available > 0 && (
           <Button
             className="w-full"
-            onClick={onClaim}
+            onClick={() => {
+              if (onClaim) {
+                onClaim();
+              } else {
+                setClaimModalOpen(true);
+              }
+            }}
           >
             Claim {available} Points
           </Button>
@@ -171,6 +183,14 @@ export function ReputationDisplay({
           </p>
         )}
       </CardContent>
+
+      {/* Reputation Claim Modal */}
+      <ReputationClaimModal
+        open={claimModalOpen}
+        onOpenChange={setClaimModalOpen}
+        availableReputation={available}
+        userAddress={session?.user?.walletAddress || ''}
+      />
     </Card>
   );
 }
