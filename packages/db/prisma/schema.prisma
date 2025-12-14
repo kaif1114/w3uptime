@@ -477,6 +477,7 @@ model Transaction {
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
+  REPUTATION_CLAIM
 }
 
 enum TransactionStatus {
