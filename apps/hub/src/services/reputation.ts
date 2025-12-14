@@ -22,18 +22,19 @@ export interface ReputationCounters {
 export async function applyGoodTick(publicKey: string) {
   const user = await prisma.user.findUnique({
     where: { publicKey },
-    select: { id: true, goodTicks: true, badTicks: true },
+    select: { id: true, goodTicks: true, badTicks: true, totalReputation: true },
   });
   if (!user) return;
 
   const goodTicks = user.goodTicks + 1;
   const badTicks = user.badTicks;
+  const totalReputation = user.totalReputation + 1;  // Increment unclaimed reputation
 
   const reputationScore = computeReputationScore({ goodTicks, badTicks });
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { goodTicks, reputationScore },
+    data: { goodTicks, reputationScore, totalReputation },
   });
 }
 
