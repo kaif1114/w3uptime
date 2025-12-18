@@ -5,7 +5,7 @@ const W3GOVERNANCE_ABI = [
   'function reputationPoints(address user) external view returns (uint256)'
 ];
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS!;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS!;
 
 export function createReputationContractWithSigner(signer: Signer): Contract {
   return new Contract(CONTRACT_ADDRESS, W3GOVERNANCE_ABI, signer);

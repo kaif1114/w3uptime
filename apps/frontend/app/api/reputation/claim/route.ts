@@ -30,14 +30,14 @@ function checkRateLimit(userId: string): { allowed: boolean; resetIn?: number } 
 export const POST = withAuth(async (_request: NextRequest, user) => {
   try {
     // 1. Rate limiting check
-    const rateLimitResult = checkRateLimit(user.id);
-    if (!rateLimitResult.allowed) {
-      const minutesLeft = Math.ceil((rateLimitResult.resetIn || 0) / 60000);
-      return NextResponse.json({
-        success: false,
-        error: `Too many claim attempts. Try again in ${minutesLeft} minutes.`
-      }, { status: 429 });
-    }
+    // const rateLimitResult = checkRateLimit(user.id);
+    // if (!rateLimitResult.allowed) {
+    //   const minutesLeft = Math.ceil((rateLimitResult.resetIn || 0) / 60000);
+    //   return NextResponse.json({
+    //     success: false,
+    //     error: `Too many claim attempts. Try again in ${minutesLeft} minutes.`
+    //   }, { status: 429 });
+    // }
 
     // 2. Fetch user with current reputation tracking
     const userWithReputation = await prisma.user.findUnique({
