@@ -1,20 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { AlertCircle, CheckCircle2, Loader2, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface AdminDashboardClientProps {
   initialStats: {
@@ -44,7 +36,6 @@ export function AdminDashboardClient({
   initialStats,
   initialErrors,
 }: AdminDashboardClientProps) {
-  const { toast } = useToast();
   const [finalizingProposals, setFinalizingProposals] = useState<Set<string>>(
     new Set()
   );
@@ -66,8 +57,7 @@ export function AdminDashboardClient({
         throw new Error(data.error || 'Finalization failed');
       }
 
-      toast({
-        title: 'Success',
+      toast.success('Success', {
         description: (
           <div className="space-y-2">
             <p>{data.data.message}</p>
@@ -86,9 +76,7 @@ export function AdminDashboardClient({
       // Refresh the page after 2 seconds
       setTimeout(() => window.location.reload(), 2000);
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Finalization Failed',
+      toast.error('Finalization Failed', {
         description:
           error instanceof Error ? error.message : 'Unknown error occurred',
       });

@@ -40,11 +40,11 @@ export const GET = withAuth(async (_req: NextRequest, user) => {
     let onChainBalance: number | null = null;
     try {
       const balance = await getCachedOnChainBalance(user.walletAddress);
+      console.log("balance:", balance);
       onChainBalance = balance !== null ? Number(balance) : null;
     } catch (error) {
       console.warn('On-chain balance fetch failed, continuing without it:', error);
     }
-
     return NextResponse.json({
       success: true,
       data: {

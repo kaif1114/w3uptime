@@ -53,6 +53,10 @@ export interface Proposal {
   user: User;
   votes: ProposalVote[];
   comments: ProposalComment[];
+  onChainStatus?: string;
+  onChainId?: number | null;
+  txHash?: string | null;
+  votingEndsAt?: Date | null;
 }
 
 export interface CreateProposalData {
@@ -60,6 +64,8 @@ export interface CreateProposalData {
   description: string;
   type: ProposalType;
   tags?: string[];
+  createOnChain?: boolean;
+  txHash?: string | null;
 }
 
 export interface CreateCommentData {

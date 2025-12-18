@@ -216,27 +216,28 @@ export function CreateProposalForm() {
           setTxHash(creationTxHash);
 
           console.log(`✅ Proposal created on-chain: ID ${result.proposalId}, tx ${creationTxHash}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("On-chain creation failed:", error);
 
           // Parse MetaMask-specific errors
-          if (error.code === 4001 || error.code === "ACTION_REJECTED") {
+          const err = error as { code?: number | string; message?: string };
+          if (err.code === 4001 || err.code === "ACTION_REJECTED") {
             setErrors({ submit: "Transaction rejected. Please try again." });
-          } else if (error.message?.includes("insufficient funds")) {
+          } else if (err.message?.includes("insufficient funds")) {
             setErrors({
               submit:
                 "Insufficient ETH for gas fees. Please add Sepolia ETH to your wallet.",
             });
           } else if (
-            error.message?.includes("network") ||
-            error.message?.includes("chainId")
+            err.message?.includes("network") ||
+            err.message?.includes("chainId")
           ) {
             setErrors({
               submit: "Please connect to Sepolia testnet in MetaMask.",
             });
           } else {
             setErrors({
-              submit: `On-chain creation failed: ${error.message || "Unknown error"}`,
+              submit: `On-chain creation failed: ${err.message || "Unknown error"}`,
             });
           }
           setTxPending(false);

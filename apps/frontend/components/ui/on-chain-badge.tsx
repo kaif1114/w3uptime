@@ -34,6 +34,8 @@ const onChainBadgeVariants = cva(
   }
 );
 
+type OnChainStatusType = 'DRAFT' | 'PENDING_ONCHAIN' | 'ACTIVE' | 'PASSED' | 'FAILED';
+
 interface OnChainBadgeProps extends VariantProps<typeof onChainBadgeVariants> {
   onChainStatus: string;
   txHash?: string | null;
@@ -89,7 +91,7 @@ export function OnChainBadge({
   const badgeContent = (
     <Badge
       variant="outline"
-      className={cn(onChainBadgeVariants({ status: onChainStatus as any, size }), className)}
+      className={cn(onChainBadgeVariants({ status: onChainStatus as OnChainStatusType, size }), className)}
     >
       <Icon />
       <span>{config.label}</span>

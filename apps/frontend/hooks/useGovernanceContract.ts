@@ -89,15 +89,15 @@ export function useGovernanceContract() {
     initContract();
 
     // Listen for network changes
-    if (typeof window !== 'undefined' && window.ethereum) {
+    if (typeof window !== 'undefined' && window.ethereum?.on) {
       window.ethereum.on('chainChanged', () => {
         initContract();
       });
     }
 
     return () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        window.ethereum.removeAllListeners('chainChanged');
+      if (typeof window !== 'undefined' && window.ethereum?.removeListener) {
+        window.ethereum.removeListener('chainChanged', initContract);
       }
     };
   }, []);

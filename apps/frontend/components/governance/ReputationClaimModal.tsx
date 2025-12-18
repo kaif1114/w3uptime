@@ -144,7 +144,7 @@ export function ReputationClaimModal({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                You don't have any reputation available to claim yet.
+                You don&apos;t have any reputation available to claim yet.
               </AlertDescription>
             </Alert>
           )}

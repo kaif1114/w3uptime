@@ -20,6 +20,10 @@ export async function getMetaMaskProvider(): Promise<BrowserProvider> {
 }
 
 export async function connectWallet(): Promise<{ provider: BrowserProvider; signer: Signer; address: string }> {
+  if (!window.ethereum) {
+    throw new Error('MetaMask is not installed');
+  }
+
   const provider = await getMetaMaskProvider();
 
   // Request account access

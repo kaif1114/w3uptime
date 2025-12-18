@@ -60,7 +60,6 @@ export function ProposalDetailClient({
     isSuccess: voteSuccess,
     data: voteData,
   } = useVote();
-  const { data: session } = useSession();
 
   const proposal = proposalData?.proposal;
 
