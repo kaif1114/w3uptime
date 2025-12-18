@@ -160,6 +160,16 @@ export const connectWallet = async () : Promise<AuthResult | undefined> => {
       throw new Error("No wallet accounts found. Please connect your wallet.");
     }
 
+    // Log multiple accounts for debugging
+    if (accounts.length > 1) {
+      console.log(
+        `MetaMask returned ${accounts.length} accounts. Using selected account:`,
+        accounts[0]
+      );
+    } else {
+      console.log("Connected with account:", accounts[0]);
+    }
+
     const walletAddress = accounts[0];
 
     return await authenticateWallet(walletAddress, provider);
