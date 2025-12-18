@@ -31,15 +31,32 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     // This would require checking Etherscan API or calling contract.getReputationBalance()
     // to ensure the transaction actually succeeded
 
-    // Update claimedReputation and lastClaimAt to prevent double-claiming
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        claimedReputation: {
-          increment: amount
-        },
-        lastClaimAt: new Date()
-      }
+    // Create Transaction record and update User in atomic transaction
+    await prisma.$transaction(async (tx) => {
+      // Create transaction record for audit trail
+      await tx.transaction.create({
+        data: {
+          type: 'REPUTATION_CLAIM',
+          amount: amount.toString(),
+          transactionHash,
+          blockNumber: 0, // Reputation claims don't need specific block number
+          status: 'CONFIRMED',
+          userId: user.id,
+          createdAt: new Date(),
+          processedAt: new Date()
+        }
+      });
+
+      // Update user's claimed reputation
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          claimedReputation: {
+            increment: amount
+          },
+          lastClaimAt: new Date()
+        }
+      });
     });
 
     return NextResponse.json({

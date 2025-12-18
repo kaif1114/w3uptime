@@ -34,7 +34,7 @@ export const GET = withAuth(async (_req: NextRequest, user) => {
       0
     );
 
-    const available = earned - claimed;
+    const available = Math.max(0, earned - claimed); // Ensure non-negative
 
     // Fetch on-chain balance with caching and error handling
     let onChainBalance: number | null = null;
