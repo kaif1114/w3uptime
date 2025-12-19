@@ -19,9 +19,10 @@ export function MarkdownMessage({
         remarkPlugins={[remarkGfm]}
         components={{
           // Code blocks
-          code: ({ node, inline, className: codeClassName, children, ...props }) => {
+          code: ({ node, className: codeClassName, children, ...props }) => {
+            const isBlock = !!codeClassName;
             const match = /language-(\w+)/.exec(codeClassName || "");
-            return !inline ? (
+            return !isBlock ? (
               <pre className="bg-muted p-2 rounded-md overflow-x-auto my-2">
                 <code
                   className={cn("text-xs font-mono", codeClassName)}

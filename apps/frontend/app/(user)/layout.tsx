@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
-import { ChatAssistant } from "@/components/assistant/chat-assistant";
+import { ChatAssistant } from "@/components/assistant/ChatAssistant";
 
 export default async function UserLayout({
   children,
