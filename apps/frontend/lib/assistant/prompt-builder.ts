@@ -1,4 +1,49 @@
 import { AssistantContext } from "./context-builder";
+const AVAILABLE_TOOLS = [
+  {
+    type: "get_all_monitors",
+    description: "Fetch all monitors for the current user",
+    required: [],
+    optional: [],
+    returns: "Array of monitor objects with id, name, url, status",
+  },
+  {
+    type: "get_monitor_data",
+    description: "Get detailed information about a specific monitor including ticks, incidents, and status",
+    required: ["monitorId"],
+    optional: [],
+    returns: "Monitor object with full details",
+  },
+  {
+    type: "get_escalation_policies",
+    description: "List all escalation policies for the current user",
+    required: [],
+    optional: [],
+    returns: "Array of escalation policy objects with levels",
+  },
+  {
+    type: "get_incidents",
+    description: "Fetch incidents with optional filters",
+    required: [],
+    optional: ["monitorId", "status", "limit"],
+    returns: "Array of incident objects",
+  },
+  {
+    type: "get_status_page_link",
+    description: "Get the public URL for a status page",
+    required: [],
+    optional: ["statusPageId"],
+    returns: "Status page URL string",
+  },
+  
+{
+    type: "get_all_incidents_for_monitor",
+    description: "fetch all incidents for a monitor in certain time period",
+    required: ["monitorId"],
+    optional: ["status","limit"],
+    returns: "Array of incident objects",
+  },
+];
 
 const ALLOWED_ACTIONS = [
   {
