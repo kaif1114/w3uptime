@@ -6,6 +6,10 @@ const createTransporter = () => {
     throw new Error('Email configuration missing: GOOGLE_APP_USER and GOOGLE_APP_PASSWORD environment variables are required');
   }
 
+  // Log configuration status (without exposing password)
+  console.log(`Email configuration: Using Gmail SMTP with user: ${process.env.GOOGLE_APP_USER}`);
+  console.log(`Email password configured: ${process.env.GOOGLE_APP_PASSWORD ? 'Yes' : 'No'}`);
+
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -241,7 +245,21 @@ export async function sendEscalationEmail(
     console.log(`Escalation emails sent successfully to: ${validEmails.join(', ')}`);
   } catch (error) {
     console.error(`L Failed to send escalation emails:`, error);
-    throw new Error(`Email sending failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    // Provide helpful error messages for common Gmail authentication issues
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('Invalid login') || errorMessage.includes('BadCredentials') || errorMessage.includes('535-5.7.8')) {
+      errorMessage = `Gmail authentication failed. Please ensure:
+1. GOOGLE_APP_USER and GOOGLE_APP_PASSWORD environment variables are set correctly
+2. If 2FA is enabled, use an App Password (not your regular password)
+3. Generate an App Password at: https://myaccount.google.com/apppasswords
+4. Original error: ${errorMessage}`;
+    } else if (errorMessage.includes('EAUTH')) {
+      errorMessage = `Email authentication error. Check your Gmail credentials and App Password settings. Original error: ${errorMessage}`;
+    }
+    
+    throw new Error(`Email sending failed: ${errorMessage}`);
   }
 }
 
@@ -297,7 +315,21 @@ export async function sendResolutionEmail(
     console.log(`Resolution emails sent successfully to: ${validEmails.join(', ')}`);
   } catch (error) {
     console.error(`Failed to send resolution emails:`, error);
-    throw new Error(`Resolution email sending failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    // Provide helpful error messages for common Gmail authentication issues
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('Invalid login') || errorMessage.includes('BadCredentials') || errorMessage.includes('535-5.7.8')) {
+      errorMessage = `Gmail authentication failed. Please ensure:
+1. GOOGLE_APP_USER and GOOGLE_APP_PASSWORD environment variables are set correctly
+2. If 2FA is enabled, use an App Password (not your regular password)
+3. Generate an App Password at: https://myaccount.google.com/apppasswords
+4. Original error: ${errorMessage}`;
+    } else if (errorMessage.includes('EAUTH')) {
+      errorMessage = `Email authentication error. Check your Gmail credentials and App Password settings. Original error: ${errorMessage}`;
+    }
+    
+    throw new Error(`Resolution email sending failed: ${errorMessage}`);
   }
 }
 
@@ -310,6 +342,20 @@ export async function testEmailConfiguration(): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('L Email configuration failed:', error);
+    
+    // Provide helpful error messages for common Gmail authentication issues
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('Invalid login') || errorMessage.includes('BadCredentials') || errorMessage.includes('535-5.7.8')) {
+      console.error(`
+Gmail authentication failed. Troubleshooting steps:
+1. Verify GOOGLE_APP_USER and GOOGLE_APP_PASSWORD are set correctly
+2. If 2FA is enabled, you MUST use an App Password (not your regular password)
+3. Generate an App Password: https://myaccount.google.com/apppasswords
+4. Make sure "Less secure app access" is not required (deprecated by Google)
+5. Original error: ${errorMessage}
+      `);
+    }
+    
     return false;
   }
 }
