@@ -14,6 +14,7 @@ import {
   ToolResult,
 } from "@/types/assistant";
 import { cn } from "@/lib/utils";
+import { MarkdownMessage } from "./MarkdownMessage";
 
 type ChatAssistantProps = {
   defaultContext?: {
@@ -370,13 +371,17 @@ export function ChatAssistant({
               <div
                 key={msg.id}
                 className={cn(
-                  "rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
+                  "rounded-lg px-3 py-2 text-sm",
                   msg.role === "USER"
-                    ? "bg-primary text-primary-foreground ml-auto max-w-[85%]"
+                    ? "bg-primary text-primary-foreground ml-auto max-w-[85%] whitespace-pre-wrap"
                     : "bg-muted text-muted-foreground max-w-[95%]"
                 )}
               >
-                <div>{msg.content}</div>
+                {msg.role === "ASSISTANT" ? (
+                  <MarkdownMessage content={msg.content} />
+                ) : (
+                  <div>{msg.content}</div>
+                )}
                 {msg.role === "ASSISTANT" && (
                   <>
                     {renderToolInfo(msg)}
