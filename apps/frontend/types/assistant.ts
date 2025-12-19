@@ -32,6 +32,19 @@ export interface ChatResponse {
   message: AssistantMessage;
   conversationId: string;
   suggestions?: string[];
+  toolResults?: ToolResult[];
+  toolsUsed?: string[];
+}
+
+export interface ToolCall {
+  type: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ToolResult {
+  toolType: string;
+  result: unknown;
+  error?: string;
 }
 
 export type SuggestedAction = {

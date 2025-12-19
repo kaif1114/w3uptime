@@ -10,7 +10,7 @@ if (!apiKey) {
   console.warn(
     "[assistant] No CHATGPT_API or OPENAI_API_KEY found. Assistant responses will fail."
   );
-}
+}   
 
 const openai = apiKey
   ? new OpenAI({

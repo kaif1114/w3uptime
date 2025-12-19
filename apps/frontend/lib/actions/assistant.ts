@@ -4,6 +4,8 @@ import { prisma } from "db/client";
 import type { PrismaClient } from "@prisma/client";
 import { ConversationContext } from "@/types/assistant";
 
+// why any??
+
 const client = prisma as PrismaClient & {
   conversation: any;
   conversationMessage: any;
