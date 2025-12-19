@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, X, Send, Bot, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Loader2, ChevronDown, ChevronUp, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,7 @@ import {
   AssistantMessage,
   ConversationContext,
   SuggestedAction,
+  ToolResult,
 } from "@/types/assistant";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ export function ChatAssistant({
   const [input, setInput] = useState("");
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+  const [expandedToolResults, setExpandedToolResults] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: contextSummary, isLoading: contextLoading } =
@@ -104,6 +106,13 @@ export function ChatAssistant({
 
       setConversationId(response.conversationId);
 
+      // Store tool results and tools used in message metadata if available
+      const messageMetadata = {
+        ...response.message.metadata,
+        toolResults: response.toolResults,
+        toolsUsed: response.toolsUsed,
+      };
+
       setMessages((prev) => [
         ...prev,
         {
@@ -111,7 +120,7 @@ export function ChatAssistant({
           role: response.message.role,
           content: response.message.content,
           createdAt: response.message.createdAt,
-          metadata: response.message.metadata,
+          metadata: messageMetadata,
         },
       ]);
     } catch (error) {
@@ -168,6 +177,81 @@ export function ChatAssistant({
     } finally {
       setPendingActionId(null);
     }
+  };
+
+  const renderToolInfo = (msg: AssistantMessage) => {
+    const toolsUsed = msg.metadata?.toolsUsed as string[] | undefined;
+    const toolResults = msg.metadata?.toolResults as ToolResult[] | undefined;
+
+    if (!toolsUsed || toolsUsed.length === 0) return null;
+
+    const isExpanded = expandedToolResults.has(msg.id);
+
+    return (
+      <div className="mt-2 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[10px]">
+            <Database className="h-3 w-3 mr-1" />
+            Used {toolsUsed.length} tool{toolsUsed.length > 1 ? "s" : ""}: {toolsUsed.join(", ")}
+          </Badge>
+          {toolResults && toolResults.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 px-2 text-[10px]"
+              onClick={() => {
+                setExpandedToolResults((prev) => {
+                  const next = new Set(prev);
+                  if (isExpanded) {
+                    next.delete(msg.id);
+                  } else {
+                    next.add(msg.id);
+                  }
+                  return next;
+                });
+              }}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  Hide results
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  Show results
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+        {isExpanded && toolResults && toolResults.length > 0 && (
+          <div className="mt-1 space-y-2 border-l-2 border-muted pl-2">
+            {toolResults.map((toolResult, index) => (
+              <div key={index} className="text-[10px]">
+                <div className="font-semibold text-muted-foreground mb-1">
+                  {toolResult.toolType}
+                  {toolResult.error && (
+                    <Badge variant="destructive" className="ml-2 text-[9px]">
+                      Error
+                    </Badge>
+                  )}
+                </div>
+                {toolResult.error ? (
+                  <div className="text-destructive font-mono">
+                    {toolResult.error}
+                  </div>
+                ) : (
+                  <pre className="text-[9px] bg-muted/50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto">
+                    {JSON.stringify(toolResult.result, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderActions = (msg: AssistantMessage) => {
@@ -293,13 +377,21 @@ export function ChatAssistant({
                 )}
               >
                 <div>{msg.content}</div>
-                {msg.role === "ASSISTANT" && renderActions(msg)}
+                {msg.role === "ASSISTANT" && (
+                  <>
+                    {renderToolInfo(msg)}
+                    {renderActions(msg)}
+                  </>
+                )}
               </div>
             ))}
             {chatMutation.isPending && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Thinking...
+                <span>Thinking...</span>
+                <Badge variant="outline" className="text-[10px] ml-2">
+                  May fetch data
+                </Badge>
               </div>
             )}
             {actionStatus && (

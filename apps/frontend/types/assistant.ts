@@ -25,6 +25,8 @@ export interface AssistantMessage {
   metadata?: {
     suggestedActions?: SuggestedAction[];
     contextUsed?: Record<string, unknown>;
+    toolResults?: ToolResult[];
+    toolsUsed?: string[];
   };
 }
 

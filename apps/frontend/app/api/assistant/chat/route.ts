@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "db/client";
 import { generateAssistantReply } from "@/lib/assistant/llm-service";
-import { ConversationContext, SuggestedAction } from "@/types/assistant";
+import {
+  getAllMonitors,
+  getMonitorData,
+  getEscalationPolicies,
+  getIncidents,
+  getStatusPageLink,
+  getAllIncidentsForMonitor,
+} from "@/lib/assistant/ToolHandlers";
+import { ConversationContext, SuggestedAction, ToolCall, ToolResult } from "@/types/assistant";
 
 type ChatBody = {
   message?: string;
@@ -56,7 +64,7 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
     ];
 
     // Ask the LLM
-    const llmResult = await generateAssistantReply({
+    let llmResult = await generateAssistantReply({
       userId: user.id,
       userMessage: message.trim(),
       contextType: contextType ?? conversation.contextType ?? undefined,
@@ -64,10 +72,157 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
       history,
     });
 
+    // Extract tool calls if the model followed the TOOL_CALLS convention
+    let toolCalls: ToolCall[] = [];
+    let toolResults: ToolResult[] = [];
+    let toolsUsed: string[] = [];
+
+    let assistantContent = llmResult.content;
+    const toolMarker = "TOOL_CALLS:";
+    const toolMarkerIndex = assistantContent.lastIndexOf(toolMarker);
+
+    if (toolMarkerIndex !== -1) {
+      const toolBlock = assistantContent
+        .slice(toolMarkerIndex + toolMarker.length)
+        .trim();
+      const contentWithoutTools = assistantContent
+        .slice(0, toolMarkerIndex)
+        .trim();
+
+      try {
+        const parsed = JSON.parse(toolBlock);
+        if (Array.isArray(parsed)) {
+          toolCalls = parsed.filter(
+            (tc) =>
+              tc &&
+              typeof tc.type === "string" &&
+              (!tc.data || typeof tc.data === "object")
+          ) as ToolCall[];
+
+          // Execute tools
+          if (toolCalls.length > 0) {
+            const toolExecutionPromises = toolCalls.map(async (toolCall) => {
+              try {
+                let result: unknown;
+
+                switch (toolCall.type) {
+                  case "get_all_monitors":
+                    result = await getAllMonitors(user.id);
+                    break;
+                  case "get_monitor_data":
+                    if (!toolCall.data?.monitorId) {
+                      throw new Error("monitorId is required");
+                    }
+                    result = await getMonitorData(
+                      user.id,
+                      toolCall.data.monitorId as string
+                    );
+                    break;
+                  case "get_escalation_policies":
+                    result = await getEscalationPolicies(user.id);
+                    break;
+                  case "get_incidents":
+                    result = await getIncidents(user.id, {
+                      monitorId: toolCall.data?.monitorId as string | undefined,
+                      status: toolCall.data?.status as
+                        | "ONGOING"
+                        | "ACKNOWLEDGED"
+                        | "RESOLVED"
+                        | undefined,
+                      limit: toolCall.data?.limit
+                        ? Number(toolCall.data.limit)
+                        : undefined,
+                    });
+                    break;
+                  case "get_status_page_link":
+                    result = await getStatusPageLink(
+                      user.id,
+                      toolCall.data?.statusPageId as string | undefined
+                    );
+                    break;
+                  case "get_all_incidents_for_monitor":
+                    if (!toolCall.data?.monitorId) {
+                      throw new Error("monitorId is required");
+                    }
+                    result = await getAllIncidentsForMonitor(
+                      user.id,
+                      toolCall.data.monitorId as string,
+                      {
+                        status: toolCall.data?.status as
+                          | "ONGOING"
+                          | "ACKNOWLEDGED"
+                          | "RESOLVED"
+                          | undefined,
+                        limit: toolCall.data?.limit
+                          ? Number(toolCall.data.limit)
+                          : undefined,
+                      }
+                    );
+                    break;
+                  default:
+                    throw new Error(`Unknown tool type: ${toolCall.type}`);
+                }
+
+                toolsUsed.push(toolCall.type);
+                return {
+                  toolType: toolCall.type,
+                  result,
+                } as ToolResult;
+              } catch (error) {
+                return {
+                  toolType: toolCall.type,
+                  result: null,
+                  error: (error as Error).message || "Tool execution error",
+                } as ToolResult;
+              }
+            });
+
+            toolResults = await Promise.all(toolExecutionPromises);
+
+            // Make a follow-up LLM call with tool results
+            const toolResultsText = toolResults
+              .map((tr) => {
+                if (tr.error) {
+                  return `${tr.toolType}: Error - ${tr.error}`;
+                }
+                return `${tr.toolType}: ${JSON.stringify(tr.result, null, 2)}`;
+              })
+              .join("\n\n");
+
+            const followUpHistory = [
+              ...history,
+              {
+                role: "assistant" as const,
+                content: contentWithoutTools || assistantContent,
+              },
+              {
+                role: "user" as const,
+                content: `Tool Results:\n${toolResultsText}\n\nPlease provide your response based on this data.`,
+              },
+            ];
+
+            llmResult = await generateAssistantReply({
+              userId: user.id,
+              userMessage: `Tool Results:\n${toolResultsText}`,
+              contextType: contextType ?? conversation.contextType ?? undefined,
+              contextId: contextId ?? conversation.contextId ?? undefined,
+              history: followUpHistory,
+            });
+
+            assistantContent = llmResult.content;
+          } else {
+            // No valid tool calls, use original content
+            assistantContent = contentWithoutTools || assistantContent;
+          }
+        }
+      } catch {
+        // ignore malformed tool calls, use original content
+      }
+    }
+
     // Extract suggested actions if the model followed the SUGGESTED_ACTIONS convention
     let suggestedActions: SuggestedAction[] = [];
 
-    let assistantContent = llmResult.content;
     const marker = "SUGGESTED_ACTIONS:";
     const markerIndex = assistantContent.lastIndexOf(marker);
     if (markerIndex !== -1) {
@@ -150,6 +305,16 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
       JSON.stringify(llmResult.contextUsed ?? null)
     );
 
+    // Prepare metadata for storage (must be JSON-serializable)
+    const metadataSafe = JSON.parse(
+      JSON.stringify({
+        contextUsed: contextUsedSafe,
+        suggestedActions: validatedActions,
+        toolResults: toolResults.length > 0 ? toolResults : undefined,
+        toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
+      })
+    );
+
     // Persist messages
     const [userMsg, assistantMsg] = await Promise.all([
       prisma.conversationMessage.create({
@@ -164,10 +329,7 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
           conversationId: conversation.id,
           role: "ASSISTANT",
           content: assistantContent,
-          metadata: {
-            contextUsed: contextUsedSafe,
-            suggestedActions: validatedActions,
-          },
+          metadata: metadataSafe,
         },
       }),
     ]);
@@ -186,6 +348,8 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
         metadata: assistantMsg.metadata,
         createdAt: assistantMsg.createdAt,
       },
+      toolResults: toolResults.length > 0 ? toolResults : undefined,
+      toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
     });
   } catch (error) {
     console.error("[assistant chat] error", error);
