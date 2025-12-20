@@ -28,6 +28,7 @@ export const GET = async (
         include: {
           user: { select: { id: true, walletAddress: true } },
           votes: true,
+          voteCaches: true,
           comments: {
             orderBy: { createdAt: "desc" },
             include: { user: { select: { id: true, walletAddress: true } } },

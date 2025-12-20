@@ -29,23 +29,53 @@ export const GET = withAuth(
     try {
       const { id: proposalId } = await params;
 
-      // Fetch proposal with vote counts
+      // Fetch proposal with both vote types
       const proposal = await prisma.proposal.findUnique({
         where: { id: proposalId },
         include: {
-          _count: {
-            select: {
-              votes: true,
-            },
-          },
-          votes: {
-            where: { vote: "UPVOTE" },
-          },
+          votes: true,        // Database votes (DRAFT proposals)
+          voteCaches: true,   // On-chain votes (ACTIVE proposals)
         },
       });
 
       if (!proposal) {
         return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
+      }
+
+      // Determine which vote source to use based on onChainStatus
+      const isOnChain =
+        proposal.onChainStatus === "ACTIVE" ||
+        proposal.onChainStatus === "PASSED" ||
+        proposal.onChainStatus === "FAILED";
+
+      // Calculate vote counts from appropriate source
+      let upvoteCount: number;
+      let downvoteCount: number;
+      let totalVotes: number;
+      let userVote: string | null = null;
+
+      if (isOnChain) {
+        // Count from VoteCache (on-chain votes)
+        upvoteCount = proposal.voteCaches.filter(v => v.voteType === "UPVOTE").length;
+        downvoteCount = proposal.voteCaches.filter(v => v.voteType === "DOWNVOTE").length;
+        totalVotes = proposal.voteCaches.length;
+
+        // Check user's vote by wallet address (case-insensitive)
+        if (user.walletAddress) {
+          const userVoteRecord = proposal.voteCaches.find(
+            v => v.voterAddress.toLowerCase() === user.walletAddress.toLowerCase()
+          );
+          userVote = userVoteRecord ? userVoteRecord.voteType : null;
+        }
+      } else {
+        // Count from ProposalVote (database votes for DRAFT/PENDING_ONCHAIN)
+        upvoteCount = proposal.votes.filter(v => v.vote === "UPVOTE").length;
+        downvoteCount = proposal.votes.filter(v => v.vote === "DOWNVOTE").length;
+        totalVotes = proposal.votes.length;
+
+        // Check user's vote by userId
+        const userVoteRecord = proposal.votes.find(v => v.userId === user.id);
+        userVote = userVoteRecord ? userVoteRecord.vote : null;
       }
 
       // Check if voting is currently active
@@ -54,21 +84,6 @@ export const GET = withAuth(
         proposal.onChainStatus === "ACTIVE" &&
         proposal.votingEndsAt !== null &&
         new Date() < proposal.votingEndsAt;
-
-      // Get user's current vote if exists
-      const userVote = await prisma.proposalVote.findUnique({
-        where: {
-          proposalId_userId: {
-            proposalId,
-            userId: user.id,
-          },
-        },
-      });
-
-      // Calculate vote counts from database
-      const upvoteCount = proposal.votes.length;
-      const totalVotes = proposal._count.votes;
-      const downvoteCount = totalVotes - upvoteCount;
 
       // Calculate time remaining
       let timeRemaining: number | null = null;
@@ -95,11 +110,11 @@ export const GET = withAuth(
         timeRemaining, // Seconds remaining
         onChainStatus: proposal.onChainStatus,
         
-        // User's vote
-        userVote: userVote ? userVote.vote : null,
+        // User's vote (from correct source based on onChainStatus)
+        userVote,
         userHasVoted: !!userVote,
         
-        // Vote counts (from database cache)
+        // Vote counts (from correct source based on onChainStatus)
         voteCounts: {
           upvotes: upvoteCount,
           downvotes: downvoteCount,

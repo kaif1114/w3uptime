@@ -48,6 +48,17 @@ export interface ProposalComment {
   user: User;
 }
 
+export interface VoteCache {
+  id: string;
+  proposalId: string;
+  onChainProposalId: number;
+  voterAddress: string;
+  voteType: VoteType;
+  txHash: string;
+  blockNumber: number;
+  createdAt: Date;
+}
+
 export interface Proposal {
   id: string;
   title: string;
@@ -60,6 +71,7 @@ export interface Proposal {
   updatedAt: Date;
   user: User;
   votes: ProposalVote[];
+  voteCaches?: VoteCache[];
   comments: ProposalComment[];
   onChainStatus: OnChainStatus;
   onChainId?: number | null;

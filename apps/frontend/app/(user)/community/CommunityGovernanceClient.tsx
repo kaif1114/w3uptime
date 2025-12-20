@@ -35,6 +35,11 @@ import {
   OnChainStatus
 } from "@/types/proposal";
 import {
+  getUpvoteCount,
+  getDownvoteCount,
+  getUserVote as getProposalUserVote
+} from "@/lib/governance/vote-helpers";
+import {
   AlertCircle,
   ArrowDown,
   ArrowLeft,
@@ -219,28 +224,20 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   };
 
   const getUpvotes = (proposal: Proposal) => {
-    return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
-      0
-    );
+    return getUpvoteCount(proposal);
   };
 
   const getDownvotes = (proposal: Proposal) => {
-    return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
-        .length || 0
-    );
+    return getDownvoteCount(proposal);
   };
 
   const getUserVote = (proposal: Proposal) => {
-    if (!session?.user?.id || !proposal?.votes) {
-      return null;
-    }
-
-    const userVote = proposal.votes.find(
-      (vote) => vote.userId === session.user.id
+    if (!session?.user) return null;
+    return getProposalUserVote(
+      proposal,
+      session.user.id,
+      session.user.walletAddress
     );
-    return userVote ? userVote.vote : null;
   };
 
   

@@ -253,6 +253,7 @@ export const GET = async (req: NextRequest) => {
               },
             },
           },
+          voteCaches: true,
           comments: {
             include: {
               user: {

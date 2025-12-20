@@ -22,6 +22,11 @@ import {
   OnChainStatus
 } from "@/types/proposal";
 import {
+  getUpvoteCount,
+  getDownvoteCount,
+  getUserVote as getProposalUserVote
+} from "@/lib/governance/vote-helpers";
+import {
   AlertCircle,
   ArrowDown,
   ArrowLeft,
@@ -149,28 +154,22 @@ export function ProposalDetailClient({
   };
 
   const getUpvotes = () => {
-    return (
-      proposal?.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
-      0
-    );
+    if (!proposal) return 0;
+    return getUpvoteCount(proposal);
   };
 
   const getDownvotes = () => {
-    return (
-      proposal?.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
-        .length || 0
-    );
+    if (!proposal) return 0;
+    return getDownvoteCount(proposal);
   };
 
   const getUserVote = () => {
-    if (!session?.user?.id || !proposal?.votes) {
-      return null;
-    }
-
-    const userVote = proposal.votes.find(
-      (vote) => vote.userId === session.user.id
+    if (!proposal || !session?.user) return null;
+    return getProposalUserVote(
+      proposal,
+      session.user.id,
+      session.user.walletAddress
     );
-    return userVote ? userVote.vote : null;
   };
 
   const canVote = () => {
