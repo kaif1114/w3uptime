@@ -96,14 +96,17 @@ export const POST = withAuth(async (req: NextRequest, user) => {
     );
     const contract = createGovernanceContractWithSigner(wallet);
 
+    // Get the finalizeProposal function
+    const finalizeProposalFn = contract.getFunction("finalizeProposal");
+
     // Estimate gas
-    const gasEstimate = await contract.finalizeProposal.estimateGas(
+    const gasEstimate = await finalizeProposalFn.estimateGas(
       proposal.onChainId
     );
     const gasLimit = (gasEstimate * BigInt(120)) / BigInt(100); // 20% buffer
 
     // Send transaction
-    const tx = await contract.finalizeProposal(proposal.onChainId, {
+    const tx = await finalizeProposalFn(proposal.onChainId, {
       gasLimit,
     });
 

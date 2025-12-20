@@ -11,7 +11,7 @@
  * - Type-safe contract interactions
  */
 
-import { Contract, Provider, Signer, BaseContract, ContractTransactionResponse } from 'ethers';
+import { Contract, Provider, Signer, BaseContract, ContractTransactionResponse, Overrides } from 'ethers';
 import type { OnChainProposal, VoteCastEvent, ProposalFinalizedEvent } from './governance-types';
 import { convertContractToProposal } from './governance-types';
 import GOVERNANCE_ABI from './governance-abi.json';
@@ -59,18 +59,18 @@ export const GOVERNANCE_CONTRACT_ABI = GOVERNANCE_ABI;
 export interface W3GovernanceContract extends BaseContract {
   // Write methods (transactions)
   getFunction(name: "createProposal"): {
-    (contentHash: string, votingDuration: number): Promise<ContractTransactionResponse>;
-    estimateGas(contentHash: string, votingDuration: number): Promise<bigint>;
+    (contentHash: string, votingDuration: number, overrides?: Overrides): Promise<ContractTransactionResponse>;
+    estimateGas(contentHash: string, votingDuration: number, overrides?: Overrides): Promise<bigint>;
   };
 
   getFunction(name: "vote"): {
-    (proposalId: number, support: boolean): Promise<ContractTransactionResponse>;
-    estimateGas(proposalId: number, support: boolean): Promise<bigint>;
+    (proposalId: number, support: boolean, overrides?: Overrides): Promise<ContractTransactionResponse>;
+    estimateGas(proposalId: number, support: boolean, overrides?: Overrides): Promise<bigint>;
   };
 
   getFunction(name: "finalizeProposal"): {
-    (proposalId: number): Promise<ContractTransactionResponse>;
-    estimateGas(proposalId: number): Promise<bigint>;
+    (proposalId: number, overrides?: Overrides): Promise<ContractTransactionResponse>;
+    estimateGas(proposalId: number, overrides?: Overrides): Promise<bigint>;
   };
 
   // Read methods
