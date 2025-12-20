@@ -1,4 +1,4 @@
-import { prisma } from '../client';
+import { prisma } from 'db/client';
 
 /**
  * One-time migration script to sync User.claimedReputation with Transaction records
