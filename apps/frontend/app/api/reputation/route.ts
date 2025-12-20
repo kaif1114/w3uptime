@@ -19,20 +19,14 @@ export const GET = withAuth(async (_req: NextRequest, user) => {
     const reputation = await getReputation(user.id);
     const earned = reputation.totalScore;
 
-    // Get claimed amount from transactions
-    const claimedTransactions = await prisma.transaction.findMany({
-      where: {
-        userId: user.id,
-        type: 'REPUTATION_CLAIM',
-        status: 'CONFIRMED'
-      },
-      select: { amount: true }
+    // Get claimed amount from User field (single source of truth)
+    // This matches what claim-success endpoint updates
+    const userRecord = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { claimedReputation: true }
     });
 
-    const claimed = claimedTransactions.reduce(
-      (sum, tx) => sum + Number(tx.amount),
-      0
-    );
+    const claimed = userRecord?.claimedReputation || 0;
 
     const available = Math.max(0, earned - claimed); // Ensure non-negative
 
