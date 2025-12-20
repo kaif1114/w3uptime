@@ -38,9 +38,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { createGovernanceContractWithSigner } from "common/governance-contract";
+import { useState } from "react";
 
 export function CreateProposalForm() {
   const [formData, setFormData] = useState({
@@ -55,8 +53,6 @@ export function CreateProposalForm() {
 
   // On-chain creation state
   const [createOnChain, setCreateOnChain] = useState(false);
-  const [gasEstimate, setGasEstimate] = useState<string | null>(null);
-  const [isEstimating, setIsEstimating] = useState(false);
   const [txPending, setTxPending] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
 
@@ -123,60 +119,6 @@ export function CreateProposalForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Gas estimation for on-chain proposals
-  const estimateGas = async () => {
-    if (!formData.title.trim() || !formData.description.trim()) {
-      setGasEstimate(null);
-      return;
-    }
-
-    setIsEstimating(true);
-    try {
-      const contentHash = generateContentHash(
-        formData.title.trim(),
-        formData.description.trim()
-      );
-      const votingDuration = 7 * 24 * 60 * 60; // 7 days in seconds
-
-      if (!window.ethereum) {
-        throw new Error("MetaMask not installed");
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = createGovernanceContractWithSigner(signer);
-
-      // Estimate gas for createProposal transaction
-      const gasEstimate = await contract.createProposal.estimateGas(
-        contentHash,
-        votingDuration
-      );
-
-      // Get current gas price
-      const feeData = await provider.getFeeData();
-      const gasPrice = feeData.gasPrice || BigInt(0);
-
-      // Calculate total cost in ETH
-      const gasCost = gasEstimate * gasPrice;
-      const gasCostEth = ethers.formatEther(gasCost);
-
-      setGasEstimate(`~${parseFloat(gasCostEth).toFixed(6)} ETH`);
-    } catch (error) {
-      console.error("Gas estimation failed:", error);
-      setGasEstimate("Unable to estimate");
-    } finally {
-      setIsEstimating(false);
-    }
-  };
-
-  // Trigger gas estimation when on-chain toggle is enabled
-  useEffect(() => {
-    if (createOnChain && formData.title && formData.description) {
-      estimateGas();
-    } else {
-      setGasEstimate(null);
-    }
-  }, [createOnChain, formData.title, formData.description]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -521,24 +463,6 @@ export function CreateProposalForm() {
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>{contractError}</AlertDescription>
                     </Alert>
-                  )}
-
-                  {/* Gas estimation loading */}
-                  {isEstimating && (
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span>Estimating gas costs...</span>
-                    </div>
-                  )}
-
-                  {/* Gas estimate display */}
-                  {gasEstimate && !isEstimating && (
-                    <div className="flex items-center justify-between rounded bg-white p-2 text-sm border border-blue-200">
-                      <span className="text-muted-foreground">Estimated Gas:</span>
-                      <span className="font-mono font-medium text-blue-700">
-                        {gasEstimate}
-                      </span>
-                    </div>
                   )}
 
                   {/* Transaction submitted */}

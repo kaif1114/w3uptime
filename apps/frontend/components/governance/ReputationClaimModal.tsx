@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { useClaimReputation } from '@/hooks/useClaimReputation';
-import { ethers } from 'ethers';
 
 interface ReputationClaimModalProps {
   open: boolean;
@@ -23,31 +22,10 @@ export function ReputationClaimModal({
 }: ReputationClaimModalProps) {
   const [currentStep, setCurrentStep] = useState<string>('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
-  const [estimatedGas, setEstimatedGas] = useState<string | null>(null);
 
   const claimMutation = useClaimReputation();
 
   const hasReputation = availableReputation > 0;
-
-  // Estimate gas cost on modal open
-  useEffect(() => {
-    if (open && hasReputation) {
-      estimateGasCost();
-    }
-  }, [open, hasReputation]);
-
-  const estimateGasCost = async () => {
-    try {
-      if (typeof window === 'undefined' || !window.ethereum) return;
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const feeData = await provider.getFeeData();
-      // Estimate ~150,000 gas for claim transaction (includes signature verification)
-      const estimatedCost = BigInt(150000) * (feeData.gasPrice || BigInt(0));
-      setEstimatedGas(ethers.formatEther(estimatedCost));
-    } catch (error) {
-      console.error('Gas estimation failed:', error);
-    }
-  };
 
   const handleClaim = async () => {
     try {
@@ -67,7 +45,6 @@ export function ReputationClaimModal({
       setTimeout(() => {
         setTransactionHash(null);
         setCurrentStep('');
-        setEstimatedGas(null);
         claimMutation.reset();
       }, 300);
     }
@@ -90,12 +67,6 @@ export function ReputationClaimModal({
               <span className="text-sm text-muted-foreground">Available to Claim</span>
               <span className="text-2xl font-bold">{availableReputation} REP</span>
             </div>
-            {estimatedGas && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Estimated Gas Cost</span>
-                <span className="font-mono">{parseFloat(estimatedGas).toFixed(6)} SEP</span>
-              </div>
-            )}
           </div>
 
           {/* Transaction States */}
