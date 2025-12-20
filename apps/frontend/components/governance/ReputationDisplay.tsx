@@ -110,7 +110,7 @@ export function ReputationDisplay({
       <CardContent className="space-y-4">
         {/* Earned Points */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Earned:</span>
+          <span className="text-sm text-muted-foreground">All-Time Earned:</span>
           <Badge variant="secondary">{earned} points</Badge>
         </div>
 
@@ -124,7 +124,7 @@ export function ReputationDisplay({
 
         {/* On-chain Balance */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">On-chain:</span>
+          <span className="text-sm text-muted-foreground">On-Chain Balance:</span>
           {onChainBalance === null ? (
             <Badge variant="outline" className="text-xs">
               Contract unavailable
