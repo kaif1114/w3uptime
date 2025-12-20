@@ -183,6 +183,8 @@ export function useClaimReputation() {
       queryClient.invalidateQueries({ queryKey: ['reputation'] });
       queryClient.invalidateQueries({ queryKey: ['reputation-with-claiming'] });
       queryClient.invalidateQueries({ queryKey: ['community', 'reputation'] });
+      // Invalidate on-chain reputation to force immediate refresh after claim
+      queryClient.invalidateQueries({ queryKey: ['onChainReputation'] });
     },
   });
 }
