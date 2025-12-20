@@ -24,8 +24,30 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Contract, BrowserProvider } from 'ethers';
+import { BrowserProvider, ContractTransactionResponse, BaseContract } from 'ethers';
 import { createGovernanceContract } from 'common/governance-contract';
+
+// Typed interface for W3Governance contract
+interface W3GovernanceContractInterface extends BaseContract {
+  getFunction(name: "createProposal"): {
+    (contentHash: string, votingDuration: number): Promise<ContractTransactionResponse>;
+    estimateGas(contentHash: string, votingDuration: number): Promise<bigint>;
+  };
+  getFunction(name: "vote"): {
+    (proposalId: number, support: boolean): Promise<ContractTransactionResponse>;
+    estimateGas(proposalId: number, support: boolean): Promise<bigint>;
+  };
+  getFunction(name: "getProposal"): (proposalId: number) => Promise<{
+    proposer: string;
+    contentHash: string;
+    votingEndsAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    finalized: boolean;
+    passed: boolean;
+  }>;
+  getFunction(name: "getVote"): (proposalId: number, voter: string) => Promise<[boolean, boolean]>;
+}
 
 interface ProposalCreationResult {
   proposalId: number;
@@ -65,7 +87,7 @@ interface CustomError extends Error {
 }
 
 export function useGovernanceContract() {
-  const [contract, setContract] = useState<Contract | null>(null);
+  const [contract, setContract] = useState<W3GovernanceContractInterface | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +109,7 @@ export function useGovernanceContract() {
           return;
         }
 
-        const contractInstance = createGovernanceContract(browserProvider);
+        const contractInstance = createGovernanceContract(browserProvider) as unknown as W3GovernanceContractInterface;
         setContract(contractInstance);
         setProvider(browserProvider);
         setIsConnected(true);
@@ -117,7 +139,7 @@ export function useGovernanceContract() {
    * Decode custom Solidity errors from transaction failures
    * Handles InsufficientReputation and other contract-specific errors
    */
-  function decodeContractError(error: CustomError, contract: Contract): string {
+  function decodeContractError(error: CustomError): string {
     // Check for common MetaMask errors first
     if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
       return 'Transaction rejected by user';
@@ -179,19 +201,21 @@ export function useGovernanceContract() {
 
     try {
       const signer = await provider.getSigner();
-      const contractWithSigner = contract.connect(signer);
+      const contractWithSigner = contract.connect(signer) as unknown as W3GovernanceContractInterface;
 
       // IMPORTANT: Estimate gas first to catch reverts early
       try {
-        await contractWithSigner.createProposal.estimateGas(contentHash, votingDuration);
+        const createProposalFn = contractWithSigner.getFunction("createProposal");
+        await createProposalFn.estimateGas(contentHash, votingDuration);
       } catch (estimateError) {
         // Decode and throw user-friendly error
-        const friendlyError = decodeContractError(estimateError as CustomError, contract);
+        const friendlyError = decodeContractError(estimateError as CustomError);
         throw new Error(friendlyError);
       }
 
       // If estimation succeeds, proceed with transaction
-      const tx = await contractWithSigner.createProposal(contentHash, votingDuration);
+      const createProposalFn = contractWithSigner.getFunction("createProposal");
+      const tx = await createProposalFn(contentHash, votingDuration);
       const receipt = await tx.wait();
 
       if (!receipt) {
@@ -221,7 +245,7 @@ export function useGovernanceContract() {
     } catch (error) {
       // If not already decoded, decode it now
       if (error instanceof Error && !error.message.includes('Insufficient reputation')) {
-        const friendlyError = decodeContractError(error as CustomError, contract);
+        const friendlyError = decodeContractError(error as CustomError);
         throw new Error(friendlyError);
       }
       throw error;
@@ -241,17 +265,19 @@ export function useGovernanceContract() {
 
     try {
       const signer = await provider.getSigner();
-      const contractWithSigner = contract.connect(signer);
+      const contractWithSigner = contract.connect(signer) as unknown as W3GovernanceContractInterface;
 
       // Estimate gas first to catch reverts early
       try {
-        await contractWithSigner.vote.estimateGas(proposalId, support);
+        const voteFn = contractWithSigner.getFunction("vote");
+        await voteFn.estimateGas(proposalId, support);
       } catch (estimateError) {
-        const friendlyError = decodeContractError(estimateError as CustomError, contract);
+        const friendlyError = decodeContractError(estimateError as CustomError);
         throw new Error(friendlyError);
       }
 
-      const tx = await contractWithSigner.vote(proposalId, support);
+      const voteFn = contractWithSigner.getFunction("vote");
+      const tx = await voteFn(proposalId, support);
       const receipt = await tx.wait();
 
       if (!receipt) {
@@ -264,7 +290,7 @@ export function useGovernanceContract() {
       };
     } catch (error) {
       if (error instanceof Error && !error.message.includes('Insufficient reputation')) {
-        const friendlyError = decodeContractError(error as CustomError, contract);
+        const friendlyError = decodeContractError(error as CustomError);
         throw new Error(friendlyError);
       }
       throw error;
@@ -281,7 +307,8 @@ export function useGovernanceContract() {
       throw new Error('Contract not initialized');
     }
 
-    const data = await (contract as any).getProposal(proposalId);
+    const getProposalFn = contract.getFunction("getProposal");
+    const data = await getProposalFn(proposalId);
 
     return {
       proposer: data.proposer,
@@ -305,7 +332,8 @@ export function useGovernanceContract() {
       throw new Error('Contract not initialized');
     }
 
-    const [hasVoted, support] = await (contract as any).getVote(proposalId, voter);
+    const getVoteFn = contract.getFunction("getVote");
+    const [hasVoted, support] = await getVoteFn(proposalId, voter);
 
     return {
       hasVoted,
