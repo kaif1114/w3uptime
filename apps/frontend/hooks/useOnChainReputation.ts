@@ -47,7 +47,7 @@ async function fetchOnChainReputation(): Promise<OnChainReputationData> {
   const availableToClaimPoints = result.data.available;
 
   // Check thresholds (match ReputationGuard constants)
-  const MIN_REP_FOR_PROPOSAL = 200;
+  const MIN_REP_FOR_PROPOSAL = 500;
   const MIN_REP_FOR_VOTE = 50;
 
   return {
@@ -66,7 +66,7 @@ async function fetchOnChainReputation(): Promise<OnChainReputationData> {
  * - available: Unclaimed reputation points that can be claimed
  * 
  * Returns permission flags for creating proposals and voting based on thresholds:
- * - MIN_REP_FOR_PROPOSAL = 200
+ * - MIN_REP_FOR_PROPOSAL = 500
  * - MIN_REP_FOR_VOTE = 50
  */
 export function useOnChainReputation() {

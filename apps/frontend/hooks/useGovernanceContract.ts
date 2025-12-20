@@ -53,6 +53,17 @@ interface VoteData {
   support: boolean;
 }
 
+interface CustomError extends Error {
+  code?: string | number;
+  data?: string;
+  info?: {
+    error?: {
+      code?: number;
+      data?: string;
+    };
+  };
+}
+
 export function useGovernanceContract() {
   const [contract, setContract] = useState<Contract | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
@@ -103,6 +114,56 @@ export function useGovernanceContract() {
   }, []);
 
   /**
+   * Decode custom Solidity errors from transaction failures
+   * Handles InsufficientReputation and other contract-specific errors
+   */
+  function decodeContractError(error: CustomError, contract: Contract): string {
+    // Check for common MetaMask errors first
+    if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+      return 'Transaction rejected by user';
+    }
+
+    const errorMessage = error.message || '';
+
+    // Check for insufficient reputation error pattern
+    if (errorMessage.includes('InsufficientReputation') ||
+        errorMessage.includes('revert data') ||
+        errorMessage.includes('CALL_EXCEPTION')) {
+      return 'Insufficient reputation balance. You need 500 REP to create proposals.';
+    }
+
+    // Check for insufficient funds
+    if (errorMessage.includes('insufficient funds')) {
+      return 'Insufficient ETH for gas fees. Please add Sepolia ETH to your wallet.';
+    }
+
+    // Check for network errors
+    if (errorMessage.includes('network') || errorMessage.includes('chainId')) {
+      return 'Please connect to Sepolia testnet in MetaMask.';
+    }
+
+    // Check for other custom errors
+    if (errorMessage.includes('EmptyContentHash')) {
+      return 'Invalid proposal content hash.';
+    }
+
+    if (errorMessage.includes('InvalidVotingDuration')) {
+      return 'Invalid voting duration. Must be between 1 and 30 days.';
+    }
+
+    if (errorMessage.includes('AlreadyVoted')) {
+      return 'You have already voted on this proposal.';
+    }
+
+    if (errorMessage.includes('VotingEnded')) {
+      return 'Voting period has ended for this proposal.';
+    }
+
+    // Generic fallback
+    return `Transaction failed: ${errorMessage}`;
+  }
+
+  /**
    * Create a new proposal on-chain
    * @param contentHash - keccak256 hash of proposal content
    * @param votingDuration - Duration in seconds (default: 7 days)
@@ -116,36 +177,55 @@ export function useGovernanceContract() {
       throw new Error('Contract not initialized');
     }
 
-    const signer = await provider.getSigner();
-    const contractWithSigner = contract.connect(signer) as any;
+    try {
+      const signer = await provider.getSigner();
+      const contractWithSigner = contract.connect(signer);
 
-    const tx = await contractWithSigner.createProposal(contentHash, votingDuration);
-    const receipt = await tx.wait();
-
-    if (!receipt) {
-      throw new Error('Transaction receipt not available');
-    }
-
-    // Parse ProposalCreated event
-    const event = receipt.logs.find((log: any) => {
+      // IMPORTANT: Estimate gas first to catch reverts early
       try {
-        return contract.interface.parseLog(log)?.name === 'ProposalCreated';
-      } catch {
-        return false;
+        await contractWithSigner.createProposal.estimateGas(contentHash, votingDuration);
+      } catch (estimateError) {
+        // Decode and throw user-friendly error
+        const friendlyError = decodeContractError(estimateError as CustomError, contract);
+        throw new Error(friendlyError);
       }
-    });
 
-    if (!event) {
-      throw new Error('ProposalCreated event not found in transaction receipt');
+      // If estimation succeeds, proceed with transaction
+      const tx = await contractWithSigner.createProposal(contentHash, votingDuration);
+      const receipt = await tx.wait();
+
+      if (!receipt) {
+        throw new Error('Transaction receipt not available');
+      }
+
+      // Parse ProposalCreated event
+      const event = receipt.logs.find((log: any) => {
+        try {
+          return contract.interface.parseLog(log)?.name === 'ProposalCreated';
+        } catch {
+          return false;
+        }
+      });
+
+      if (!event) {
+        throw new Error('ProposalCreated event not found in transaction receipt');
+      }
+
+      const parsed = contract.interface.parseLog(event)!;
+
+      return {
+        proposalId: Number(parsed.args.proposalId),
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error) {
+      // If not already decoded, decode it now
+      if (error instanceof Error && !error.message.includes('Insufficient reputation')) {
+        const friendlyError = decodeContractError(error as CustomError, contract);
+        throw new Error(friendlyError);
+      }
+      throw error;
     }
-
-    const parsed = contract.interface.parseLog(event)!;
-
-    return {
-      proposalId: Number(parsed.args.proposalId),
-      txHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
-    };
   };
 
   /**
@@ -159,20 +239,36 @@ export function useGovernanceContract() {
       throw new Error('Contract not initialized');
     }
 
-    const signer = await provider.getSigner();
-    const contractWithSigner = contract.connect(signer) as any;
+    try {
+      const signer = await provider.getSigner();
+      const contractWithSigner = contract.connect(signer);
 
-    const tx = await contractWithSigner.vote(proposalId, support);
-    const receipt = await tx.wait();
+      // Estimate gas first to catch reverts early
+      try {
+        await contractWithSigner.vote.estimateGas(proposalId, support);
+      } catch (estimateError) {
+        const friendlyError = decodeContractError(estimateError as CustomError, contract);
+        throw new Error(friendlyError);
+      }
 
-    if (!receipt) {
-      throw new Error('Transaction receipt not available');
+      const tx = await contractWithSigner.vote(proposalId, support);
+      const receipt = await tx.wait();
+
+      if (!receipt) {
+        throw new Error('Transaction receipt not available');
+      }
+
+      return {
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error) {
+      if (error instanceof Error && !error.message.includes('Insufficient reputation')) {
+        const friendlyError = decodeContractError(error as CustomError, contract);
+        throw new Error(friendlyError);
+      }
+      throw error;
     }
-
-    return {
-      txHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
-    };
   };
 
   /**

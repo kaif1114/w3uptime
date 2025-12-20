@@ -21,7 +21,7 @@ export function ReputationPageClient() {
         <AlertDescription>
           Reputation is earned through validator activities and platform usage.
           Claim it on-chain to participate in governance (voting requires 50
-          REP, proposals require 200 REP).
+          REP, proposals require 500 REP).
         </AlertDescription>
       </Alert>
 
@@ -82,7 +82,7 @@ export function ReputationPageClient() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm">Create Proposals</span>
-              <span className="font-medium">200 REP</span>
+              <span className="font-medium">500 REP</span>
             </div>
           </div>
         </CardContent>

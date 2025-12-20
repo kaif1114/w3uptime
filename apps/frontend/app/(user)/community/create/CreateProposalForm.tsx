@@ -506,7 +506,7 @@ export function CreateProposalForm() {
                   </p>
                   <div className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
                     <p>
-                      Required: 200 REP | Your Balance: {reputationData.onChainBalance ?? 0} REP
+                      Required: 500 REP | Your Balance: {reputationData.onChainBalance ?? 0} REP
                     </p>
                     {reputationData.availableToClaimPoints > 0 && (
                       <p className="font-medium">

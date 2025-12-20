@@ -2,7 +2,7 @@
 import { prisma } from "db/client";
 import { computeReputationScore } from "hub/src/services/reputation";
 
-export const MIN_REP_FOR_PROPOSAL = 200;
+export const MIN_REP_FOR_PROPOSAL = 500;
 export const MIN_REP_FOR_COMMENT = 100;
 export const MIN_REP_FOR_VOTE = 50;
 
