@@ -26,11 +26,13 @@ import {
 import { useProposals, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
 import { useReputation } from "@/hooks/useReputation";
+import { useVote } from "@/hooks/useVote";
 import {
   Proposal,
   ProposalType,
   VoteType,
-  ProposalFilters
+  ProposalFilters,
+  OnChainStatus
 } from "@/types/proposal";
 import {
   AlertCircle,
@@ -96,6 +98,10 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     isLoading: isReputationLoading,
     error: reputationError,
   } = useReputation();
+  const {
+    vote: onChainVote,
+    isLoading: isVotingOnChain,
+  } = useVote();
 
   
   const proposals = proposalsData?.data || [];
@@ -122,10 +128,50 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
 
   const handleVote = async (proposalId: string, vote: VoteType) => {
     try {
-      await voteProposal.mutateAsync({
-        proposalId,
-        vote: { vote },
+      // Find the proposal to check its onChainStatus
+      const proposal = proposals.find((p) => p.id === proposalId);
+
+      console.log("=== COMMUNITY PAGE VOTE DEBUG ===");
+      console.log("Proposal:", {
+        id: proposalId,
+        onChainStatus: proposal?.onChainStatus,
+        onChainId: proposal?.onChainId,
       });
+
+      const isOnChainProposal =
+        proposal?.onChainStatus === OnChainStatus.ACTIVE ||
+        proposal?.onChainStatus === OnChainStatus.PASSED ||
+        proposal?.onChainStatus === OnChainStatus.FAILED;
+
+      console.log("Is on-chain proposal?", isOnChainProposal);
+
+      if (isOnChainProposal) {
+        // On-chain voting via MetaMask
+        if (!proposal?.onChainId) {
+          throw new Error("On-chain proposal ID not found");
+        }
+
+        console.log(`✅ Routing to ON-CHAIN vote for proposal ${proposal.onChainId}: ${vote}`);
+
+        const support = vote === VoteType.UPVOTE;
+        await onChainVote({
+          proposalId: proposal.onChainId,
+          support,
+        });
+
+        console.log("✅ On-chain vote successful");
+      } else {
+        // Database voting for DRAFT proposals
+        console.log(`⚠️ Routing to DATABASE vote for proposal ${proposalId}: ${vote}`);
+
+        await voteProposal.mutateAsync({
+          proposalId,
+          vote: { vote },
+        });
+
+        console.log("✅ Database vote successful");
+      }
+
       setVoteErrorMessage(null);
     } catch (error) {
       console.error("Failed to vote:", error);
@@ -135,6 +181,10 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
       if (message.includes("Insufficient reputation to vote on proposals")) {
         setVoteErrorMessage(
           "Your reputation score is too low to vote on proposals."
+        );
+      } else if (message.includes("This proposal requires on-chain voting")) {
+        setVoteErrorMessage(
+          "This proposal requires on-chain voting via MetaMask. Please connect your wallet."
         );
       } else {
         setVoteErrorMessage("Failed to vote. Please try again later.");
@@ -317,7 +367,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                       onClick={() =>
                         handleVote(selectedProposal.id, VoteType.UPVOTE)
                       }
-                      disabled={voteProposal.isPending}
+                      disabled={voteProposal.isPending || isVotingOnChain}
                       className="flex items-center space-x-2"
                     >
                       <ArrowUp className="h-5 w-5" />
@@ -333,7 +383,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                       onClick={() =>
                         handleVote(selectedProposal.id, VoteType.DOWNVOTE)
                       }
-                      disabled={voteProposal.isPending}
+                      disabled={voteProposal.isPending || isVotingOnChain}
                       className="flex items-center space-x-2"
                     >
                       <ArrowDown className="h-5 w-5" />
@@ -473,7 +523,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
           getDownvotes={getDownvotes}
           onProposalClick={handleProposalClick}
           onVote={handleVote}
-          isVoting={voteProposal.isPending}
+          isVoting={voteProposal.isPending || isVotingOnChain}
           getUserVote={getUserVote}
         />
       )}

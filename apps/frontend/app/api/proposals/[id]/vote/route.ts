@@ -43,7 +43,7 @@ export const POST = withAuth(
       }
       const { vote } = validation.data;
 
-      
+
       const proposal = await prisma.proposal.findUnique({
         where: { id: proposalId },
       });
@@ -52,6 +52,27 @@ export const POST = withAuth(
           { error: "Proposal not found" },
           { status: 404 }
         );
+
+      // CRITICAL: Reject database votes for on-chain proposals
+      // Only DRAFT proposals can use database voting
+      if (proposal.onChainStatus !== "DRAFT") {
+        console.log(
+          `❌ Rejected database vote for proposal ${proposalId} with onChainStatus: ${proposal.onChainStatus}`
+        );
+        return NextResponse.json(
+          {
+            error:
+              proposal.onChainStatus === "ACTIVE"
+                ? "This proposal requires on-chain voting via MetaMask. Please vote through the blockchain."
+                : `Voting is not available for proposals with status: ${proposal.onChainStatus}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      console.log(
+        `✅ Accepting database vote for DRAFT proposal ${proposalId}`
+      );
 
       const existing = await prisma.proposalVote
         .findUnique({
