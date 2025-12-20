@@ -27,7 +27,7 @@ import { useProposals, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
 import { useReputation } from "@/hooks/useReputation";
 import { useVote } from "@/hooks/useVote";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Proposal,
   ProposalType,
@@ -434,7 +434,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* On-Chain Balance */}
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">On-Chain Balance</p>
@@ -468,29 +468,43 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                   Ready to claim on-chain
                 </p>
               </div>
+
+              {/* All-Time Earned */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">All-Time Earned</p>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-2xl font-semibold">
+                    {isReputationLoading || !reputation
+                      ? "—"
+                      : reputation.totalScore}
+                  </span>
+                  <span className="text-sm text-muted-foreground">points</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total reputation earned
+                </p>
+              </div>
             </div>
 
             {reputation && (
-              <div className="border-t pt-4">
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div>
-                    Create proposal:{" "}
-                    <span className="font-medium">
-                      {reputation.thresholds.createProposal}+ points required
-                    </span>
-                  </div>
-                  <div>
-                    Comment:{" "}
-                    <span className="font-medium">
-                      {reputation.thresholds.comment}+ points required
-                    </span>
-                  </div>
-                  <div>
-                    Vote:{" "}
-                    <span className="font-medium">
-                      {reputation.thresholds.vote}+ points required
-                    </span>
-                  </div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>
+                  Create proposal:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.createProposal}+ points required
+                  </span>
+                </div>
+                <div>
+                  Comment:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.comment}+ points required
+                  </span>
+                </div>
+                <div>
+                  Vote:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.vote}+ points required
+                  </span>
                 </div>
               </div>
             )}
