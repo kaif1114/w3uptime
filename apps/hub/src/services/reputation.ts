@@ -6,7 +6,7 @@ export interface ReputationCounters {
   }
   
   const BAD_TICK_PENALTY = 2;              // α = 2
-  const POINTS_PER_REP = 100;              // 100 raw points = 1 rep score
+  // const POINTS_PER_REP = 100;              // 100 raw points = 1 rep score
   const UPTIME_CHECK_REWARD = 1;           // Points per successful uptime check
   const FAILED_UPTIME_CHECK_PENALTY = 1;   // Penalty for failed uptime checks
   
@@ -24,15 +24,17 @@ export interface ReputationCounters {
 export async function applyGoodTick(publicKey: string) {
   const user = await prisma.user.findUnique({
     where: { publicKey },
-    select: { id: true, goodTicks: true, badTicks: true },
+    select: { id: true, walletAddress: true, goodTicks: true, badTicks: true },
   });
-  if (!user) return;
+  
+  if (!user) {
+    return;
+  }
 
   const goodTicks = user.goodTicks + 1;
   const badTicks = user.badTicks;
-
   const reputationScore = computeReputationScore({ goodTicks, badTicks });
-
+  
   await prisma.user.update({
     where: { id: user.id },
     data: { goodTicks, reputationScore },
@@ -42,13 +44,15 @@ export async function applyGoodTick(publicKey: string) {
 export async function applyBadTick(publicKey: string) {
   const user = await prisma.user.findUnique({
     where: { publicKey },
-    select: { id: true, goodTicks: true, badTicks: true },
+    select: { id: true, walletAddress: true, goodTicks: true, badTicks: true },
   });
-  if (!user) return;
+  
+  if (!user) {
+    return;
+  }
 
   const goodTicks = user.goodTicks;
   const badTicks = user.badTicks + 1;
-
   const reputationScore = computeReputationScore({ goodTicks, badTicks });
 
   await prisma.user.update({

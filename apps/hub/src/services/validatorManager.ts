@@ -107,43 +107,70 @@ export async function handleSignup(message: SignupIncomingMessage, socket: WebSo
       });
       return;
     }
+    // ✅ FIX: Ensure publicKey is set for existing users
+    const needsPublicKeyUpdate = !validator.publicKey || validator.publicKey !== message.publicKey;
     const hasIpChanged = validator?.geoLocation?.ip !== message.ip;
-    if (hasIpChanged) {
-      const oldGeoLocationId = validator.geoLocationId;
-      const geoLocation = await getGeoLocation(message.ip);
-      const newGeoLocation = await prisma.geoLocation.create({
-        data: {
-          ip: message.ip,
-          country: geoLocation.country?.toLowerCase() || null,
-          countryCode: geoLocation.country_code,
-          region: geoLocation.region,
-          regionCode: geoLocation.region_iso_code,
-          city: geoLocation.city?.toLowerCase() || null,
-          postalCode: geoLocation.postal_code,
-          continent: geoLocation.continent?.toLowerCase() || null,
-          continentCode: geoLocation.continent_code,
-          latitude: geoLocation.latitude,
-          longitude: geoLocation.longitude,
-          timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
-          flag: geoLocation.flag.svg || null,
-          updatedAt: new Date(),
-        },
-      });
+    
+    if (needsPublicKeyUpdate || hasIpChanged) {
+      const updateData: any = {};
+      
+      // Update publicKey if missing or changed
+      if (needsPublicKeyUpdate) {
+        updateData.publicKey = message.publicKey;
+        console.log(`Setting publicKey for existing user ${validator.id}:`, {
+          walletAddress: validator.walletAddress,
+          previousPublicKey: validator.publicKey ? 'exists' : 'null',
+          newPublicKey: message.publicKey.substring(0, 20) + '...',
+        });
+      }
+      
+      // Update geoLocation if IP changed
+      if (hasIpChanged) {
+        const oldGeoLocationId = validator.geoLocationId;
+        const geoLocation = await getGeoLocation(message.ip);
+        const newGeoLocation = await prisma.geoLocation.create({
+          data: {
+            ip: message.ip,
+            country: geoLocation.country?.toLowerCase() || null,
+            countryCode: geoLocation.country_code,
+            region: geoLocation.region,
+            regionCode: geoLocation.region_iso_code,
+            city: geoLocation.city?.toLowerCase() || null,
+            postalCode: geoLocation.postal_code,
+            continent: geoLocation.continent?.toLowerCase() || null,
+            continentCode: geoLocation.continent_code,
+            latitude: geoLocation.latitude,
+            longitude: geoLocation.longitude,
+            timezoneAbbreviation: geoLocation.timezone.abbreviation || null,
+            flag: geoLocation.flag.svg || null,
+            updatedAt: new Date(),
+          },
+        });
+        updateData.geoLocationId = newGeoLocation.id;
+        
+        // Delete old geoLocation after update
+        if(oldGeoLocationId) {
+          await prisma.geoLocation.delete({
+            where: {
+              id: oldGeoLocationId,
+            },
+          });
+        }
+      }
+      
+      // Perform the update
       await prisma.user.update({
         where: {
           id: validator.id,
         },
-        data: {
-          geoLocationId: newGeoLocation.id,
-        },
+        data: updateData,
       });
-      if(oldGeoLocationId) {
-        await prisma.geoLocation.delete({
-          where: {
-            id: oldGeoLocationId,
-          },
-        });
-      }
+      
+      // Refresh validator object with updated data
+      validator = await prisma.user.findUnique({
+        where: { id: validator.id },
+        include: { geoLocation: true },
+      });
     }
 
     socket.send(
