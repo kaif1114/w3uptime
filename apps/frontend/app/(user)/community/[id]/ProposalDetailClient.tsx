@@ -18,7 +18,8 @@ import { useSession } from "@/hooks/useSession";
 import { useOnChainReputation } from "@/hooks/useOnChainReputation";
 import {
   ProposalType,
-  VoteType
+  VoteType,
+  OnChainStatus
 } from "@/types/proposal";
 import {
   AlertCircle,
@@ -65,10 +66,26 @@ export function ProposalDetailClient({
 
   const handleVote = async (vote: VoteType) => {
     try {
+      // Enhanced debugging
+      console.log("=== VOTE DEBUG START ===");
+      console.log("Proposal data:", {
+        id: proposal?.id,
+        onChainStatus: proposal?.onChainStatus,
+        onChainId: proposal?.onChainId,
+        typeOf_onChainStatus: typeof proposal?.onChainStatus,
+      });
+
       const isOnChainProposal =
-        proposal?.onChainStatus === "ACTIVE" ||
-        proposal?.onChainStatus === "PASSED" ||
-        proposal?.onChainStatus === "FAILED";
+        proposal?.onChainStatus === OnChainStatus.ACTIVE ||
+        proposal?.onChainStatus === OnChainStatus.PASSED ||
+        proposal?.onChainStatus === OnChainStatus.FAILED;
+
+      console.log("Is on-chain proposal?", isOnChainProposal);
+      console.log("Comparison results:", {
+        isActive: proposal?.onChainStatus === OnChainStatus.ACTIVE,
+        isPassed: proposal?.onChainStatus === OnChainStatus.PASSED,
+        isFailed: proposal?.onChainStatus === OnChainStatus.FAILED,
+      });
 
       if (isOnChainProposal) {
         // On-chain voting via MetaMask
@@ -76,7 +93,7 @@ export function ProposalDetailClient({
           throw new Error("On-chain proposal ID not found");
         }
 
-        console.log(`Voting on-chain for proposal ${proposal.onChainId}: ${vote}`);
+        console.log(`✅ Routing to ON-CHAIN vote for proposal ${proposal.onChainId}: ${vote}`);
 
         const support = vote === VoteType.UPVOTE;
         await onChainVote({
@@ -87,7 +104,7 @@ export function ProposalDetailClient({
         console.log("✅ On-chain vote successful");
       } else {
         // Database voting for DRAFT proposals
-        console.log(`Voting in database for proposal ${proposalId}: ${vote}`);
+        console.log(`⚠️ Routing to DATABASE vote for proposal ${proposalId}: ${vote}`);
 
         await voteProposal.mutateAsync({
           proposalId,
@@ -96,6 +113,7 @@ export function ProposalDetailClient({
 
         console.log("✅ Database vote successful");
       }
+      console.log("=== VOTE DEBUG END ===");
     } catch (error) {
       console.error("Failed to vote:", error);
       // Error handling is done by the hook
@@ -161,20 +179,20 @@ export function ProposalDetailClient({
 
     // Can't vote on finalized proposals
     if (
-      proposal.onChainStatus === "PASSED" ||
-      proposal.onChainStatus === "FAILED"
+      proposal.onChainStatus === OnChainStatus.PASSED ||
+      proposal.onChainStatus === OnChainStatus.FAILED
     ) {
       return false;
     }
 
     // Can't vote while transaction is pending
-    if (proposal.onChainStatus === "PENDING_ONCHAIN") {
+    if (proposal.onChainStatus === OnChainStatus.PENDING_ONCHAIN) {
       return false;
     }
 
     // Can vote on DRAFT (database) or ACTIVE (on-chain)
     return (
-      proposal.onChainStatus === "DRAFT" || proposal.onChainStatus === "ACTIVE"
+      proposal.onChainStatus === OnChainStatus.DRAFT || proposal.onChainStatus === OnChainStatus.ACTIVE
     );
   };
 
@@ -182,18 +200,18 @@ export function ProposalDetailClient({
     if (!session?.user) return "Please sign in to vote";
     if (!proposal) return null;
 
-    if (proposal.onChainStatus === "PASSED") {
+    if (proposal.onChainStatus === OnChainStatus.PASSED) {
       return "This proposal has passed and voting is closed";
     }
-    if (proposal.onChainStatus === "FAILED") {
+    if (proposal.onChainStatus === OnChainStatus.FAILED) {
       return "This proposal has failed and voting is closed";
     }
-    if (proposal.onChainStatus === "PENDING_ONCHAIN") {
+    if (proposal.onChainStatus === OnChainStatus.PENDING_ONCHAIN) {
       return "Waiting for on-chain confirmation. Voting will be available shortly.";
     }
 
     // Check if voting period ended for ACTIVE proposals
-    if (proposal.onChainStatus === "ACTIVE" && proposal.votingEndsAt) {
+    if (proposal.onChainStatus === OnChainStatus.ACTIVE && proposal.votingEndsAt) {
       const now = new Date();
       const endsAt = new Date(proposal.votingEndsAt);
       if (now >= endsAt) {
@@ -207,10 +225,10 @@ export function ProposalDetailClient({
   const getVotingMethod = () => {
     if (!proposal) return "Unknown";
 
-    if (proposal.onChainStatus === "DRAFT") {
+    if (proposal.onChainStatus === OnChainStatus.DRAFT) {
       return "Database Voting";
     }
-    if (proposal.onChainStatus === "ACTIVE") {
+    if (proposal.onChainStatus === OnChainStatus.ACTIVE) {
       return "On-Chain Voting (MetaMask)";
     }
     return "Voting Closed";
@@ -371,9 +389,9 @@ export function ProposalDetailClient({
         <CardHeader>
           <CardTitle>Community Feedback</CardTitle>
           <CardDescription>
-            {proposal?.onChainStatus === "ACTIVE"
+            {proposal?.onChainStatus === OnChainStatus.ACTIVE
               ? "Vote directly on the Sepolia blockchain via MetaMask (gas fees apply)"
-              : proposal?.onChainStatus === "DRAFT"
+              : proposal?.onChainStatus === OnChainStatus.DRAFT
               ? "Vote on this proposal to show your support or concerns"
               : "Voting has ended for this proposal"}
           </CardDescription>
@@ -381,7 +399,7 @@ export function ProposalDetailClient({
         <CardContent>
           <div className="space-y-4">
             {/* On-chain voting indicator */}
-            {proposal?.onChainStatus === "ACTIVE" && (
+            {proposal?.onChainStatus === OnChainStatus.ACTIVE && (
               <Alert className="border-blue-200 bg-blue-50">
                 <Shield className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
@@ -419,7 +437,7 @@ export function ProposalDetailClient({
             )}
 
             {/* Reputation Check Warning for On-Chain Voting */}
-            {proposal?.onChainStatus === "ACTIVE" &&
+            {proposal?.onChainStatus === OnChainStatus.ACTIVE &&
               reputationData &&
               !reputationData.canVote && (
                 <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
@@ -464,7 +482,7 @@ export function ProposalDetailClient({
                     isVotingOnChain ||
                     !canVote() ||
                     isLoadingReputation ||
-                    (proposal?.onChainStatus === "ACTIVE" &&
+                    (proposal?.onChainStatus === OnChainStatus.ACTIVE &&
                       reputationData &&
                       !reputationData.canVote)
                   }
@@ -490,7 +508,7 @@ export function ProposalDetailClient({
                     isVotingOnChain ||
                     !canVote() ||
                     isLoadingReputation ||
-                    (proposal?.onChainStatus === "ACTIVE" &&
+                    (proposal?.onChainStatus === OnChainStatus.ACTIVE &&
                       reputationData &&
                       !reputationData.canVote)
                   }
