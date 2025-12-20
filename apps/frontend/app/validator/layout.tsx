@@ -9,7 +9,7 @@ export default async function ValidatorLayout({
 }>) {
   const session = await getSessionOnServer();
   if (!session?.authenticated) {
-    redirect("/login");
+    redirect("/");
   }
   return (
     <div className="relative">

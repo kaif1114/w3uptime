@@ -12,7 +12,7 @@ interface RouteParams {
 
 export const POST = withAuth(async (_request: NextRequest, user, _session, { params }: RouteParams) => {
   try {
-    // Get user with balance and wallet address
+    
     const userWithBalance = await prisma.user.findUnique({
       where: { id: user.id },
       select: { balance: true, walletAddress: true }
@@ -27,7 +27,7 @@ export const POST = withAuth(async (_request: NextRequest, user, _session, { par
 
     const { id } = await params;
 
-    // Find the withdrawal request
+    
     const withdrawal = await prisma.transaction.findFirst({
       where: {
         id,
@@ -44,16 +44,16 @@ export const POST = withAuth(async (_request: NextRequest, user, _session, { par
       }, { status: 404 });
     }
 
-    // Check if user still has sufficient balance
-    const amountInternalUnits = Math.floor(Number(BigInt(withdrawal.amount)) / Math.pow(10, 15)); // Convert from wei to internal units
-    if (userWithBalance.balance < amountInternalUnits) {
+    
+    const amountWei = BigInt(withdrawal.amount.toString());
+    if (BigInt(userWithBalance.balance.toString()) < amountWei) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'
       }, { status: 400 });
     }
 
-    // Get authorized signer private key
+    
     const authorizedSignerKey = process.env.AUTHORIZED_SIGNER_KEY;
     if (!authorizedSignerKey) {
       console.error('AUTHORIZED_SIGNER_KEY not configured');
@@ -63,17 +63,17 @@ export const POST = withAuth(async (_request: NextRequest, user, _session, { par
       }, { status: 500 });
     }
 
-    // Generate nonce and expiry
+    
     const nonce = generateNonce();
-    const expiry = getWithdrawalExpiry(15); // 15 minutes from now
+    const expiry = getWithdrawalExpiry(15); 
 
-    // Create message hash
+    
     const messageHash = ethers.solidityPackedKeccak256(
       ['address', 'uint256', 'uint256', 'uint256'],
       [userWithBalance.walletAddress, withdrawal.amount, nonce, expiry]
     );
 
-    // Sign the message
+    
     const wallet = new ethers.Wallet(authorizedSignerKey);
     const signature = await wallet.signMessage(ethers.getBytes(messageHash));
 

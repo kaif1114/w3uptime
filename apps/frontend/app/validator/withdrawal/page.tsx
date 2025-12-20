@@ -5,7 +5,7 @@ import WithdrawalsSection from "../components/WithdrawalsSection";
 export default async function WithdrawalPage() {
   const session = await getSessionOnServer();
   if (!session?.authenticated) {
-    redirect("/login");
+    redirect("/");
   }
 
   return (

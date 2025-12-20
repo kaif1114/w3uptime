@@ -1,17 +1,13 @@
-// Mapbox related types
 
-/**
- * Continent data with validator count
- */
+
+
 export interface ContinentData {
   continent: string;
   count: number;
   countries: string[];
 }
 
-/**
- * Mapbox map event with point coordinates
- */
+
 export interface MapboxEvent {
   point: {
     x: number;
@@ -26,9 +22,7 @@ export interface MapboxEvent {
   originalEvent: MouseEvent;
 }
 
-/**
- * Mapbox feature from query results
- */
+
 export interface MapboxFeature {
   id?: string | number;
   type: 'Feature';
@@ -46,9 +40,7 @@ export interface MapboxFeature {
   state?: Record<string, unknown>;
 }
 
-/**
- * Country feature properties from Mapbox data
- */
+
 export interface CountryFeatureProperties {
   NAME?: string;
   NAME_EN?: string;

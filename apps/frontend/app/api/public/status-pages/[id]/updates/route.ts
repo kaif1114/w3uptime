@@ -8,7 +8,7 @@ export const GET = async (
   try {
     const { id } = await context.params;
 
-    // First verify the status page exists and is published
+    
     const statusPage = await prisma.statusPage.findFirst({
       where: { 
         id, 
@@ -24,7 +24,7 @@ export const GET = async (
       );
     }
 
-    // Fetch all updates for this status page
+    
     const updates = await prisma.update.findMany({
       where: { statusPageId: id },
       include: {
@@ -42,7 +42,7 @@ export const GET = async (
       orderBy: { publishedAt: 'desc' },
     });
 
-    // Transform to public API format
+    
     const formattedUpdates = updates.map(update => ({
       id: update.id,
       title: update.title,

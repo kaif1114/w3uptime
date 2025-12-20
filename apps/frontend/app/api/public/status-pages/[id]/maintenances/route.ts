@@ -8,7 +8,7 @@ export const GET = async (
   try {
     const { id } = await context.params;
 
-    // First verify the status page exists and is published
+    
     const statusPage = await prisma.statusPage.findFirst({
       where: { 
         id, 
@@ -24,20 +24,20 @@ export const GET = async (
       );
     }
 
-    // Fetch all maintenances for this status page
+    
     const maintenances = await prisma.maintenance.findMany({
       where: { statusPageId: id },
       orderBy: { from: 'desc' },
     });
 
-    // Transform to public API format
+    
     const formattedMaintenances = maintenances.map(maintenance => ({
       id: maintenance.id,
       title: maintenance.title,
       description: maintenance.description,
       from: maintenance.from.toISOString(),
       to: maintenance.to.toISOString(),
-      // Calculate status based on current time
+      
       status: (() => {
         const now = new Date();
         const from = new Date(maintenance.from);

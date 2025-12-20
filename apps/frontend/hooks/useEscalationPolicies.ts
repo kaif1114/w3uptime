@@ -5,7 +5,7 @@ import {
   CreateEscalationPolicyResponse,
 } from "@/types/escalation-policy";
 
-// Types for pagination and search
+
 export interface FetchEscalationPoliciesParams {
   page?: number;
   limit?: number;
@@ -29,7 +29,7 @@ export interface PaginatedEscalationPoliciesResponse {
   sortOrder: string;
 }
 
-// Fetch escalation policies with pagination and search
+
 async function fetchEscalationPolicies(
   params: FetchEscalationPoliciesParams = {}
 ): Promise<PaginatedEscalationPoliciesResponse> {
@@ -58,7 +58,7 @@ async function fetchEscalationPolicies(
   return data;
 }
 
-// Create new escalation policy
+
 async function createEscalationPolicy(
   data: CreateEscalationPolicyRequest
 ): Promise<CreateEscalationPolicyResponse> {
@@ -84,7 +84,7 @@ async function createEscalationPolicy(
   return res.json();
 }
 
-// Bulk delete escalation policies
+
 async function bulkDeleteEscalationPolicies(ids: string[]): Promise<any> {
   const res = await fetch("/api/escalation-policies", {
     method: "DELETE",
@@ -109,7 +109,7 @@ async function bulkDeleteEscalationPolicies(ids: string[]): Promise<any> {
   return res.json();
 }
 
-// Update escalation policy
+
 async function updateEscalationPolicy(
   id: string,
   data: {
@@ -145,15 +145,15 @@ async function updateEscalationPolicy(
   return res.json();
 }
 
-// Hook to fetch escalation policies with pagination and search
+
 export function useEscalationPolicies(
   params: FetchEscalationPoliciesParams = {}
 ) {
   return useQuery({
     queryKey: ["escalation-policies", params],
     queryFn: () => fetchEscalationPolicies(params),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 5, 
+    gcTime: 1000 * 60 * 30, 
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
@@ -162,7 +162,7 @@ export function useEscalationPolicies(
   });
 }
 
-// Hook to create escalation policy
+
 export function useCreateEscalationPolicy() {
   const queryClient = useQueryClient();
 
@@ -173,7 +173,7 @@ export function useCreateEscalationPolicy() {
         "Escalation policy created successfully:",
         response.escalationPolicy
       );
-      // Invalidate and refetch escalation policies list
+      
       queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
     },
     onError: (error: any) => {
@@ -183,7 +183,7 @@ export function useCreateEscalationPolicy() {
   });
 }
 
-// Hook to bulk delete escalation policies
+
 export function useBulkDeleteEscalationPolicies() {
   const queryClient = useQueryClient();
 
@@ -191,7 +191,7 @@ export function useBulkDeleteEscalationPolicies() {
     mutationFn: bulkDeleteEscalationPolicies,
     onSuccess: (response) => {
       console.log("Escalation policies deleted successfully:", response);
-      // Invalidate and refetch escalation policies list
+      
       queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
     },
     onError: (error: any) => {
@@ -204,7 +204,7 @@ export function useBulkDeleteEscalationPolicies() {
   });
 }
 
-// Hook to update escalation policy
+
 export function useUpdateEscalationPolicy() {
   const queryClient = useQueryClient();
 
@@ -216,7 +216,7 @@ export function useUpdateEscalationPolicy() {
         "Escalation policy updated successfully:",
         response.escalationPolicy
       );
-      // Invalidate and refetch escalation policies list and specific policy
+      
       queryClient.invalidateQueries({ queryKey: ["escalation-policies"] });
       queryClient.invalidateQueries({
         queryKey: ["escalation-policy", variables.id],
@@ -229,7 +229,7 @@ export function useUpdateEscalationPolicy() {
   });
 }
 
-// Hook to fetch single escalation policy
+
 export function useEscalationPolicy(id: string) {
   return useQuery({
     queryKey: ["escalation-policy", id],
@@ -248,7 +248,7 @@ export function useEscalationPolicy(id: string) {
       return res.json();
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) return false;
       return failureCount < 2;

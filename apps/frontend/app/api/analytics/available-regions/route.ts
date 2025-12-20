@@ -9,7 +9,7 @@ const availableRegionsQuerySchema = z.object({
   regionType: z.enum(['continent', 'country', 'city']).default('continent'),
 });
 
-// GET /api/analytics/available-regions - Get available regions with monitoring data
+
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -32,7 +32,7 @@ export const GET = withAuth(async (
 
     const { monitorId, regionType } = validation.data;
 
-    // If monitorId is provided, verify ownership
+    
     if (monitorId) {
       const monitor = await prisma.monitor.findFirst({
         where: {
@@ -51,7 +51,7 @@ export const GET = withAuth(async (
 
     let availableRegions: RawRegionQueryResult[] = [];
 
-    // Get available regions based on type (use parameterized raw queries)
+    
     switch (regionType) {
       case 'continent': {
         let sql = `
@@ -111,7 +111,7 @@ export const GET = withAuth(async (
       }
     }
 
-    // Helper function to convert BigInt to Number
+    
     const convertBigIntToNumber = (obj: unknown): unknown => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'bigint') return Number(obj);

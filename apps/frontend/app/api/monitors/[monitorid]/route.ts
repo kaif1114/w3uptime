@@ -6,14 +6,14 @@ import { withAuth } from "@/lib/auth";
 const patchMonitorSchema = z.object({
   name: z.string().min(1),
   url: z.url().min(1),
-  timeout: z.number().int().positive().default(30), // seconds
-  checkInterval: z.number().int().positive().default(300), // seconds
+  timeout: z.number().int().positive().default(30), 
+  checkInterval: z.number().int().positive().default(300), 
   status: z.enum(["ACTIVE", "PAUSED", "DOWN", "RECOVERING"]).default("ACTIVE"),
   expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
   escalationPolicyId: z.string().min(1, "Escalation policy is required"),
 });
 
-// GET /api/monitors/[monitorid] - Get single monitor
+
 export const GET = withAuth(
   async (
     req: NextRequest,
@@ -38,9 +38,9 @@ export const GET = withAuth(
         );
       }
 
-      // Fetch incident data in parallel for better performance
+      
       const [lastResolvedIncident, ongoingIncident] = await Promise.all([
-        // Get the most recent resolved incident
+        
         prisma.incident.findFirst({
           where: {
             monitorId: monitorid,
@@ -53,7 +53,7 @@ export const GET = withAuth(
             resolvedAt: true,
           },
         }),
-        // Check if there's any ongoing incident
+        
         prisma.incident.findFirst({
           where: {
             monitorId: monitorid,
@@ -81,7 +81,7 @@ export const GET = withAuth(
           expectedStatusCodes: monitor.expectedStatusCodes,
           escalationPolicyId: monitor.escalationPolicyId,
           createdAt: monitor.createdAt.toISOString(),
-          updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
+          updatedAt: monitor.createdAt.toISOString(), 
           lastCheckedAt: monitor.lastCheckedAt
             ? monitor.lastCheckedAt.toISOString()
             : null,
@@ -105,7 +105,7 @@ export const GET = withAuth(
   }
 );
 
-// PATCH /api/monitors/[monitorid] - Update monitor
+
 export const PATCH = withAuth(
   async (
     req: NextRequest,
@@ -186,7 +186,7 @@ export const PATCH = withAuth(
   }
 );
 
-// DELETE /api/monitors/[monitorid] - Delete monitor
+
 export const DELETE = withAuth(
   async (
     req: NextRequest,
@@ -219,9 +219,9 @@ export const DELETE = withAuth(
       }
 
       await prisma.$transaction(async (tx) => {
-        // Delete all associated records in the correct order due to foreign key constraints
+        
 
-        // 1. Delete TimelineEvents related to incidents of this monitor
+        
         await tx.timelineEvent.deleteMany({
           where: {
             incident: {
@@ -230,7 +230,7 @@ export const DELETE = withAuth(
           },
         });
 
-        // 2. Delete EscalationLogs related to alerts of this monitor
+        
         await tx.escalationLog.deleteMany({
           where: {
             Alert: {
@@ -239,35 +239,35 @@ export const DELETE = withAuth(
           },
         });
 
-        // 3. Delete Alerts for this monitor
+        
         await tx.alert.deleteMany({
           where: {
             monitorId: monitorid,
           },
         });
 
-        // 4. Delete Incidents for this monitor
+        
         await tx.incident.deleteMany({
           where: {
             monitorId: monitorid,
           },
         });
 
-        // 5. Delete StatusPageSections for this monitor
+        
         await tx.statusPageSection.deleteMany({
           where: {
             monitorId: monitorid,
           },
         });
 
-        // 6. Delete MonitorTicks for this monitor
+        
         await tx.monitorTick.deleteMany({
           where: {
             monitorId: monitorid,
           },
         });
 
-        // 7. Finally delete the monitor
+        
         await tx.monitor.delete({
           where: {
             id: monitorid,

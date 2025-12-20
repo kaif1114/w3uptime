@@ -15,7 +15,7 @@ const querySchema = z.object({
   return !!data.start && !!data.end;
 }, { message: 'Custom period requires start and end query params' });
 
-// GET /api/monitors/[monitorid]/regional-timeseries - Regional time series for a monitor
+
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -41,7 +41,7 @@ export const GET = withAuth(async (
 
     const { period, regionType, regionCode, start, end } = validation.data;
 
-    // Verify monitor ownership
+    
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,

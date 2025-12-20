@@ -1,8 +1,6 @@
-// Database model types that correspond to Prisma schema
 
-/**
- * Database StatusPageSection type
- */
+
+
 export interface DbStatusPageSection {
   id: string;
   name: string;
@@ -14,9 +12,7 @@ export interface DbStatusPageSection {
   maintenanceId?: string;
 }
 
-/**
- * Database Maintenance type
- */
+
 export interface DbMaintenance {
   id: string;
   title: string;
@@ -26,9 +22,7 @@ export interface DbMaintenance {
   statusPageId: string;
 }
 
-/**
- * Database Update type
- */
+
 export interface DbUpdate {
   id: string;
   title: string;
@@ -37,9 +31,7 @@ export interface DbUpdate {
   statusPageId: string;
 }
 
-/**
- * Database StatusPage type with relations
- */
+
 export interface DbStatusPage {
   id: string;
   name: string;
@@ -56,9 +48,7 @@ export interface DbStatusPage {
   updates: DbUpdate[];
 }
 
-/**
- * Database User type
- */
+
 export interface DbUser {
   id: string;
   walletAddress: string;
@@ -66,9 +56,7 @@ export interface DbUser {
   updatedAt: Date;
 }
 
-/**
- * Database Proposal type
- */
+
 export interface DbProposal {
   id: string;
   title: string;

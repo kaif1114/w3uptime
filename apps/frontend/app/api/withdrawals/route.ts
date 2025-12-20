@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { z } from 'zod';
+import { ethers } from 'ethers';
 import { withAuth } from '@/lib/auth';
 
 const WithdrawalRequestSchema = z.object({
@@ -44,15 +45,25 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       }
     });
 
-    // Format withdrawals to match frontend expectations
-    const formattedWithdrawals = withdrawals.map(withdrawal => ({
-      id: withdrawal.id,
-      amount: parseFloat((BigInt(withdrawal.amount) / BigInt(Math.pow(10, 15))).toString()) / 1000, // Convert to ETH
-      status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
-      requestedAt: withdrawal.createdAt.toISOString(),
-      processedAt: withdrawal.processedAt?.toISOString(),
-      transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
-    }));
+    const userBalance = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true }
+    });
+
+    
+    const formattedWithdrawals = withdrawals.map(withdrawal => {
+      const amountWei = BigInt(withdrawal.amount);
+      const amountEth = parseFloat(ethers.formatEther(amountWei));
+
+      return {
+        id: withdrawal.id,
+        amount: amountEth,
+        status: withdrawal.status.toLowerCase() as 'pending' | 'completed' | 'failed',
+        requestedAt: withdrawal.createdAt.toISOString(),
+        processedAt: withdrawal.processedAt?.toISOString(),
+        transactionHash: withdrawal.transactionHash?.startsWith('pending_') ? undefined : withdrawal.transactionHash
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -64,7 +75,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: 0 // Will be fetched separately if needed
+        userBalance: userBalance ? parseFloat(ethers.formatEther(BigInt(userBalance.balance.toString()))) : 0
       }
     });
 
@@ -79,7 +90,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
 
 export const POST = withAuth(async (request: NextRequest, user) => {
   try {
-    // Get user with balance
+    
     const userWithBalance = await prisma.user.findUnique({
       where: { id: user.id },
       select: { balance: true, walletAddress: true }
@@ -95,10 +106,17 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     const body = await request.json();
     const { amount } = WithdrawalRequestSchema.parse(body);
     
-    const amountWei = BigInt(parseFloat(amount) * Math.pow(10, 18));
-    const amountInternalUnits = Math.floor(parseFloat(amount) * 1000); // Internal balance units
+    let amountWei: bigint;
+    try {
+      amountWei = ethers.parseEther(amount);
+    } catch {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid amount format'
+      }, { status: 400 });
+    }
 
-    // Validate amount
+    
     if (amountWei <= 0) {
       return NextResponse.json({
         success: false,
@@ -106,15 +124,15 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       }, { status: 400 });
     }
 
-    // Check user balance
-    if (userWithBalance.balance < amountInternalUnits) {
+    
+    if (BigInt(userWithBalance.balance.toString()) < amountWei) {
       return NextResponse.json({
         success: false,
         error: 'Insufficient balance'
       }, { status: 400 });
     }
 
-    // Create pending withdrawal record with temporary transaction hash
+    
     const tempTxHash = `pending_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     
     const withdrawal = await prisma.transaction.create({
@@ -122,8 +140,8 @@ export const POST = withAuth(async (request: NextRequest, user) => {
         type: 'WITHDRAWAL',
         toAddress: userWithBalance.walletAddress,
         amount: amountWei.toString(),
-        transactionHash: tempTxHash, // Temporary unique hash for pending withdrawals
-        blockNumber: 0, // Will be filled when blockchain transaction is confirmed
+        transactionHash: tempTxHash, 
+        blockNumber: 0, 
         status: 'PENDING',
         userId: user.id
       }
@@ -133,7 +151,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       success: true,
       data: {
         withdrawalId: withdrawal.id,
-        amount: parseFloat(amount),
+          amount: parseFloat(ethers.formatEther(amountWei)),
         status: 'pending'
       }
     });

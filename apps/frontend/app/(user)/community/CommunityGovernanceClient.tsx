@@ -25,12 +25,21 @@ import {
 } from "@/components/ui/select";
 import { useProposals, useVoteProposal } from "@/hooks/useProposals";
 import { useSession } from "@/hooks/useSession";
+import { useReputation } from "@/hooks/useReputation";
+import { useVote } from "@/hooks/useVote";
+import { useRouter } from "next/navigation";
 import {
   Proposal,
   ProposalType,
   VoteType,
-  ProposalFilters
+  ProposalFilters,
+  OnChainStatus
 } from "@/types/proposal";
+import {
+  getUpvoteCount,
+  getDownvoteCount,
+  getUserVote as getProposalUserVote
+} from "@/lib/governance/vote-helpers";
 import {
   AlertCircle,
   ArrowDown,
@@ -60,6 +69,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
     null
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [voteErrorMessage, setVoteErrorMessage] = useState<string | null>(null);
 
   
   const getApiFilters = (): ProposalFilters => {
@@ -89,6 +99,15 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   } = useProposals(getApiFilters());
   const voteProposal = useVoteProposal();
   const { data: session } = useSession();
+  const {
+    data: reputation,
+    isLoading: isReputationLoading,
+    error: reputationError,
+  } = useReputation();
+  const {
+    vote: onChainVote,
+    isLoading: isVotingOnChain,
+  } = useVote();
 
   
   const proposals = proposalsData?.data || [];
@@ -115,12 +134,67 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
 
   const handleVote = async (proposalId: string, vote: VoteType) => {
     try {
-      await voteProposal.mutateAsync({
-        proposalId,
-        vote: { vote },
+      // Find the proposal to check its onChainStatus
+      const proposal = proposals.find((p) => p.id === proposalId);
+
+      console.log("=== COMMUNITY PAGE VOTE DEBUG ===");
+      console.log("Proposal:", {
+        id: proposalId,
+        onChainStatus: proposal?.onChainStatus,
+        onChainId: proposal?.onChainId,
       });
+
+      const isOnChainProposal =
+        proposal?.onChainStatus === OnChainStatus.ACTIVE ||
+        proposal?.onChainStatus === OnChainStatus.PASSED ||
+        proposal?.onChainStatus === OnChainStatus.FAILED;
+
+      console.log("Is on-chain proposal?", isOnChainProposal);
+
+      if (isOnChainProposal) {
+        // On-chain voting via MetaMask
+        if (!proposal?.onChainId) {
+          throw new Error("On-chain proposal ID not found");
+        }
+
+        console.log(`✅ Routing to ON-CHAIN vote for proposal ${proposal.onChainId}: ${vote}`);
+
+        const support = vote === VoteType.UPVOTE;
+        await onChainVote({
+          proposalId: proposal.onChainId,
+          support,
+        });
+
+        console.log("✅ On-chain vote successful");
+      } else {
+        // Database voting for DRAFT proposals
+        console.log(`⚠️ Routing to DATABASE vote for proposal ${proposalId}: ${vote}`);
+
+        await voteProposal.mutateAsync({
+          proposalId,
+          vote: { vote },
+        });
+
+        console.log("✅ Database vote successful");
+      }
+
+      setVoteErrorMessage(null);
     } catch (error) {
       console.error("Failed to vote:", error);
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      if (message.includes("Insufficient reputation to vote on proposals")) {
+        setVoteErrorMessage(
+          "Your reputation score is too low to vote on proposals."
+        );
+      } else if (message.includes("This proposal requires on-chain voting")) {
+        setVoteErrorMessage(
+          "This proposal requires on-chain voting via MetaMask. Please connect your wallet."
+        );
+      } else {
+        setVoteErrorMessage("Failed to vote. Please try again later.");
+      }
     }
   };
 
@@ -151,28 +225,20 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
   };
 
   const getUpvotes = (proposal: Proposal) => {
-    return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.UPVOTE).length ||
-      0
-    );
+    return getUpvoteCount(proposal);
   };
 
   const getDownvotes = (proposal: Proposal) => {
-    return (
-      proposal.votes?.filter((vote) => vote.vote === VoteType.DOWNVOTE)
-        .length || 0
-    );
+    return getDownvoteCount(proposal);
   };
 
   const getUserVote = (proposal: Proposal) => {
-    if (!session?.user?.id || !proposal?.votes) {
-      return null;
-    }
-
-    const userVote = proposal.votes.find(
-      (vote) => vote.userId === session.user.id
+    if (!session?.user) return null;
+    return getProposalUserVote(
+      proposal,
+      session.user.id,
+      session.user.walletAddress
     );
-    return userVote ? userVote.vote : null;
   };
 
   
@@ -190,6 +256,15 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
             Back to Proposals
           </Button>
         </div>
+
+        {voteErrorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-gray-200">
+              {voteErrorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {isLoading ? (
           <ProposalDetailSkeleton />
@@ -274,7 +349,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
               </div>
 
               
-              <div className="border rounded-lg p-4 bg-muted/30">
+              <div className=" rounded-lg">
                 <h3 className="text-lg font-semibold mb-4">
                   Vote on this proposal
                 </h3>
@@ -290,7 +365,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                       onClick={() =>
                         handleVote(selectedProposal.id, VoteType.UPVOTE)
                       }
-                      disabled={voteProposal.isPending}
+                      disabled={voteProposal.isPending || isVotingOnChain}
                       className="flex items-center space-x-2"
                     >
                       <ArrowUp className="h-5 w-5" />
@@ -306,7 +381,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
                       onClick={() =>
                         handleVote(selectedProposal.id, VoteType.DOWNVOTE)
                       }
-                      disabled={voteProposal.isPending}
+                      disabled={voteProposal.isPending || isVotingOnChain}
                       className="flex items-center space-x-2"
                     >
                       <ArrowDown className="h-5 w-5" />
@@ -347,10 +422,111 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
 
   return (
     <div className="space-y-4">
-      
       <div className="border-t border-border/50 my-6" />
 
-      
+      {session?.user && !reputationError && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your community reputation</CardTitle>
+            <CardDescription>
+              This score influences your ability to create, comment on, and vote
+              on proposals.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* On-Chain Balance */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">On-Chain Balance</p>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-2xl font-semibold">
+                    {isReputationLoading || !reputation
+                      ? "—"
+                      : reputation.onChainBalance === null
+                      ? "N/A"
+                      : reputation.onChainBalance}
+                  </span>
+                  <span className="text-sm text-muted-foreground">points</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Available to use for governance
+                </p>
+              </div>
+
+              {/* Available to Claim */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Available to Claim</p>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-2xl font-semibold">
+                    {isReputationLoading || !reputation
+                      ? "—"
+                      : reputation.available}
+                  </span>
+                  <span className="text-sm text-muted-foreground">points</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ready to claim on-chain
+                </p>
+              </div>
+
+              {/* All-Time Earned */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">All-Time Earned</p>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-2xl font-semibold">
+                    {isReputationLoading || !reputation
+                      ? "—"
+                      : reputation.totalScore}
+                  </span>
+                  <span className="text-sm text-muted-foreground">points</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total reputation earned
+                </p>
+              </div>
+            </div>
+
+            {reputation && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>
+                  Create proposal:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.createProposal}+ points required
+                  </span>
+                </div>
+                <div>
+                  Comment:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.comment}+ points required
+                  </span>
+                </div>
+                <div>
+                  Vote:{" "}
+                  <span className="font-medium">
+                    {reputation.thresholds.vote}+ points required
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <Link href="/community/reputation">
+              <Button className="w-full" variant="outline">
+                Manage Reputation
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {voteErrorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-gray-200">
+            {voteErrorMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Input
@@ -395,7 +571,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
           getDownvotes={getDownvotes}
           onProposalClick={handleProposalClick}
           onVote={handleVote}
-          isVoting={voteProposal.isPending}
+          isVoting={voteProposal.isPending || isVotingOnChain}
           getUserVote={getUserVote}
         />
       )}

@@ -105,7 +105,7 @@ export function useCreateWithdrawal() {
       return result.data;
     },
     onSuccess: () => {
-      // Invalidate withdrawals queries to refetch updated data
+      
       queryClient.invalidateQueries({ queryKey: ['withdrawals'] });
     },
   });

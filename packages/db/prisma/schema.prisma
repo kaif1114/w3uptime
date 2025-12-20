@@ -14,7 +14,7 @@ model User {
   nonceExpiry        DateTime?
   updatedAt          DateTime           @updatedAt
   walletAddress      String             @unique
-  balance            Int                @default(0)
+  balance            Decimal            @default(0) @db.Decimal(78, 0)
   type               UserType           @default(USER)
   publicKey          String?            @unique
   geoLocationId      String?            @unique
@@ -31,6 +31,15 @@ model User {
   geoLocation        GeoLocation?       @relation(fields: [geoLocationId], references: [id])
   transactions       Transaction[]
   conversations      Conversation[]
+
+  goodTicks         Int                @default(0)
+  badTicks          Int                @default(0)
+
+  reputationScore     Int                @default(0)
+
+  // On-chain reputation claiming fields
+  claimedReputation   Int                @default(0)  // Transferred to on-chain balance
+  lastClaimAt         DateTime?                       // Last claim timestamp
 }
 
 model GeoLocation {
@@ -323,12 +332,25 @@ model Proposal {
   userId      String
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  
+  // On-chain tracking fields
+  onChainId           Int?              @unique
+  contentHash         String?
+  creationTxHash      String?           @unique
+  finalizationTxHash  String?           @unique
+  votingEndsAt        DateTime?
+  onChainStatus       OnChainStatus     @default(DRAFT)
+  
   user        User              @relation(fields: [userId], references: [id])
   comments    ProposalComment[]
   votes       ProposalVote[]
+  voteCaches  VoteCache[]
 
   @@index([userId])
   @@index([createdAt])
+  @@index([onChainId])
+  @@index([onChainStatus])
+  @@index([votingEndsAt])
 }
 
 model ProposalComment {
@@ -355,6 +377,25 @@ model ProposalVote {
 
   @@unique([proposalId, userId])
   @@index([proposalId])
+}
+
+model VoteCache {
+  id                  String    @id @default(uuid())
+  proposalId          String
+  onChainProposalId   Int
+  voterAddress        String
+  voteType            VoteType
+  txHash              String    @unique
+  blockNumber         Int
+  createdAt           DateTime  @default(now())
+
+  proposal            Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterAddress])
+  @@index([proposalId])
+  @@index([onChainProposalId])
+  @@index([voterAddress])
+  @@index([txHash])
 }
 
 enum MonitorStatus {
@@ -446,6 +487,14 @@ enum MessageRole {
   SYSTEM
 }
 
+enum OnChainStatus {
+  DRAFT              // Not yet submitted on-chain
+  PENDING_ONCHAIN    // Transaction submitted, awaiting confirmation
+  ACTIVE             // On-chain and voting active
+  PASSED             // Finalized and passed
+  FAILED   
+  }
+
 model Transaction {
   id              String            @id @default(uuid())
   type            TransactionType
@@ -470,6 +519,7 @@ model Transaction {
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
+  REPUTATION_CLAIM
 }
 
 enum TransactionStatus {

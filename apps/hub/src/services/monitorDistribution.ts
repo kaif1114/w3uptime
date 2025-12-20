@@ -1,11 +1,12 @@
-// Use CommonJS require so ts-node (CJS) resolves the CJS export of db/client
-// This avoids TS1479 when importing an ESM package from a CJS module
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
+
+
 const { prisma } = require("db/client");
 import { v7 as uuidv7 } from "uuid";
 import { IncomingMessage } from "common/types";
 import { validators } from "./validatorManager";
 import { addToBatch } from "./batchProcessor";
+import { applyUptimeCheckReward, applyUptimeCheckPenalty } from "./reputation";
 
 export const CALLBACKS: { [callbackId: string]: (message: IncomingMessage) => void } = {};
 
@@ -15,6 +16,7 @@ export function startMonitorDistribution() {
       where: {
         status: {
           not: "PAUSED",
+          
         },
       },
     });
@@ -54,6 +56,17 @@ export function startMonitorDistribution() {
             };
             
             addToBatch(monitorTick);
+
+            // Award reputation for uptime check
+            if (validatorData?.publicKey) {
+              if (status === 'GOOD') {
+                await applyUptimeCheckReward(validatorData.publicKey);
+              } else if (status === 'BAD') {
+                await applyUptimeCheckPenalty(validatorData.publicKey);
+              }
+            } else {
+              console.warn(`No publicKey found for validator: ${validatorId}`);
+            }
           }
         };
       });

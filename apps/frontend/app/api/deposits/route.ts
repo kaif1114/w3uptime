@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth';
 
@@ -63,7 +64,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit)
         },
-        userBalance: 0 // Will be fetched separately if needed
+        userBalance: 0 
       }
     });
 
@@ -133,14 +134,13 @@ export async function POST(request: NextRequest) {
       });
 
       const amountWei = BigInt(amount);
-      const amountEth = Number(amountWei) / Math.pow(10, 18);
-      const balanceIncrement = Math.floor(amountEth * 1000);
+      const amountDecimal = new Prisma.Decimal(amountWei.toString());
 
       await tx.user.update({
         where: { walletAddress: normalizedAddress },
         data: {
           balance: {
-            increment: balanceIncrement
+            increment: amountDecimal
           }
         }
       });

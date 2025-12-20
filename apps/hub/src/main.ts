@@ -3,7 +3,7 @@ import { createExpressServer } from "./server/expressServer";
 import { createWebSocketServer } from "./services/websocketHandler";
 import { startMonitorDistribution } from "./services/monitorDistribution";
 
-const COST_PER_VALIDATION = 1;
+const COST_PER_VALIDATION = 1;  // in lamports == 0.000000001 SOL
 
 function startServer() {
   const { app, httpServer } = createExpressServer();

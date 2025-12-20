@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { logout } from "@/lib/auth";
+import { useSession } from "@/hooks/useSession";
+import { WalletAddress } from "@/components/ui/wallet-address";
 
 
 const items = [
@@ -82,7 +84,8 @@ const items = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const router = useRouter()
+  const router = useRouter();
+  const { data: session } = useSession();
 
   const handleLogout = async () => {
     try {
@@ -138,19 +141,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <div className="flex flex-col gap-2">
+          {/* Wallet Address Display */}
+          {session?.user?.walletAddress && (
+            <div className="px-2 py-1.5 rounded-md bg-sidebar-accent/50">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-sidebar-foreground/70" />
+                <WalletAddress
+                  address={session.user.walletAddress}
+                  startChars={6}
+                  endChars={4}
+                  showCopyButton={true}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Theme Toggle */}
           <div className="flex items-center justify-between px-2">
             <span className="text-sm text-sidebar-foreground/70">Theme</span>
             <ModeToggle />
           </div>
+
+          {/* Logout Button */}
           <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton onClick={handleLogout} size="lg">
-          <IconLogout className="mr-2 h-4 w-4 cursor-pointer" />
-          Log out
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
-              
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout} size="lg">
+                <IconLogout className="mr-2 h-4 w-4 cursor-pointer" />
+                Log out
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </div>
       </SidebarFooter>
     </Sidebar>

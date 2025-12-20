@@ -1,4 +1,4 @@
-// ROUTE FOR GETTING A CUSTOM PAGE
+
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
@@ -39,7 +39,7 @@ export const GET = withAuth(async (
           announcement: statusPage.announcement,
           isPublished: statusPage.isPublished,
           createdAt: statusPage.createdAt.toISOString(),
-          updatedAt: statusPage.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist yet
+          updatedAt: statusPage.createdAt.toISOString(), 
         },
         { status: 200 }
       );
@@ -52,7 +52,7 @@ export const GET = withAuth(async (
     }
   });
 
-//   create a custom page update for the same post request
+
 
 export const PATCH = withAuth(async (
     req: NextRequest,
@@ -136,11 +136,11 @@ export const PATCH = withAuth(async (
   
   
 
-// ROUTE FOR DELETING A CUSTOM PAGE-for single custom page
 
 
 
-// DELETE /api/custompage/[customid] - Delete custom page
+
+
 export const DELETE = withAuth(async (
     req: NextRequest,
     user,

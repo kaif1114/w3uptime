@@ -52,7 +52,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Integration ID is required" }, { status: 400 });
     }
 
-    // Verify the integration belongs to the user
+    
     const integration = await prisma.slackIntegration.findFirst({
       where: {
         id: integrationId,
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Integration not found" }, { status: 404 });
     }
 
-    // Soft delete by setting isActive to false
+    
     await prisma.slackIntegration.update({
       where: { id: integrationId },
       data: { isActive: false },

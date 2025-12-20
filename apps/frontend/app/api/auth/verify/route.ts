@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const normalizedAddress = walletAddress.toLowerCase();
 
-    // Find user with the provided wallet address
+    
     const user = await prisma.user.findUnique({
       where: { walletAddress: normalizedAddress }
     });
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Check if user has a valid nonce
+    
     if (!user.nonce || !user.nonceExpiry || new Date() > user.nonceExpiry) {
       return NextResponse.json({
         success: false,
@@ -62,18 +62,18 @@ export async function POST(request: NextRequest) {
     const sessionId = uuidv7();
     const expiresAt = new Date(Date.now() + Number(process.env.SESSION_EXPIRY_DAYS || 7) * 24 * 60 * 60 * 1000);
     
-    // Get client information
+    
     const userAgent = request.headers.get('user-agent') || 'Unknown';
     const forwarded = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
     const ipAddress = forwarded?.split(',')[0] || realIp || 'Unknown';
 
-    // Create session in database
+    
        await prisma.session.create({
        data: {
          sessionId,
          userId: user.id,
-         walletAddress: user.walletAddress!, // Store wallet address in session
+         walletAddress: user.walletAddress!, 
          expiresAt,
          userAgent,
          ipAddress
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: Number(process.env.SESSION_EXPIRY_DAYS || 7) * 24 * 60 * 60, // 7 days in seconds
+        maxAge: Number(process.env.SESSION_EXPIRY_DAYS || 7) * 24 * 60 * 60, 
       path: '/'
     });
 

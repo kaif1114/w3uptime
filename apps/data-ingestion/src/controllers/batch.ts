@@ -5,10 +5,14 @@ const { prisma } = require("db/client");
 import { MonitorTickBatchResponse } from "common/types";
 import { Request, Response } from "express";
 import z from "zod";
+import { Prisma } from "@prisma/client";
+
+// Reward per validation in wei (1 gwei).
+const REWARD_PER_VALIDATION_WEI = 1_000_000_000n;
 
 const monitorTickItemSchema = z.object({
-  monitorId: z.string().uuid(),
-  validatorId: z.string().uuid(),
+  monitorId: z.uuid(),
+  validatorId: z.uuid(),
   status: z.enum(["GOOD", "BAD"]),
   latency: z.number().min(0),
   longitude: z.number().min(-180).max(180),
@@ -22,7 +26,7 @@ const monitorTickItemSchema = z.object({
 const batchRequestSchema = z.object({
   batch: z.array(monitorTickItemSchema).min(1).max(100),
   batchId: z.uuid(),
-  timestamp: z.string().datetime(),
+  timestamp: z.coerce.date(),
 });
 
 export async function receiveBatch(req: Request, res: Response) {
@@ -33,8 +37,7 @@ export async function receiveBatch(req: Request, res: Response) {
       const response: MonitorTickBatchResponse = {
         success: false,
         message: "Validation failed",
-        errors: validationResult.error.issues.map(
-          (err: any, index: number) => ({
+        errors: validationResult.error.issues.map((err, index) => ({
             index,
             error: `${err.path.join(".")}: ${err.message}`,
           })
@@ -67,7 +70,35 @@ export async function receiveBatch(req: Request, res: Response) {
         skipDuplicates: true,
       });
 
+
       processedCount = result.count;
+// --- Reward validators for performing validations ---
+      // Count total validations per validator (regardless of website status)
+      const validationsPerValidator: Record<string, number> = {};
+
+      for (const item of batch) {
+        validationsPerValidator[item.validatorId] =
+          (validationsPerValidator[item.validatorId] || 0) + 1;
+      }
+
+      // Increment balance for each validator based on validations performed
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        for (const [validatorId, validationCount] of Object.entries(
+          validationsPerValidator
+        )) {
+          const balanceRewardWei =
+            new Prisma.Decimal(validationCount.toString()).mul(new Prisma.Decimal(REWARD_PER_VALIDATION_WEI.toString()));
+
+          await tx.user.update({
+            where: { id: validatorId },
+            data: {
+              //@ts-ignore
+              balance: { increment: balanceRewardWei },
+            },
+          });
+        }
+      });
+      // --- END: Validator rewards ---
     } catch (error) {
       console.error("Batch processing error:", error);
       const response: MonitorTickBatchResponse = {

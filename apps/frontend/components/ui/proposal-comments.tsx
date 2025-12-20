@@ -2,7 +2,6 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddComment, useProposalComments } from "@/hooks/useProposals";
@@ -15,6 +14,9 @@ interface ProposalCommentsProps {
 
 export function ProposalComments({ proposalId }: ProposalCommentsProps) {
   const [newComment, setNewComment] = useState("");
+  const [reputationMessage, setReputationMessage] = useState<string | null>(
+    null
+  );
 
   const { data: comments, isLoading, error } = useProposalComments(proposalId);
   const addComment = useAddComment();
@@ -29,8 +31,21 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
         comment: { content: newComment.trim() },
       });
       setNewComment("");
+      setReputationMessage(null);
     } catch (error) {
       console.error("Failed to add comment:", error);
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      if (message.includes("Insufficient reputation to comment on proposals")) {
+        setReputationMessage(
+          "Your reputation score is too low to comment on proposals."
+        );
+      } else {
+        setReputationMessage(
+          "Failed to add comment. Please try again later."
+        );
+      }
     }
   };
 
@@ -49,33 +64,44 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
   };
 
   if (error) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+    const isReputationError = message.includes(
+      "Insufficient reputation to comment on proposals"
+    );
+
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div>
+        <div className="p-4">
+          <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Comments
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-4">
-            Failed to load comments. Please try again later.
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-muted-foreground text-center">
+            {isReputationError
+              ? "Your reputation score is too low to view or add comments on proposals."
+              : "Failed to load comments. Please try again later."}
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div>
+      <div className="p-4">
+        <div className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
           Comments ({comments?.length || 0})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        
+        </div>
+      </div>
+      <div className="space-y-4">
+        {reputationMessage && (
+          <p className="text-sm text-gray-200">{reputationMessage}</p>
+        )}
+
         <form onSubmit={handleSubmitComment} className="space-y-3">
           <Textarea
             placeholder="Share your thoughts on this proposal..."
@@ -142,7 +168,7 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
