@@ -24,19 +24,18 @@ export interface ReputationCounters {
 export async function applyGoodTick(publicKey: string) {
   const user = await prisma.user.findUnique({
     where: { publicKey },
-    select: { id: true, goodTicks: true, badTicks: true, totalReputation: true },
+    select: { id: true, goodTicks: true, badTicks: true },
   });
   if (!user) return;
 
   const goodTicks = user.goodTicks + 1;
   const badTicks = user.badTicks;
-  const totalReputation = user.totalReputation + 1;  // Increment unclaimed reputation
 
   const reputationScore = computeReputationScore({ goodTicks, badTicks });
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { goodTicks, reputationScore, totalReputation },
+    data: { goodTicks, reputationScore },
   });
 }
 
@@ -61,7 +60,7 @@ export async function applyBadTick(publicKey: string) {
 export async function applyUptimeCheckReward(publicKey: string) {
   const user = await prisma.user.findUnique({
     where: { publicKey },
-    select: { id: true, goodTicks: true, badTicks: true, reputationScore: true, totalReputation: true },
+    select: { id: true, goodTicks: true, badTicks: true, reputationScore: true },
   });
   if (!user) {
     console.warn(`User not found for publicKey: ${publicKey}`);
@@ -69,13 +68,11 @@ export async function applyUptimeCheckReward(publicKey: string) {
   }
 
   const newReputationScore = user.reputationScore + UPTIME_CHECK_REWARD;
-  const newTotalReputation = user.totalReputation + UPTIME_CHECK_REWARD;
 
   await prisma.user.update({
     where: { id: user.id },
     data: { 
-      reputationScore: newReputationScore,
-      totalReputation: newTotalReputation
+      reputationScore: newReputationScore
     },
   });
 

@@ -37,7 +37,6 @@ model User {
   reputationScore     Int                @default(0)
 
   // On-chain reputation claiming fields
-  totalReputation     Int                @default(0)  // Total earned from validations
   claimedReputation   Int                @default(0)  // Transferred to on-chain balance
   lastClaimAt         DateTime?                       // Last claim timestamp
 }

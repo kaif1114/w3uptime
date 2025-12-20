@@ -44,7 +44,6 @@ export const POST = withAuth(async (_request: NextRequest, user) => {
       where: { id: user.id },
       select: {
         walletAddress: true,
-        totalReputation: true,
         claimedReputation: true
       }
     });
@@ -56,10 +55,11 @@ export const POST = withAuth(async (_request: NextRequest, user) => {
       }, { status: 404 });
     }
 
-    // 3. Calculate unclaimed amount
-    const totalReputation = userWithReputation.totalReputation || 0;
+    // 3. Calculate unclaimed amount using getReputation as single source of truth
+    const reputation = await getReputation(user.id);
+    const totalReputation = reputation.totalScore;
     const claimedReputation = userWithReputation.claimedReputation || 0;
-    const unclaimedAmount = totalReputation - claimedReputation;
+    const unclaimedAmount = Math.max(0, totalReputation - claimedReputation);
 
     if (unclaimedAmount <= 0) {
       return NextResponse.json({
@@ -70,6 +70,22 @@ export const POST = withAuth(async (_request: NextRequest, user) => {
           claimedReputation,
           unclaimedAmount: 0
         }
+      }, { status: 400 });
+    }
+
+    // Additional safety check for suspiciously large claims
+    if (unclaimedAmount > 100000) {
+      console.error('Suspiciously large claim detected:', {
+        userId: user.id,
+        walletAddress: userWithReputation.walletAddress,
+        unclaimedAmount,
+        totalReputation,
+        claimedReputation,
+        breakdown: reputation
+      });
+      return NextResponse.json({
+        success: false,
+        error: 'Claim amount too large - please contact support'
       }, { status: 400 });
     }
 
@@ -97,10 +113,7 @@ export const POST = withAuth(async (_request: NextRequest, user) => {
     const wallet = new ethers.Wallet(authorizedSignerKey);
     const signature = await wallet.signMessage(ethers.getBytes(messageHash));
 
-    // 8. Get reputation breakdown for transparency
-    const reputation = await getReputation(user.id);
-
-    // 9. Return signature data for user to submit on-chain
+    // 8. Return signature data for user to submit on-chain
     return NextResponse.json({
       success: true,
       data: {

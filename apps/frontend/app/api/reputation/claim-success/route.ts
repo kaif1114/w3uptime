@@ -28,14 +28,28 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       }, { status: 400 });
     }
 
-    // TODO: Optional - Verify transaction on-chain
-    // This would require checking Etherscan API or calling contract.getReputationBalance()
-    // to ensure the transaction actually succeeded
+    // Check for duplicate transaction hash
+    const existingTx = await prisma.transaction.findUnique({
+      where: { transactionHash }
+    });
+
+    if (existingTx) {
+      console.warn('Duplicate transaction hash detected:', {
+        userId: user.id,
+        transactionHash,
+        existingTxId: existingTx.id,
+        existingTxCreatedAt: existingTx.createdAt
+      });
+      return NextResponse.json({
+        success: false,
+        error: 'This transaction has already been processed'
+      }, { status: 400 });
+    }
 
     // Validate claimed amount doesn't exceed earned reputation
     const existingUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { claimedReputation: true }
+      select: { claimedReputation: true, walletAddress: true }
     });
 
     if (!existingUser) {
@@ -52,10 +66,12 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     if (newClaimedTotal > earnedReputation.totalScore) {
       console.error('Claim validation failed:', {
         userId: user.id,
+        walletAddress: existingUser.walletAddress,
         newClaimedTotal,
         earned: earnedReputation.totalScore,
         attemptingToClaim: amount,
-        currentClaimed
+        currentClaimed,
+        breakdown: earnedReputation
       });
       return NextResponse.json({
         success: false,
@@ -89,6 +105,18 @@ export const POST = withAuth(async (request: NextRequest, user) => {
           lastClaimAt: new Date()
         }
       });
+    });
+
+    // Log successful claim recording
+    console.log('Reputation claim recorded:', {
+      userId: user.id,
+      walletAddress: existingUser.walletAddress,
+      transactionHash,
+      amount,
+      previousClaimed: currentClaimed,
+      newClaimed: newClaimedTotal,
+      earnedTotal: earnedReputation.totalScore,
+      remaining: earnedReputation.totalScore - newClaimedTotal
     });
 
     return NextResponse.json({
