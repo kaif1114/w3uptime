@@ -17,6 +17,14 @@ export enum VoteType {
   DOWNVOTE = "DOWNVOTE",
 }
 
+export enum OnChainStatus {
+  DRAFT = "DRAFT",
+  PENDING_ONCHAIN = "PENDING_ONCHAIN",
+  ACTIVE = "ACTIVE",
+  PASSED = "PASSED",
+  FAILED = "FAILED",
+}
+
 export interface User {
   id: string;
   walletAddress: string;
@@ -40,6 +48,17 @@ export interface ProposalComment {
   user: User;
 }
 
+export interface VoteCache {
+  id: string;
+  proposalId: string;
+  onChainProposalId: number;
+  voterAddress: string;
+  voteType: VoteType;
+  txHash: string;
+  blockNumber: number;
+  createdAt: Date;
+}
+
 export interface Proposal {
   id: string;
   title: string;
@@ -52,7 +71,14 @@ export interface Proposal {
   updatedAt: Date;
   user: User;
   votes: ProposalVote[];
+  voteCaches?: VoteCache[];
   comments: ProposalComment[];
+  onChainStatus: OnChainStatus;
+  onChainId?: number | null;
+  contentHash?: string | null;
+  creationTxHash?: string | null;
+  finalizationTxHash?: string | null;
+  votingEndsAt?: Date | null;
 }
 
 export interface CreateProposalData {
@@ -60,6 +86,8 @@ export interface CreateProposalData {
   description: string;
   type: ProposalType;
   tags?: string[];
+  createOnChain?: boolean;
+  txHash?: string | null;
 }
 
 export interface CreateCommentData {

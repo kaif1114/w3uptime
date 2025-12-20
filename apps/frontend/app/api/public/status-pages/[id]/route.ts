@@ -11,7 +11,7 @@ export const GET = async (
     const statusPage = await prisma.statusPage.findFirst({
       where: {
         id,
-        isPublished: true, // Only return published status pages
+        isPublished: true, 
       },
       include: {
         statusPageSections: {

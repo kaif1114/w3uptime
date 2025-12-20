@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
+import { AccountChangeManager } from "@/components/wallet/account-change-manager";
 
 export default async function UserLayout({
   children,
@@ -12,7 +13,7 @@ export default async function UserLayout({
 }>) {
   const session = await getSessionOnServer();
   if (!session?.authenticated) {
-    redirect("/login");
+    redirect("/");
   }
   return (
     <SidebarProvider
@@ -26,6 +27,7 @@ export default async function UserLayout({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
+        <AccountChangeManager />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">

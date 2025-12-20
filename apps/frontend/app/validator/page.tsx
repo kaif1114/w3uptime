@@ -5,7 +5,7 @@ import ValidatorDashboardClient from "./components/ValidatorDashboardClient";
 export default async function ValidatorDashboardPage() {
   const session = await getSessionOnServer();
   if (!session?.authenticated) {
-    redirect("/login");
+    redirect("/");
   }
 
   return (

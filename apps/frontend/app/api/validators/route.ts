@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get query parameters from the request
+    
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
     
-    // Forward the request to the hub server with the session cookie
+    
     const hubResponse = await fetch(`${HUB_SERVER_URL}/validators${queryString ? `?${queryString}` : ''}`, {
       method: 'GET',
       headers: {

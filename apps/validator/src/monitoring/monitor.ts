@@ -38,7 +38,7 @@ export class WebsiteMonitor extends EventEmitter {
     super();
     
     this.config = {
-      defaultTimeout: 30000, // 30 seconds
+      defaultTimeout: 30000, 
       userAgent: 'W3Uptime-Validator/1.0',
       maxConcurrentRequests: 10,
       retryAttempts: 2,
@@ -47,21 +47,19 @@ export class WebsiteMonitor extends EventEmitter {
     };
   }
 
-  /**
-   * Monitor a single website
-   */
+  
   async monitorWebsite(request: MonitoringRequest): Promise<MonitoringResult> {
     const startTime = process.hrtime.bigint();
     
     try {
-      // Validate URL
+      
       this.validateUrl(request.url);
       
-      // Perform HTTP request
+      
       const response = await this.performHttpRequest(request);
       const latency = this.calculateLatency(startTime);
       
-      // Determine if result is good or bad
+      
       const isGood = this.isStatusGood(response.status, request.expectedStatusCodes);
       
       const result: MonitoringResult = {
@@ -93,17 +91,13 @@ export class WebsiteMonitor extends EventEmitter {
     }
   }
 
-  /**
-   * Queue monitoring request
-   */
+  
   queueMonitoringRequest(request: MonitoringRequest): void {
     this.requestQueue.push(request);
     this.processQueue();
   }
 
-  /**
-   * Monitor multiple websites concurrently
-   */
+  
   async monitorMultipleWebsites(requests: MonitoringRequest[]): Promise<MonitoringResult[]> {
     const promises = requests.map(request => this.monitorWebsite(request));
     return Promise.allSettled(promises).then(results => 
@@ -113,9 +107,7 @@ export class WebsiteMonitor extends EventEmitter {
     );
   }
 
-  /**
-   * Get monitoring statistics
-   */
+  
   getStatistics(): {
     activeRequests: number;
     queuedRequests: number;
@@ -124,13 +116,11 @@ export class WebsiteMonitor extends EventEmitter {
     return {
       activeRequests: this.activeRequests.size,
       queuedRequests: this.requestQueue.length,
-      totalProcessed: 0 // Would need to track this
+      totalProcessed: 0 
     };
   }
 
-  /**
-   * Validate URL format
-   */
+  
   private validateUrl(url: string): void {
     try {
       const parsedUrl = new URL(url);
@@ -142,9 +132,7 @@ export class WebsiteMonitor extends EventEmitter {
     }
   }
 
-  /**
-   * Perform HTTP request with retry logic
-   */
+  
   private async performHttpRequest(request: MonitoringRequest): Promise<AxiosResponse> {
     const config: AxiosRequestConfig = {
       url: request.url,
@@ -154,10 +142,10 @@ export class WebsiteMonitor extends EventEmitter {
         'User-Agent': this.config.userAgent,
         ...request.headers
       },
-      validateStatus: () => true, // Don't throw on any status code
+      validateStatus: () => true, 
       maxRedirects: 5,
-      // Security settings
-      maxContentLength: 10 * 1024 * 1024, // 10MB max response size
+      
+      maxContentLength: 10 * 1024 * 1024, 
       decompress: true
     };
 
@@ -179,27 +167,21 @@ export class WebsiteMonitor extends EventEmitter {
     throw lastError!;
   }
 
-  /**
-   * Check if HTTP status is considered good
-   */
+  
   private isStatusGood(status: number, expectedStatusCodes?: number[]): boolean {
     const defaultGoodCodes = [200, 201, 202, 204];
     const expectedCodes = expectedStatusCodes || defaultGoodCodes;
     return expectedCodes.includes(status);
   }
 
-  /**
-   * Calculate latency in milliseconds
-   */
+  
   private calculateLatency(startTime: bigint): number {
     const endTime = process.hrtime.bigint();
     const latencyNs = endTime - startTime;
-    return Number(latencyNs) / 1_000_000; // Convert to milliseconds
+    return Number(latencyNs) / 1_000_000; 
   }
 
-  /**
-   * Process the request queue
-   */
+  
   private async processQueue(): Promise<void> {
     if (this.isProcessing || this.activeRequests.size >= this.config.maxConcurrentRequests) {
       return;
@@ -214,11 +196,11 @@ export class WebsiteMonitor extends EventEmitter {
       const request = this.requestQueue.shift()!;
       this.activeRequests.add(request.callbackId);
 
-      // Process request asynchronously
+      
       this.monitorWebsite(request)
         .finally(() => {
           this.activeRequests.delete(request.callbackId);
-          // Continue processing queue
+          
           this.processQueue();
         });
     }
@@ -226,9 +208,7 @@ export class WebsiteMonitor extends EventEmitter {
     this.isProcessing = false;
   }
 
-  /**
-   * Create error result
-   */
+  
   private createErrorResult(request: MonitoringRequest, error: string): MonitoringResult {
     return {
       callbackId: request.callbackId,
@@ -240,16 +220,12 @@ export class WebsiteMonitor extends EventEmitter {
     };
   }
 
-  /**
-   * Utility delay function
-   */
+  
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Cleanup resources
-   */
+  
   destroy(): void {
     this.removeAllListeners();
     this.requestQueue = [];
@@ -257,13 +233,9 @@ export class WebsiteMonitor extends EventEmitter {
   }
 }
 
-/**
- * Advanced monitoring with additional checks
- */
+
 export class AdvancedWebsiteMonitor extends WebsiteMonitor {
-  /**
-   * Monitor with content validation
-   */
+  
   async monitorWithContentCheck(
     request: MonitoringRequest & { 
       expectedContent?: string;
@@ -272,12 +244,12 @@ export class AdvancedWebsiteMonitor extends WebsiteMonitor {
   ): Promise<MonitoringResult> {
     const result = await this.monitorWebsite(request);
     
-    // If basic check passed and we have content validation
+    
     if (result.status === 'GOOD' && (request.expectedContent || request.contentRegex)) {
       try {
         const response = await axios.get(request.url, {
           timeout: 30000,
-          maxContentLength: 1024 * 1024 // 1MB for content check
+          maxContentLength: 1024 * 1024 
         });
 
         let contentValid = true;
@@ -305,19 +277,17 @@ export class AdvancedWebsiteMonitor extends WebsiteMonitor {
     return result;
   }
 
-  /**
-   * Monitor with SSL certificate validation
-   */
+  
   async monitorWithSSLCheck(request: MonitoringRequest): Promise<MonitoringResult> {
     const result = await this.monitorWebsite(request);
     
     if (result.status === 'GOOD' && request.url.startsWith('https://')) {
-      // SSL certificate validation would go here
-      // This is a simplified implementation
+      
+      
       try {
         const url = new URL(request.url);
-        // In a real implementation, you would check certificate validity,
-        // expiration, trust chain, etc.
+        
+        
         console.log(`SSL check for ${url.hostname} - placeholder implementation`);
       } catch (error) {
         result.status = 'BAD';

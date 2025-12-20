@@ -19,6 +19,7 @@ import { useDepositHistory, useRefreshDeposits } from '@/hooks/useDeposits';
 import { useSession } from '@/hooks/useSession';
 import { formatDepositAmount } from 'common/contract';
 import { format } from 'date-fns';
+import { ethers } from 'ethers';
 
 export function WalletContent() {
   const { data: session, isLoading: sessionLoading } = useSession();
@@ -67,8 +68,7 @@ export function WalletContent() {
     );
   }
 
-  const userBalance = session.user?.balance || 0;
-  const balanceInEth = userBalance / 1000; 
+  const rawBalance = session.user?.balance ? BigInt(session.user.balance) : BigInt(0);
 
   return (
     <div className="space-y-8">
@@ -83,7 +83,7 @@ export function WalletContent() {
                   <Skeleton className="h-16 w-64" />
                 ) : (
                   <>
-                    <span className="text-5xl font-bold">{balanceInEth.toFixed(4)} SepoliaETH</span>
+                    <span className="text-5xl font-bold">{ethers.formatEther(rawBalance)} SepoliaETH</span>
                   </>
                 )}
               </div>

@@ -47,22 +47,22 @@ export function useValidatorDashboard() {
 
       return result.data;
     },
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    refetchInterval: 60000, // Refetch every minute
+    staleTime: 30000, 
+    refetchInterval: 60000, 
   });
 }
 
-// Mock withdrawal request function
+
 export function useWithdrawalRequest() {
   const [isPending, setIsPending] = useState(false);
 
   const mutateAsync = useCallback(async (amount: number) => {
     setIsPending(true);
 
-    // Simulate API delay
+    
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Mock successful response
+    
     const withdrawalRequest: WithdrawalRequest = {
       id: `wd_${Date.now()}`,
       amount,

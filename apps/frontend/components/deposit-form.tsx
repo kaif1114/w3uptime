@@ -108,7 +108,7 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
 
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
-      });
+      }) as string[];
       
       if (accounts.length > 0) {
         setWalletAddress(accounts[0]);

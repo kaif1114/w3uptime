@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 
-// GET /api/monitors/[monitorid]/incidents - Get monitor incidents count
+
 export const GET = withAuth(async (
   req: NextRequest,
   user,
@@ -12,7 +12,7 @@ export const GET = withAuth(async (
   try {
     const { monitorid } = await params;
 
-    // Verify monitor ownership
+    
     const monitor = await prisma.monitor.findFirst({
       where: {
         id: monitorid,
@@ -27,7 +27,7 @@ export const GET = withAuth(async (
       );
     }
 
-    // Count incidents for this monitor
+    
     const incidentCount = await prisma.incident.count({
       where: {
         monitorId: monitorid,

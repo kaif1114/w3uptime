@@ -12,18 +12,18 @@ export function useLandingAuth() {
   const queryClient = useQueryClient();
 
   const handleNavigation = async (path: string) => {
-    // If user is already authenticated, navigate directly
+    
     if (session?.authenticated) {
       router.push(path);
       return;
     }
 
-    // If session is still loading, wait
+    
     if (isSessionLoading) {
       return;
     }
 
-    // User is not authenticated, try to connect MetaMask
+    
     await connectWithMetaMask(path);
   };
 
@@ -32,20 +32,20 @@ export function useLandingAuth() {
     setError(null);
 
     try {
-      // Check if MetaMask is installed
+      
       if (!window.ethereum) {
         setError('MetaMask is not installed. Please install MetaMask to continue.');
         return;
       }
 
-      // Connect wallet and authenticate
+      
       const authResult = await connectWallet();
       
-      if (authResult?.success) {
-        // Update the session in the query cache
+      if (authResult?.authenticated) {
+        
         queryClient.setQueryData(['session'], authResult);
         
-        // Redirect to the intended path or default to monitors
+        
         router.push(redirectPath || '/monitors');
       } else {
         setError(authResult?.error || 'Failed to connect with MetaMask');

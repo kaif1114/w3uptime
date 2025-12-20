@@ -2,14 +2,14 @@ import "server-only";
 
 
 export async function register() {
-  // Only initialize in Node.js runtime, not Edge runtime
+  
   if (process.env.NEXT_RUNTIME !== "edge") {
-    // Dynamic import to avoid bundling pg client in Edge runtime
+    
     const { initializeConnection } = await import("@/lib/pg");
     console.log("Initializing PostgreSQL connection on application startup...");
     initializeConnection();
 
-    // Initialize workers
+    
     try {
       console.log("Initializing escalation workers...");
       const { WorkerManager } = await import("@/lib/workerManager");
@@ -21,7 +21,7 @@ export async function register() {
       console.error("Failed to initialize escalation workers:", error);
     }
 
-    // Initialize blockchain listener
+    
     try {
       console.log("Initializing blockchain listener...");
       const { startBlockchainListener } = await import("@/lib/blockchain-listener");
@@ -30,6 +30,28 @@ export async function register() {
       console.log("Blockchain listener initialized successfully");
     } catch (error) {
       console.error("Failed to initialize blockchain listener:", error);
+    }
+
+    // Start governance proposal listener
+    try {
+      console.log("Initializing governance proposal listener...");
+      const { startProposalListener } = await import("@/lib/services/proposal-listener");
+      
+      await startProposalListener();
+      console.log("Governance proposal listener initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize governance proposal listener:", error);
+    }
+
+    // Start vote cache listener
+    try {
+      console.log("Initializing vote cache listener...");
+      const { startVoteCacheListener } = await import("@/lib/services/vote-cache-listener");
+      
+      await startVoteCacheListener();
+      console.log("Vote cache listener initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize vote cache listener:", error);
     }
   }
 }

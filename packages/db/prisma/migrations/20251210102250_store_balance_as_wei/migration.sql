@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."User" ALTER COLUMN "balance" SET DEFAULT 0,
+ALTER COLUMN "balance" SET DATA TYPE DECIMAL(78,0);

@@ -18,9 +18,7 @@ export class EscalationWorker {
 
   }
 
-  /**
-   * Process an individual escalation job
-   */
+  
   private async processJob(job: Job<EscalationJobData>): Promise<void> {
     const {
       monitor,
@@ -33,7 +31,7 @@ export class EscalationWorker {
     console.log(`Processing escalation job: ${job.name}`);
 
     try {
-      // Check if incident is still ongoing (not acknowledged or resolved)
+      
       const incidentData = await prisma.incident.findUnique({
         where: { id: incident.id },
         select: { status: true, title: true },
@@ -54,7 +52,7 @@ export class EscalationWorker {
         return;
       }
 
-      // Get escalation level details
+      
       const escalationLevel = await prisma.escalationLevel.findUnique({
         where: { id: escalationLevelId },
         include: {
@@ -70,7 +68,7 @@ export class EscalationWorker {
       }
 
     
-      // Create a more meaningful alert message
+      
       const alertMessage = `ALERT!
 
 Monitor: ${monitor.name}
@@ -82,7 +80,7 @@ The incident has been ongoing and requires immediate attention.
 `;
 
 
-      // Create alert record for this escalation attempt
+      
       const alert = await prisma.alert.create({
         data: {
           title: `${monitor.name} - Monitor Alert`,
@@ -94,18 +92,18 @@ The incident has been ongoing and requires immediate attention.
         },
       });
 
-      // Log the escalation attempt first to get the ID
+      
       const escalationLog = await prisma.escalationLog.create({
         data: {
           alertId: alert.id,
           escalationLevelId,
-          wasAcknowledged: false, // Will be updated if/when acknowledged
+          wasAcknowledged: false, 
         },
       });
       
       console.log('Worker created escalationLog ID:', escalationLog.id);
 
-      // Send the escalation based on the method
+      
       let success = false;
       let error: string | null = null;
 
@@ -177,30 +175,24 @@ The incident has been ongoing and requires immediate attention.
       console.log(`Successfully processed escalation job: ${job.name}`);
     } catch (error) {
       console.error(`L Error processing escalation job ${job.name}:`, error);
-      throw error; // Re-throw to trigger retry mechanism
+      throw error; 
     }
   }
 
-  /**
-   * Start the worker
-   */
+  
   async start(): Promise<void> {
     console.log("Starting escalation worker...");
-    // Worker starts automatically when created
+    
   }
 
-  /**
-   * Stop the worker gracefully
-   */
+  
   async stop(): Promise<void> {
     console.log(" Stopping escalation worker...");
     await this.worker.close();
     console.log("Escalation worker stopped");
   }
 
-  /**
-   * Get worker status
-   */
+  
   getStatus(): { isRunning: boolean } {
     return {
       isRunning: !this.worker.closing,
@@ -208,7 +200,7 @@ The incident has been ongoing and requires immediate attention.
   }
 }
 
-// Create and export a singleton worker instance
+
 let workerInstance: EscalationWorker | null = null;
 
 export const getEscalationWorker = (): EscalationWorker => {

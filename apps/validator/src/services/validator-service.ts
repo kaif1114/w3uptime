@@ -35,7 +35,6 @@ export class ValidatorService extends EventEmitter {
     
     this.keystoreManager = new KeystoreManager(securityConfig.keystoreDir);
     
-    // Initialize signer based on paranoid mode
     if (securityConfig.paranoidMode) {
       this.signer = new ParanoidMessageSigner(securityConfig.keystoreDir);
     } else {
@@ -56,30 +55,27 @@ export class ValidatorService extends EventEmitter {
     this.setupGracefulShutdown();
   }
 
-  /**
-   * Start the validator service
-   */
+  
   async start(walletName: string): Promise<void> {
     if (this.isRunning) {
       throw new Error('Validator service is already running');
     }
 
     try {
-      console.log(chalk.blue('🔐 Authenticating with wallet...'));
+      console.log(chalk.blue(' Authenticating with wallet...'));
       
-      // Authenticate with wallet
+
       await this.authenticateWallet(walletName);
       
       console.log(chalk.green('Authentication successful'));
-      console.log(chalk.blue('🌐 Connecting to hub...'));
+      console.log(chalk.blue(' Connecting to hub...'));
       
-      // Create and start WebSocket connection
       await this.initializeWebSocketClient();
       
       console.log(chalk.green('Connected to hub'))
       console.log(chalk.blue('📝 Registering as validator...'));
       
-      // Register with hub
+  
       await this.websocketClient!.signup();
       
       this.isRunning = true;
@@ -87,12 +83,12 @@ export class ValidatorService extends EventEmitter {
       
       console.log(chalk.green('🚀 Validator service started successfully'));
       console.log(chalk.cyan(`📊 Wallet Address: ${this.signer.getAddress()}`));
-      console.log(chalk.cyan(`🌐 Hub URL: ${this.configManager.getHubConfig().url}`));
+      console.log(chalk.cyan(` Hub URL: ${this.configManager.getHubConfig().url}`));
       console.log(chalk.yellow('Press Ctrl+C to stop'));
       
       this.emit('started');
       
-      // Start uptime tracking
+  
       this.startUptimeTracking();
       
     } catch (error) {
@@ -101,9 +97,7 @@ export class ValidatorService extends EventEmitter {
     }
   }
 
-  /**
-   * Stop the validator service
-   */
+
   async stop(): Promise<void> {
     if (!this.isRunning || this.shutdownInProgress) {
       return;
@@ -113,17 +107,16 @@ export class ValidatorService extends EventEmitter {
     console.log(chalk.yellow('Stopping validator service...'));
 
     try {
-      // Disconnect WebSocket
       if (this.websocketClient) {
         this.websocketClient.disconnect();
         this.websocketClient.destroy();
         this.websocketClient = null;
       }
 
-      // Lock signer session
+      
       this.signer.lock();
 
-      // Cleanup monitor
+      
       this.monitor.destroy();
 
       this.isRunning = false;
@@ -138,9 +131,7 @@ export class ValidatorService extends EventEmitter {
     }
   }
 
-  /**
-   * Get current service status
-   */
+  
   getStatus(): {
     running: boolean;
     stats: ValidatorStats;
@@ -161,9 +152,7 @@ export class ValidatorService extends EventEmitter {
     return status;
   }
 
-  /**
-   * Authenticate with wallet
-   */
+  
   private async authenticateWallet(walletName: string): Promise<void> {
     const keystorePath = this.keystoreManager.getKeystorePath(walletName);
 
@@ -171,16 +160,14 @@ export class ValidatorService extends EventEmitter {
       throw new Error(`Wallet "${walletName}" not found`);
     }
 
-    // Get password from user
+    
     const password = await this.promptPassword('Enter wallet password:');
 
-    // Authenticate with signer
+    
     await this.signer.authenticate(keystorePath, password);
   }
 
-  /**
-   * Initialize WebSocket client
-   */
+  
   private async initializeWebSocketClient(): Promise<void> {
     const hubConfig = this.configManager.getHubConfig();
     
@@ -194,7 +181,7 @@ export class ValidatorService extends EventEmitter {
 
     this.websocketClient = new ValidatorWebSocketClient(wsConfig, this.signer);
     
-    // Setup WebSocket event handlers
+    
     this.websocketClient.on('connected', () => {
       console.log(chalk.green('Connected to hub'));
     });
@@ -205,7 +192,7 @@ export class ValidatorService extends EventEmitter {
 
     this.websocketClient.on('reconnected', () => {
       console.log(chalk.green('🔄 Reconnected to hub'));
-      // Registration will be handled automatically by the WebSocket client
+      
     });
 
     this.websocketClient.on('registered', (data: { validatorId: string }) => {
@@ -224,13 +211,10 @@ export class ValidatorService extends EventEmitter {
       console.log(chalk.red(`WebSocket error: ${error.message}`));
     });
 
-    // Connect to hub
+
     await this.websocketClient.connect();
   }
 
-  /**
-   * Handle validation request from hub
-   */
   private async handleValidationRequest(data: { url: string; callbackId: string; monitorId?: string }): Promise<void> {
     try {
       console.log(chalk.blue(`🔍 Validating: ${data.url}`));
@@ -242,7 +226,7 @@ export class ValidatorService extends EventEmitter {
 
       const result: MonitoringResult = await this.monitor.monitorWebsite(monitoringRequest);
       
-      // Send result back to hub
+  
       await this.websocketClient!.sendValidationResult({
         callbackId: result.callbackId,
         status: result.status,
@@ -250,7 +234,6 @@ export class ValidatorService extends EventEmitter {
         monitorId: data.monitorId || 'unknown'
       });
 
-      // Update stats
       this.updateStats(result);
       
       const statusIcon = result.status === 'GOOD' ? '[GOOD]' : '[BAD]';
@@ -259,7 +242,6 @@ export class ValidatorService extends EventEmitter {
     } catch (error) {
       console.log(chalk.red(`Validation failed for ${data.url}: ${error instanceof Error ? error.message : String(error)}`));
       
-      // Send error result
       try {
         await this.websocketClient!.sendValidationResult({
           callbackId: data.callbackId,
@@ -274,10 +256,6 @@ export class ValidatorService extends EventEmitter {
       this.stats.failedValidations++;
     }
   }
-
-  /**
-   * Update validation statistics
-   */
   private updateStats(result: MonitoringResult): void {
     this.stats.totalValidations++;
     this.stats.lastValidation = new Date();
@@ -288,19 +266,12 @@ export class ValidatorService extends EventEmitter {
       this.stats.failedValidations++;
     }
   }
-
-  /**
-   * Setup event handlers
-   */
   private setupEventHandlers(): void {
     this.monitor.on('monitoringComplete', (result: MonitoringResult) => {
       this.emit('validationComplete', result);
     });
   }
 
-  /**
-   * Setup graceful shutdown handlers
-   */
   private setupGracefulShutdown(): void {
     process.on('SIGINT', async () => {
       chalk.yellow('\nReceived SIGINT, shutting down gracefully...');
@@ -314,16 +285,11 @@ export class ValidatorService extends EventEmitter {
       process.exit(0);
     });
   }
-
-  /**
-   * Start uptime tracking
-   */
   private startUptimeTracking(): void {
     setInterval(() => {
       if (this.isRunning) {
         const status = this.getStatus();
         
-        // Log periodic status (every 5 minutes)
         if (status.stats.uptime % (5 * 60 * 1000) < 1000) {
           chalk.gray(
             `📊 Uptime: ${this.formatUptime(status.stats.uptime)} | ` +
@@ -335,9 +301,6 @@ export class ValidatorService extends EventEmitter {
     }, 1000);
   }
 
-  /**
-   * Format uptime duration
-   */
   private formatUptime(uptime: number): string {
     const seconds = Math.floor(uptime / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -354,18 +317,12 @@ export class ValidatorService extends EventEmitter {
       return `${seconds}s`;
     }
   }
-
-  /**
-   * Calculate success rate
-   */
   private getSuccessRate(): number {
     if (this.stats.totalValidations === 0) return 100;
     return Math.round((this.stats.successfulValidations / this.stats.totalValidations) * 100);
   }
 
-  /**
-   * Prompt for password (handles both normal and paranoid mode)
-   */
+  
   private async promptPassword(message: string): Promise<string> {
     const { password } = await inquirer.default.prompt([
       {
@@ -378,9 +335,7 @@ export class ValidatorService extends EventEmitter {
     return password;
   }
 
-  /**
-   * Clean up resources
-   */
+  
   destroy(): void {
     this.removeAllListeners();
     if (this.websocketClient) {

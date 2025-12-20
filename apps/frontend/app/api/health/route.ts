@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       message: 'W3Uptime API is healthy',
       timestamp: new Date().toISOString(),
       services: {
-        database: 'operational', // We can add actual DB health check later
+        database: 'operational', 
         blockchainListener: status.isListening ? 'operational' : 'stopped',
         blockchainStatus: status
       }

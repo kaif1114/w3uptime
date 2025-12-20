@@ -7,14 +7,14 @@ const createMonitorSchema = z
   .object({
     name: z.string().min(1),
     url: z.url().min(1),
-    timeout: z.number().int().positive().default(30), // seconds
-    checkInterval: z.number().int().positive().default(300), // seconds
+    timeout: z.number().int().positive().default(30), 
+    checkInterval: z.number().int().positive().default(300), 
     expectedStatusCodes: z
       .array(z.number().int())
       .default([200, 201, 202, 204]),
     status: z.enum(["ACTIVE", "PAUSED"]).default("ACTIVE"),
     escalationPolicyId: z.uuid().optional().nullable(),
-    // Optional inline creation payload (minimal: one level)
+    
     escalationPolicy: z
       .object({
         name: z.string().min(1),
@@ -37,7 +37,7 @@ const createMonitorSchema = z
     path: ["escalationPolicyId"],
   });
 
-// POST /api/monitors - Create monitor
+
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
@@ -135,19 +135,19 @@ export const POST = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-// GET /api/monitors - Get all monitors for user
+
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const monitors = await prisma.monitor.findMany({
       where: {
-        userId: user.id, // Use authenticated user's ID
+        userId: user.id, 
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    // Format monitors to match frontend interface
+    
     const formattedMonitors = monitors.map((monitor) => ({
       id: monitor.id,
       name: monitor.name,
@@ -157,7 +157,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       checkInterval: monitor.checkInterval,
       expectedStatusCodes: monitor.expectedStatusCodes,
       createdAt: monitor.createdAt.toISOString(),
-      updatedAt: monitor.createdAt.toISOString(), // Use createdAt since updatedAt doesn't exist
+      updatedAt: monitor.createdAt.toISOString(), 
     }));
 
     return NextResponse.json({

@@ -37,7 +37,10 @@ export async function getSessionOnServer() {
   return {
     success: true,
     authenticated: true,
-    user: session.user,
+    user: {
+      ...session.user,
+      balance: session.user.balance ? BigInt(session.user.balance.toString()).toString() : "0"
+    },
     session: {
       id: session.id,
       walletAddress: session.walletAddress,

@@ -20,7 +20,7 @@ interface EscalationLevelInput {
 }
 
 
-// Validation schema for creating escalation policy
+
 const createEscalationPolicySchema = z.object({
   name: z.string()
     .min(1, "Policy name is required")
@@ -52,7 +52,7 @@ const createEscalationPolicySchema = z.object({
     .max(10, "Cannot have more than 10 escalation levels"),
 });
 
-// GET /api/escalation-policies - Get escalation policies for user with pagination and search
+
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const { searchParams } = new URL(req.url);
@@ -62,10 +62,10 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    // Calculate offset for pagination
+    
     const offset = (page - 1) * limit;
 
-    // Build where clause with search
+    
     const whereClause: WhereClause = {
       userId: user.id,
     };
@@ -77,7 +77,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       };
     }
 
-    // Build order by clause
+    
     const orderByClause: OrderByClause = {};
     const order = (sortOrder === "asc" || sortOrder === "desc") ? sortOrder : "desc";
     if (sortBy === "name") {
@@ -87,15 +87,15 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     } else if (sortBy === "updatedAt") {
       orderByClause.updatedAt = order;
     } else {
-      orderByClause.createdAt = "desc"; // Default
+      orderByClause.createdAt = "desc"; 
     }
 
-    // Get total count for pagination
+    
     const totalCount = await prisma.escalationPolicy.count({
       where: whereClause,
     });
 
-    // Get paginated policies
+    
     const escalationPolicies = await prisma.escalationPolicy.findMany({
       where: whereClause,
       include: {
@@ -110,7 +110,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       take: limit,
     });
 
-    // Transform the data to match frontend types
+    
     const transformedPolicies = escalationPolicies.map((policy) => ({
       id: policy.id,
       name: policy.name,
@@ -120,7 +120,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
         id: level.id,
         order: level.levelOrder,
         method: level.channel.toLowerCase(),
-        target: level.contacts[0] || "", // Take first contact for now
+        target: level.contacts[0] || "", 
         slackChannels: level.slackChannels ? JSON.parse(level.slackChannels as string) : [],
         waitTimeMinutes: level.waitMinutes,
       })),
@@ -128,7 +128,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       updatedAt: policy.updatedAt,
     }));
 
-    // Calculate pagination metadata
+    
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
@@ -156,7 +156,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-// POST /api/escalation-policies - Create new escalation policy
+
 export const POST = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
@@ -174,26 +174,26 @@ export const POST = withAuth(async (req: NextRequest, user) => {
 
     const { name, levels } = validation.data;
 
-    // Create escalation policy with levels in a transaction
+    
     const escalationPolicy = await prisma.$transaction(async (tx: PrismaTransaction) => {
-      // Create the escalation policy
+      
       const policy = await tx.escalationPolicy.create({
         data: {
           name,
-          userId: user.id, // Associate with authenticated user
+          userId: user.id, 
           enabled: true,
         },
       });
 
-      // Create escalation levels
+      
       const createdLevels = await Promise.all(
         levels.map((level: EscalationLevelInput, index: number) =>
           tx.escalationLevel.create({
             data: {
               escalationId: policy.id,
-              levelOrder: index + 1, // 1-based ordering
+              levelOrder: index + 1, 
               waitMinutes: level.waitTimeMinutes,
-              contacts: [level.target], // Store as array
+              contacts: [level.target], 
               channel: level.method.toUpperCase() as "EMAIL" | "SLACK" | "WEBHOOK",
               slackChannels: level.slackChannels ? JSON.stringify(level.slackChannels) : undefined,
             },
@@ -207,7 +207,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       };
     });
 
-    // Transform response to match frontend types
+    
     const transformedPolicy = {
       id: escalationPolicy.id,
       name: escalationPolicy.name,
@@ -248,7 +248,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
   }
 });
 
-// DELETE /api/escalation-policies - Bulk delete escalation policies
+
 export const DELETE = withAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json();
@@ -261,7 +261,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    // Verify all policies belong to the user and are not in use
+    
     const policies = await prisma.escalationPolicy.findMany({
       where: {
         id: { in: ids },
@@ -279,7 +279,7 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    // Check if any policies are in use by monitors
+    
     const policiesInUse = policies.filter(
       (policy) => policy.monitors.length > 0
     );
@@ -297,9 +297,9 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
       );
     }
 
-    // Delete policies and their levels in a transaction
+    
     const result = await prisma.$transaction(async (tx: PrismaTransaction) => {
-      // Delete escalation logs first (due to foreign key constraints)
+      
       await tx.escalationLog.deleteMany({
         where: {
           escalationLevel: {
@@ -308,14 +308,14 @@ export const DELETE = withAuth(async (req: NextRequest, user) => {
         },
       });
 
-      // Delete escalation levels next
+      
       await tx.escalationLevel.deleteMany({
         where: {
           escalationId: { in: ids },
         },
       });
 
-      // Delete escalation policies last
+      
       const deletedPolicies = await tx.escalationPolicy.deleteMany({
         where: {
           id: { in: ids },

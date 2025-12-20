@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "public"."User" ADD COLUMN     "badTicks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "goodTicks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "reputationScore" INTEGER NOT NULL DEFAULT 0;

@@ -34,7 +34,7 @@ function SlackCallbackContent() {
         if (!sessionData.authenticated) {
           
           const returnUrl = encodeURIComponent(`/slack/callback?code=${code}&state=${state || ""}`);
-          router.push(`/login?from=${returnUrl}`);
+          router.push(`?from=${returnUrl}`);
           return;
         }
 
