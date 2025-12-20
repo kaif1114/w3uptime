@@ -12,6 +12,136 @@ This document explains the implementation of a comprehensive **Reputation System
 
 ---
 
+## 0. Critical Bug Fix: Reputation Claiming Calculation (December 20, 2025)
+
+### Issue Report
+**Symptoms:**
+- User reported incorrect reputation calculations after claiming
+- Initial state: earned=848, available=758, onchain=80
+- After claim: earned=848, available=463, onchain=375
+- Math didn't add up: 80 + claimed ≠ 375
+- Second claim failed with "insufficient points" error
+
+### Root Causes Identified
+
+#### Bug #1: Dual Tracking System Inconsistency 🔴 CRITICAL
+The system used **two different data sources** for the same value:
+- `GET /api/reputation` read from `Transaction` table
+- `POST /api/reputation/claim-success` wrote to `User.claimedReputation` field
+- Result: State mismatch causing incorrect "available" calculations
+
+#### Bug #2: Stale Cache
+- 30-second cache TTL on on-chain balance
+- Users saw outdated values even after successful claims
+- No cache invalidation after claim transactions
+
+#### Bug #3: Missing Validation
+- No check to prevent claiming more than earned
+- Potential for over-claiming due to race conditions
+
+### Fixes Implemented
+
+**Commits:** `17a40c2` → `618a530` (7 commits)
+
+#### Fix #1: Data Migration Script
+**File:** `packages/db/scripts/sync-claimed-reputation.ts` (NEW)
+**Commits:** `17a40c2`, `fc348c9`
+
+Created one-time migration to sync existing `User.claimedReputation` values with `Transaction` records:
+```bash
+npx tsx packages/db/scripts/sync-claimed-reputation.ts
+```
+
+**Result:** Synced 1 user (1575 → 385 points), 1 already correct
+
+#### Fix #2: Consolidate Data Source
+**File:** `apps/frontend/app/api/reputation/route.ts` (lines 22-29)
+**Commit:** `6dcaa41`
+
+**Before:**
+```typescript
+const claimedTransactions = await prisma.transaction.findMany({...});
+const claimed = claimedTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+```
+
+**After:**
+```typescript
+const userRecord = await prisma.user.findUnique({
+  where: { id: user.id },
+  select: { claimedReputation: true }
+});
+const claimed = userRecord?.claimedReputation || 0;
+```
+
+**Impact:** Single source of truth - both GET and POST use `User.claimedReputation`
+
+#### Fix #3: Reduce Cache TTL
+**File:** `apps/frontend/lib/cache/reputation-cache.ts` (line 4)
+**Commit:** `3a74e29`
+
+Changed from 30s to 10s for faster on-chain balance updates after claims.
+
+#### Fix #4: Add Cache Invalidation
+**File:** `apps/frontend/hooks/useClaimReputation.ts` (line 187)
+**Commit:** `8ea8f4b`
+
+Added to `onSuccess` callback:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['onChainReputation'] });
+```
+
+**Impact:** UI shows updated on-chain balance immediately after claim
+
+#### Fix #5: Add Validation
+**File:** `apps/frontend/app/api/reputation/claim-success/route.ts` (lines 35-64)
+**Commit:** `4e31334`
+
+Added validation before database update:
+```typescript
+const currentClaimed = existingUser.claimedReputation || 0;
+const newClaimedTotal = currentClaimed + amount;
+const earnedReputation = await getReputation(user.id);
+
+if (newClaimedTotal > earnedReputation.totalScore) {
+  return NextResponse.json({
+    success: false,
+    error: 'Cannot claim more than earned reputation'
+  }, { status: 400 });
+}
+```
+
+**Impact:** Prevents over-claiming, logs detailed errors
+
+### Testing
+**File:** `REPUTATION_CLAIM_TEST_GUIDE.md` (NEW)
+**Commit:** `618a530`
+
+Comprehensive test guide with 6 scenarios:
+1. Fresh claim (first-time user)
+2. Sequential claims (multiple claims)
+3. Partial claim (claim less than available)
+4. Cache refresh (verify immediate updates)
+5. Validation error (prevent over-claiming)
+6. On-chain governance (use claimed reputation)
+
+### Expected Outcomes
+- ✅ Math always correct: `earned = available + claimed`
+- ✅ No state mismatch between data sources
+- ✅ On-chain balance updates immediately
+- ✅ Second/third claims work correctly
+- ✅ Validation prevents over-claiming
+- ✅ 10s cache provides faster updates
+
+### Files Modified
+1. `packages/db/scripts/sync-claimed-reputation.ts` - NEW migration script
+2. `apps/frontend/app/api/reputation/route.ts` - Use User.claimedReputation
+3. `apps/frontend/lib/cache/reputation-cache.ts` - Reduced TTL to 10s
+4. `apps/frontend/hooks/useClaimReputation.ts` - Added cache invalidation
+5. `apps/frontend/app/api/reputation/claim-success/route.ts` - Added validation
+6. `REPUTATION_CLAIM_TEST_GUIDE.md` - NEW test guide
+
+---
+
 ## 1. Database Schema Changes
 
 ### Migration: `20251130192453_reputation`
