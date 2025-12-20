@@ -24,30 +24,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { BrowserProvider, ContractTransactionResponse, BaseContract } from 'ethers';
-import { createGovernanceContract } from 'common/governance-contract';
-
-// Typed interface for W3Governance contract
-interface W3GovernanceContractInterface extends BaseContract {
-  getFunction(name: "createProposal"): {
-    (contentHash: string, votingDuration: number): Promise<ContractTransactionResponse>;
-    estimateGas(contentHash: string, votingDuration: number): Promise<bigint>;
-  };
-  getFunction(name: "vote"): {
-    (proposalId: number, support: boolean): Promise<ContractTransactionResponse>;
-    estimateGas(proposalId: number, support: boolean): Promise<bigint>;
-  };
-  getFunction(name: "getProposal"): (proposalId: number) => Promise<{
-    proposer: string;
-    contentHash: string;
-    votingEndsAt: bigint;
-    upvotes: bigint;
-    downvotes: bigint;
-    finalized: boolean;
-    passed: boolean;
-  }>;
-  getFunction(name: "getVote"): (proposalId: number, voter: string) => Promise<[boolean, boolean]>;
-}
+import { BrowserProvider } from 'ethers';
+import { createGovernanceContract, W3GovernanceContract } from 'common/governance-contract';
 
 interface ProposalCreationResult {
   proposalId: number;
@@ -87,7 +65,7 @@ interface CustomError extends Error {
 }
 
 export function useGovernanceContract() {
-  const [contract, setContract] = useState<W3GovernanceContractInterface | null>(null);
+  const [contract, setContract] = useState<W3GovernanceContract | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +87,7 @@ export function useGovernanceContract() {
           return;
         }
 
-        const contractInstance = createGovernanceContract(browserProvider) as unknown as W3GovernanceContractInterface;
+        const contractInstance = createGovernanceContract(browserProvider);
         setContract(contractInstance);
         setProvider(browserProvider);
         setIsConnected(true);
@@ -201,7 +179,7 @@ export function useGovernanceContract() {
 
     try {
       const signer = await provider.getSigner();
-      const contractWithSigner = contract.connect(signer) as unknown as W3GovernanceContractInterface;
+      const contractWithSigner = contract.connect(signer) as W3GovernanceContract;
 
       // IMPORTANT: Estimate gas first to catch reverts early
       try {
@@ -265,7 +243,7 @@ export function useGovernanceContract() {
 
     try {
       const signer = await provider.getSigner();
-      const contractWithSigner = contract.connect(signer) as unknown as W3GovernanceContractInterface;
+      const contractWithSigner = contract.connect(signer) as W3GovernanceContract;
 
       // Estimate gas first to catch reverts early
       try {

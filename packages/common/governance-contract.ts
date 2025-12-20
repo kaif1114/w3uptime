@@ -11,7 +11,7 @@
  * - Type-safe contract interactions
  */
 
-import { Contract, Provider, Signer } from 'ethers';
+import { Contract, Provider, Signer, BaseContract, ContractTransactionResponse } from 'ethers';
 import type { OnChainProposal, VoteCastEvent, ProposalFinalizedEvent } from './governance-types';
 import { convertContractToProposal } from './governance-types';
 import GOVERNANCE_ABI from './governance-abi.json';
@@ -35,6 +35,69 @@ export const SEPOLIA_CHAIN_ID = 11155111;
 export const GOVERNANCE_CONTRACT_ABI = GOVERNANCE_ABI;
 
 /**
+ * Typed interface for W3Governance smart contract
+ *
+ * Extends BaseContract with type-safe method signatures following ethers.js v6 best practices.
+ * Uses the getFunction() pattern for accessing contract methods with proper typing.
+ *
+ * @example Read Operations
+ * ```typescript
+ * const contract = createGovernanceContract(provider);
+ * const getProposalFn = contract.getFunction("getProposal");
+ * const proposal = await getProposalFn(1);
+ * ```
+ *
+ * @example Write Operations with Gas Estimation
+ * ```typescript
+ * const contract = createGovernanceContractWithSigner(signer);
+ * const voteFn = contract.getFunction("vote");
+ * const gasEstimate = await voteFn.estimateGas(1, true);
+ * const tx = await voteFn(1, true);
+ * await tx.wait();
+ * ```
+ */
+export interface W3GovernanceContract extends BaseContract {
+  // Write methods (transactions)
+  getFunction(name: "createProposal"): {
+    (contentHash: string, votingDuration: number): Promise<ContractTransactionResponse>;
+    estimateGas(contentHash: string, votingDuration: number): Promise<bigint>;
+  };
+
+  getFunction(name: "vote"): {
+    (proposalId: number, support: boolean): Promise<ContractTransactionResponse>;
+    estimateGas(proposalId: number, support: boolean): Promise<bigint>;
+  };
+
+  getFunction(name: "finalizeProposal"): {
+    (proposalId: number): Promise<ContractTransactionResponse>;
+    estimateGas(proposalId: number): Promise<bigint>;
+  };
+
+  // Read methods
+  getFunction(name: "getProposal"): (proposalId: number) => Promise<{
+    proposer: string;
+    contentHash: string;
+    votingEndsAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    finalized: boolean;
+    passed: boolean;
+  }>;
+
+  getFunction(name: "getVote"): (proposalId: number, voter: string) => Promise<[boolean, boolean]>;
+
+  getFunction(name: "getVoteCounts"): (proposalId: number) => Promise<[bigint, bigint, bigint]>;
+
+  getFunction(name: "isVotingActive"): (proposalId: number) => Promise<boolean>;
+
+  getFunction(name: "proposalCount"): () => Promise<bigint>;
+
+  getFunction(name: "MIN_VOTING_DURATION"): () => Promise<bigint>;
+
+  getFunction(name: "MAX_VOTING_DURATION"): () => Promise<bigint>;
+}
+
+/**
  * Create a read-only W3Governance contract instance
  *
  * @param provider - Ethers.js Provider (e.g., AlchemyProvider, JsonRpcProvider)
@@ -53,8 +116,8 @@ export const GOVERNANCE_CONTRACT_ABI = GOVERNANCE_ABI;
  * console.log(proposal);
  * ```
  */
-export function createGovernanceContract(provider: Provider): Contract {
-  return new Contract(GOVERNANCE_CONTRACT_ADDRESS, GOVERNANCE_CONTRACT_ABI, provider);
+export function createGovernanceContract(provider: Provider): W3GovernanceContract {
+  return new Contract(GOVERNANCE_CONTRACT_ADDRESS, GOVERNANCE_CONTRACT_ABI, provider) as W3GovernanceContract;
 }
 
 /**
@@ -79,8 +142,8 @@ export function createGovernanceContract(provider: Provider): Contract {
  * await tx.wait();
  * ```
  */
-export function createGovernanceContractWithSigner(signer: Signer): Contract {
-  return new Contract(GOVERNANCE_CONTRACT_ADDRESS, GOVERNANCE_CONTRACT_ABI, signer);
+export function createGovernanceContractWithSigner(signer: Signer): W3GovernanceContract {
+  return new Contract(GOVERNANCE_CONTRACT_ADDRESS, GOVERNANCE_CONTRACT_ABI, signer) as W3GovernanceContract;
 }
 
 /**
