@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { withAuth } from '@/lib/auth';
+import { getReputation } from '../../proposals/ReputationGuard';
 
 /**
  * POST /api/reputation/claim-success
@@ -30,6 +31,37 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     // TODO: Optional - Verify transaction on-chain
     // This would require checking Etherscan API or calling contract.getReputationBalance()
     // to ensure the transaction actually succeeded
+
+    // Validate claimed amount doesn't exceed earned reputation
+    const existingUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { claimedReputation: true }
+    });
+
+    if (!existingUser) {
+      return NextResponse.json({
+        success: false,
+        error: 'User not found'
+      }, { status: 404 });
+    }
+
+    const currentClaimed = existingUser.claimedReputation || 0;
+    const newClaimedTotal = currentClaimed + amount;
+    const earnedReputation = await getReputation(user.id);
+
+    if (newClaimedTotal > earnedReputation.totalScore) {
+      console.error('Claim validation failed:', {
+        userId: user.id,
+        newClaimedTotal,
+        earned: earnedReputation.totalScore,
+        attemptingToClaim: amount,
+        currentClaimed
+      });
+      return NextResponse.json({
+        success: false,
+        error: 'Cannot claim more than earned reputation'
+      }, { status: 400 });
+    }
 
     // Create Transaction record and update User in atomic transaction
     await prisma.$transaction(async (tx) => {
