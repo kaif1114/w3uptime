@@ -54,14 +54,16 @@ export function useMetaMaskAccountChange(
     };
 
     // Add event listener
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    if (window.ethereum?.on) {
+      window.ethereum.on("accountsChanged", handleAccountsChanged as (...args: unknown[]) => void);
+    }
 
     // Cleanup: Remove listener on unmount
     return () => {
       if (window.ethereum?.removeListener) {
         window.ethereum.removeListener(
           "accountsChanged",
-          handleAccountsChanged
+          handleAccountsChanged as (...args: unknown[]) => void
         );
       }
     };

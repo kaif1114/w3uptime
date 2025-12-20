@@ -70,7 +70,9 @@ export async function GET(req: NextRequest) {
           let onChainVoteData = null;
           if (p.onChainId) {
             try {
-              const onChainProposal = await contract.getProposal(p.onChainId);
+              // Get the getProposal function
+              const getProposalFn = contract.getFunction("getProposal");
+              const onChainProposal = await getProposalFn(p.onChainId);
 
               // Query VoteCast events to get individual voters
               const filter = contract.filters.VoteCast(BigInt(p.onChainId));

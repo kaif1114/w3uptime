@@ -114,8 +114,11 @@ export function useVote() {
       // Get contract instance with signer
       const contract = createGovernanceContractWithSigner(signer);
 
+      // Get the vote function
+      const voteFn = contract.getFunction("vote");
+      
       // Call vote function on contract
-      const tx = await contract.vote(BigInt(proposalId), support);
+      const tx = await voteFn(proposalId, support);
 
       // Wait for transaction confirmation
       const receipt = await tx.wait(1);

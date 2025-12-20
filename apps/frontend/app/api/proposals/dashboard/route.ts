@@ -55,7 +55,11 @@ export async function GET(req: NextRequest) {
 
             const provider = new ethers.JsonRpcProvider(rpcUrl);
             const contract = createGovernanceContract(provider);
-            const onChainProposal = await contract.getProposal(p.onChainId);
+            
+            // Get the getProposal function
+            const getProposalFn = contract.getFunction("getProposal");
+            const onChainProposal = await getProposalFn(p.onChainId);
+            
             onChainVotes = {
               upvotes: Number(onChainProposal.upvotes),
               downvotes: Number(onChainProposal.downvotes),

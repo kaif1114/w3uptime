@@ -168,14 +168,17 @@ export async function POST(
     let tx: ethers.ContractTransactionResponse;
 
     try {
+      // Get the finalizeProposal function
+      const finalizeProposalFn = contract.getFunction("finalizeProposal");
+      
       // Estimate gas first
-      const gasEstimate = await contract.finalizeProposal.estimateGas(proposal.onChainId);
+      const gasEstimate = await finalizeProposalFn.estimateGas(proposal.onChainId);
       console.log(`[Finalize] Estimated gas: ${gasEstimate.toString()}`);
 
       // Call with 20% gas buffer
       const gasLimit = (gasEstimate * BigInt(120)) / BigInt(100);
 
-      tx = await contract.finalizeProposal(proposal.onChainId, {
+      tx = await finalizeProposalFn(proposal.onChainId, {
         gasLimit,
       });
 

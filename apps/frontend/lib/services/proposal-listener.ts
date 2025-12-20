@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { createGovernanceContract, GOVERNANCE_CONTRACT_ADDRESS } from "common/governance-contract";
+import { createGovernanceContract, GOVERNANCE_CONTRACT_ADDRESS, type W3GovernanceContract } from "common/governance-contract";
 import { prisma } from "db/client";
 
 /**
@@ -16,7 +16,7 @@ import { prisma } from "db/client";
  */
 export class ProposalEventListener {
   private provider: ethers.Provider | null = null;
-  private contract: ethers.Contract | null = null;
+  private contract: W3GovernanceContract | null = null;
   private isListening = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;

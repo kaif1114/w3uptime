@@ -47,9 +47,12 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const contract = createGovernanceContract(provider);
 
+    // Get the getVote function
+    const getVoteFn = contract.getFunction("getVote");
+    
     // Call getVote(proposalId, voterAddress) to check on-chain vote status
-    const [hasVoted, support] = await contract.getVote(
-      BigInt(proposal.onChainId),
+    const [hasVoted, support] = await getVoteFn(
+      proposal.onChainId,
       user.walletAddress
     );
 

@@ -166,7 +166,8 @@ export async function getProposalFromChain(
   provider: Provider
 ): Promise<OnChainProposal> {
   const contract = createGovernanceContract(provider);
-  const rawData = await contract.getProposal(proposalId);
+  const getProposalFn = contract.getFunction("getProposal");
+  const rawData = await getProposalFn(proposalId);
   return convertContractToProposal(rawData);
 }
 
@@ -192,7 +193,8 @@ export async function getVoteStatus(
   provider: Provider
 ): Promise<{ hasVoted: boolean; support: boolean }> {
   const contract = createGovernanceContract(provider);
-  const [hasVoted, support] = await contract.getVote(proposalId, voter);
+  const getVoteFn = contract.getFunction("getVote");
+  const [hasVoted, support] = await getVoteFn(proposalId, voter);
   return { hasVoted, support };
 }
 
@@ -214,7 +216,8 @@ export async function getVoteCounts(
   provider: Provider
 ): Promise<{ upvotes: bigint; downvotes: bigint; total: bigint }> {
   const contract = createGovernanceContract(provider);
-  const [upvotes, downvotes, total] = await contract.getVoteCounts(proposalId);
+  const getVoteCountsFn = contract.getFunction("getVoteCounts");
+  const [upvotes, downvotes, total] = await getVoteCountsFn(proposalId);
   return { upvotes, downvotes, total };
 }
 
@@ -238,7 +241,8 @@ export async function isVotingActive(
   provider: Provider
 ): Promise<boolean> {
   const contract = createGovernanceContract(provider);
-  return await contract.isVotingActive(proposalId);
+  const isVotingActiveFn = contract.getFunction("isVotingActive");
+  return await isVotingActiveFn(proposalId);
 }
 
 /**
@@ -432,9 +436,11 @@ export async function getContractConstants(provider: Provider): Promise<{
   maxVotingDuration: bigint;
 }> {
   const contract = createGovernanceContract(provider);
+  const getMinDurationFn = contract.getFunction("MIN_VOTING_DURATION");
+  const getMaxDurationFn = contract.getFunction("MAX_VOTING_DURATION");
   const [minVotingDuration, maxVotingDuration] = await Promise.all([
-    contract.MIN_VOTING_DURATION(),
-    contract.MAX_VOTING_DURATION(),
+    getMinDurationFn(),
+    getMaxDurationFn(),
   ]);
   return { minVotingDuration, maxVotingDuration };
 }
@@ -447,5 +453,6 @@ export async function getContractConstants(provider: Provider): Promise<{
  */
 export async function getProposalCount(provider: Provider): Promise<bigint> {
   const contract = createGovernanceContract(provider);
-  return await contract.proposalCount();
+  const proposalCountFn = contract.getFunction("proposalCount");
+  return await proposalCountFn();
 }
