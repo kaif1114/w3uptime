@@ -9,6 +9,10 @@ export interface ReputationData {
   monitorScore: number;
   depositScore: number;
   ageScore: number;
+  earned: number;
+  claimed: number;
+  available: number;
+  onChainBalance: number | null;
   thresholds: {
     createProposal: number;
     comment: number;
