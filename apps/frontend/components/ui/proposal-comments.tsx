@@ -2,7 +2,6 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddComment, useProposalComments } from "@/hooks/useProposals";
@@ -72,33 +71,33 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
     );
 
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div>
+        <div className="p-4">
+          <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Comments
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-4">
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-muted-foreground text-center">
             {isReputationError
               ? "Your reputation score is too low to view or add comments on proposals."
               : "Failed to load comments. Please try again later."}
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div>
+      <div className="p-4">
+        <div className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
           Comments ({comments?.length || 0})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </div>
+      </div>
+      <div className="space-y-4">
         {reputationMessage && (
           <p className="text-sm text-gray-200">{reputationMessage}</p>
         )}
@@ -169,7 +168,7 @@ export function ProposalComments({ proposalId }: ProposalCommentsProps) {
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

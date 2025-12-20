@@ -349,7 +349,7 @@ export function CommunityGovernanceClient({}: CommunityGovernanceClientProps) {
               </div>
 
               
-              <div className="border rounded-lg p-4 bg-muted/30">
+              <div className=" rounded-lg">
                 <h3 className="text-lg font-semibold mb-4">
                   Vote on this proposal
                 </h3>
