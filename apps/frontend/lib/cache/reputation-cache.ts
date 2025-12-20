@@ -1,7 +1,7 @@
 import NodeCache from 'node-cache';
 import { getOnChainReputationBalance } from '../contracts/reputation-contract';
 
-const cache = new NodeCache({ stdTTL: 30 }); // 30 seconds
+const cache = new NodeCache({ stdTTL: 10 }); // 10 seconds - reduced for faster updates after claims
 
 export async function getCachedOnChainBalance(
   walletAddress: string
