@@ -9,13 +9,13 @@ export default async function ValidatorDashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">
-          Validator Dashboard
+          Earnings & Withdrawals
         </h1>
         <p className="text-muted-foreground mt-2">
-          Monitor your validator performance, earnings, and manage withdrawals
+          Monitor your earnings and manage withdrawals
         </p>
       </div>
 
