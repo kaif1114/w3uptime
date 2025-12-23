@@ -108,7 +108,6 @@ This feature is valuable for both technical and non-technical users who need qui
 - Badge indicator for unread messages (future enhancement)
 - Chat drawer: 600px width on desktop, fullscreen on mobile
 - Message bubbles: User (right-aligned, blue), Assistant (left-aligned, gray)
-- Avatar icons: User initials from wallet address, "AI" for assistant
 - Typing indicator during streaming
 - Tool execution visualization (collapsible accordion showing tool calls)
 
@@ -214,7 +213,7 @@ Each tool internally calls existing authenticated API endpoints (`/api/monitors`
 **Redis (Existing ioredis Client)**
 - Key pattern: `chat:conversation:{userId}:{conversationId}`
 - Value: JSON string containing conversation object
-- TTL: 7 days (604800 seconds)
+- TTL: 1 day
 - Conversation object:
   ```
   {
@@ -383,14 +382,10 @@ All API calls include session cookies for authentication. No new authentication 
 
 ### Intelligence Improvements
 - Implement conversation summarization for long histories
-- Add RAG (Retrieval Augmented Generation) with documentation
-- Train on common user patterns
 - Add proactive suggestions ("I noticed your monitor is down, would you like me to investigate?")
-- Multi-language support
 
 ### Performance Optimizations
 - Use GPT-4o-mini for simple queries (70% cost reduction)
-- Implement caching for common queries
 - Batch tool executions where possible
 - Optimize token usage with better truncation strategies
 - Add streaming chunk batching to reduce UI re-renders
@@ -711,7 +706,7 @@ function truncateConversation(messages: Message[], maxMessages = 20): Message[] 
 
 Would you like details on the DOWN monitor?"
 
-**Query:** "Create a monitor for https://newsite.com, check every 3 minutes"
+**Query:** "Create a monitor for https://newsite.com"
 **Tools Used:** getEscalationPolicies, createMonitor
 **Response:** "I see you have 2 escalation policies available:
 1. Critical Alerts (Email → Slack → PagerDuty)
