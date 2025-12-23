@@ -2,141 +2,45 @@ import { ethers } from "ethers";
 import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
 import { Prisma } from "@prisma/client";
+import { BaseBlockListener } from "./services/base-block-listener";
 
-class BlockchainListener {
-  private provider: ethers.Provider | null = null;
-  private contract: ContractInstance | null = null;
-  private isListening = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+class BlockchainListener extends BaseBlockListener<ContractInstance> {
+  getListenerName(): string {
+    return "payment";
+  }
 
-  async startListening() {
-    if (this.isListening) {
-      console.log("Blockchain listener is already running");
+  createContract(provider: ethers.Provider): ContractInstance {
+    return createContractInstance(provider);
+  }
+
+  getEventFilters(): (ethers.DeferredTopicFilter | ethers.EventFilter)[] {
+    if (!this.contract) return [];
+    return [
+      this.contract.filters.FundsDeposited(),
+      this.contract.filters.Withdrawal()
+    ];
+  }
+
+  async processEvent(event: ethers.Log): Promise<void> {
+    if (!this.contract) return;
+
+    // Parse event type
+    let parsedEvent;
+    try {
+      parsedEvent = this.contract.interface.parseLog({
+        topics: event.topics,
+        data: event.data || '0x'
+      });
+    } catch (parseError) {
+      console.error('Failed to parse event:', parseError);
       return;
     }
 
-    try {
-      const rpcUrl = process.env.ETHEREUM_RPC_URL;
-      if (!rpcUrl) {
-        throw new Error("ETHEREUM_RPC_URL environment variable is required");
-      }
-
-      this.provider = new ethers.JsonRpcProvider(rpcUrl);
-      this.contract = createContractInstance(this.provider);
-
-      
-      const network = await this.provider.getNetwork();
-      console.log(`Connected to Ethereum network: ${network.name} (${network.chainId})`);
-
-      
-      this.contract.on("FundsDeposited", this.handleDepositEvent.bind(this));
-
-      
-      this.contract.on("Withdrawal", this.handleWithdrawalEvent.bind(this));
-
-      
-      this.provider.on("error", this.handleProviderError.bind(this));
-
-      this.isListening = true;
-      this.reconnectAttempts = 0;
-      console.log(`Listening for FundsDeposited and Withdrawal events on contract: ${CONTRACT_ADDRESS}`);
-
-      
-      await this.processPastEvents();
-
-    } catch (error) {
-      console.error("Failed to start blockchain listener:", error);
-      await this.handleReconnect();
-    }
-  }
-
-  private async processPastEvents() {
-    if (!this.contract || !this.provider) return;
-
-    try {
-      const currentBlock = await this.provider.getBlockNumber();
-      const blocksToCheck = 50; 
-      const chunkSize = 10; 
-      const fromBlock = Math.max(0, currentBlock - blocksToCheck);
-
-      console.log(`Checking for past FundsDeposited and Withdrawal events from block ${fromBlock} to ${currentBlock} in chunks of ${chunkSize}`);
-
-      const depositFilter = this.contract.filters.FundsDeposited();
-      const withdrawalFilter = this.contract.filters.Withdrawal();
-      let allEvents: ethers.Log[] = [];
-
-      
-      for (let start = fromBlock; start <= currentBlock; start += chunkSize) {
-        const end = Math.min(start + chunkSize - 1, currentBlock);
-        
-        try {
-          console.log(`Querying events from block ${start} to ${end}`);
-          
-          
-          const [depositEvents, withdrawalEvents] = await Promise.all([
-            this.contract.queryFilter(depositFilter, start, end),
-            this.contract.queryFilter(withdrawalFilter, start, end)
-          ]);
-          
-          console.log(`Found ${depositEvents.length} deposit events and ${withdrawalEvents.length} withdrawal events in blocks ${start}-${end}`);
-          allEvents = allEvents.concat(depositEvents, withdrawalEvents);
-          
-          
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (chunkError) {
-          console.error(`Error querying events for blocks ${start}-${end}:`, chunkError);
-          
-        }
-      }
-
-      for (const event of allEvents) {
-        await this.processEvent(event, undefined);
-      }
-
-      console.log(`Processed ${allEvents.length} past events (deposits and withdrawals) from ${blocksToCheck} blocks`);
-    } catch (error) {
-      console.error("Error processing past events:", error);
-    }
-  }
-
-  private async handleDepositEvent(...args: unknown[]) {
-    
-    const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
-    const log = event.log || event;
-    await this.processDepositEvent(log, event.args);
-  }
-
-  private async handleWithdrawalEvent(...args: unknown[]) {
-    
-    const event = args[args.length - 1] as { log?: ethers.Log; args: unknown[] } & ethers.Log;
-    const log = event.log || event;
-    await this.processWithdrawalEvent(log, event.args);
-  }
-
-  private async processEvent(event: ethers.Log, precomputedArgs?: unknown[]) {
-    try {
-      if (!this.contract) return;
-
-      
-      let parsedEvent;
-      try {
-        parsedEvent = this.contract.interface.parseLog({
-          topics: event.topics,
-          data: event.data || '0x'
-        });
-      } catch (parseError) {
-        console.error('Failed to parse event log:', parseError);
-        return;
-      }
-
-      if (parsedEvent?.name === "FundsDeposited") {
-        await this.processDepositEvent(event, precomputedArgs);
-      } else if (parsedEvent?.name === "Withdrawal") {
-        await this.processWithdrawalEvent(event, precomputedArgs);
-      }
-    } catch (error) {
-      console.error("Error processing event:", error);
+    // Delegate to existing handlers
+    if (parsedEvent?.name === "FundsDeposited") {
+      await this.processDepositEvent(event, parsedEvent.args);
+    } else if (parsedEvent?.name === "Withdrawal") {
+      await this.processWithdrawalEvent(event, parsedEvent.args);
     }
   }
 
@@ -151,24 +55,24 @@ class BlockchainListener {
         hasPrecomputedArgs: !!precomputedArgs
       });
 
-      
+      // Verify event is from our contract
       if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
         console.warn('Event not from our contract, skipping:', event.address);
         return;
       }
 
-      
+      // Parse event arguments
       let from: string, amount: bigint, timestamp: bigint;
-      
+
       if (precomputedArgs && precomputedArgs.length >= 3) {
         from = precomputedArgs[0] as string;
         amount = precomputedArgs[1] as bigint;
         timestamp = precomputedArgs[2] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
-        
+        // Parse manually
         console.log('Parsing log manually');
-        
+
         if (!event.topics || event.topics.length === 0) {
           console.warn('Event has no topics, cannot parse');
           return;
@@ -206,7 +110,7 @@ class BlockchainListener {
         blockNumber: event.blockNumber
       });
 
-      
+      // Check for duplicate transaction
       const existingTransaction = await prisma.transaction.findUnique({
         where: { transactionHash: event.transactionHash }
       });
@@ -220,7 +124,7 @@ class BlockchainListener {
 
       console.log("Normalized address:", normalizedAddress);
 
-      
+      // Get or create user
       let user = await prisma.user.findUnique({
         where: { walletAddress: normalizedAddress }
       });
@@ -235,7 +139,7 @@ class BlockchainListener {
         });
       }
 
-      
+      // Create transaction and update balance atomically
       await prisma.$transaction(async (tx) => {
         await tx.transaction.create({
           data: {
@@ -280,15 +184,15 @@ class BlockchainListener {
         hasPrecomputedArgs: !!precomputedArgs
       });
 
-      
+      // Verify event is from our contract
       if (event.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
         console.warn('Event not from our contract, skipping:', event.address);
         return;
       }
 
-      
+      // Parse event arguments
       let user: string, amount: bigint, nonce: bigint, timestamp: bigint;
-      
+
       if (precomputedArgs && precomputedArgs.length >= 4) {
         user = precomputedArgs[0] as string;
         amount = precomputedArgs[1] as bigint;
@@ -296,9 +200,9 @@ class BlockchainListener {
         timestamp = precomputedArgs[3] as bigint;
         console.log('Using precomputed args from ContractEventPayload');
       } else {
-        
+        // Parse manually
         console.log('Parsing log manually');
-        
+
         if (!event.topics || event.topics.length === 0) {
           console.warn('Event has no topics, cannot parse');
           return;
@@ -337,14 +241,14 @@ class BlockchainListener {
         blockNumber: event.blockNumber
       });
 
-      
+      // Check for duplicate transaction
       const existingTransaction = await prisma.transaction.findUnique({
         where: { transactionHash: event.transactionHash }
       });
 
       if (existingTransaction) {
         console.log("Transaction already processed:", event.transactionHash);
-        
+
         if (existingTransaction.status === 'PENDING') {
           await prisma.transaction.update({
             where: { id: existingTransaction.id },
@@ -361,7 +265,7 @@ class BlockchainListener {
       const normalizedAddress = user.toLowerCase();
       console.log("Normalized address:", normalizedAddress);
 
-      
+      // Verify user exists
       const existingUser = await prisma.user.findUnique({
         where: { walletAddress: normalizedAddress }
       });
@@ -371,7 +275,7 @@ class BlockchainListener {
         return;
       }
 
-      
+      // Check for pending withdrawal
       const amountString = amount.toString();
       const pendingWithdrawal = await prisma.transaction.findFirst({
         where: {
@@ -386,10 +290,10 @@ class BlockchainListener {
         }
       });
 
-      
+      // Update or create transaction and update balance atomically
       await prisma.$transaction(async (tx) => {
         if (pendingWithdrawal) {
-          
+          // Update pending withdrawal
           await tx.transaction.update({
             where: { id: pendingWithdrawal.id },
             data: {
@@ -400,7 +304,7 @@ class BlockchainListener {
             }
           });
         } else {
-          
+          // Create new withdrawal record
           await tx.transaction.create({
             data: {
               type: 'WITHDRAWAL',
@@ -421,7 +325,6 @@ class BlockchainListener {
           where: { walletAddress: normalizedAddress },
           data: {
             balance: {
-        
               decrement: amountDecimal,
             },
           },
@@ -435,59 +338,15 @@ class BlockchainListener {
     }
   }
 
-  private async handleProviderError(error: unknown) {
-    console.error("Provider error:", error);
-    this.isListening = false;
-    await this.handleReconnect();
-  }
-
-  private async handleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("Max reconnection attempts reached. Stopping blockchain listener.");
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000); 
-
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-
-    setTimeout(async () => {
-      await this.stopListening();
-      await this.startListening();
-    }, delay);
-  }
-
-  async stopListening() {
-    if (!this.isListening) return;
-
-    if (this.contract) {
-      
-      this.contract.removeAllListeners();
-      this.contract = null;
-    }
-
-    if (this.provider) {
-      this.provider.removeAllListeners("error");
-      this.provider = null;
-    }
-
-    this.isListening = false;
-    console.log("Stopped blockchain listener");
-  }
-
   getStatus() {
     return {
-      isListening: this.isListening,
-      contractAddress: CONTRACT_ADDRESS,
-      hasProvider: !!this.provider,
-      hasContract: !!this.contract,
-      reconnectAttempts: this.reconnectAttempts
+      ...super.getStatus(),
+      contractAddress: CONTRACT_ADDRESS
     };
   }
 }
 
-
+// Singleton instance
 let blockchainListener: BlockchainListener | null = null;
 
 export function startBlockchainListener() {
@@ -497,8 +356,8 @@ export function startBlockchainListener() {
   }
 
   blockchainListener = new BlockchainListener();
-  
-  blockchainListener.startListening().catch((error) => {
+
+  blockchainListener.start().catch((error) => {
     console.error("Failed to start blockchain listener:", error);
   });
 
@@ -507,7 +366,7 @@ export function startBlockchainListener() {
 
 export function stopBlockchainListener() {
   if (blockchainListener) {
-    blockchainListener.stopListening();
+    blockchainListener.stop();
     blockchainListener = null;
   }
 }
@@ -518,6 +377,7 @@ export function getBlockchainListenerStatus() {
     contractAddress: CONTRACT_ADDRESS,
     hasProvider: false,
     hasContract: false,
-    reconnectAttempts: 0
+    reconnectAttempts: 0,
+    lastProcessedBlock: 0
   };
 }

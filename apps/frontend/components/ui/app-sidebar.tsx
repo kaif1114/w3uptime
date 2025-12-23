@@ -72,6 +72,11 @@ const items = [
     icon: Wallet,
   },
   {
+    title: "Earnings & Withdrawals",
+    url: "/withdrawal",
+    icon: Wallet,
+  },
+  {
     title: "Community",
     url: "/community",
     icon: Lightbulb,

@@ -13,8 +13,8 @@ export default async function ValidatorLayout({
   }
   return (
     <div className="relative">
-      <FloatingTopbar />
-      <div className="pt-20">{children}</div>
+      {/* <FloatingTopbar /> */}
+      <div>{children}</div>
     </div>
   );
 }
