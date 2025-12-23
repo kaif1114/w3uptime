@@ -115,9 +115,17 @@ export abstract class BaseBlockListener<TContract extends ethers.BaseContract> {
       const end = Math.min(start + this.chunkSize - 1, toBlock);
 
       try {
-        // Query all event types in parallel
+        // Query all event types in parallel using contract.queryFilter
+        // This automatically filters by contract address AND event signature
         const eventArrays = await Promise.all(
-          filters.map(filter => this.contract!.queryFilter(filter, start, end))
+          filters.map(async (filter) => {
+            // contract.queryFilter handles DeferredTopicFilter correctly and includes contract address
+            return await (this.contract!.queryFilter as (
+              filter: ethers.DeferredTopicFilter | ethers.EventFilter,
+              fromBlock: number,
+              toBlock: number
+            ) => Promise<ethers.Log[]>)(filter, start, end);
+          })
         );
 
         // Flatten and sort by block number

@@ -61,10 +61,16 @@ class VoteCacheListener extends BaseBlockListener<W3GovernanceContract> {
     try {
       if (!this.contract) return;
 
+      // Verify event is from our contract
+      if (event.address.toLowerCase() !== GOVERNANCE_CONTRACT_ADDRESS.toLowerCase()) {
+        // Silently skip events from other contracts
+        return;
+      }
+
       // Parse event if args not provided
       let parsedEvent;
       if (precomputedArgs) {
-        parsedEvent = { args: precomputedArgs };
+        parsedEvent = { args: precomputedArgs, name: 'VoteCast' };
       } else {
         try {
           parsedEvent = this.contract.interface.parseLog({
@@ -72,13 +78,15 @@ class VoteCacheListener extends BaseBlockListener<W3GovernanceContract> {
             data: event.data || '0x',
           });
         } catch (parseError) {
-          console.error('[VoteCacheListener] Failed to parse event:', parseError);
+          // Silently skip events that don't match VoteCast signature
+          // This can happen if queryFilter returns logs from other events
           return;
         }
       }
 
-      if (!parsedEvent || !parsedEvent.args) {
-        console.error('[VoteCacheListener] No parsed event args');
+      // Verify this is actually a VoteCast event
+      if (!parsedEvent || parsedEvent.name !== 'VoteCast' || !parsedEvent.args) {
+        // Silently skip non-VoteCast events
         return;
       }
 
