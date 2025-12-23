@@ -484,3 +484,12 @@ enum TransactionStatus {
   CONFIRMED
   FAILED
 }
+
+model BlockchainSyncState {
+  id           String   @id @default(cuid())
+  listenerName String   @unique
+  lastBlock    Int
+  updatedAt    DateTime @updatedAt
+
+  @@map("blockchain_sync_state")
+}
