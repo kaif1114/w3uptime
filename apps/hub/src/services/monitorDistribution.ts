@@ -58,15 +58,15 @@ export function startMonitorDistribution() {
             addToBatch(monitorTick);
 
             // Award reputation for uptime check
-            if (validatorData?.publicKey) {
-              if (status === 'GOOD') {
-                await applyUptimeCheckReward(validatorData.publicKey);
-              } else if (status === 'BAD') {
-                await applyUptimeCheckPenalty(validatorData.publicKey);
-              }
-            } else {
-              console.warn(`No publicKey found for validator: ${validatorId}`);
-            }
+            // if (validatorData?.publicKey) {
+            //   if (status === 'GOOD') {
+            //     await applyUptimeCheckReward(validatorData.publicKey);
+            //   } else if (status === 'BAD') {
+            //     await applyUptimeCheckPenalty(validatorData.publicKey);
+            //   }
+            // } else {
+            //   console.warn(`No publicKey found for validator: ${validatorId}`);
+            // }
           }
         };
       });

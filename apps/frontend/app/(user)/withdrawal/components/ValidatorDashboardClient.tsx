@@ -41,19 +41,11 @@ export default function ValidatorDashboardClient() {
 
   return (
     <div className="space-y-6">
-      
       <BalanceOverview balance={dashboardData.balance} />
-
-      
       {dashboardData.validationSummary.totalValidations > 0 && (
         <ValidationsSummary validationSummary={dashboardData.validationSummary} />
       )}
-
-      
       <WithdrawalsSection />
-
-      
-      
     </div>
   );
 }
