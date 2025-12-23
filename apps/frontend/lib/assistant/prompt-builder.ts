@@ -1,5 +1,11 @@
 import { AssistantContext } from "./context-builder";
-const AVAILABLE_TOOLS = [
+import { ALLOWED_ACTIONS } from "./tool-definitions";
+
+/**
+ * Text-based tool descriptions for fallback mode (older models without Function Calling).
+ * When Function Calling is available, these are not used.
+ */
+const TEXT_BASED_TOOLS = [
   {
     type: "get_all_monitors",
     description: "Fetch all monitors for the current user",
@@ -9,7 +15,8 @@ const AVAILABLE_TOOLS = [
   },
   {
     type: "get_monitor_data",
-    description: "Get detailed information about a specific monitor including ticks, incidents, and status",
+    description:
+      "Get detailed information about a specific monitor including ticks, incidents, and status",
     required: ["monitorId"],
     optional: [],
     returns: "Monitor object with full details",
@@ -44,99 +51,112 @@ const AVAILABLE_TOOLS = [
   },
 ];
 
-const ALLOWED_ACTIONS = [
-  {
-    type: "create_monitor",
-    required: ["name", "url"],
-    optional: [
-      "timeout",
-      "checkInterval",
-      "expectedStatusCodes",
-      "escalationPolicyId",
-    ],
-  },
-  {
-    type: "pause_monitor",
-    required: ["monitorId"],
-  },
-  {
-    type: "resume_monitor",
-    required: ["monitorId"],
-  },
-  {
-    type: "delete_monitor",
-    required: ["monitorId"],
-  },
-  {
-    type: "create_escalation_policy",
-    required: ["name"],
-    optional: ["levels"],
-  },
-  {
-    type: "remove_escalation_policy",
-    required: ["escalationPolicyId"],
-  },
-  {
-    type: "edit_escalation_policy",
-    required: ["escalationPolicyId"],
-    optional: ["name", "enabled", "levels"],
-  },
-  {
-    type: "view_incident_timeline",
-    required: ["incidentId"],
-  },
-  {
-    type: "acknowledge_incident",
-    required: ["incidentId"],
-  },
-  {
-    type: "resolve_incident",
-    required: ["incidentId"],
-  },
+/**
+ * Anti-hallucination rules that prevent the model from making up data.
+ */
+const ANTI_HALLUCINATION_RULES = [
+  "=== CRITICAL RULES - NEVER VIOLATE ===",
+  "1. NEVER invent, guess, or fabricate monitor IDs, incident IDs, URLs, emails, or any data",
+  "2. If you don't have specific data, use a tool to fetch it - NEVER make assumptions",
+  "3. ALWAYS use tools to fetch current data before answering questions about status, uptime, or incidents",
+  "4. The context snapshot may be outdated - prefer fresh tool results over context data",
+  "5. If a tool returns empty results or an error, say 'No data found' or report the error - NEVER make up results",
+  "6. For actions requiring IDs (monitorId, incidentId, etc.), ALWAYS fetch the ID first using tools if not provided",
+  "7. When citing statistics (uptime %, latency, incident count), only use numbers from actual tool results",
+  "8. If you're unsure about something, say 'I don't have that information' rather than guessing",
 ];
 
 /**
- * System prompt that sets the assistant's role.
+ * UX behavior rules for silent tool execution.
+ * The assistant should not narrate its process - just provide answers.
  */
-export function buildSystemPrompt(context: AssistantContext) {
+const SILENT_UX_RULES = [
+  "=== RESPONSE BEHAVIOR ===",
+  "1. NEVER announce that you are fetching data or calling tools",
+  "2. NEVER say phrases like 'Let me fetch that', 'I need to get', 'Let me check', 'Based on the data I retrieved'",
+  "3. When you need data, call the tool and respond with the FINAL answer only",
+  "4. Do NOT narrate your process - just provide the answer directly",
+  "5. Respond as if you already have the information",
+  "",
+  "BAD EXAMPLES (never do this):",
+  "- 'Let me fetch the escalation policy... The email is john@example.com'",
+  "- 'I need to check your monitor status first. Based on the data...'",
+  "- 'Let me get that information for you...'",
+  "",
+  "GOOD EXAMPLES (do this):",
+  "- 'The email associated with your escalation policy is john@example.com'",
+  "- 'Your API monitor is currently UP with 99.9% uptime over the last 24 hours.'",
+  "- 'You have 3 active monitors, all currently healthy.'",
+];
+
+/**
+ * Build the system prompt with anti-hallucination guardrails.
+ *
+ * @param context - The assistant context with user data summary
+ * @param useFunctionCalling - If true, omit text-based tool instructions (Function Calling handles it)
+ */
+export function buildSystemPrompt(
+  context: AssistantContext,
+  useFunctionCalling = true
+): string {
   const monitorCount = context.summary.monitors.length;
   const incidentCount = context.summary.incidents.length;
 
-  const toolDescriptions = AVAILABLE_TOOLS.map(
-    (tool) =>
-      `- ${tool.type}: ${tool.description}. Required: ${tool.required.join(", ") || "none"}. Optional: ${tool.optional.join(", ") || "none"}. Returns: ${tool.returns}`
-  ).join("\n");
-
-  return [
+  const sections: string[] = [
     "You are W3Uptime's monitoring assistant.",
-    "You help users understand monitor status, incidents, alerts, and analytics.",
-    "Be concise, actionable, and clear.",
+    "You help users understand monitor status, incidents, alerts, escalation policies, and analytics.",
+    "Be concise, actionable, and accurate.",
     "",
-    "=== TOOLS (Read-Only Data Fetching) ===",
-    "You have access to tools that can fetch fresh data from the system.",
-    "Use tools when you need current information that may not be in the provided context, or when the user asks for specific data.",
-    "When you need to call a tool, append a JSON block on its own line in this exact format:",
-    "TOOL_CALLS:",
-    '[{ "type": "<tool_type>", "data": { /* required and optional fields */ } }]',
-    "You can call multiple tools in one request by including multiple objects in the array.",
-    "Available tools:",
-    toolDescriptions,
+    ...ANTI_HALLUCINATION_RULES,
+    "",
+    ...SILENT_UX_RULES,
+  ];
+
+  // Only include text-based tool instructions for older models
+  if (!useFunctionCalling) {
+    const toolDescriptions = TEXT_BASED_TOOLS.map(
+      (tool) =>
+        `- ${tool.type}: ${tool.description}. Required: ${tool.required.join(", ") || "none"}. Optional: ${tool.optional.join(", ") || "none"}. Returns: ${tool.returns}`
+    ).join("\n");
+
+    sections.push(
+      "",
+      "=== TOOLS (Read-Only Data Fetching) - TEXT MODE ===",
+      "You have access to tools that fetch fresh data from the system.",
+      "When you need to call a tool, append a JSON block on its own line in this exact format:",
+      "TOOL_CALLS:",
+      '[{ "type": "<tool_type>", "data": { /* required and optional fields */ } }]',
+      "You can call multiple tools by including multiple objects in the array.",
+      "Available tools:",
+      toolDescriptions
+    );
+  }
+
+  // Actions section (write operations suggested to user)
+  const actionsList = ALLOWED_ACTIONS.map((a) => a.type).join(", ");
+  sections.push(
     "",
     "=== ACTIONS (Write Operations) ===",
-    "Actions are for modifying data (create, update, delete).",
-    "If required data for an action is missing, first call appropriate tools to fetch it, or ask the user to provide it instead of guessing.",
-    "Only emit SUGGESTED_ACTIONS after all required fields for that action are available.",
-    "When you emit SUGGESTED_ACTIONS, also include in your visible reply a short preview of the data you will send.",
-    "When proposing executable actions, append a JSON block on its own line in this exact format:",
+    "Actions modify data (create, update, delete). They are SUGGESTED to the user, not executed automatically.",
+    "If required data for an action is missing, use tools to fetch it first, or ask the user - NEVER guess.",
+    "Only emit SUGGESTED_ACTIONS when all required fields are available and verified.",
+    "Include a short preview of the action data in your response.",
+    "Format:",
     "SUGGESTED_ACTIONS:",
-    '[{ "type": "<action_type>", "label": "<short label>", "confirm": false, "data": { /* required fields */ } }]',
-    "Only include actions from the allowed list and only when relevant. If no actions, omit SUGGESTED_ACTIONS.",
-    `Allowed actions: ${ALLOWED_ACTIONS.map((a) => a.type).join(", ")}`,
+    '[{ "type": "<action_type>", "label": "<button label>", "confirm": true, "data": { /* all required fields */ } }]',
+    `Allowed actions: ${actionsList}`
+  );
+
+  // Context summary
+  sections.push(
     "",
     "=== CONTEXT ===",
     `User has ${monitorCount} monitors and ${incidentCount} recent incidents.`,
-    "The context provided may be stale. Use tools to fetch fresh data when needed.",
-  ].join(" ");
+    `Context generated at: ${context.generatedAt}`,
+    "WARNING: This context is a snapshot and may be stale. ALWAYS use tools to fetch current data for status questions."
+  );
+
+  return sections.join("\n");
 }
 
 type HistoryMessage = {
@@ -166,14 +186,18 @@ export function buildMessages({
     contextId: context.contextId,
     focus: context.focus,
     summary: context.summary,
-    generatedAt: context.generatedAt,
+    _metadata: {
+      generatedAt: context.generatedAt,
+      warning:
+        "This is a snapshot that may be outdated. Use tools for current data.",
+    },
   };
 
   return [
     { role: "system", content: systemPrompt },
     {
       role: "system",
-      content: `Context JSON:\n${JSON.stringify(contextSummary, null, 2)}`,
+      content: `Context Snapshot (may be stale):\n${JSON.stringify(contextSummary, null, 2)}`,
     },
     ...history.map((m) => ({
       role: m.role,

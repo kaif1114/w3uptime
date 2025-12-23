@@ -93,6 +93,8 @@ export async function buildAssistantContext(
     focusedContext = incident || null;
   }
 
+  const generatedAt = new Date().toISOString();
+
   return {
     user: user
       ? {
@@ -128,7 +130,23 @@ export async function buildAssistantContext(
     focus: focusedContext,
     contextType,
     contextId,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
+    /**
+     * Metadata about context freshness to help reduce hallucinations.
+     * The LLM should prefer tool results over this potentially stale context.
+     */
+    _staleness: {
+      snapshotTime: generatedAt,
+      trustLevel: "LOW" as const,
+      warning:
+        "This context is a snapshot and may be outdated. Always use tools for current status, uptime, or incident data.",
+      recommendations: [
+        "Use get_all_monitors for current monitor list and status",
+        "Use get_monitor_data for specific monitor details and stats",
+        "Use get_incidents for current incident information",
+        "Use get_escalation_policies for alert configuration and emails",
+      ],
+    },
   };
 }
 

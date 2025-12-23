@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "db/client";
-import { generateAssistantReply } from "@/lib/assistant/llm-service";
+import {
+  generateAssistantReply,
+  generateFollowUpReply,
+  currentModelSupportsTools,
+  HistoryMessage,
+} from "@/lib/assistant/llm-service";
 import {
   getAllMonitors,
   getMonitorData,
@@ -10,7 +15,20 @@ import {
   getStatusPageLink,
   getAllIncidentsForMonitor,
 } from "@/lib/assistant/ToolHandlers";
-import { ConversationContext, SuggestedAction, ToolCall, ToolResult } from "@/types/assistant";
+import { ToolName } from "@/lib/assistant/tool-definitions";
+import { summarizeToolResult } from "@/lib/assistant/result-summarizer";
+import {
+  validateResponse,
+  logValidationWarnings,
+  ToolResult as ValidationToolResult,
+} from "@/lib/assistant/response-validator";
+import {
+  ConversationContext,
+  SuggestedAction,
+  ToolCall,
+  ToolResult,
+} from "@/types/assistant";
+import { ChatCompletionMessageToolCall } from "openai/resources/chat/completions";
 
 type ChatBody = {
   message?: string;
@@ -18,6 +36,306 @@ type ChatBody = {
   contextType?: ConversationContext;
   contextId?: string;
 };
+
+/**
+ * Execute a tool by name and return the result.
+ */
+async function executeTool(
+  userId: string,
+  toolName: string,
+  args: Record<string, unknown>
+): Promise<{ result: unknown; error?: string }> {
+  try {
+    let result: unknown;
+
+    switch (toolName) {
+      case "get_all_monitors":
+        result = await getAllMonitors(userId);
+        break;
+
+      case "get_monitor_data":
+        if (!args.monitorId) {
+          throw new Error("monitorId is required");
+        }
+        result = await getMonitorData(userId, args.monitorId as string);
+        break;
+
+      case "get_escalation_policies":
+        result = await getEscalationPolicies(userId);
+        break;
+
+      case "get_incidents":
+        result = await getIncidents(userId, {
+          monitorId: args.monitorId as string | undefined,
+          status: args.status as
+            | "ONGOING"
+            | "ACKNOWLEDGED"
+            | "RESOLVED"
+            | undefined,
+          limit: args.limit ? Number(args.limit) : undefined,
+        });
+        break;
+
+      case "get_status_page_link":
+        result = await getStatusPageLink(
+          userId,
+          args.statusPageId as string | undefined
+        );
+        break;
+
+      case "get_all_incidents_for_monitor":
+        if (!args.monitorId) {
+          throw new Error("monitorId is required");
+        }
+        result = await getAllIncidentsForMonitor(
+          userId,
+          args.monitorId as string,
+          {
+            status: args.status as
+              | "ONGOING"
+              | "ACKNOWLEDGED"
+              | "RESOLVED"
+              | undefined,
+            limit: args.limit ? Number(args.limit) : undefined,
+          }
+        );
+        break;
+
+      default:
+        throw new Error(`Unknown tool: ${toolName}`);
+    }
+
+    return { result };
+  } catch (error) {
+    return {
+      result: null,
+      error: (error as Error).message || "Tool execution error",
+    };
+  }
+}
+
+/**
+ * Handle OpenAI Function Calling tool calls.
+ */
+async function handleFunctionCalling(
+  userId: string,
+  toolCalls: ChatCompletionMessageToolCall[]
+): Promise<{
+  toolResults: ToolResult[];
+  toolsUsed: string[];
+  formattedResults: Array<{
+    tool_call_id: string;
+    name: string;
+    result: unknown;
+    error?: string;
+  }>;
+}> {
+  const toolResults: ToolResult[] = [];
+  const toolsUsed: string[] = [];
+  const formattedResults: Array<{
+    tool_call_id: string;
+    name: string;
+    result: unknown;
+    error?: string;
+  }> = [];
+
+  const executions = toolCalls.map(async (toolCall) => {
+    const functionName = toolCall.function.name;
+    let args: Record<string, unknown> = {};
+
+    try {
+      args = JSON.parse(toolCall.function.arguments || "{}");
+    } catch {
+      // Invalid JSON in arguments
+      const errorResult: ToolResult = {
+        toolType: functionName,
+        result: null,
+        error: "Invalid tool arguments",
+      };
+      toolResults.push(errorResult);
+      formattedResults.push({
+        tool_call_id: toolCall.id,
+        name: functionName,
+        result: null,
+        error: "Invalid tool arguments",
+      });
+      return;
+    }
+
+    const { result, error } = await executeTool(userId, functionName, args);
+
+    toolsUsed.push(functionName);
+    toolResults.push({
+      toolType: functionName,
+      result: error ? null : result,
+      error,
+    });
+    formattedResults.push({
+      tool_call_id: toolCall.id,
+      name: functionName,
+      result: error ? null : result,
+      error,
+    });
+  });
+
+  await Promise.all(executions);
+
+  return { toolResults, toolsUsed, formattedResults };
+}
+
+/**
+ * Handle text-based tool calling (fallback for older models).
+ */
+async function handleTextBasedToolCalling(
+  userId: string,
+  content: string
+): Promise<{
+  toolResults: ToolResult[];
+  toolsUsed: string[];
+  contentWithoutTools: string;
+  toolCalls: ToolCall[];
+}> {
+  const toolResults: ToolResult[] = [];
+  const toolsUsed: string[] = [];
+  let toolCalls: ToolCall[] = [];
+  let contentWithoutTools = content;
+
+  const toolMarker = "TOOL_CALLS:";
+  const toolMarkerIndex = content.lastIndexOf(toolMarker);
+
+  if (toolMarkerIndex === -1) {
+    return { toolResults, toolsUsed, contentWithoutTools, toolCalls };
+  }
+
+  const toolBlock = content.slice(toolMarkerIndex + toolMarker.length).trim();
+  contentWithoutTools = content.slice(0, toolMarkerIndex).trim();
+
+  try {
+    const parsed = JSON.parse(toolBlock);
+    if (!Array.isArray(parsed)) {
+      return { toolResults, toolsUsed, contentWithoutTools, toolCalls };
+    }
+
+    toolCalls = parsed.filter(
+      (tc) =>
+        tc &&
+        typeof tc.type === "string" &&
+        (!tc.data || typeof tc.data === "object")
+    ) as ToolCall[];
+
+    // Execute tools
+    for (const toolCall of toolCalls) {
+      const { result, error } = await executeTool(
+        userId,
+        toolCall.type,
+        toolCall.data || {}
+      );
+
+      toolsUsed.push(toolCall.type);
+      toolResults.push({
+        toolType: toolCall.type,
+        result: error ? null : result,
+        error,
+      });
+    }
+  } catch (parseError) {
+    console.error(
+      "[assistant chat] Failed to parse text-based tool calls:",
+      parseError
+    );
+    // Return content without the malformed tool block
+  }
+
+  return { toolResults, toolsUsed, contentWithoutTools, toolCalls };
+}
+
+/**
+ * Extract suggested actions from response text.
+ */
+function extractSuggestedActions(content: string): {
+  actions: SuggestedAction[];
+  contentWithoutActions: string;
+} {
+  const marker = "SUGGESTED_ACTIONS:";
+  const markerIndex = content.lastIndexOf(marker);
+
+  if (markerIndex === -1) {
+    return { actions: [], contentWithoutActions: content };
+  }
+
+  const actionsBlock = content.slice(markerIndex + marker.length).trim();
+  const contentWithoutActions = content.slice(0, markerIndex).trim();
+
+  try {
+    const parsed = JSON.parse(actionsBlock);
+    if (!Array.isArray(parsed)) {
+      return { actions: [], contentWithoutActions };
+    }
+
+    const actions: SuggestedAction[] = parsed
+      .filter(
+        (a) =>
+          a &&
+          typeof a.type === "string" &&
+          (!a.label || typeof a.label === "string")
+      )
+      .map((a) => ({
+        type: a.type,
+        label: a.label,
+        confirm: Boolean(a.confirm),
+        data:
+          a.data && typeof a.data === "object"
+            ? (a.data as Record<string, unknown>)
+            : undefined,
+      }));
+
+    return { actions, contentWithoutActions };
+  } catch {
+    return { actions: [], contentWithoutActions };
+  }
+}
+
+/**
+ * Validate and filter suggested actions.
+ */
+function validateActions(actions: SuggestedAction[]): SuggestedAction[] {
+  const ACTION_SPECS: Record<
+    string,
+    { required: string[]; optional?: string[] }
+  > = {
+    create_monitor: {
+      required: ["name", "url"],
+      optional: [
+        "timeout",
+        "checkInterval",
+        "expectedStatusCodes",
+        "escalationPolicyId",
+      ],
+    },
+    pause_monitor: { required: ["monitorId"] },
+    resume_monitor: { required: ["monitorId"] },
+    delete_monitor: { required: ["monitorId"] },
+    create_escalation_policy: { required: ["name"], optional: ["levels"] },
+    remove_escalation_policy: { required: ["escalationPolicyId"] },
+    edit_escalation_policy: {
+      required: ["escalationPolicyId"],
+      optional: ["name", "enabled", "levels"],
+    },
+    view_incident_timeline: { required: ["incidentId"] },
+    acknowledge_incident: { required: ["incidentId"] },
+    resolve_incident: { required: ["incidentId"] },
+  };
+
+  return actions.filter((action) => {
+    const spec = ACTION_SPECS[action.type];
+    if (!spec) return false;
+    const data = action.data || {};
+    return spec.required.every(
+      (field) =>
+        data[field] !== undefined && data[field] !== null && data[field] !== ""
+    );
+  });
+}
 
 export const POST = withAuth(async (req: NextRequest, user, _session) => {
   try {
@@ -54,269 +372,144 @@ export const POST = withAuth(async (req: NextRequest, user, _session) => {
       take: 12,
     });
 
-    // Add the user's new message to history prior to LLM call
-    const history = [
-      ...recentMessages.map((m) => ({
-        role: m.role.toLowerCase() as "user" | "assistant" | "system",
-        content: m.content,
-      })),
-      { role: "user" as const, content: message.trim() },
-    ];
+    const history: HistoryMessage[] = recentMessages.map((m) => ({
+      role: m.role.toLowerCase() as "user" | "assistant" | "system",
+      content: m.content,
+    }));
 
-    // Ask the LLM
+    // Initial LLM call
     let llmResult = await generateAssistantReply({
       userId: user.id,
       userMessage: message.trim(),
       contextType: contextType ?? conversation.contextType ?? undefined,
       contextId: contextId ?? conversation.contextId ?? undefined,
       history,
+      enableTools: true,
     });
 
-    // Extract tool calls if the model followed the TOOL_CALLS convention
-    let toolCalls: ToolCall[] = [];
+    let assistantContent = llmResult.content;
     let toolResults: ToolResult[] = [];
     let toolsUsed: string[] = [];
 
-    let assistantContent = llmResult.content;
-    const toolMarker = "TOOL_CALLS:";
-    const toolMarkerIndex = assistantContent.lastIndexOf(toolMarker);
+    const useFunctionCalling =
+      llmResult.usedFunctionCalling && currentModelSupportsTools();
 
-    if (toolMarkerIndex !== -1) {
-      const toolBlock = assistantContent
-        .slice(toolMarkerIndex + toolMarker.length)
-        .trim();
-      const contentWithoutTools = assistantContent
-        .slice(0, toolMarkerIndex)
-        .trim();
+    // Handle tool calls based on method
+    if (useFunctionCalling && llmResult.toolCalls?.length) {
+      // OpenAI Function Calling (structured, reliable)
+      const { toolResults: results, toolsUsed: used, formattedResults } =
+        await handleFunctionCalling(user.id, llmResult.toolCalls);
 
-      try {
-        const parsed = JSON.parse(toolBlock);
-        if (Array.isArray(parsed)) {
-          toolCalls = parsed.filter(
-            (tc) =>
-              tc &&
-              typeof tc.type === "string" &&
-              (!tc.data || typeof tc.data === "object")
-          ) as ToolCall[];
+      toolResults = results;
+      toolsUsed = used;
 
-          // Execute tools
-          if (toolCalls.length > 0) {
-            const toolExecutionPromises = toolCalls.map(async (toolCall) => {
-              try {
-                let result: unknown;
+      if (formattedResults.length > 0) {
+        // Make follow-up call with tool results
+        const followUpResult = await generateFollowUpReply({
+          userId: user.id,
+          originalMessage: message.trim(),
+          contextType: contextType ?? conversation.contextType ?? undefined,
+          contextId: contextId ?? conversation.contextId ?? undefined,
+          history,
+          assistantMessageWithToolCalls: {
+            content: llmResult.content,
+            tool_calls: llmResult.toolCalls,
+          },
+          toolResults: formattedResults,
+        });
 
-                switch (toolCall.type) {
-                  case "get_all_monitors":
-                    result = await getAllMonitors(user.id);
-                    break;
-                  case "get_monitor_data":
-                    if (!toolCall.data?.monitorId) {
-                      throw new Error("monitorId is required");
-                    }
-                    result = await getMonitorData(
-                      user.id,
-                      toolCall.data.monitorId as string
-                    );
-                    break;
-                  case "get_escalation_policies":
-                    result = await getEscalationPolicies(user.id);
-                    break;
-                  case "get_incidents":
-                    result = await getIncidents(user.id, {
-                      monitorId: toolCall.data?.monitorId as string | undefined,
-                      status: toolCall.data?.status as
-                        | "ONGOING"
-                        | "ACKNOWLEDGED"
-                        | "RESOLVED"
-                        | undefined,
-                      limit: toolCall.data?.limit
-                        ? Number(toolCall.data.limit)
-                        : undefined,
-                    });
-                    break;
-                  case "get_status_page_link":
-                    result = await getStatusPageLink(
-                      user.id,
-                      toolCall.data?.statusPageId as string | undefined
-                    );
-                    break;
-                  case "get_all_incidents_for_monitor":
-                    if (!toolCall.data?.monitorId) {
-                      throw new Error("monitorId is required");
-                    }
-                    result = await getAllIncidentsForMonitor(
-                      user.id,
-                      toolCall.data.monitorId as string,
-                      {
-                        status: toolCall.data?.status as
-                          | "ONGOING"
-                          | "ACKNOWLEDGED"
-                          | "RESOLVED"
-                          | undefined,
-                        limit: toolCall.data?.limit
-                          ? Number(toolCall.data.limit)
-                          : undefined,
-                      }
-                    );
-                    break;
-                  default:
-                    throw new Error(`Unknown tool type: ${toolCall.type}`);
-                }
+        assistantContent = followUpResult.content;
+      }
+    } else if (!useFunctionCalling) {
+      // Text-based fallback for older models
+      const {
+        toolResults: results,
+        toolsUsed: used,
+        contentWithoutTools,
+        toolCalls,
+      } = await handleTextBasedToolCalling(user.id, llmResult.content);
 
-                toolsUsed.push(toolCall.type);
-                return {
-                  toolType: toolCall.type,
-                  result,
-                } as ToolResult;
-              } catch (error) {
-                return {
-                  toolType: toolCall.type,
-                  result: null,
-                  error: (error as Error).message || "Tool execution error",
-                } as ToolResult;
-              }
-            });
+      if (toolCalls.length > 0) {
+        toolResults = results;
+        toolsUsed = used;
 
-            toolResults = await Promise.all(toolExecutionPromises);
+        // Make follow-up call with summarized tool results
+        const toolResultsText = results
+          .map((tr) => {
+            if (tr.error) {
+              return `[${tr.toolType}] ERROR: ${tr.error}`;
+            }
+            return `[${tr.toolType}] Result:\n${summarizeToolResult(tr.toolType as ToolName, tr.result)}`;
+          })
+          .join("\n\n");
 
-            // Make a follow-up LLM call with tool results
-            const toolResultsText = toolResults
-              .map((tr) => {
-                if (tr.error) {
-                  return `${tr.toolType}: Error - ${tr.error}`;
-                }
-                return `${tr.toolType}: ${JSON.stringify(tr.result, null, 2)}`;
-              })
-              .join("\n\n");
+        const followUpHistory: HistoryMessage[] = [
+          ...history,
+          {
+            role: "assistant" as const,
+            content: contentWithoutTools || llmResult.content,
+          },
+          {
+            role: "user" as const,
+            // Silent UX: Don't mention fetching data
+            content: `[INTERNAL DATA - Do not mention that you fetched this]\n\n${toolResultsText}\n\nRespond directly with the answer. Do NOT say "based on the data" or mention that you fetched anything.`,
+          },
+        ];
 
-            const followUpHistory = [
-              ...history,
-              {
-                role: "assistant" as const,
-                content: contentWithoutTools || assistantContent,
-              },
-              {
-                role: "user" as const,
-                content: `Tool Results:\n${toolResultsText}\n\nPlease provide your response based on this data.`,
-              },
-            ];
+        const followUpResult = await generateAssistantReply({
+          userId: user.id,
+          userMessage: message.trim(),
+          contextType: contextType ?? conversation.contextType ?? undefined,
+          contextId: contextId ?? conversation.contextId ?? undefined,
+          history: followUpHistory,
+          enableTools: false, // No tools on follow-up
+        });
 
-            llmResult = await generateAssistantReply({
-              userId: user.id,
-              userMessage: `Tool Results:\n${toolResultsText}`,
-              contextType: contextType ?? conversation.contextType ?? undefined,
-              contextId: contextId ?? conversation.contextId ?? undefined,
-              history: followUpHistory,
-            });
-
-            assistantContent = llmResult.content;
-          } else {
-            // No valid tool calls, use original content
-            assistantContent = contentWithoutTools || assistantContent;
-          }
-        }
-      } catch {
-        // ignore malformed tool calls, use original content
+        assistantContent = followUpResult.content;
+      } else {
+        assistantContent = contentWithoutTools || llmResult.content;
       }
     }
 
-    // Extract suggested actions if the model followed the SUGGESTED_ACTIONS convention
-    let suggestedActions: SuggestedAction[] = [];
+    // Extract and validate suggested actions
+    const { actions: suggestedActions, contentWithoutActions } =
+      extractSuggestedActions(assistantContent);
+    assistantContent = contentWithoutActions || assistantContent;
 
-    const marker = "SUGGESTED_ACTIONS:";
-    const markerIndex = assistantContent.lastIndexOf(marker);
-    if (markerIndex !== -1) {
-      const actionsBlock = assistantContent
-        .slice(markerIndex + marker.length)
-        .trim();
-      const contentWithoutActions = assistantContent
-        .slice(0, markerIndex)
-        .trim();
-      if (contentWithoutActions) assistantContent = contentWithoutActions;
+    const validatedActions = validateActions(suggestedActions);
 
-      try {
-        const parsed = JSON.parse(actionsBlock);
-        if (Array.isArray(parsed)) {
-          suggestedActions = parsed
-            .filter(
-              (a) =>
-                a &&
-                typeof a.type === "string" &&
-                (!a.label || typeof a.label === "string")
-            )
-            .map((a) => ({
-              type: a.type,
-              label: a.label,
-              confirm: Boolean(a.confirm),
-              data:
-                a.data && typeof a.data === "object"
-                  ? (a.data as Record<string, unknown>)
-                  : undefined,
-            }));
-        }
-      } catch {
-        // ignore malformed suggestions
-      }
-    }
-
-    // Validation: keep only actions with required fields present
-    const ACTION_SPECS: Record<
-      string,
-      { required: string[]; optional?: string[] }
-    > = {
-      create_monitor: {
-        required: ["name", "url"],
-        optional: [
-          "timeout",
-          "checkInterval",
-          "expectedStatusCodes",
-          "escalationPolicyId",
-        ],
-      },
-      pause_monitor: { required: ["monitorId"] },
-      resume_monitor: { required: ["monitorId"] },
-      delete_monitor: { required: ["monitorId"] },
-      create_escalation_policy: { required: ["name"], optional: ["levels"] },
-      remove_escalation_policy: { required: ["escalationPolicyId"] },
-      edit_escalation_policy: {
-        required: ["escalationPolicyId"],
-        optional: ["name", "enabled", "levels"],
-      },
-      view_incident_timeline: { required: ["incidentId"] },
-      acknowledge_incident: { required: ["incidentId"] },
-      resolve_incident: { required: ["incidentId"] },
-    };
-
-    const validatedActions: SuggestedAction[] = suggestedActions.filter(
-      (action) => {
-        const spec = ACTION_SPECS[action.type];
-        if (!spec) return false;
-        const data = action.data || {};
-        return spec.required.every(
-          (field) =>
-            data[field] !== undefined &&
-            data[field] !== null &&
-            data[field] !== ""
-        );
-      }
+    // Validate response for potential hallucinations
+    const validationResult = validateResponse(
+      assistantContent,
+      toolResults as ValidationToolResult[],
+      llmResult.contextUsed,
+      toolsUsed.length > 0
     );
 
+    if (!validationResult.isValid) {
+      logValidationWarnings(validationResult, assistantContent);
+    }
+
+    // Prepare metadata for storage (must be JSON-serializable)
     const contextUsedSafe = JSON.parse(
       JSON.stringify(llmResult.contextUsed ?? null)
     );
 
-    // Prepare metadata for storage (must be JSON-serializable)
     const metadataSafe = JSON.parse(
       JSON.stringify({
         contextUsed: contextUsedSafe,
         suggestedActions: validatedActions,
         toolResults: toolResults.length > 0 ? toolResults : undefined,
         toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
+        usedFunctionCalling: useFunctionCalling,
+        validationWarnings: validationResult.warnings.length > 0
+          ? validationResult.warnings
+          : undefined,
       })
     );
 
     // Persist messages
-    const [userMsg, assistantMsg] = await Promise.all([
+    const [, assistantMsg] = await Promise.all([
       prisma.conversationMessage.create({
         data: {
           conversationId: conversation.id,

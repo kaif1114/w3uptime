@@ -382,12 +382,12 @@ export function ChatAssistant({
                 ) : (
                   <div>{msg.content}</div>
                 )}
-                {msg.role === "ASSISTANT" && (
+                {/* {msg.role === "ASSISTANT" && (
                   <>
                     {renderToolInfo(msg)}
                     {renderActions(msg)}
                   </>
-                )}
+                )} */}
               </div>
             ))}
             {chatMutation.isPending && (
