@@ -109,7 +109,7 @@ export function WalletContent() {
 
       
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl">Transaction history</CardTitle>
