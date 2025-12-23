@@ -1,0 +1,750 @@
+<context>
+# Overview
+The LLM-Based Assistant is an AI-powered conversational interface for W3Uptime that enables users to interact with their monitoring infrastructure through natural language. Powered by OpenAI GPT-4o via Vercel AI SDK, the assistant provides real-time, context-aware help for managing monitors, viewing analytics, handling incidents, and understanding system status. It solves the problem of complex UI navigation and data interpretation by offering an intuitive chat interface that understands user intent and executes actions on their behalf.
+
+This feature is valuable for both technical and non-technical users who need quick access to monitoring data, want to perform actions without navigating through multiple pages, or need help interpreting analytics and metrics. The assistant acts as an intelligent layer between users and their monitoring infrastructure, reducing friction and improving operational efficiency.
+
+# Core Features
+
+## 1. Conversational Interface
+**What it does:** Provides a chat-based interface where users can ask questions and receive responses in natural language.
+
+**Why it's important:** Eliminates the learning curve for new users and provides faster access to information compared to traditional UI navigation.
+
+**How it works:** A floating chat button appears on all pages. Clicking it opens a responsive drawer/sheet containing the chat interface. Users type messages, and the AI responds with streaming text and can execute actions via tool calling.
+
+## 2. Tool-Based Actions
+**What it does:** The assistant can perform 15+ different actions including creating monitors, fetching analytics, managing escalation policies, viewing incidents, and checking validator statistics.
+
+**Why it's important:** Transforms the assistant from a passive information provider into an active agent that can execute user requests, reducing the number of clicks and pages needed to accomplish tasks.
+
+**How it works:** Behind the scenes, the LLM uses Vercel AI SDK's tool calling feature to invoke backend functions that interact with existing API endpoints. Tools are transparently executed with proper authentication and authorization.
+
+## 3. Context Awareness
+**What it does:** The assistant automatically knows what page the user is on and what resources they're viewing (e.g., which monitor's detail page).
+
+**Why it's important:** Enables users to ask questions like "What's the uptime?" without specifying which monitor, making conversations more natural and efficient.
+
+**How it works:** React Context API silently injects current page metadata (page type, monitor ID, incident ID) into each chat request. The system prompt incorporates this context, allowing the LLM to resolve ambiguous references.
+
+## 4. Real-Time Streaming Responses
+**What it does:** Assistant responses appear progressively as they're generated, similar to ChatGPT, rather than waiting for the complete response.
+
+**Why it's important:** Provides immediate feedback and reduces perceived latency, creating a more engaging and responsive user experience.
+
+**How it works:** Vercel AI SDK's `streamText` function sends Server-Sent Events (SSE) to the frontend. React hooks consume the stream and update the UI in real-time as tokens arrive.
+
+## 5. Persistent Conversation History
+**What it does:** Conversations are saved and persist across page navigation and browser sessions.
+
+**Why it's important:** Users can reference previous questions and answers, and the assistant can provide context-aware follow-up responses based on conversation history.
+
+**How it works:** Each conversation is assigned a unique ID and stored in Redis with user ID isolation. Conversations expire after 7 days. The assistant loads recent message history (last 20 messages) before responding to maintain context.
+
+## 6. Multi-Step Tool Execution
+**What it does:** The assistant can automatically execute multiple tools in sequence to complete complex requests without requiring multiple user prompts.
+
+**Why it's important:** Enables sophisticated workflows like "Create a monitor and set up critical alerts" to be completed in a single conversation turn.
+
+**How it works:** Vercel AI SDK's `maxSteps: 5` parameter allows the LLM to automatically chain up to 5 tool executions, analyzing each result before deciding whether to call another tool or respond to the user.
+
+# User Experience
+
+## User Personas
+
+### Persona 1: DevOps Engineer
+**Needs:** Quick access to monitor status, incident investigation, performance analytics
+**Usage Pattern:** "What's causing the spike in latency?", "Show me incidents from the last 24 hours", "Pause the staging monitor"
+**Value:** Reduces time spent navigating dashboards during incidents
+
+### Persona 2: Site Reliability Engineer
+**Needs:** Creating and managing monitors, configuring escalation policies, understanding validator distribution
+**Usage Pattern:** "Create a monitor for our new API endpoint", "Update the escalation policy to include Slack", "Which regions have the most validators?"
+**Value:** Streamlines monitor configuration and policy management
+
+### Persona 3: Manager/Non-Technical User
+**Needs:** High-level status overview, incident summaries, uptime reports
+**Usage Pattern:** "Give me a summary of all incidents this week", "What's our overall uptime?", "Which monitors are down?"
+**Value:** Makes monitoring data accessible without technical expertise
+
+## Key User Flows
+
+### Flow 1: Quick Status Check (Context-Aware)
+1. User navigates to monitor detail page for "example.com"
+2. User clicks floating chat button (bottom-right)
+3. Chat drawer slides open from right side
+4. User types: "What's the uptime?"
+5. Assistant automatically knows user is viewing "example.com" monitor
+6. Assistant executes `getMonitorStats` tool
+7. Streaming response appears: "Your monitor 'example.com' achieved 99.8% uptime over the last 24 hours..."
+8. User can ask follow-up questions without closing chat
+
+### Flow 2: Monitor Creation
+1. User opens chat from dashboard
+2. User types: "Create a monitor for https://api.newservice.com, check every 5 minutes"
+3. Assistant executes `getEscalationPolicies` to see available policies
+4. Assistant asks: "Which escalation policy? 1. Critical Alerts 2. Standard"
+5. User responds: "Critical Alerts"
+6. Assistant executes `createMonitor` with specified parameters
+7. Success confirmation appears with monitor details
+8. User can immediately ask about the new monitor
+
+### Flow 3: Incident Investigation
+1. User receives alert about downtime
+2. User opens chat and types: "What incidents are happening right now?"
+3. Assistant executes `getIncidents` filtered for ongoing status
+4. Assistant displays incident summaries
+5. User asks: "Show me details for incident X"
+6. Assistant executes `getIncidentDetails`
+7. Assistant shows timeline, affected monitor, duration
+8. User types: "Acknowledge this incident"
+9. Assistant executes `updateIncident` to acknowledge
+10. Confirmation and notification sent
+
+## UI/UX Considerations
+
+### Visual Design
+- Floating button: Bottom-right corner, circular, MessageSquare icon
+- Badge indicator for unread messages (future enhancement)
+- Chat drawer: 600px width on desktop, fullscreen on mobile
+- Message bubbles: User (right-aligned, blue), Assistant (left-aligned, gray)
+- Avatar icons: User initials from wallet address, "AI" for assistant
+- Typing indicator during streaming
+- Tool execution visualization (collapsible accordion showing tool calls)
+
+### Responsive Behavior
+- Desktop (>768px): Sheet slides from right, 600px width
+- Mobile (≤768px): Sheet takes full screen
+- Input area fixed at bottom
+- Scrollable message area
+- Auto-scroll to latest message
+
+### Interaction Patterns
+- Enter key sends message (Shift+Enter for new line)
+- Send button disabled during streaming
+- Clear visual distinction between user/assistant messages
+- Timestamps on messages
+- Error states with retry options
+- Rate limit feedback (20 messages/minute)
+
+### Accessibility
+- Keyboard navigation support
+- ARIA labels for screen readers
+- Focus management when opening/closing chat
+- High contrast message bubbles
+- Readable font sizes (min 14px)
+
+</context>
+
+<PRD>
+# Technical Architecture
+
+## System Components
+
+### Frontend Components (Next.js 15 + React 19)
+**ChatWidget** - Main container component with Sheet (Shadcn)
+- Manages open/close state
+- Renders floating button trigger
+- Conditionally renders mobile vs desktop layout
+- Uses `useChat` hook for state management
+
+**ChatMessages** - Message display component
+- Renders scrollable list of messages
+- Displays user/assistant avatars
+- Shows streaming indicator during responses
+- Handles loading skeletons
+- Auto-scrolls to latest message
+
+**ChatInput** - Message input form
+- Textarea with grow/shrink behavior
+- Send button with loading state
+- Enter key handler (Shift+Enter for newline)
+- Character count validation (max 2000)
+
+**ChatContextProvider** - React Context provider
+- Tracks current page type and resource IDs
+- Provides `setContext` function for page components
+- Automatically clears context on unmount
+
+### Backend API (Next.js API Routes)
+**POST /api/chat** - Main streaming endpoint
+- Protected by `withAuth` middleware
+- Accepts: message, conversationId, context
+- Loads conversation history from Redis
+- Builds system prompt with context injection
+- Executes Vercel AI SDK `streamText` with tools
+- Streams SSE response to client
+- Saves conversation in `onFinish` callback
+- Implements rate limiting (20 msg/min per user)
+
+### Tool Registry (15 Tools)
+All tools use Vercel AI SDK's `tool()` function with Zod parameter schemas:
+
+**Monitor Management:**
+1. `getMonitors` - List all user's monitors
+2. `getMonitorDetails` - Get specific monitor info
+3. `createMonitor` - Create new monitor
+4. `updateMonitor` - Update/pause monitor
+
+**Analytics:**
+5. `getMonitorStats` - Uptime/latency stats (day/week/month)
+6. `getMonitorTimeSeries` - Time-bucketed chart data
+7. `getMonitorAnalytics` - Geographic distribution & insights
+
+**Incidents:**
+8. `getIncidents` - List incidents with filters
+9. `getIncidentDetails` - Full incident with timeline
+10. `updateIncident` - Acknowledge/resolve incidents
+
+**Escalation:**
+11. `getEscalationPolicies` - List policies
+12. `createEscalationPolicy` - Create policy with levels
+
+**Validators:**
+13. `getValidatorStats` - Validator distribution
+14. `getValidatorDashboard` - User's validator performance
+
+**Alerts:**
+15. `getActiveAlerts` - Current active alerts
+
+Each tool internally calls existing authenticated API endpoints (`/api/monitors`, `/api/incidents`, etc.).
+
+### Data Storage
+
+**Redis (Existing ioredis Client)**
+- Key pattern: `chat:conversation:{userId}:{conversationId}`
+- Value: JSON string containing conversation object
+- TTL: 7 days (604800 seconds)
+- Conversation object:
+  ```
+  {
+    conversationId: string,
+    userId: string,
+    createdAt: string,
+    updatedAt: string,
+    messages: Array<{
+      role: 'user' | 'assistant' | 'tool',
+      content: string,
+      toolCalls?: [...],
+      toolResults?: [...],
+      timestamp: string
+    }>,
+    metadata: {
+      lastContext?: { pageType, monitorId, ... }
+    }
+  }
+  ```
+
+**PostgreSQL (Existing Prisma Database)**
+- No new tables required
+- Tools interact with existing Monitor, Incident, EscalationPolicy, User tables via API routes
+
+## Data Models
+
+### Chat Types (TypeScript)
+```typescript
+interface Message {
+  role: 'user' | 'assistant' | 'tool';
+  content: string;
+  toolCalls?: ToolCall[];
+  toolResults?: ToolResult[];
+  timestamp: string;
+}
+
+interface PageContext {
+  pageType: 'monitor-detail' | 'dashboard' | 'incidents' | 'validators' | null;
+  monitorId?: string;
+  incidentId?: string;
+}
+
+interface ChatRequest {
+  message: string;
+  conversationId?: string;
+  context?: PageContext;
+}
+
+interface StoredConversation {
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Message[];
+  metadata?: {
+    lastContext?: PageContext;
+  };
+}
+```
+
+## APIs and Integrations
+
+### External APIs
+**OpenAI GPT-4o (via Vercel AI SDK)**
+- Model: `gpt-4o` (default) or `gpt-4o-mini` (future optimization)
+- Max tokens: 4096 output tokens
+- Temperature: 1.0 (default)
+- API key from environment: `OPENAI_API_KEY`
+- Cost: $5/1M input tokens, $15/1M output tokens
+
+### Internal API Integration
+All tools use internal fetch to existing API routes:
+- `/api/monitors` - GET (list), POST (create)
+- `/api/monitors/{id}` - GET (details), PATCH (update)
+- `/api/monitors/{id}/stats?period=day` - GET (statistics)
+- `/api/monitors/{id}/analytics?period=day` - GET (analytics)
+- `/api/monitors/{id}/timeseries?period=day` - GET (time-series)
+- `/api/incidents` - GET (list), POST (create)
+- `/api/incidents/{id}` - GET (details), PATCH (update)
+- `/api/escalation-policies` - GET (list), POST (create)
+- `/api/alerts` - GET (list)
+- `/api/validators` - GET (distribution)
+- `/api/validator/dashboard` - GET (user stats)
+
+All API calls include session cookies for authentication. No new authentication mechanism needed.
+
+## Infrastructure Requirements
+
+### Runtime Environment
+- Node.js 20+ (existing)
+- Next.js 15 server (existing)
+- Redis server (existing, port 6379 or 6378 locally)
+
+### Dependencies (New)
+- `ai` (^5.0.0) - Vercel AI SDK Core
+- `@ai-sdk/openai` (^1.0.0) - OpenAI provider for AI SDK
+- `zod` (existing 4.0.17) - Schema validation
+
+### Environment Variables (New)
+- `OPENAI_API_KEY` - Already configured
+- `OPENAI_MODEL` - Optional, default: gpt-4o
+- `CHAT_RATE_LIMIT_PER_MINUTE` - Optional, default: 20
+- `CHAT_HISTORY_TTL_DAYS` - Optional, default: 7
+
+### Deployment Considerations
+- No additional infrastructure needed
+- Uses existing Next.js deployment
+- Redis already deployed
+- Stateless API routes scale horizontally
+- Streaming works with standard HTTP/1.1 (SSE compatible)
+
+# Development Roadmap
+
+## MVP Requirements (Phase 1: Core Functionality)
+
+### Backend MVP
+- Install Vercel AI SDK dependencies
+- Create Redis conversation history manager (load/save/truncate functions)
+- Create system prompt builder with context injection logic
+- Implement 5 core tools:
+  1. getMonitors
+  2. getMonitorDetails
+  3. getMonitorStats
+  4. getIncidents
+  5. getValidatorStats
+- Create streaming chat API endpoint (`POST /api/chat`)
+- Implement authentication via existing `withAuth` middleware
+- Add rate limiting (20 messages/minute per user)
+- Basic error handling for tool execution failures
+
+### Frontend MVP
+- Create ChatContextProvider for page context tracking
+- Create useChat hook with TanStack Query for state management
+- Build ChatWidget component with floating button trigger
+- Build ChatMessages component with user/assistant bubbles
+- Build ChatInput component with textarea and send button
+- Integrate Sheet component (Shadcn) for drawer UI
+- Implement streaming message display
+- Add to layout.tsx for global availability
+
+### Context Injection MVP
+- Add context injection to monitor detail pages
+- Add context injection to dashboard
+- Test context-aware queries
+
+**Deliverable:** Users can open chat, ask questions about monitors and incidents, receive context-aware streaming responses, and have conversations persist in Redis.
+
+## Future Enhancements (Phase 2: Advanced Features)
+
+### Tool Expansion
+- Add remaining 10 tools (createMonitor, updateMonitor, updateIncident, createEscalationPolicy, etc.)
+- Add tools for status page management
+- Add tools for governance proposals (if needed)
+- Implement tool result visualization (show charts, graphs from analytics data)
+
+### UI Polish
+- Add tool execution display component (show which tools ran, what parameters, results)
+- Add message timestamps
+- Add message editing/deletion
+- Add conversation management (list past conversations, delete conversations)
+- Add "new conversation" button
+- Add suggested prompts/quick actions
+- Add typing indicator animation
+- Add message reactions (thumbs up/down for feedback)
+- Dark mode optimization
+
+### Intelligence Improvements
+- Implement conversation summarization for long histories
+- Add RAG (Retrieval Augmented Generation) with documentation
+- Train on common user patterns
+- Add proactive suggestions ("I noticed your monitor is down, would you like me to investigate?")
+- Multi-language support
+
+### Performance Optimizations
+- Use GPT-4o-mini for simple queries (70% cost reduction)
+- Implement caching for common queries
+- Batch tool executions where possible
+- Optimize token usage with better truncation strategies
+- Add streaming chunk batching to reduce UI re-renders
+
+### Analytics & Monitoring
+- Track tool usage frequency
+- Monitor conversation success rates
+- Track average response time
+- Measure user satisfaction (thumbs up/down)
+- A/B test different system prompts
+- Cost tracking per user/organization
+
+# Logical Dependency Chain
+
+## Foundation Layer (Must be built first)
+1. **Install Dependencies** - `ai` and `@ai-sdk/openai` packages
+2. **Redis Conversation Manager** - Core storage layer (lib/ai/chat-history.ts)
+3. **Type Definitions** - TypeScript interfaces for Message, PageContext, etc. (types/chat.ts)
+4. **System Prompt Builder** - Template with context injection (lib/ai/system-prompts.ts)
+
+**Why first:** All other components depend on these foundational pieces. Cannot build API endpoint without conversation manager. Cannot build tools without types. Cannot build UI without understanding data structures.
+
+## Backend API Layer (After foundation)
+5. **Tool Registry File** - Start with 5 core tools (app/api/chat/tools.ts)
+   - Each tool is independent and can be added incrementally
+   - Start with read-only tools (getMonitors, getMonitorStats) before action tools
+6. **Chat API Endpoint** - Streaming endpoint with tool execution (app/api/chat/route.ts)
+   - Depends on: conversation manager, system prompt builder, tool registry, types
+
+**Why this order:** Tools can be built and tested independently. API endpoint orchestrates everything and requires all backend pieces to exist. Can test with Postman before building frontend.
+
+## Frontend Foundation (After backend is testable)
+7. **Chat Context Provider** - Page context tracking (providers/chat-context-provider.tsx)
+   - Independent, no dependencies
+8. **useChat Hook** - State management with TanStack Query (hooks/useChat.ts)
+   - Depends on: chat context provider, type definitions
+
+**Why this order:** Context provider is stateless and simple. Hook depends on provider and types but can be built/tested before UI components exist.
+
+## UI Components (After frontend foundation)
+9. **ChatInput Component** - Message input form (components/assistant/chat-input.tsx)
+   - No dependencies, pure presentation
+10. **ChatMessages Component** - Message display (components/assistant/chat-messages.tsx)
+    - No dependencies, pure presentation
+11. **ChatWidget Container** - Orchestrates input + messages (components/assistant/chat-widget.tsx)
+    - Depends on: useChat hook, ChatInput, ChatMessages
+
+**Why this order:** Build leaf components first (input, messages), then container that composes them. Can test each component in isolation with mock data.
+
+## Integration (After UI exists)
+12. **Layout Integration** - Add ChatContextProvider and ChatWidget to layout.tsx
+    - Depends on: all UI components, chat context provider
+13. **Page Context Injection** - Add setContext calls to monitor/incident pages
+    - Depends on: chat context provider being in layout
+
+**Why this order:** Need all components built before integrating into layout. Need provider in layout before pages can inject context.
+
+## Polish & Optimization (Iterative improvements)
+14. **Error Handling** - Add retry logic, user-friendly error messages
+15. **Loading States** - Add skeletons, streaming indicators
+16. **Rate Limiting Feedback** - Show user when they hit rate limit
+17. **Tool Expansion** - Add remaining 10 tools incrementally
+18. **Token Optimization** - Implement conversation truncation, summarization
+
+**Why last:** These are enhancements to working functionality. Can be added iteratively without blocking core features.
+
+# Risks and Mitigations
+
+## Risk 1: OpenAI API Rate Limits
+**Risk Level:** Medium
+**Description:** OpenAI enforces rate limits on API calls. High user concurrency could cause failures.
+**Impact:** Users receive error messages, cannot use assistant during peak times.
+**Mitigation:**
+- Implement exponential backoff retry logic
+- Add application-level rate limiting (20 msg/min per user)
+- Queue requests during high load
+- Monitor usage and request limit increases from OpenAI
+- Consider fallback to GPT-4o-mini for simple queries
+- Cache common responses in Redis
+
+## Risk 2: High Token Costs
+**Risk Level:** Medium
+**Description:** GPT-4o costs $5/1M input tokens, $15/1M output tokens. Long conversations consume many tokens.
+**Impact:** High operational costs, especially with many active users.
+**Mitigation:**
+- Truncate conversation history to last 20 messages
+- Implement conversation summarization for older context
+- Use GPT-4o-mini (70% cheaper) for simple queries
+- Set max output token limits
+- Monitor per-user costs and implement spending caps
+- Estimated cost: ~$0.06 per conversation, $60/month for 1000 conversations
+
+## Risk 3: Tool Execution Failures
+**Risk Level:** High
+**Description:** Tools call existing API endpoints which can fail (database errors, validation errors, 404s).
+**Impact:** Assistant cannot complete user requests, poor user experience.
+**Mitigation:**
+- Wrap all tool executions in try-catch blocks
+- Return structured error objects: `{ error: true, message: '...' }`
+- LLM naturally handles errors and explains to users
+- Implement retry logic for transient failures
+- Log all tool execution errors for debugging
+- Provide fallback responses when tools fail
+- Test all tools extensively before deployment
+
+## Risk 4: Context Injection Bugs
+**Risk Level:** Low
+**Description:** Page context might not be set correctly, or stale context might be used.
+**Impact:** Assistant responds with wrong monitor data or confused responses.
+**Mitigation:**
+- Clear context on component unmount
+- Validate context in API endpoint before using
+- Log context data for debugging
+- Show context indicator in UI during development
+- Test context injection on all page types
+- Make assistant ask for clarification if context is ambiguous
+
+## Risk 5: Streaming Response Failures
+**Risk Level:** Medium
+**Description:** Network interruptions, server errors, or client-side bugs could break streaming.
+**Impact:** Users see incomplete responses or frozen UI.
+**Mitigation:**
+- Implement connection timeout detection
+- Add "regenerate response" button
+- Show error state with retry option
+- Test streaming with various network conditions
+- Implement heartbeat/keepalive for long-running streams
+- Fallback to non-streaming response if SSE fails
+
+## Risk 6: Redis Memory Usage
+**Risk Level:** Low
+**Description:** Many users with long conversations could consume significant Redis memory.
+**Impact:** Redis OOM errors, conversation loss.
+**Mitigation:**
+- Enforce 7-day TTL on all conversations
+- Limit conversation length (truncate to 20 messages)
+- Monitor Redis memory usage
+- Set Redis maxmemory policy to `allkeys-lru`
+- Implement conversation archival to PostgreSQL if needed
+- Estimated: 100KB per conversation = 10GB for 100K conversations (manageable)
+
+## Risk 7: Security - Prompt Injection
+**Risk Level:** Medium
+**Description:** Users might try to manipulate the assistant with prompt injection attacks.
+**Impact:** Assistant behaves unexpectedly, exposes data, or executes unauthorized actions.
+**Mitigation:**
+- All tools enforce authentication via existing `withAuth` middleware
+- Tools only access user's own resources (userId filtering)
+- Input validation with Zod (2000 char max)
+- System prompt emphasizes assistant role and limitations
+- Log suspicious patterns for review
+- Rate limiting prevents abuse
+- Tools return sanitized data (no internal IDs or sensitive fields)
+
+## Risk 8: User Expectations
+**Risk Level:** Medium
+**Description:** Users might expect the assistant to do things it cannot (modify infrastructure, access external systems).
+**Impact:** User frustration, negative feedback.
+**Mitigation:**
+- Clear system prompt explaining capabilities
+- "I cannot do that" responses for out-of-scope requests
+- Onboarding tooltip showing example queries
+- Documentation with use cases and limitations
+- Feedback mechanism to capture feature requests
+
+# Appendix
+
+## Research Findings
+
+### Vercel AI SDK Choice
+After evaluating multiple options (LangChain, raw OpenAI SDK, Anthropic SDK, Vercel AI SDK), Vercel AI SDK was chosen because:
+- Built-in streaming support with React integration
+- Automatic tool calling with `maxSteps` for multi-turn execution
+- Simple API: `streamText()` handles complexity
+- TypeScript-first with excellent type safety
+- Framework-agnostic tools can call any backend
+- Active development and good documentation
+- SSE streaming works seamlessly with Next.js
+- `onFinish` callback perfect for conversation persistence
+
+### Redis vs PostgreSQL for Conversations
+Redis was chosen over PostgreSQL because:
+- Faster read/write for frequently accessed conversations
+- Already deployed in W3Uptime stack
+- Native TTL support (7-day automatic expiry)
+- Simpler key-value access pattern
+- Lower latency for chat (sub-millisecond)
+- Can archive to PostgreSQL later if needed
+
+### Context Injection Approach
+Silent context injection was chosen over explicit context selection because:
+- More natural user experience ("What's the uptime?" vs "What's the uptime for monitor X?")
+- Reduces cognitive load
+- Users already understand current page context
+- Can still explicitly reference other resources ("What's the uptime for example.com?")
+- React Context API is lightweight and battle-tested
+
+## Technical Specifications
+
+### Streaming Protocol (Server-Sent Events)
+```
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+data: {"type":"text-delta","textDelta":"Hello"}
+
+data: {"type":"text-delta","textDelta":" world"}
+
+data: {"type":"tool-call","toolCallId":"123","toolName":"getMonitors","args":{}}
+
+data: {"type":"tool-result","toolCallId":"123","result":{...}}
+
+data: [DONE]
+```
+
+### Tool Execution Flow
+```
+1. User sends message: "Show me my monitors"
+2. API loads conversation history from Redis
+3. API builds system prompt with context
+4. API calls streamText() with tools
+5. LLM analyzes message, decides to use getMonitors tool
+6. Vercel AI SDK executes tool function
+7. Tool calls GET /api/monitors internally
+8. Tool returns monitor list to LLM
+9. LLM generates response: "You have 3 monitors..."
+10. Response streams to client via SSE
+11. onFinish saves conversation to Redis
+```
+
+### Rate Limiting Implementation
+```typescript
+// In API endpoint
+const rateLimitKey = `ratelimit:chat:${user.id}`;
+const requestCount = await redis.incr(rateLimitKey);
+if (requestCount === 1) {
+  await redis.expire(rateLimitKey, 60); // 1 minute window
+}
+if (requestCount > 20) {
+  return Response.json({ error: 'Too many messages. Please slow down.' }, { status: 429 });
+}
+```
+
+### Context Injection Example
+```typescript
+// In monitor detail page
+const { setContext } = useChatContext();
+
+useEffect(() => {
+  setContext({
+    pageType: 'monitor-detail',
+    monitorId: params.monitorid,
+  });
+
+  return () => setContext(null); // Clear on unmount
+}, [params.monitorid, setContext]);
+
+// In API endpoint, system prompt includes:
+`CURRENT CONTEXT:
+- User is viewing: monitor-detail
+- Monitor ID: ${context.monitorId}
+
+If user asks about "this monitor" or "current website", they refer to monitor ${context.monitorId}.`
+```
+
+### Error Handling Pattern
+```typescript
+// In tool execution
+try {
+  const response = await fetch(`/api/monitors/${monitorId}`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return {
+      error: true,
+      message: 'Monitor not found or access denied',
+    };
+  }
+
+  return await response.json();
+} catch (error) {
+  return {
+    error: true,
+    message: 'Failed to fetch monitor data. Please try again.',
+  };
+}
+
+// LLM receives error and naturally responds:
+"I tried to fetch the monitor details, but it seems that monitor doesn't exist or you don't have access to it. Could you provide a valid monitor ID?"
+```
+
+### Conversation Truncation Strategy
+```typescript
+function truncateConversation(messages: Message[], maxMessages = 20): Message[] {
+  // Always keep system message at index 0
+  const systemMessage = messages[0];
+  const restMessages = messages.slice(1);
+
+  // Keep last N messages
+  const truncated = restMessages.slice(-maxMessages);
+
+  return [systemMessage, ...truncated];
+}
+```
+
+## Example Queries & Responses
+
+**Query:** "What's the current status of all my monitors?"
+**Tools Used:** getMonitors
+**Response:** "You have 5 active monitors. 4 are currently UP and 1 is DOWN. Here's the breakdown:
+- example.com: UP (99.8% uptime)
+- api.service.com: UP (99.5% uptime)
+- dashboard.app: DOWN (incident ongoing)
+- staging.test.com: UP (99.9% uptime)
+- beta.site.org: UP (100% uptime)
+
+Would you like details on the DOWN monitor?"
+
+**Query:** "Create a monitor for https://newsite.com, check every 3 minutes"
+**Tools Used:** getEscalationPolicies, createMonitor
+**Response:** "I see you have 2 escalation policies available:
+1. Critical Alerts (Email → Slack → PagerDuty)
+2. Standard Monitoring (Email only)
+
+Which policy would you like to use for this monitor?"
+
+**Query:** "Show me incidents from last week"
+**Tools Used:** getIncidents
+**Response:** "You had 3 incidents last week:
+
+1. **example.com** - Resolved on Jan 15
+   - Duration: 15 minutes
+   - Cause: Server returned 503 errors
+
+2. **api.service.com** - Resolved on Jan 17
+   - Duration: 2 hours 30 minutes
+   - Cause: Database connection timeout
+
+3. **dashboard.app** - Resolved on Jan 18
+   - Duration: 5 minutes
+   - Cause: SSL certificate expired
+
+Would you like details on any specific incident?"
+
+**Query:** "How is my validator performing?"
+**Tools Used:** getValidatorDashboard
+**Response:** "Your validator statistics:
+- Total validations: 15,432
+- Success rate: 99.2%
+- Total earnings: 0.0234 ETH
+- Available balance: 0.0200 ETH
+- Reputation score: 1,543
+
+You're in the top 10% of validators by reputation. Great job!"
+</PRD>
