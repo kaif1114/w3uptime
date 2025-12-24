@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/useSession";
 import { useMetaMaskAccountChange } from "@/hooks/useMetaMaskAccountChange";
-import { AccountMismatchAlert } from "@/components/ui/account-mismatch-alert";
+import { AccountMismatchAlert } from "@/components/ui/AccountMismatchAlert";
 import { logout } from "@/lib/auth";
 
 interface MismatchState {

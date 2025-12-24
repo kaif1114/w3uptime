@@ -1,6 +1,6 @@
 "use client";
 
-import SlackWorkspaceSelector from "@/components/slack-workspace-selector";
+import SlackWorkspaceSelector from "@/components/SlackWorkspaceSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

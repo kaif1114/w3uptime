@@ -3,7 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
-import { WalletAddress } from "@/components/ui/wallet-address";
+import { WalletAddress } from "@/components/ui/WalletAddress";
 import { useSession } from "@/hooks/useSession";
 
 export function SiteHeader() {

@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { EscalationLevelItem } from "../../create/EscalationlevelItem";
-import { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
+import { SelectedSlackWorkspace } from "@/components/SlackWorkspaceSelector";
 import Link from "next/link";
 
 const escalationPolicySchema = z.object({

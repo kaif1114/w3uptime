@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ProposalComments } from "@/components/ui/proposal-comments";
-import { ProposalDetailSkeleton } from "@/components/ui/proposal-skeleton";
+import { ProposalComments } from "@/components/ui/ProposalComments";
+import { ProposalDetailSkeleton } from "@/components/ui/ProposalSkeleton";
 import { useProposal, useVoteProposal } from "@/hooks/useProposals";
 import { useVote } from "@/hooks/useVote";
 import { useSession } from "@/hooks/useSession";

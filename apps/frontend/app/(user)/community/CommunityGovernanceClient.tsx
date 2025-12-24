@@ -11,11 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ProposalComments } from "@/components/ui/proposal-comments";
+import { ProposalComments } from "@/components/ui/ProposalComments";
 import {
   ProposalCardSkeleton,
   ProposalDetailSkeleton,
-} from "@/components/ui/proposal-skeleton";
+} from "@/components/ui/ProposalSkeleton";
 import {
   Select,
   SelectContent,

@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SiteHeader } from "@/components/ui/site-header";
+import { SiteHeader } from "@/components/ui/SiteHeader";
 import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";

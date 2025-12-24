@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MessageSquare, AlertCircle, StopCircle } from 'lucide-react';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
-import { RateLimitWarning } from './rate-limit-warning';
+import { RateLimitWarning } from './RateLimitWarning';
 import { useChat } from '@/hooks/useChat';
 import { toast } from 'sonner';
 import { ChatError } from '@/types/chat';

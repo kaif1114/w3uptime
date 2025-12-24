@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { WalletAddress } from "@/components/ui/wallet-address";
+import { WalletAddress } from "@/components/ui/WalletAddress";
 
 interface AccountMismatchAlertProps {
   isOpen: boolean;
