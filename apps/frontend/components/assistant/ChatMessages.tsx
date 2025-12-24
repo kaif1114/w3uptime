@@ -96,12 +96,15 @@ export function ChatMessages({ messages, isStreaming = false, isLoading = false 
               )}
             >
               {/* Show thinking steps for assistant messages */}
-              {!isUser && message.thinkingSteps && message.thinkingSteps.length > 0 && (
-                <ThinkingStepsDisplay
-                  steps={message.thinkingSteps}
-                  isStreaming={isStreaming && index === messages.length - 1}
-                />
-              )}
+              {!isUser && (() => {
+                console.log('[ChatMessages] Message', index, 'thinkingSteps:', message.thinkingSteps);
+                return message.thinkingSteps && message.thinkingSteps.length > 0 && (
+                  <ThinkingStepsDisplay
+                    steps={message.thinkingSteps}
+                    isStreaming={isStreaming && index === messages.length - 1}
+                  />
+                );
+              })()}
 
               <p className="text-sm whitespace-pre-wrap break-words">
                 {message.content}

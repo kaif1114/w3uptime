@@ -10,9 +10,12 @@ interface ThinkingStepsDisplayProps {
 }
 
 export function ThinkingStepsDisplay({ steps, isStreaming = false }: ThinkingStepsDisplayProps) {
-  console.log('[ThinkingStepsDisplay] Rendering with', steps.length, 'steps:', steps);
+  console.log('[ThinkingStepsDisplay] Rendering with', steps.length, 'steps:', steps, 'isStreaming:', isStreaming);
 
-  if (steps.length === 0) return null;
+  if (steps.length === 0) {
+    console.log('[ThinkingStepsDisplay] No steps to display, returning null');
+    return null;
+  }
 
   return (
     <div className="space-y-2 mb-3 p-3 bg-muted/50 rounded-lg border border-border/50">

@@ -142,7 +142,7 @@ export function useChat(options: UseChatOptions = {}) {
               }
 
               const event = validation.data;
-              console.log('[Validated Event]', event.type);
+              console.log('[Validated Event]', event.type, event);
 
               if (event.type === 'text-delta') {
                 assistantMessage += event.delta;
@@ -165,23 +165,29 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
-              } else if (event.type === 'tool-call' && 'toolName' in event && 'toolCallId' in event && 'args' in event) {
-                // Create a new thinking step
-                stepCounter++;
+              } else if (event.type === 'tool-call') {
+                console.log('[Tool Call Event Detected]', event, 'Has toolName?', 'toolName' in event, 'Has toolCallId?', 'toolCallId' in event, 'Has args?', 'args' in event);
 
-                const step: ThinkingStep = {
-                  stepNumber: stepCounter,
-                  toolName: event.toolName as string,
-                  description: getToolDescription(event.toolName as string, event.args as Record<string, unknown>),
-                  status: 'in-progress',
-                  args: event.args as Record<string, unknown>,
-                  startTime: new Date().toISOString(),
-                };
+                if ('toolName' in event && 'toolCallId' in event && 'args' in event) {
+                  // Create a new thinking step
+                  stepCounter++;
 
-                thinkingSteps.push(step);
-                toolCalls.set(event.toolCallId as string, event.toolName as string);
+                  const step: ThinkingStep = {
+                    stepNumber: stepCounter,
+                    toolName: event.toolName as string,
+                    description: getToolDescription(event.toolName as string, event.args as Record<string, unknown>),
+                    status: 'in-progress',
+                    args: event.args as Record<string, unknown>,
+                    startTime: new Date().toISOString(),
+                  };
 
-                console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
+                  thinkingSteps.push(step);
+                  toolCalls.set(event.toolCallId as string, event.toolName as string);
+
+                  console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
+                } else {
+                  console.warn('[Tool Call Event Missing Properties]', event);
+                }
 
                 // Update message with thinking steps
                 setMessages(prev => {
