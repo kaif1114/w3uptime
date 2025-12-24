@@ -49,7 +49,7 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
     const validation = chatRequestSchema.safeParse(body);
     if (!validation.success) {
       return Response.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -80,10 +80,12 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
 
     // 4. Build Message History (AI SDK 5 format - no experimental_ prefixes)
     const systemPrompt = buildSystemPrompt({ context });
-    const messageHistory = conversation.messages.map(msg => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    const messageHistory = conversation.messages
+      .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+      .map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      }));
 
     // 5. Create Tools with execution context
     const tools = createTools({
@@ -115,11 +117,11 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
             toolCalls: toolCalls?.map(tc => ({
               toolCallId: tc.toolCallId,
               toolName: tc.toolName,
-              args: tc.args,
+              args: tc.input,
             })),
             toolResults: toolResults?.map(tr => ({
               toolCallId: tr.toolCallId,
-              result: tr.result,
+              result: tr.output,
             })),
             timestamp: new Date().toISOString(),
           };
@@ -133,7 +135,7 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
       },
     });
 
-    return result.toDataStreamResponse({
+    return result.toUIMessageStreamResponse({
       headers: { 'X-Conversation-Id': activeConversationId! },
     });
   } catch (error) {
