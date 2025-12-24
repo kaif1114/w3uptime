@@ -165,19 +165,19 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
-              } else if (event.type === 'tool-call') {
-                console.log('[Tool Call Event Detected]', event, 'Has toolName?', 'toolName' in event, 'Has toolCallId?', 'toolCallId' in event, 'Has args?', 'args' in event);
+              } else if (event.type === 'tool-input-available') {
+                console.log('[Tool Input Available Event Detected]', event);
 
-                if ('toolName' in event && 'toolCallId' in event && 'args' in event) {
+                if ('toolName' in event && 'toolCallId' in event && 'input' in event) {
                   // Create a new thinking step
                   stepCounter++;
 
                   const step: ThinkingStep = {
                     stepNumber: stepCounter,
                     toolName: event.toolName as string,
-                    description: getToolDescription(event.toolName as string, event.args as Record<string, unknown>),
+                    description: getToolDescription(event.toolName as string, event.input as Record<string, unknown>),
                     status: 'in-progress',
-                    args: event.args as Record<string, unknown>,
+                    args: event.input as Record<string, unknown>,
                     startTime: new Date().toISOString(),
                   };
 
@@ -186,7 +186,7 @@ export function useChat(options: UseChatOptions = {}) {
 
                   console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
                 } else {
-                  console.warn('[Tool Call Event Missing Properties]', event);
+                  console.warn('[Tool Input Available Event Missing Properties]', event);
                 }
 
                 // Update message with thinking steps
@@ -207,33 +207,41 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
-              } else if (event.type === 'tool-result' && 'toolName' in event && 'result' in event) {
-                // Find the corresponding step and mark it completed
-                const step = thinkingSteps.find(s => s.toolName === event.toolName && !s.endTime);
-                console.log('[Tool Result]', event.toolName, 'Step found:', !!step);
-                if (step) {
-                  step.status = 'completed';
-                  step.result = event.result;
-                  step.endTime = new Date().toISOString();
+              } else if (event.type === 'tool-output-available') {
+                console.log('[Tool Output Available Event Detected]', event);
 
-                  // Check if result indicates error
-                  if (typeof event.result === 'object' && event.result && 'error' in event.result) {
-                    step.status = 'failed';
-                    step.error = (event.result as { error?: boolean; message?: string }).message || 'Tool execution failed';
-                  }
+                if ('toolCallId' in event && 'output' in event) {
+                  // Find the corresponding step by toolCallId
+                  const toolName = toolCalls.get(event.toolCallId as string);
+                  const step = thinkingSteps.find(s => s.toolName === toolName && !s.endTime);
+                  console.log('[Tool Output]', 'toolCallId:', event.toolCallId, 'toolName:', toolName, 'Step found:', !!step);
 
-                  // Update message with updated steps
-                  setMessages(prev => {
-                    const withoutLast = prev.slice(0, -1);
-                    const lastMessage = prev[prev.length - 1];
-                    if (lastMessage?.role === 'assistant') {
-                      return [...withoutLast, {
-                        ...lastMessage,
-                        thinkingSteps: [...thinkingSteps],
-                      }];
+                  if (step) {
+                    step.status = 'completed';
+                    step.result = event.output;
+                    step.endTime = new Date().toISOString();
+
+                    // Check if result indicates error
+                    if (typeof event.output === 'object' && event.output && 'error' in event.output) {
+                      step.status = 'failed';
+                      step.error = (event.output as { error?: boolean; message?: string }).message || 'Tool execution failed';
                     }
-                    return prev;
-                  });
+
+                    console.log('[Thinking Step Completed]', step);
+
+                    // Update message with updated steps
+                    setMessages(prev => {
+                      const withoutLast = prev.slice(0, -1);
+                      const lastMessage = prev[prev.length - 1];
+                      if (lastMessage?.role === 'assistant') {
+                        return [...withoutLast, {
+                          ...lastMessage,
+                          thinkingSteps: [...thinkingSteps],
+                        }];
+                      }
+                      return prev;
+                    });
+                  }
                 }
               } else if (event.type === 'start-step') {
                 // Step starting - we'll create the thinking step on tool-call instead
@@ -259,7 +267,7 @@ export function useChat(options: UseChatOptions = {}) {
                     return prev;
                   });
                 }
-              } else if (event.type === 'start' || event.type === 'finish' || event.type === 'reasoning-start' || event.type === 'reasoning-delta') {
+              } else if (event.type === 'start' || event.type === 'finish' || event.type === 'reasoning-start' || event.type === 'reasoning-delta' || event.type === 'reasoning-end' || event.type === 'text-start' || event.type === 'text-end' || event.type === 'tool-input-start' || event.type === 'tool-input-delta') {
                 // Informational events - just log for now
                 console.log('[Stream Event]', event.type);
               } else if (event.type === 'error' && 'error' in event) {
