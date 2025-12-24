@@ -10,6 +10,8 @@ interface ThinkingStepsDisplayProps {
 }
 
 export function ThinkingStepsDisplay({ steps, isStreaming = false }: ThinkingStepsDisplayProps) {
+  console.log('[ThinkingStepsDisplay] Rendering with', steps.length, 'steps:', steps);
+
   if (steps.length === 0) return null;
 
   return (

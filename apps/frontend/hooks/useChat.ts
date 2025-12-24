@@ -130,14 +130,19 @@ export function useChat(options: UseChatOptions = {}) {
 
             try {
               const parsed: unknown = JSON.parse(data);
+
+              // Debug: Log all incoming events
+              console.log('[Stream Event]', parsed);
+
               const validation = streamEventSchema.safeParse(parsed);
 
               if (!validation.success) {
-                console.warn('Invalid stream event:', validation.error);
+                console.warn('Invalid stream event:', parsed, validation.error);
                 continue;
               }
 
               const event = validation.data;
+              console.log('[Validated Event]', event.type);
 
               if (event.type === 'text-delta') {
                 assistantMessage += event.delta;
@@ -176,6 +181,8 @@ export function useChat(options: UseChatOptions = {}) {
                 thinkingSteps.push(step);
                 toolCalls.set(event.toolCallId, event.toolName);
 
+                console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
+
                 // Update message with thinking steps
                 setMessages(prev => {
                   const withoutLast = prev.slice(0, -1);
@@ -197,6 +204,7 @@ export function useChat(options: UseChatOptions = {}) {
               } else if (event.type === 'tool-result') {
                 // Find the corresponding step and mark it completed
                 const step = thinkingSteps.find(s => s.toolName === event.toolName && !s.endTime);
+                console.log('[Tool Result]', event.toolName, 'Step found:', !!step);
                 if (step) {
                   step.status = 'completed';
                   step.result = event.result;
