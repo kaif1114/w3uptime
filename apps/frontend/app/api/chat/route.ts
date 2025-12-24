@@ -27,7 +27,7 @@ const chatRequestSchema = z.object({
   }).optional(),
 });
 
-const model = process.env.OPENAI_MODEL || 'gpt-4o';
+const model = process.env.OPENAI_MODEL || 'gpt-5';
 
 export const POST = withAuth(async (req: NextRequest, user, session) => {
   try {
@@ -99,11 +99,10 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
     // 6. Stream Response
    
     const result = streamText({
-      model: `openai/${model}`,
+      model: openai(model),
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,
-      temperature: 1.0,
       onFinish: async ({ text, toolCalls, toolResults }) => {
         try {
           const userMessage: Message = {
@@ -126,6 +125,10 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
             })),
             timestamp: new Date().toISOString(),
           };
+          console.log('userMessage', userMessage);
+          console.log('toolCalls', toolCalls);
+          console.log('toolResults', toolResults);
+          console.log('assistantMessage', assistantMessage);
 
           await chatHistory.appendMessage(user.id, activeConversationId!, userMessage);
           await chatHistory.appendMessage(user.id, activeConversationId!, assistantMessage);

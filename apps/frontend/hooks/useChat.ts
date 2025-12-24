@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Message, ChatRequest, ChatError } from '@/types/chat';
 import { useChatContext } from '@/providers/ChatContextProvider';
+import { streamEventSchema } from '@/lib/schemas/StreamEvents';
 
 interface UseChatOptions {
   onError?: (error: ChatError) => void;
@@ -124,9 +125,19 @@ export function useChat(options: UseChatOptions = {}) {
             if (data === '[DONE]') continue;
 
             try {
-              const parsed = JSON.parse(data);
-              if (parsed.type === 'text-delta') {
-                assistantMessage += parsed.textDelta;
+              const parsed: unknown = JSON.parse(data);
+              const validation = streamEventSchema.safeParse(parsed);
+
+              if (!validation.success) {
+                console.warn('Invalid stream event:', validation.error);
+                continue;
+              }
+
+              const event = validation.data;
+
+              if (event.type === 'text-delta') {
+                assistantMessage += event.delta;
+
                 // Update streaming message
                 setMessages(prev => {
                   const withoutLast = prev.slice(0, -1);
@@ -140,6 +151,9 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
+              } else if (event.type === 'error') {
+                console.error('Stream error:', event.error);
+                throw new Error(event.error);
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);

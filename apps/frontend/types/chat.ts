@@ -129,3 +129,45 @@ export interface ToolExecutionContext {
   sessionId: string;
   context?: PageContext;
 }
+
+// ============================================================================
+// AI SDK Stream Event Types (v6.0.3)
+// ============================================================================
+
+/**
+ * Text delta event - incremental text content from AI streaming
+ * This is the primary event type for streaming LLM responses
+ */
+export interface TextDeltaEvent {
+  type: 'text-delta';
+  id: string;
+  delta: string; // The incremental text content
+}
+
+/**
+ * Error event - an error occurred during streaming
+ */
+export interface ErrorEvent {
+  type: 'error';
+  error: string;
+}
+
+/**
+ * Union type of all handled stream events
+ */
+export type StreamEvent = TextDeltaEvent | ErrorEvent;
+
+/**
+ * Type guard to check if parsed data is a TextDeltaEvent
+ * Provides runtime type safety for stream event parsing
+ */
+export function isTextDeltaEvent(event: unknown): event is TextDeltaEvent {
+  return (
+    typeof event === 'object' &&
+    event !== null &&
+    'type' in event &&
+    event.type === 'text-delta' &&
+    'delta' in event &&
+    typeof event.delta === 'string'
+  );
+}
