@@ -13,7 +13,7 @@ import type {
   StatusPage,
   StatusPageSection,
   WidgetType,
-} from "@/types/status-page";
+} from "@/types/StatusPage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

@@ -24,7 +24,7 @@ export async function register() {
     
     try {
       console.log("Initializing blockchain listener...");
-      const { startBlockchainListener } = await import("@/lib/blockchain-listener");
+      const { startBlockchainListener } = await import("@/lib/BlockchainListener");
       
       startBlockchainListener();
       console.log("Blockchain listener initialized successfully");
@@ -35,7 +35,7 @@ export async function register() {
     // Start governance proposal listener
     try {
       console.log("Initializing governance proposal listener...");
-      const { startProposalListener } = await import("@/lib/services/proposal-listener");
+      const { startProposalListener } = await import("@/lib/services/ProposalListener");
       
       await startProposalListener();
       console.log("Governance proposal listener initialized successfully");
@@ -46,7 +46,7 @@ export async function register() {
     // Start vote cache listener
     try {
       console.log("Initializing vote cache listener...");
-      const { startVoteCacheListener } = await import("@/lib/services/vote-cache-listener");
+      const { startVoteCacheListener } = await import("@/lib/services/VoteCacheListener");
       
       await startVoteCacheListener();
       console.log("Vote cache listener initialized successfully");

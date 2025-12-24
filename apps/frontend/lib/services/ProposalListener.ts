@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { createGovernanceContract, GOVERNANCE_CONTRACT_ADDRESS, type W3GovernanceContract } from "common/governance-contract";
 import { prisma } from "db/client";
-import { BaseBlockListener } from "./base-block-listener";
+import { BaseBlockListener } from "./BaseBlockListener";
 
 /**
  * ProposalEventListener

@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/ui/site-header";
-import { getSessionOnServer } from "@/lib/get-session-on-server";
+import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountChangeManager } from "@/components/wallet/account-change-manager";

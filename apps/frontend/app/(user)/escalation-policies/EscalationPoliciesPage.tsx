@@ -40,7 +40,7 @@ import {
   useBulkDeleteEscalationPolicies,
   useEscalationPolicies,
 } from "@/hooks/useEscalationPolicies";
-import { EscalationPolicy } from "@/types/escalation-policy";
+import { EscalationPolicy } from "@/types/EscalationPolicy";
 import { isEscalationPolicyError } from "@/types/error";
 import {
   AlertTriangle,

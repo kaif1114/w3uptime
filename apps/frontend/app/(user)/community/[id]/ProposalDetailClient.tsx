@@ -25,7 +25,7 @@ import {
   getUpvoteCount,
   getDownvoteCount,
   getUserVote as getProposalUserVote
-} from "@/lib/governance/vote-helpers";
+} from "@/lib/governance/VoteHelpers";
 import {
   AlertCircle,
   ArrowDown,

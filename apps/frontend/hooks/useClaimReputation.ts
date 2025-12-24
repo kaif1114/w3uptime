@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ethers } from 'ethers';
-import { connectWallet, createReputationContractWithSigner } from '@/lib/contracts/claim-reputation-contract';
+import { connectWallet, createReputationContractWithSigner } from '@/lib/contracts/ClaimReputationContract';
 
 export interface ClaimSignatureResponse {
   signature: string;

@@ -1,4 +1,4 @@
-import { getSessionOnServer } from "@/lib/get-session-on-server";
+import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 import { redirect } from "next/navigation";
 import WithdrawalsSection from "../components/WithdrawalsSection";
 

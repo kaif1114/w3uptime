@@ -1,5 +1,5 @@
 import NodeCache from 'node-cache';
-import { getOnChainReputationBalance } from '../contracts/reputation-contract';
+import { getOnChainReputationBalance } from '../contracts/ReputationContract';
 
 const cache = new NodeCache({ stdTTL: 10 }); // 10 seconds - reduced for faster updates after claims
 

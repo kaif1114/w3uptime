@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useSlackIntegrations, useDeleteSlackIntegration } from "@/hooks/use-slack-integrations";
+import { useSlackIntegrations, useDeleteSlackIntegration } from "@/hooks/useSlackIntegration";
 import { Trash2, ExternalLink, Slack, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {

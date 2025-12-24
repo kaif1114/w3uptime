@@ -3,15 +3,15 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth';
-import { chatHistory } from '@/lib/ai/chat-history';
-import { buildSystemPrompt } from '@/lib/ai/system-prompts';
+import { chatHistory } from '@/lib/ai/ChatHistory';
+import { buildSystemPrompt } from '@/lib/ai/SystemPrompts';
 import { createTools } from './tools';
 import { Message } from '@/types/chat';
-import { checkRateLimit } from '@/lib/ai/rate-limiter';
+import { checkRateLimit } from '@/lib/ai/RateLimiter';
 
 const chatRequestSchema = z.object({
   message: z.string().min(1).max(2000),
-  conversationId: z.string().uuid().optional(),
+  conversationId: z.uuid().optional(),
   context: z.object({
     pageType: z.enum([
       'monitor-detail',
@@ -21,11 +21,13 @@ const chatRequestSchema = z.object({
       'validators',
       'escalation-policies',
     ]).nullable(),
-    monitorId: z.string().uuid().optional(),
-    incidentId: z.string().uuid().optional(),
-    escalationPolicyId: z.string().uuid().optional(),
+    monitorId: z.uuid().optional(),
+    incidentId: z.uuid().optional(),
+    escalationPolicyId: z.uuid().optional(),
   }).optional(),
 });
+
+const model = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export const POST = withAuth(async (req: NextRequest, user, session) => {
   try {
@@ -95,9 +97,9 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
     });
 
     // 6. Stream Response
-    const model = process.env.OPENAI_MODEL || 'gpt-4o';
+   
     const result = streamText({
-      model: openai(model) as any,
+      model: `openai/${model}`,
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,

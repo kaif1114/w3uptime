@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GripVertical, Plus, X } from "lucide-react";
-import type { StatusPageSection, WidgetType } from "@/types/status-page";
+import type { StatusPageSection, WidgetType } from "@/types/StatusPage";
 import type { Monitor } from "@/types/monitor";
 
 interface StructureTabProps {

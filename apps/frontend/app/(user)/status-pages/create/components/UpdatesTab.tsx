@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronDown, Circle, Minus, AlertTriangle, Check } from "lucide-react";
-import type { StatusPageSection, StatusPageResource } from "@/types/status-page";
+import type { StatusPageSection, StatusPageResource } from "@/types/StatusPage";
 import type { Monitor } from "@/types/monitor";
 
 interface StatusUpdate {

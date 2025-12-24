@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCreateEscalationPolicy } from "@/hooks/useEscalationPolicies";
-import { EscalationMethod } from "@/types/escalation-policy";
+import { EscalationMethod } from "@/types/EscalationPolicy";
 import { isApiError } from "@/types/error";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Plus, Save } from "lucide-react";

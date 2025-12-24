@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { EscalationMethod } from "@/types/escalation-policy";
+import { EscalationMethod } from "@/types/EscalationPolicy";
 import {
   GripVertical,
   Trash2,

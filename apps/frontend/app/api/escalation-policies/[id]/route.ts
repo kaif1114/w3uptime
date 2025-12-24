@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
 import { z } from "zod";
-import { PrismaTransaction } from "@/types/database-operations";
-import { EscalationMethod } from "@/types/escalation-policy";
+import { PrismaTransaction } from "@/types/DatabaseOperation";
+import { EscalationMethod } from "@/types/EscalationPolicy";
 
 interface SlackChannelConfig {
   teamId: string;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBlockchainListenerStatus, startBlockchainListener, stopBlockchainListener } from '@/lib/blockchain-listener';
+import { getBlockchainListenerStatus, startBlockchainListener, stopBlockchainListener } from '@/lib/BlockchainListener';
 
 export async function GET(request: NextRequest) {
   try {

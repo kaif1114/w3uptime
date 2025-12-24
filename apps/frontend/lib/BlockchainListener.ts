@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { createContractInstance, CONTRACT_ADDRESS, ContractInstance } from "common/contract";
 import { prisma } from "db/client";
 import { Prisma } from "@prisma/client";
-import { BaseBlockListener } from "./services/base-block-listener";
+import { BaseBlockListener } from "./services/BaseBlockListener";
 
 class BlockchainListener extends BaseBlockListener<ContractInstance> {
   getListenerName(): string {
