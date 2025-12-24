@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Message, ChatRequest, ChatError, ThinkingStep, StepStatus } from '@/types/chat';
+import { Message, ChatRequest, ChatError, ThinkingStep } from '@/types/chat';
 import { useChatContext } from '@/providers/ChatContextProvider';
 import { streamEventSchema } from '@/lib/schemas/StreamEvents';
 import { getToolDescription } from '@/lib/toolDescriptions';
@@ -165,21 +165,21 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
-              } else if (event.type === 'tool-call') {
+              } else if (event.type === 'tool-call' && 'toolName' in event && 'toolCallId' in event && 'args' in event) {
                 // Create a new thinking step
                 stepCounter++;
 
                 const step: ThinkingStep = {
                   stepNumber: stepCounter,
-                  toolName: event.toolName,
-                  description: getToolDescription(event.toolName, event.args),
+                  toolName: event.toolName as string,
+                  description: getToolDescription(event.toolName as string, event.args as Record<string, unknown>),
                   status: 'in-progress',
-                  args: event.args,
+                  args: event.args as Record<string, unknown>,
                   startTime: new Date().toISOString(),
                 };
 
                 thinkingSteps.push(step);
-                toolCalls.set(event.toolCallId, event.toolName);
+                toolCalls.set(event.toolCallId as string, event.toolName as string);
 
                 console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
 
@@ -201,7 +201,7 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
-              } else if (event.type === 'tool-result') {
+              } else if (event.type === 'tool-result' && 'toolName' in event && 'result' in event) {
                 // Find the corresponding step and mark it completed
                 const step = thinkingSteps.find(s => s.toolName === event.toolName && !s.endTime);
                 console.log('[Tool Result]', event.toolName, 'Step found:', !!step);
@@ -256,9 +256,9 @@ export function useChat(options: UseChatOptions = {}) {
               } else if (event.type === 'start' || event.type === 'finish' || event.type === 'reasoning-start' || event.type === 'reasoning-delta') {
                 // Informational events - just log for now
                 console.log('[Stream Event]', event.type);
-              } else if (event.type === 'error') {
+              } else if (event.type === 'error' && 'error' in event) {
                 console.error('Stream error:', event.error);
-                throw new Error(event.error);
+                throw new Error(event.error as string);
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
