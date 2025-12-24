@@ -105,12 +105,13 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
     });
 
     // 6. Stream Response
-   
+
     const result = streamText({
       model: openai(model),
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,
+      maxSteps: 5, // Allow up to 5 steps for multi-turn tool calls
       onFinish: async ({ text, toolCalls, toolResults }) => {
         try {
           const userMessage: Message = {
