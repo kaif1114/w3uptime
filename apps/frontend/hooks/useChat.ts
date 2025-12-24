@@ -229,6 +229,33 @@ export function useChat(options: UseChatOptions = {}) {
                     return prev;
                   });
                 }
+              } else if (event.type === 'start-step') {
+                // Step starting - we'll create the thinking step on tool-call instead
+                console.log('[Step Start]', event);
+              } else if (event.type === 'step-finish') {
+                // Step finished - mark the most recent in-progress step as completed
+                console.log('[Step Finish]', event);
+                const inProgressStep = thinkingSteps.find(s => s.status === 'in-progress');
+                if (inProgressStep && !inProgressStep.endTime) {
+                  inProgressStep.status = 'completed';
+                  inProgressStep.endTime = new Date().toISOString();
+
+                  // Update message
+                  setMessages(prev => {
+                    const withoutLast = prev.slice(0, -1);
+                    const lastMessage = prev[prev.length - 1];
+                    if (lastMessage?.role === 'assistant') {
+                      return [...withoutLast, {
+                        ...lastMessage,
+                        thinkingSteps: [...thinkingSteps],
+                      }];
+                    }
+                    return prev;
+                  });
+                }
+              } else if (event.type === 'start' || event.type === 'finish' || event.type === 'reasoning-start' || event.type === 'reasoning-delta') {
+                // Informational events - just log for now
+                console.log('[Stream Event]', event.type);
               } else if (event.type === 'error') {
                 console.error('Stream error:', event.error);
                 throw new Error(event.error);

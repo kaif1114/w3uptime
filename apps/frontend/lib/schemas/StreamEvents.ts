@@ -31,14 +31,50 @@ export const toolResultEventSchema = z.object({
 });
 
 /**
+ * Zod schema for stream start event
+ */
+export const startEventSchema = z.object({
+  type: z.literal('start'),
+}).passthrough(); // Allow additional fields
+
+/**
+ * Zod schema for step start event
+ */
+export const startStepEventSchema = z.object({
+  type: z.literal('start-step'),
+}).passthrough();
+
+/**
+ * Zod schema for reasoning start event
+ */
+export const reasoningStartEventSchema = z.object({
+  type: z.literal('reasoning-start'),
+  id: z.string().optional(),
+}).passthrough();
+
+/**
+ * Zod schema for reasoning delta event
+ */
+export const reasoningDeltaEventSchema = z.object({
+  type: z.literal('reasoning-delta'),
+  delta: z.string(),
+}).passthrough();
+
+/**
  * Zod schema for step-finish stream events
- * Note: Currently not emitted by AI SDK v6, reserved for future use
  */
 export const stepFinishEventSchema = z.object({
   type: z.literal('step-finish'),
   stepNumber: z.number().optional(),
   finishReason: z.string().optional(),
-});
+}).passthrough();
+
+/**
+ * Zod schema for finish event
+ */
+export const finishEventSchema = z.object({
+  type: z.literal('finish'),
+}).passthrough();
 
 /**
  * Zod schema for error stream events
@@ -53,10 +89,15 @@ export const errorEventSchema = z.object({
  * Enables type-safe exhaustive checking with switch statements
  */
 export const streamEventSchema = z.discriminatedUnion('type', [
+  startEventSchema,
+  startStepEventSchema,
   textDeltaEventSchema,
   toolCallEventSchema,
   toolResultEventSchema,
+  reasoningStartEventSchema,
+  reasoningDeltaEventSchema,
   stepFinishEventSchema,
+  finishEventSchema,
   errorEventSchema,
 ]);
 
