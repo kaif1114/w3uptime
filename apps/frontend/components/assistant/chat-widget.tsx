@@ -3,18 +3,38 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MessageSquare, AlertCircle, StopCircle } from 'lucide-react';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
+import { RateLimitWarning } from './rate-limit-warning';
 import { useChat } from '@/hooks/useChat';
 import { toast } from 'sonner';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { messages, isStreaming, sendMessage, clearMessages } = useChat({
-    onError: (error) => {
-      toast.error(error.message || 'Failed to send message');
+  const {
+    messages,
+    isStreaming,
+    sendMessage,
+    error,
+    clearMessages,
+    stopStreaming,
+    messageCount
+  } = useChat({
+    onError: (error: any) => {
+      // Enhanced error toast
+      if (error.status === 429) {
+        toast.error('Rate limit reached', {
+          description: `Please wait ${error.resetIn || 60} seconds before sending more messages.`,
+          duration: 5000,
+        });
+      } else {
+        toast.error('Failed to send message', {
+          description: error.message || 'Please try again.',
+        });
+      }
     },
   });
 
@@ -60,7 +80,42 @@ export function ChatWidget() {
           </div>
         </SheetHeader>
 
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mx-4 mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{(error as any).message || 'An error occurred'}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Rate Limit Warning */}
+        <RateLimitWarning messageCount={messageCount} />
+
         <ChatMessages messages={messages} isStreaming={isStreaming} />
+
+        {/* Stop Button */}
+        {isStreaming && (
+          <div className="px-4 pb-2 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={stopStreaming}
+              className="gap-2"
+            >
+              <StopCircle className="h-4 w-4" />
+              Stop generating
+            </Button>
+          </div>
+        )}
 
         <ChatInput
           onSend={handleSend}

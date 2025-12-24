@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Message, ChatRequest } from '@/types/chat';
 import { useChatContext } from '@/providers/ChatContextProvider';
@@ -13,11 +13,46 @@ export function useChat(options: UseChatOptions = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [messageCount, setMessageCount] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messageTimestampsRef = useRef<number[]>([]);
+  const conversationIdRef = useRef<string | undefined>();
+  const contextRef = useRef(useChatContext().context);
+
   const { context } = useChatContext();
+
+  // Update refs when context changes
+  useEffect(() => {
+    contextRef.current = context;
+  }, [context]);
+
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
+
+  // Update message count periodically
+  useEffect(() => {
+    const updateMessageCount = () => {
+      const now = Date.now();
+      const oneMinuteAgo = now - 60000;
+      messageTimestampsRef.current = messageTimestampsRef.current.filter(ts => ts > oneMinuteAgo);
+      setMessageCount(messageTimestampsRef.current.length);
+    };
+
+    updateMessageCount();
+    const interval = setInterval(updateMessageCount, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const sendMessage = useMutation({
     mutationFn: async (messageContent: string) => {
+      // Track message timestamp for rate limiting
+      messageTimestampsRef.current.push(Date.now());
+      const now = Date.now();
+      const oneMinuteAgo = now - 60000;
+      messageTimestampsRef.current = messageTimestampsRef.current.filter(ts => ts > oneMinuteAgo);
+      setMessageCount(messageTimestampsRef.current.length);
+
       // Abort any existing stream
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -37,8 +72,8 @@ export function useChat(options: UseChatOptions = {}) {
       // Prepare request
       const requestBody: ChatRequest = {
         message: messageContent,
-        conversationId,
-        context: context ?? undefined,
+        conversationId: conversationIdRef.current,
+        context: contextRef.current ?? undefined,
       };
 
       // Send request
@@ -51,8 +86,14 @@ export function useChat(options: UseChatOptions = {}) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send message');
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.error || `HTTP ${response.status}`) as any;
+
+        // Attach metadata for error handling
+        error.status = response.status;
+        error.resetIn = errorData.resetIn;
+
+        throw error;
       }
 
       // Get conversation ID from headers
@@ -110,14 +151,30 @@ export function useChat(options: UseChatOptions = {}) {
       setIsStreaming(false);
       return { conversationId: newConversationId };
     },
-    onError: (error: Error) => {
+    retry: (failureCount, error: any) => {
+      // Don't retry rate limits or client errors
+      if (error.status === 429 || (error.status >= 400 && error.status < 500)) {
+        return false;
+      }
+      // Retry server errors up to 2 times
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    onError: (error: any) => {
       setIsStreaming(false);
       options.onError?.(error);
 
-      // Add error message to chat
+      // Add user-friendly error message to chat
+      let errorMessage = 'Something went wrong. Please try again.';
+      if (error.status === 429) {
+        errorMessage = `Rate limit reached. Please wait ${error.resetIn || 60} seconds before sending more messages.`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Error: ${error.message}`,
+        content: `Error: ${errorMessage}`,
         timestamp: new Date().toISOString(),
       }]);
     },
@@ -144,5 +201,6 @@ export function useChat(options: UseChatOptions = {}) {
     error: sendMessage.error,
     clearMessages,
     stopStreaming,
+    messageCount,
   };
 }
