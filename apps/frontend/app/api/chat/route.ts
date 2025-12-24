@@ -97,11 +97,10 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
     // 6. Stream Response
     const model = process.env.OPENAI_MODEL || 'gpt-4o';
     const result = streamText({
-      model: openai(model),
+      model: openai(model) as any,
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,
-      maxSteps: 5, // Enable multi-step tool calling
       temperature: 1.0,
       onFinish: async ({ text, toolCalls, toolResults }) => {
         try {
@@ -117,7 +116,7 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
             toolCalls: toolCalls?.map(tc => ({
               toolCallId: tc.toolCallId,
               toolName: tc.toolName,
-              args: tc.input,
+              args: tc.input as Record<string, unknown>,
             })),
             toolResults: toolResults?.map(tr => ({
               toolCallId: tr.toolCallId,
