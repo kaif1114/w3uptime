@@ -61,6 +61,42 @@ export const reasoningDeltaEventSchema = z.object({
 }).passthrough();
 
 /**
+ * Zod schema for reasoning end event
+ */
+export const reasoningEndEventSchema = z.object({
+  type: z.literal('reasoning-end'),
+  id: z.string().optional(),
+}).passthrough();
+
+/**
+ * Zod schema for tool input start event
+ */
+export const toolInputStartEventSchema = z.object({
+  type: z.literal('tool-input-start'),
+  toolCallId: z.string(),
+  toolName: z.string(),
+}).passthrough();
+
+/**
+ * Zod schema for tool input delta event
+ */
+export const toolInputDeltaEventSchema = z.object({
+  type: z.literal('tool-input-delta'),
+  toolCallId: z.string(),
+  inputTextDelta: z.string(),
+}).passthrough();
+
+/**
+ * Zod schema for tool input available event
+ */
+export const toolInputAvailableEventSchema = z.object({
+  type: z.literal('tool-input-available'),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  input: z.record(z.unknown()),
+}).passthrough();
+
+/**
  * Zod schema for step-finish stream events
  */
 export const stepFinishEventSchema = z.object({
@@ -96,6 +132,10 @@ export const streamEventSchema = z.discriminatedUnion('type', [
   toolResultEventSchema,
   reasoningStartEventSchema,
   reasoningDeltaEventSchema,
+  reasoningEndEventSchema,
+  toolInputStartEventSchema,
+  toolInputDeltaEventSchema,
+  toolInputAvailableEventSchema,
   stepFinishEventSchema,
   finishEventSchema,
   errorEventSchema,
