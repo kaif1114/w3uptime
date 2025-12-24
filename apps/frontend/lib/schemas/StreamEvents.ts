@@ -97,12 +97,36 @@ export const toolInputAvailableEventSchema = z.object({
 }).passthrough();
 
 /**
+ * Zod schema for tool output available event
+ */
+export const toolOutputAvailableEventSchema = z.object({
+  type: z.literal('tool-output-available'),
+  toolCallId: z.string(),
+  output: z.unknown(),
+}).passthrough();
+
+/**
+ * Zod schema for text start event
+ */
+export const textStartEventSchema = z.object({
+  type: z.literal('text-start'),
+  id: z.string().optional(),
+}).passthrough();
+
+/**
  * Zod schema for step-finish stream events
  */
 export const stepFinishEventSchema = z.object({
   type: z.literal('step-finish'),
   stepNumber: z.number().optional(),
   finishReason: z.string().optional(),
+}).passthrough();
+
+/**
+ * Zod schema for finish-step event (different from step-finish)
+ */
+export const finishStepEventSchema = z.object({
+  type: z.literal('finish-step'),
 }).passthrough();
 
 /**
@@ -127,16 +151,19 @@ export const errorEventSchema = z.object({
 export const streamEventSchema = z.discriminatedUnion('type', [
   startEventSchema,
   startStepEventSchema,
+  textStartEventSchema,
   textDeltaEventSchema,
   toolCallEventSchema,
   toolResultEventSchema,
-  reasoningStartEventSchema,
-  reasoningDeltaEventSchema,
-  reasoningEndEventSchema,
   toolInputStartEventSchema,
   toolInputDeltaEventSchema,
   toolInputAvailableEventSchema,
+  toolOutputAvailableEventSchema,
+  reasoningStartEventSchema,
+  reasoningDeltaEventSchema,
+  reasoningEndEventSchema,
   stepFinishEventSchema,
+  finishStepEventSchema,
   finishEventSchema,
   errorEventSchema,
 ]);
