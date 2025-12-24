@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatWalletAddress, copyToClipboard } from "@/lib/wallet-utils";
+import { formatWalletAddress, copyToClipboard } from "@/lib/WalletUtils";
 import { cn } from "@/lib/utils";
 
 interface WalletAddressProps {

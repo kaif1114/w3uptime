@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { useSlackChannels, SlackChannel, WorkspaceChannels } from "@/hooks/use-slack-channels";
+import { useSlackChannels, SlackChannel, WorkspaceChannels } from "@/hooks/useSlackChannels";
 
 export interface SelectedSlackChannel {
   teamId: string;

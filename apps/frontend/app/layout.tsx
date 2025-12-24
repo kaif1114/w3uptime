@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/providers/theme-provider";
-import { QueryProvider } from "@/providers/query-provider";
-import { ChatContextProvider } from "@/providers/chat-context-provider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import { QueryProvider } from "@/providers/QueryProvider";
+import { ChatContextProvider } from "@/providers/ChatContextProvider";
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 
