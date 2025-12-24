@@ -145,6 +145,26 @@ export interface TextDeltaEvent {
 }
 
 /**
+ * Tool call event - AI is calling a tool
+ */
+export interface ToolCallStreamEvent {
+  type: 'tool-call';
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+}
+
+/**
+ * Tool result event - result from tool execution
+ */
+export interface ToolResultStreamEvent {
+  type: 'tool-result';
+  toolCallId: string;
+  toolName: string;
+  result: unknown;
+}
+
+/**
  * Error event - an error occurred during streaming
  */
 export interface ErrorEvent {
@@ -155,7 +175,7 @@ export interface ErrorEvent {
 /**
  * Union type of all handled stream events
  */
-export type StreamEvent = TextDeltaEvent | ErrorEvent;
+export type StreamEvent = TextDeltaEvent | ToolCallStreamEvent | ToolResultStreamEvent | ErrorEvent;
 
 /**
  * Type guard to check if parsed data is a TextDeltaEvent
@@ -169,5 +189,29 @@ export function isTextDeltaEvent(event: unknown): event is TextDeltaEvent {
     event.type === 'text-delta' &&
     'delta' in event &&
     typeof event.delta === 'string'
+  );
+}
+
+/**
+ * Type guard to check if parsed data is a ToolCallStreamEvent
+ */
+export function isToolCallEvent(event: unknown): event is ToolCallStreamEvent {
+  return (
+    typeof event === 'object' &&
+    event !== null &&
+    'type' in event &&
+    event.type === 'tool-call'
+  );
+}
+
+/**
+ * Type guard to check if parsed data is a ToolResultStreamEvent
+ */
+export function isToolResultEvent(event: unknown): event is ToolResultStreamEvent {
+  return (
+    typeof event === 'object' &&
+    event !== null &&
+    'type' in event &&
+    event.type === 'tool-result'
   );
 }

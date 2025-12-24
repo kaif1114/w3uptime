@@ -90,9 +90,17 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
       }));
 
     // 5. Create Tools with execution context
+    const sessionId = req.cookies.get('sessionId')?.value;
+    if (!sessionId) {
+      return Response.json(
+        { error: 'Session cookie missing' },
+        { status: 401 }
+      );
+    }
+
     const tools = createTools({
       userId: user.id,
-      sessionId: session.id,
+      sessionId: sessionId, // Use the actual cookie value, not the DB ID
       context,
     });
 

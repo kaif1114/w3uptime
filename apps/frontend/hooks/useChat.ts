@@ -107,6 +107,7 @@ export function useChat(options: UseChatOptions = {}) {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
+      const toolCalls: Map<string, string> = new Map(); // Track active tool calls
 
       if (!reader) {
         throw new Error('No response stream');
@@ -151,6 +152,30 @@ export function useChat(options: UseChatOptions = {}) {
                     timestamp: new Date().toISOString(),
                   }];
                 });
+              } else if (event.type === 'tool-call') {
+                // Track tool call and show status if no text yet
+                toolCalls.set(event.toolCallId, event.toolName);
+
+                // If no text content yet, show tool execution status
+                if (!assistantMessage) {
+                  const toolStatus = `Calling ${event.toolName}...`;
+                  setMessages(prev => {
+                    const withoutLast = prev.slice(0, -1);
+                    const lastMessage = prev[prev.length - 1];
+                    if (lastMessage?.role === 'assistant') {
+                      return [...withoutLast, { ...lastMessage, content: toolStatus }];
+                    }
+                    return [...prev, {
+                      role: 'assistant' as const,
+                      content: toolStatus,
+                      timestamp: new Date().toISOString(),
+                    }];
+                  });
+                }
+              } else if (event.type === 'tool-result') {
+                // Tool execution completed
+                console.debug('Tool result:', event.toolName, event.result);
+                // Keep the tool status visible if no text yet
               } else if (event.type === 'error') {
                 console.error('Stream error:', event.error);
                 throw new Error(event.error);

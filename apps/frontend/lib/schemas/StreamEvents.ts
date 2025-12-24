@@ -11,6 +11,26 @@ export const textDeltaEventSchema = z.object({
 });
 
 /**
+ * Zod schema for tool-call stream events
+ */
+export const toolCallEventSchema = z.object({
+  type: z.literal('tool-call'),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  args: z.record(z.unknown()),
+});
+
+/**
+ * Zod schema for tool-result stream events
+ */
+export const toolResultEventSchema = z.object({
+  type: z.literal('tool-result'),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  result: z.unknown(),
+});
+
+/**
  * Zod schema for error stream events
  */
 export const errorEventSchema = z.object({
@@ -24,6 +44,8 @@ export const errorEventSchema = z.object({
  */
 export const streamEventSchema = z.discriminatedUnion('type', [
   textDeltaEventSchema,
+  toolCallEventSchema,
+  toolResultEventSchema,
   errorEventSchema,
 ]);
 
