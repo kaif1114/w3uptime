@@ -38,7 +38,7 @@ export function createTools(context: ToolExecutionContext) {
     getMonitorDetails: tool({
       description: 'Get detailed information about a specific monitor by ID. Returns configuration, escalation policy, and creation date.',
       inputSchema: z.object({
-        monitorId: z.string().uuid().describe('The UUID of the monitor'),
+        monitorId: z.uuid().describe('The UUID of the monitor'),
       }),
       execute: async ({ monitorId }: { monitorId: string }): Promise<unknown> => {
         return await internalFetch(`/api/monitors/${monitorId}`, context);
@@ -48,7 +48,7 @@ export function createTools(context: ToolExecutionContext) {
     getMonitorStats: tool({
       description: 'Get uptime and latency statistics for a monitor over a time period (day, week, or month).',
       inputSchema: z.object({
-        monitorId: z.string().uuid().describe('The UUID of the monitor'),
+        monitorId: z.uuid().describe('The UUID of the monitor'),
         period: z.enum(['day', 'week', 'month']).default('day').describe('Time period for statistics'),
       }),
       execute: async ({ monitorId, period }: { monitorId: string; period: 'day' | 'week' | 'month' }): Promise<unknown> => {
@@ -81,8 +81,8 @@ export function createTools(context: ToolExecutionContext) {
       description: 'Create a new monitor for a website. Requires URL, name, and escalation policy ID. Optionally set check interval (seconds) and expected status codes.',
       inputSchema: z.object({
         name: z.string().min(1).describe('Display name for the monitor'),
-        url: z.string().url().describe('URL to monitor (must be valid HTTP/HTTPS)'),
-        escalationPolicyId: z.string().uuid().describe('UUID of escalation policy to use'),
+        url: z.url().describe('URL to monitor (must be valid HTTP/HTTPS)'),
+        escalationPolicyId: z.uuid().describe('UUID of escalation policy to use'),
         checkInterval: z.number().int().positive().default(300).describe('Check interval in seconds (default: 300)'),
         timeout: z.number().int().positive().default(30).describe('Request timeout in seconds (default: 30)'),
         expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]).describe('HTTP status codes considered successful'),
@@ -99,13 +99,13 @@ export function createTools(context: ToolExecutionContext) {
     updateMonitor: tool({
       description: 'Update an existing monitor. Can change name, URL, status (ACTIVE/PAUSED), check interval, or escalation policy.',
       inputSchema: z.object({
-        monitorId: z.string().uuid().describe('UUID of monitor to update'),
+        monitorId: z.uuid().describe('UUID of monitor to update'),
         name: z.string().min(1).optional().describe('New display name'),
-        url: z.string().url().optional().describe('New URL to monitor'),
+        url: z.url().optional().describe('New URL to monitor'),
         status: z.enum(['ACTIVE', 'PAUSED']).optional().describe('Monitor status'),
         checkInterval: z.number().int().positive().optional().describe('Check interval in seconds'),
         timeout: z.number().int().positive().optional().describe('Request timeout in seconds'),
-        escalationPolicyId: z.string().uuid().optional().describe('New escalation policy UUID'),
+        escalationPolicyId: z.uuid().optional().describe('New escalation policy UUID'),
       }),
       execute: async ({ monitorId, ...updates }: { monitorId: string; name?: string; url?: string; status?: 'ACTIVE' | 'PAUSED'; checkInterval?: number; timeout?: number; escalationPolicyId?: string }): Promise<unknown> => {
         return await internalFetch(`/api/monitors/${monitorId}`, context, {
@@ -119,7 +119,7 @@ export function createTools(context: ToolExecutionContext) {
     getMonitorAnalytics: tool({
       description: 'Get geographic analytics for a monitor including regional latency, validator distribution, and performance insights.',
       inputSchema: z.object({
-        monitorId: z.string().uuid().describe('UUID of monitor'),
+        monitorId: z.uuid().describe('UUID of monitor'),
         period: z.enum(['day', 'week', 'month']).default('day').describe('Time period for analytics'),
       }),
       execute: async ({ monitorId, period }: { monitorId: string; period: 'day' | 'week' | 'month' }): Promise<unknown> => {
@@ -130,7 +130,7 @@ export function createTools(context: ToolExecutionContext) {
     getMonitorTimeSeries: tool({
       description: 'Get time-bucketed data for charts showing uptime and latency over time. Returns data points suitable for line charts.',
       inputSchema: z.object({
-        monitorId: z.string().uuid().describe('UUID of monitor'),
+        monitorId: z.uuid().describe('UUID of monitor'),
         period: z.enum(['day', 'week', 'month']).default('day').describe('Time period'),
         metric: z.enum(['uptime', 'latency', 'both']).default('both').describe('Which metrics to include'),
       }),
@@ -142,7 +142,7 @@ export function createTools(context: ToolExecutionContext) {
     getIncidentDetails: tool({
       description: 'Get full details of a specific incident including timeline events, affected monitor, duration, and resolution notes.',
       inputSchema: z.object({
-        incidentId: z.string().uuid().describe('UUID of incident'),
+        incidentId: z.uuid().describe('UUID of incident'),
       }),
       execute: async ({ incidentId }: { incidentId: string }): Promise<unknown> => {
         return await internalFetch(`/api/incidents/${incidentId}`, context);
@@ -152,7 +152,7 @@ export function createTools(context: ToolExecutionContext) {
     updateIncident: tool({
       description: 'Update incident status (acknowledge or resolve). Optionally add resolution notes.',
       inputSchema: z.object({
-        incidentId: z.string().uuid().describe('UUID of incident'),
+        incidentId: z.uuid().describe('UUID of incident'),
         status: z.enum(['acknowledged', 'resolved']).describe('New incident status'),
         notes: z.string().optional().describe('Resolution notes or acknowledgment message'),
       }),
