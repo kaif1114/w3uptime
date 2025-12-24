@@ -38,7 +38,7 @@ export function useChat(options: UseChatOptions = {}) {
       const requestBody: ChatRequest = {
         message: messageContent,
         conversationId,
-        context,
+        context: context ?? undefined,
       };
 
       // Send request
