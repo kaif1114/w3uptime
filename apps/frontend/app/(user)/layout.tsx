@@ -17,6 +17,7 @@ export default async function UserLayout({
     redirect("/");
   }
   return (
+    <>
     <SidebarProvider
       style={
         {
@@ -42,5 +43,6 @@ export default async function UserLayout({
       </SidebarInset>
     </SidebarProvider>
     <ChatWidget />
+    </>
   );
 }

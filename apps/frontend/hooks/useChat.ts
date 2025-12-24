@@ -16,10 +16,10 @@ export function useChat(options: UseChatOptions = {}) {
   const [messageCount, setMessageCount] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const messageTimestampsRef = useRef<number[]>([]);
-  const conversationIdRef = useRef<string | undefined>();
-  const contextRef = useRef(useChatContext().context);
+  const conversationIdRef = useRef<string | undefined>(undefined);
 
   const { context } = useChatContext();
+  const contextRef = useRef(context);
 
   // Update refs when context changes
   useEffect(() => {
