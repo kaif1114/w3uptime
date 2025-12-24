@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { ChatContextProvider } from "@/providers/chat-context-provider";
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 import { getSessionOnServer } from "@/lib/get-session-on-server";
 
@@ -47,14 +48,16 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider dehydratedState={dehydratedState}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          <ChatContextProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </ChatContextProvider>
         </QueryProvider>
       </body>
     </html>
