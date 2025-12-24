@@ -8,7 +8,7 @@ export const textDeltaEventSchema = z.object({
   type: z.literal('text-delta'),
   id: z.string(),
   delta: z.string(),
-});
+}).passthrough();
 
 /**
  * Zod schema for tool-call stream events
@@ -18,7 +18,7 @@ export const toolCallEventSchema = z.object({
   toolCallId: z.string(),
   toolName: z.string(),
   args: z.record(z.unknown()),
-});
+}).passthrough();
 
 /**
  * Zod schema for tool-result stream events
@@ -28,7 +28,7 @@ export const toolResultEventSchema = z.object({
   toolCallId: z.string(),
   toolName: z.string(),
   result: z.unknown(),
-});
+}).passthrough();
 
 /**
  * Zod schema for stream start event
@@ -142,13 +142,13 @@ export const finishEventSchema = z.object({
 export const errorEventSchema = z.object({
   type: z.literal('error'),
   error: z.string(),
-});
+}).passthrough();
 
 /**
- * Discriminated union schema for all stream events
- * Enables type-safe exhaustive checking with switch statements
+ * Union schema for all stream events
+ * More permissive than discriminated union to handle AI SDK variations
  */
-export const streamEventSchema = z.discriminatedUnion('type', [
+export const streamEventSchema = z.union([
   startEventSchema,
   startStepEventSchema,
   textStartEventSchema,
@@ -166,6 +166,8 @@ export const streamEventSchema = z.discriminatedUnion('type', [
   finishStepEventSchema,
   finishEventSchema,
   errorEventSchema,
+  // Catch-all for unknown event types
+  z.object({ type: z.string() }).passthrough(),
 ]);
 
 /**
