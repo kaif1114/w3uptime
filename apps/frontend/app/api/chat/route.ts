@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { streamText } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth';
@@ -111,7 +111,7 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,
-      maxSteps: 5, // Allow up to 5 steps for multi-turn tool calls
+      stopWhen: stepCountIs(5), // Allow up to 5 steps for multi-turn tool calls
       onFinish: async ({ text, toolCalls, toolResults }) => {
         try {
           const userMessage: Message = {
