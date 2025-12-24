@@ -65,6 +65,19 @@ export interface PageContext {
 }
 
 // ============================================================================
+// Error Types
+// ============================================================================
+
+/**
+ * Error type for chat-related errors
+ * Extends Error with additional fields for HTTP status and rate limiting
+ */
+export interface ChatError extends Error {
+  status?: number;
+  resetIn?: number;
+}
+
+// ============================================================================
 // API Request/Response Types
 // ============================================================================
 

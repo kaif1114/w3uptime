@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Message, ChatRequest } from '@/types/chat';
+import { Message, ChatRequest, ChatError } from '@/types/chat';
 import { useChatContext } from '@/providers/ChatContextProvider';
 
 interface UseChatOptions {
-  onError?: (error: Error) => void;
+  onError?: (error: ChatError) => void;
 }
 
 export function useChat(options: UseChatOptions = {}) {
@@ -87,7 +87,7 @@ export function useChat(options: UseChatOptions = {}) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.error || `HTTP ${response.status}`) as any;
+        const error = new Error(errorData.error || `HTTP ${response.status}`) as ChatError;
 
         // Attach metadata for error handling
         error.status = response.status;
@@ -151,16 +151,16 @@ export function useChat(options: UseChatOptions = {}) {
       setIsStreaming(false);
       return { conversationId: newConversationId };
     },
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: ChatError) => {
       // Don't retry rate limits or client errors
-      if (error.status === 429 || (error.status >= 400 && error.status < 500)) {
+      if (error.status === 429 || (error.status && error.status >= 400 && error.status < 500)) {
         return false;
       }
       // Retry server errors up to 2 times
       return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    onError: (error: any) => {
+    onError: (error: ChatError) => {
       setIsStreaming(false);
       options.onError?.(error);
 

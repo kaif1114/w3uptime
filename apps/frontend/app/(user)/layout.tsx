@@ -5,7 +5,7 @@ import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountChangeManager } from "@/components/wallet/account-change-manager";
-import { ChatWidget } from "@/components/assistant/chat-widget";
+import { ChatWidget } from "@/components/assistant/ChatWidget";
 
 export default async function UserLayout({
   children,

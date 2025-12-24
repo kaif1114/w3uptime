@@ -10,6 +10,7 @@ import { ChatInput } from './ChatInput';
 import { RateLimitWarning } from './rate-limit-warning';
 import { useChat } from '@/hooks/useChat';
 import { toast } from 'sonner';
+import { ChatError } from '@/types/chat';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +24,7 @@ export function ChatWidget() {
     stopStreaming,
     messageCount
   } = useChat({
-    onError: (error: any) => {
+    onError: (error: ChatError) => {
       // Enhanced error toast
       if (error.status === 429) {
         toast.error('Rate limit reached', {
@@ -85,7 +86,7 @@ export function ChatWidget() {
           <Alert variant="destructive" className="mx-4 mt-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
-              <span>{(error as any).message || 'An error occurred'}</span>
+              <span>{(error as ChatError).message || 'An error occurred'}</span>
               <Button
                 variant="outline"
                 size="sm"
