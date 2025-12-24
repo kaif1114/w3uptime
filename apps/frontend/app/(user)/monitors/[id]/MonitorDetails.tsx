@@ -12,8 +12,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { DeleteConfirmDialog } from "../DeleteConfirmDialog";
 import { MetricsCards } from "./MetricsCards";
 import { TimePeriod } from "./MonitoringControls";
@@ -54,6 +55,7 @@ function getStatusText(status: MonitorStatus): string {
 }
 
 export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
+  const { setContext } = useChatContext();
   const { data: monitor, isLoading, error, refetch: refetchMonitor } = useMonitorDetails(monitorId);
   const { data: incidentsData } = useMonitorIncidents(monitorId);
   const pauseMonitor = usePauseMonitor();
@@ -62,6 +64,17 @@ export function MonitorDetails({ monitorId }: MonitorDetailsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("day");
+
+  useEffect(() => {
+    setContext({
+      pageType: 'monitor-detail',
+      monitorId,
+    });
+
+    return () => {
+      setContext(null);
+    };
+  }, [monitorId, setContext]);
 
   const handlePauseToggle = () => {
     if (monitor && monitor?.status) {

@@ -172,8 +172,9 @@
           "7",
           "11"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-24T12:36:18.056Z"
       },
       {
         "id": "13",
@@ -220,9 +221,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-24T12:32:04.396Z",
+      "lastModified": "2025-12-24T12:36:18.061Z",
       "taskCount": 15,
-      "completedCount": 11,
+      "completedCount": 12,
       "tags": [
         "master"
       ]

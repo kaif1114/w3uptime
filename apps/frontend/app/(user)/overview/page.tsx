@@ -1,8 +1,21 @@
+'use client';
+
+import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useChatContext } from "@/providers/ChatContextProvider";
 
 export default function OverviewPage() {
+  const { setContext } = useChatContext();
+
+  useEffect(() => {
+    setContext({ pageType: 'dashboard' });
+
+    return () => {
+      setContext(null);
+    };
+  }, [setContext]);
   return (
     <div className="">
       <div className="flex flex-col lg:flex-row gap-8">

@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { z } from "zod";
 
 type SlackChannelData = {
@@ -113,6 +114,7 @@ type EscalationPolicyFormData = z.infer<typeof escalationPolicySchema>;
 export function EscalationPolicyDetailPage({
   policyId,
 }: EscalationPolicyDetailPageProps) {
+  const { setContext } = useChatContext();
   const {
     data: policy,
     isLoading,
@@ -134,10 +136,21 @@ export function EscalationPolicyDetailPage({
     name: "levels",
   });
 
-  
+
   const watchedLevels = form.watch("levels");
 
-  
+  useEffect(() => {
+    setContext({
+      pageType: 'escalation-policies',
+      escalationPolicyId: policyId,
+    });
+
+    return () => {
+      setContext(null);
+    };
+  }, [policyId, setContext]);
+
+
   useEffect(() => {
     if (policy) {
       const formData = {
