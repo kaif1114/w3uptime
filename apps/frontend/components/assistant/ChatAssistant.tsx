@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, X, Send, Bot, Loader2, ChevronDown, ChevronUp, Database } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Loader2, ChevronDown, ChevronUp, Database, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -363,8 +363,12 @@ export function ChatAssistant({
           >
             {messages.length === 0 && (
               <div className="text-sm text-muted-foreground">
-                Ask me about your monitors, incidents, or how to configure your
-                checks.
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <span>
+                  Supercharge your workflo, ask anything about your W3Uptime!
+                </span>
+              </div>
               </div>
             )}
             {messages.map((msg) => (
