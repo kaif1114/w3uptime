@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Message, ChatRequest, ChatError } from '@/types/chat';
+import { Message, ChatRequest, ChatError, ThinkingStep, StepStatus } from '@/types/chat';
 import { useChatContext } from '@/providers/ChatContextProvider';
 import { streamEventSchema } from '@/lib/schemas/StreamEvents';
+import { getToolDescription } from '@/lib/toolDescriptions';
 
 interface UseChatOptions {
   onError?: (error: ChatError) => void;
@@ -108,6 +109,8 @@ export function useChat(options: UseChatOptions = {}) {
       const decoder = new TextDecoder();
       let assistantMessage = '';
       const toolCalls: Map<string, string> = new Map(); // Track active tool calls
+      const thinkingSteps: ThinkingStep[] = []; // Track thinking process steps
+      let stepCounter = 0; // Auto-increment step numbers
 
       if (!reader) {
         throw new Error('No response stream');
@@ -144,38 +147,80 @@ export function useChat(options: UseChatOptions = {}) {
                   const withoutLast = prev.slice(0, -1);
                   const lastMessage = prev[prev.length - 1];
                   if (lastMessage?.role === 'assistant') {
-                    return [...withoutLast, { ...lastMessage, content: assistantMessage }];
+                    return [...withoutLast, {
+                      ...lastMessage,
+                      content: assistantMessage,
+                      thinkingSteps: thinkingSteps.length > 0 ? [...thinkingSteps] : undefined,
+                    }];
                   }
                   return [...prev, {
                     role: 'assistant' as const,
                     content: assistantMessage,
+                    thinkingSteps: thinkingSteps.length > 0 ? [...thinkingSteps] : undefined,
                     timestamp: new Date().toISOString(),
                   }];
                 });
               } else if (event.type === 'tool-call') {
-                // Track tool call and show status if no text yet
+                // Create a new thinking step
+                stepCounter++;
+
+                const step: ThinkingStep = {
+                  stepNumber: stepCounter,
+                  toolName: event.toolName,
+                  description: getToolDescription(event.toolName, event.args),
+                  status: 'in-progress',
+                  args: event.args,
+                  startTime: new Date().toISOString(),
+                };
+
+                thinkingSteps.push(step);
                 toolCalls.set(event.toolCallId, event.toolName);
 
-                // If no text content yet, show tool execution status
-                if (!assistantMessage) {
-                  const toolStatus = `Calling ${event.toolName}...`;
+                // Update message with thinking steps
+                setMessages(prev => {
+                  const withoutLast = prev.slice(0, -1);
+                  const lastMessage = prev[prev.length - 1];
+                  if (lastMessage?.role === 'assistant') {
+                    return [...withoutLast, {
+                      ...lastMessage,
+                      content: assistantMessage,
+                      thinkingSteps: [...thinkingSteps],
+                    }];
+                  }
+                  return [...prev, {
+                    role: 'assistant' as const,
+                    content: assistantMessage,
+                    thinkingSteps: [...thinkingSteps],
+                    timestamp: new Date().toISOString(),
+                  }];
+                });
+              } else if (event.type === 'tool-result') {
+                // Find the corresponding step and mark it completed
+                const step = thinkingSteps.find(s => s.toolName === event.toolName && !s.endTime);
+                if (step) {
+                  step.status = 'completed';
+                  step.result = event.result;
+                  step.endTime = new Date().toISOString();
+
+                  // Check if result indicates error
+                  if (typeof event.result === 'object' && event.result && 'error' in event.result) {
+                    step.status = 'failed';
+                    step.error = (event.result as { error?: boolean; message?: string }).message || 'Tool execution failed';
+                  }
+
+                  // Update message with updated steps
                   setMessages(prev => {
                     const withoutLast = prev.slice(0, -1);
                     const lastMessage = prev[prev.length - 1];
                     if (lastMessage?.role === 'assistant') {
-                      return [...withoutLast, { ...lastMessage, content: toolStatus }];
+                      return [...withoutLast, {
+                        ...lastMessage,
+                        thinkingSteps: [...thinkingSteps],
+                      }];
                     }
-                    return [...prev, {
-                      role: 'assistant' as const,
-                      content: toolStatus,
-                      timestamp: new Date().toISOString(),
-                    }];
+                    return prev;
                   });
                 }
-              } else if (event.type === 'tool-result') {
-                // Tool execution completed
-                console.debug('Tool result:', event.toolName, event.result);
-                // Keep the tool status visible if no text yet
               } else if (event.type === 'error') {
                 console.error('Stream error:', event.error);
                 throw new Error(event.error);

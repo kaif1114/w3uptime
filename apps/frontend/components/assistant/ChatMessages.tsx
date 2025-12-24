@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { User, Bot, Loader2, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { ThinkingStepsDisplay } from './ThinkingStepsDisplay';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -94,6 +95,14 @@ export function ChatMessages({ messages, isStreaming = false, isLoading = false 
                   : 'bg-muted text-foreground'
               )}
             >
+              {/* Show thinking steps for assistant messages */}
+              {!isUser && message.thinkingSteps && message.thinkingSteps.length > 0 && (
+                <ThinkingStepsDisplay
+                  steps={message.thinkingSteps}
+                  isStreaming={isStreaming && index === messages.length - 1}
+                />
+              )}
+
               <p className="text-sm whitespace-pre-wrap break-words">
                 {message.content}
               </p>

@@ -31,6 +31,16 @@ export const toolResultEventSchema = z.object({
 });
 
 /**
+ * Zod schema for step-finish stream events
+ * Note: Currently not emitted by AI SDK v6, reserved for future use
+ */
+export const stepFinishEventSchema = z.object({
+  type: z.literal('step-finish'),
+  stepNumber: z.number().optional(),
+  finishReason: z.string().optional(),
+});
+
+/**
  * Zod schema for error stream events
  */
 export const errorEventSchema = z.object({
@@ -46,6 +56,7 @@ export const streamEventSchema = z.discriminatedUnion('type', [
   textDeltaEventSchema,
   toolCallEventSchema,
   toolResultEventSchema,
+  stepFinishEventSchema,
   errorEventSchema,
 ]);
 

@@ -33,6 +33,7 @@ export interface Message {
   content: string;
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
+  thinkingSteps?: ThinkingStep[]; // Thinking process timeline
   timestamp: string; // ISO 8601 format
 }
 
@@ -214,4 +215,28 @@ export function isToolResultEvent(event: unknown): event is ToolResultStreamEven
     'type' in event &&
     event.type === 'tool-result'
   );
+}
+
+// ============================================================================
+// Thinking Steps Types
+// ============================================================================
+
+/**
+ * Status of a thinking/processing step
+ */
+export type StepStatus = 'pending' | 'in-progress' | 'completed' | 'failed';
+
+/**
+ * A single step in the LLM's thinking/processing timeline
+ */
+export interface ThinkingStep {
+  stepNumber: number;
+  toolName: string;
+  description: string; // User-friendly description
+  status: StepStatus;
+  args?: Record<string, unknown>; // Tool arguments
+  result?: unknown; // Tool result
+  error?: string; // Error message if failed
+  startTime: string; // ISO timestamp
+  endTime?: string; // ISO timestamp when completed
 }
