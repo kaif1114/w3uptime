@@ -129,10 +129,7 @@ export function ChatMessages({ messages, isStreaming = false, isLoading = false 
 
       {/* Show loading spinner during initial streaming delay (before content or thinking steps appear) */}
       {isStreaming &&
-       messages.length > 0 &&
-       messages[messages.length - 1]?.role === 'assistant' &&
-       !messages[messages.length - 1]?.content &&
-       !messages[messages.length - 1]?.thinkingSteps?.length && (
+       (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
         <div className="flex gap-3 justify-start">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary text-primary-foreground">

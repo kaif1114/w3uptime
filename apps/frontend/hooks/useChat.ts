@@ -70,14 +70,7 @@ export function useChat(options: UseChatOptions = {}) {
         timestamp: new Date().toISOString(),
       };
 
-      // Add empty assistant message to show loading state
-      const emptyAssistantMessage: Message = {
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages(prev => [...prev, userMessage, emptyAssistantMessage]);
+      setMessages(prev => [...prev, userMessage]);
 
       // Prepare request
       const requestBody: ChatRequest = {
