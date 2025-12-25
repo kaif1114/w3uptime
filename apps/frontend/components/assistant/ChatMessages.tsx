@@ -127,6 +127,24 @@ export function ChatMessages({ messages, isStreaming = false, isLoading = false 
         );
       })}
 
+      {/* Show loading spinner during initial streaming delay (before content or thinking steps appear) */}
+      {isStreaming &&
+       messages.length > 0 &&
+       messages[messages.length - 1]?.role === 'assistant' &&
+       !messages[messages.length - 1]?.content &&
+       !messages[messages.length - 1]?.thinkingSteps?.length && (
+        <div className="flex gap-3 justify-start">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              <Bot className="h-4 w-4" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="bg-muted rounded-lg px-4 py-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      )}
+
       <div ref={messagesEndRef} />
     </div>
   );
