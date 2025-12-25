@@ -113,7 +113,9 @@ function EditMonitorFormContent({ monitor }: { monitor: Monitor }) {
     setValue,
     watch,
     reset,
+    
   } = useForm<EditMonitorFormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(editMonitorSchema),
     defaultValues: {
       name: monitor.name,

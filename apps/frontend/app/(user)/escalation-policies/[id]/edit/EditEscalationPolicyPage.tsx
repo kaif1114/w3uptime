@@ -78,6 +78,7 @@ export function EditEscalationPolicyPage({
   const {
     formState: { isSubmitting },
   } = useForm<FormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(escalationPolicySchema),
   });
 

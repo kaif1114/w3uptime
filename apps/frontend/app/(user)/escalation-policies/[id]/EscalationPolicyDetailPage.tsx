@@ -124,6 +124,7 @@ export function EscalationPolicyDetailPage({
   const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<EscalationPolicyFormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(escalationPolicySchema),
     defaultValues: {
       name: "",

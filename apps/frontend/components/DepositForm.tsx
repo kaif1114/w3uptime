@@ -44,6 +44,7 @@ export function DepositForm({ onSuccess, onError, variant = 'full' }: DepositFor
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm<DepositFormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(depositFormSchema),
     defaultValues: {
       amount: ''
