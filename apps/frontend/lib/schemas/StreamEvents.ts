@@ -17,7 +17,7 @@ export const toolCallEventSchema = z.object({
   type: z.literal('tool-call'),
   toolCallId: z.string(),
   toolName: z.string(),
-  args: z.record(z.unknown()),
+  args: z.record(z.string(), z.unknown()),
 }).passthrough();
 
 /**
@@ -93,7 +93,7 @@ export const toolInputAvailableEventSchema = z.object({
   type: z.literal('tool-input-available'),
   toolCallId: z.string(),
   toolName: z.string(),
-  input: z.record(z.unknown()),
+  input: z.record(z.string(), z.unknown()),
 }).passthrough();
 
 /**
