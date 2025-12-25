@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, Trash2 } from "lucide-react";
-import type { StatusPageSection, StatusPageResource } from "@/types/status-page";
+import type { StatusPageSection, StatusPageResource } from "@/types/StatusPage";
 import type { Maintenance as MaintenanceType, CreateMaintenanceData } from "@/hooks/useMaintenances";
 import type { Monitor } from "@/types/monitor";
 

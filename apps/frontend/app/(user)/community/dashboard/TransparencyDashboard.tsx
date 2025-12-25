@@ -38,7 +38,7 @@ import {
   FileText,
   RefreshCw,
 } from "lucide-react";
-import { OnChainBadge } from "@/components/ui/on-chain-badge";
+import { OnChainBadge } from "@/components/ui/OnChainBadge";
 import Link from "next/link";
 
 interface DashboardProposal {

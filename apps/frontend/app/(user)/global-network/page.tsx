@@ -1,7 +1,20 @@
+'use client';
+
+import { useEffect } from "react";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { MapboxGlobeMap } from "./MapboxGlobeMap";
 import { ValidatorMap } from "./ValidatorMap";
 
 export default function GlobalNetworkPage() {
+  const { setContext } = useChatContext();
+
+  useEffect(() => {
+    setContext({ pageType: 'validators' });
+
+    return () => {
+      setContext(null);
+    };
+  }, [setContext]);
   return (
     <div className=" space-y-6">
       <div className="space-y-2">

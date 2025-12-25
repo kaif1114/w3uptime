@@ -40,7 +40,7 @@ import {
   useBulkDeleteEscalationPolicies,
   useEscalationPolicies,
 } from "@/hooks/useEscalationPolicies";
-import { EscalationPolicy } from "@/types/escalation-policy";
+import { EscalationPolicy } from "@/types/EscalationPolicy";
 import { isEscalationPolicyError } from "@/types/error";
 import {
   AlertTriangle,
@@ -62,7 +62,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useChatContext } from "@/providers/ChatContextProvider";
 
 const toast = {
   success: (message: string) => {
@@ -99,6 +100,7 @@ const methodColors = {
 };
 
 export function EscalationPoliciesPage() {
+  const { setContext } = useChatContext();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPolicies, setSelectedPolicies] = useState<string[]>([]);
@@ -107,6 +109,14 @@ export function EscalationPoliciesPage() {
   const [policyToDelete, setPolicyToDelete] = useState<EscalationPolicy | null>(
     null
   );
+
+  useEffect(() => {
+    setContext({ pageType: 'escalation-policies' });
+
+    return () => {
+      setContext(null);
+    };
+  }, [setContext]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState<"name" | "createdAt" | "updatedAt">(

@@ -11,11 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ProposalComments } from "@/components/ui/proposal-comments";
+import { ProposalComments } from "@/components/ui/ProposalComments";
 import {
   ProposalCardSkeleton,
   ProposalDetailSkeleton,
-} from "@/components/ui/proposal-skeleton";
+} from "@/components/ui/ProposalSkeleton";
 import {
   Select,
   SelectContent,
@@ -39,7 +39,7 @@ import {
   getUpvoteCount,
   getDownvoteCount,
   getUserVote as getProposalUserVote
-} from "@/lib/governance/vote-helpers";
+} from "@/lib/governance/VoteHelpers";
 import {
   AlertCircle,
   ArrowDown,

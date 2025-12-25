@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { RefreshCw, ExternalLink, Wallet, MoreHorizontal, TrendingUp } from 'lucide-react';
-import { DepositForm } from '@/components/deposit-form';
+import { DepositForm } from '@/components/DepositForm';
 import { useDepositHistory, useRefreshDeposits } from '@/hooks/useDeposits';
 import { useSession } from '@/hooks/useSession';
 import { formatDepositAmount } from 'common/contract';

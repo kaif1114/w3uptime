@@ -6,7 +6,7 @@ import {
   MIN_REP_FOR_PROPOSAL,
   MIN_REP_FOR_VOTE,
 } from "../../proposals/ReputationGuard";
-import { getCachedOnChainBalance } from "@/lib/cache/reputation-cache";
+import { getCachedOnChainBalance } from "@/lib/cache/ReputationCache";
 import { prisma } from "db/client";
 
 export const GET = withAuth(async (_req: NextRequest, user) => {

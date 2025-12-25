@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth';
 import { getReputation } from '../proposals/ReputationGuard';
-import { getCachedOnChainBalance } from '@/lib/cache/reputation-cache';
+import { getCachedOnChainBalance } from '@/lib/cache/ReputationCache';
 import { prisma } from 'db/client';
 
 /**

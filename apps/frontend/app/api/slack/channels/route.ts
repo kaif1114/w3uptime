@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionOnServer } from "@/lib/get-session-on-server";
+import { getSessionOnServer } from "@/lib/GetSessionOnServer";
 import { prisma } from "db/client";
 
 interface SlackChannel {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Wallet, Menu, X, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ModeToggle } from "@/components/mode-toggle";
+import { ModeToggle } from "@/components/ModeToggle";
 import { logout } from "@/lib/auth";
 
 const navigationItems = [

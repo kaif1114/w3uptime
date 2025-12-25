@@ -1,6 +1,6 @@
 "use client";
 
-import SlackWorkspaceSelector from "@/components/slack-workspace-selector";
+import SlackWorkspaceSelector from "@/components/SlackWorkspaceSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { z } from "zod";
 
 type SlackChannelData = {
@@ -113,6 +114,7 @@ type EscalationPolicyFormData = z.infer<typeof escalationPolicySchema>;
 export function EscalationPolicyDetailPage({
   policyId,
 }: EscalationPolicyDetailPageProps) {
+  const { setContext } = useChatContext();
   const {
     data: policy,
     isLoading,
@@ -122,6 +124,7 @@ export function EscalationPolicyDetailPage({
   const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<EscalationPolicyFormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(escalationPolicySchema),
     defaultValues: {
       name: "",
@@ -134,10 +137,21 @@ export function EscalationPolicyDetailPage({
     name: "levels",
   });
 
-  
+
   const watchedLevels = form.watch("levels");
 
-  
+  useEffect(() => {
+    setContext({
+      pageType: 'escalation-policies',
+      escalationPolicyId: policyId,
+    });
+
+    return () => {
+      setContext(null);
+    };
+  }, [policyId, setContext]);
+
+
   useEffect(() => {
     if (policy) {
       const formData = {

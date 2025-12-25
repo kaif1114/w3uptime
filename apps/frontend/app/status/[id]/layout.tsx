@@ -1,7 +1,7 @@
 
 import React from 'react';
 import Navbar from '../Navbar';
-import { getStatusPageNavInfo } from '@/lib/actions/status-page';
+import { getStatusPageNavInfo } from '@/lib/actions/StatusPage';
 
 export default async function StatusLayout({
   children,

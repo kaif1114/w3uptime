@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useIncident } from "@/hooks/useIncident";
 import { useUpdateIncident } from "@/hooks/useIncidents";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { format } from "date-fns";
 import {
   Copy,
@@ -20,6 +22,7 @@ export default function IncidentDetailPage({
 }: {
   incidentId: string;
 }) {
+  const { setContext } = useChatContext();
   const {
     data,
     isLoading,
@@ -27,6 +30,17 @@ export default function IncidentDetailPage({
     refetch: refetchIncident,
   } = useIncident(incidentId);
   const updateIncidentMutation = useUpdateIncident();
+
+  useEffect(() => {
+    setContext({
+      pageType: 'incident-detail',
+      incidentId,
+    });
+
+    return () => {
+      setContext(null);
+    };
+  }, [incidentId, setContext]);
 
   if (isLoading) {
     return (

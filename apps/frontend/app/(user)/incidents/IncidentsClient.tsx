@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useChatContext } from "@/providers/ChatContextProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,14 +34,23 @@ import { useIncidents, useUpdateIncident, useDeleteIncident } from "@/hooks/useI
 const ITEMS_PER_PAGE = 10;
 
 export default function IncidentsClient() {
+  const { setContext } = useChatContext();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { data: incidents = [], isLoading: loading, error: queryError } = useIncidents();
   const updateIncidentMutation = useUpdateIncident();
   const deleteIncidentMutation = useDeleteIncident();
-  
+
   const error = queryError?.message || null;
+
+  useEffect(() => {
+    setContext({ pageType: 'incidents' });
+
+    return () => {
+      setContext(null);
+    };
+  }, [setContext]);
 
   
   const filteredIncidents = useMemo(() => {

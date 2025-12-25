@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "db/client";
 import { withAuth } from "@/lib/auth";
-import { createStatusPageSchema } from "@/lib/schemas/status-page";
+import { createStatusPageSchema } from "@/lib/schemas/StatusPage";
 
   
   export const POST = withAuth(async (req: NextRequest, user) => {

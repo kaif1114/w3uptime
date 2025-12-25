@@ -29,10 +29,10 @@ import {
   Settings,
   Wallet,
 } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
+import { ModeToggle } from "@/components/ModeToggle";
 import { logout } from "@/lib/auth";
 import { useSession } from "@/hooks/useSession";
-import { WalletAddress } from "@/components/ui/wallet-address";
+import { WalletAddress } from "@/components/ui/WalletAddress";
 
 
 const items = [

@@ -3,7 +3,7 @@ import {
   EscalationPolicy,
   CreateEscalationPolicyRequest,
   CreateEscalationPolicyResponse,
-} from "@/types/escalation-policy";
+} from "@/types/EscalationPolicy";
 
 
 export interface FetchEscalationPoliciesParams {

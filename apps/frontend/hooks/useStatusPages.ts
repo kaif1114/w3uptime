@@ -8,7 +8,7 @@ import {
   StatusPagesListResponse,
   UpdateStatusPageData,
   UpdateStatusPageResponse,
-} from "@/types/status-page";
+} from "@/types/StatusPage";
 
 const API_BASE = "/api/status-pages";
 

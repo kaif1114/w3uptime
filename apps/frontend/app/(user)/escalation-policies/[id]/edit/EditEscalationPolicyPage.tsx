@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useEscalationPolicy, useUpdateEscalationPolicy } from "@/hooks/useEscalationPolicies";
-import { EscalationMethod } from "@/types/escalation-policy";
+import { EscalationMethod } from "@/types/EscalationPolicy";
 import { isApiError } from "@/types/error";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Plus, Save, ArrowLeft, Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { EscalationLevelItem } from "../../create/EscalationlevelItem";
-import { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
+import { SelectedSlackWorkspace } from "@/components/SlackWorkspaceSelector";
 import Link from "next/link";
 
 const escalationPolicySchema = z.object({
@@ -78,6 +78,7 @@ export function EditEscalationPolicyPage({
   const {
     formState: { isSubmitting },
   } = useForm<FormData>({
+    // @ts-expect-error - Zod v4 compatibility issue with @hookform/resolvers v5.2.2
     resolver: zodResolver(escalationPolicySchema),
   });
 

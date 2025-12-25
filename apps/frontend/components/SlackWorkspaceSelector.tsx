@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { useSlackIntegrations } from "@/hooks/use-slack-integrations";
+import { useSlackIntegrations } from "@/hooks/useSlackIntegration";
 
 interface SlackIntegration {
   id: string;

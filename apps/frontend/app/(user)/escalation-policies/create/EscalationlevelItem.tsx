@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { EscalationMethod } from "@/types/escalation-policy";
+import { EscalationMethod } from "@/types/EscalationPolicy";
 import {
   GripVertical,
   Trash2,
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import z from "zod";
-import SlackWorkspaceSelector, { SelectedSlackWorkspace } from "@/components/slack-workspace-selector";
+import SlackWorkspaceSelector, { SelectedSlackWorkspace } from "@/components/SlackWorkspaceSelector";
 
 interface EscalationLevelItemProps {
   level: number;
