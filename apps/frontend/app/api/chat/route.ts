@@ -111,7 +111,7 @@ export const POST = withAuth(async (req: NextRequest, user, session) => {
       system: systemPrompt,
       messages: [...messageHistory, { role: 'user', content: message }],
       tools,
-      stopWhen: stepCountIs(5), // Allow up to 5 steps for multi-turn tool calls
+      stopWhen: stepCountIs(10), // Allow up to 5 steps for multi-turn tool calls
       onFinish: async ({ text, toolCalls, toolResults }) => {
         try {
           const userMessage: Message = {
