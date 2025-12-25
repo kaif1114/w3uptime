@@ -131,9 +131,6 @@ export function useChat(options: UseChatOptions = {}) {
             try {
               const parsed: unknown = JSON.parse(data);
 
-              // Debug: Log all incoming events
-              console.log('[Stream Event]', parsed);
-
               const validation = streamEventSchema.safeParse(parsed);
 
               if (!validation.success) {
@@ -142,7 +139,6 @@ export function useChat(options: UseChatOptions = {}) {
               }
 
               const event = validation.data;
-              console.log('[Validated Event]', event.type, event);
 
               if (event.type === 'text-delta') {
                 assistantMessage += event.delta;
@@ -166,8 +162,6 @@ export function useChat(options: UseChatOptions = {}) {
                   }];
                 });
               } else if (event.type === 'tool-input-available') {
-                console.log('[Tool Input Available Event Detected]', event);
-
                 if ('toolName' in event && 'toolCallId' in event && 'input' in event) {
                   // Create a new thinking step
                   stepCounter++;
@@ -183,10 +177,6 @@ export function useChat(options: UseChatOptions = {}) {
 
                   thinkingSteps.push(step);
                   toolCalls.set(event.toolCallId as string, event.toolName as string);
-
-                  console.log('[Thinking Step Created]', step, 'Total steps:', thinkingSteps.length);
-                } else {
-                  console.warn('[Tool Input Available Event Missing Properties]', event);
                 }
 
                 // Update message with thinking steps
@@ -208,13 +198,10 @@ export function useChat(options: UseChatOptions = {}) {
                   }];
                 });
               } else if (event.type === 'tool-output-available') {
-                console.log('[Tool Output Available Event Detected]', event);
-
                 if ('toolCallId' in event && 'output' in event) {
                   // Find the corresponding step by toolCallId
                   const toolName = toolCalls.get(event.toolCallId as string);
                   const step = thinkingSteps.find(s => s.toolName === toolName && !s.endTime);
-                  console.log('[Tool Output]', 'toolCallId:', event.toolCallId, 'toolName:', toolName, 'Step found:', !!step);
 
                   if (step) {
                     step.status = 'completed';
@@ -226,8 +213,6 @@ export function useChat(options: UseChatOptions = {}) {
                       step.status = 'failed';
                       step.error = (event.output as { error?: boolean; message?: string }).message || 'Tool execution failed';
                     }
-
-                    console.log('[Thinking Step Completed]', step);
 
                     // Update message with updated steps
                     setMessages(prev => {
@@ -244,11 +229,9 @@ export function useChat(options: UseChatOptions = {}) {
                   }
                 }
               } else if (event.type === 'start-step') {
-                // Step starting - we'll create the thinking step on tool-call instead
-                console.log('[Step Start]', event);
+                // Step starting - we'll create the thinking step on tool-input-available instead
               } else if (event.type === 'step-finish') {
                 // Step finished - mark the most recent in-progress step as completed
-                console.log('[Step Finish]', event);
                 const inProgressStep = thinkingSteps.find(s => s.status === 'in-progress');
                 if (inProgressStep && !inProgressStep.endTime) {
                   inProgressStep.status = 'completed';
@@ -268,8 +251,7 @@ export function useChat(options: UseChatOptions = {}) {
                   });
                 }
               } else if (event.type === 'start' || event.type === 'finish' || event.type === 'reasoning-start' || event.type === 'reasoning-delta' || event.type === 'reasoning-end' || event.type === 'text-start' || event.type === 'text-end' || event.type === 'tool-input-start' || event.type === 'tool-input-delta') {
-                // Informational events - just log for now
-                console.log('[Stream Event]', event.type);
+                // Informational events - no action needed
               } else if (event.type === 'error' && 'error' in event) {
                 console.error('Stream error:', event.error);
                 throw new Error(event.error as string);
