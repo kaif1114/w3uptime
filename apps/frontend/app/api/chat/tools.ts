@@ -116,6 +116,18 @@ export function createTools(context: ToolExecutionContext) {
       },
     }),
 
+    deleteMonitor: tool({
+      description: 'Delete a monitor permanently. This will remove the monitor and all associated data including incidents, alerts, and monitoring history. This action cannot be undone.',
+      inputSchema: z.object({
+        monitorId: z.uuid().describe('The UUID of the monitor to delete'),
+      }),
+      execute: async ({ monitorId }: { monitorId: string }): Promise<unknown> => {
+        return await internalFetch(`/api/monitors/${monitorId}`, context, {
+          method: 'DELETE',
+        });
+      },
+    }),
+
     getMonitorAnalytics: tool({
       description: 'Get geographic analytics for a monitor including regional latency, validator distribution, and performance insights.',
       inputSchema: z.object({

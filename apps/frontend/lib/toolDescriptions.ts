@@ -11,6 +11,7 @@ export function getToolDescription(toolName: string, args?: Record<string, unkno
     getMonitorTimeSeries: (args) => `Retrieving ${args?.metric || 'performance'} data over time`,
     createMonitor: (args) => `Creating monitor for ${args?.url || 'website'}`,
     updateMonitor: () => 'Updating monitor configuration',
+    deleteMonitor: () => 'Deleting monitor',
     getIncidents: () => 'Fetching incidents',
     getIncidentDetails: () => 'Getting incident details',
     updateIncident: () => 'Updating incident status',
