@@ -4,13 +4,13 @@ import { z } from "zod";
 import { withAuth } from "@/lib/auth";
 
 const patchMonitorSchema = z.object({
-  name: z.string().min(1),
-  url: z.url().min(1),
-  timeout: z.number().int().positive().default(30), 
-  checkInterval: z.number().int().positive().default(300), 
-  status: z.enum(["ACTIVE", "PAUSED", "DOWN", "RECOVERING"]).default("ACTIVE"),
-  expectedStatusCodes: z.array(z.number().int()).default([200, 201, 202, 204]),
-  escalationPolicyId: z.string().min(1, "Escalation policy is required"),
+  name: z.string().min(1).optional(),
+  url: z.url().min(1).optional(),
+  timeout: z.number().int().positive().optional(),
+  checkInterval: z.number().int().positive().optional(),
+  status: z.enum(["ACTIVE", "PAUSED", "DOWN", "RECOVERING"]).optional(),
+  expectedStatusCodes: z.array(z.number().int()).optional(),
+  escalationPolicyId: z.string().min(1, "Escalation policy is required").optional(),
 });
 
 
@@ -124,6 +124,7 @@ export const PATCH = withAuth(
         );
       }
 
+      // Validate partial updates
       const validation = patchMonitorSchema.safeParse(body);
       if (!validation.success) {
         return NextResponse.json(
@@ -132,9 +133,7 @@ export const PATCH = withAuth(
         );
       }
 
-      const { name, url, timeout, checkInterval, status, expectedStatusCodes, escalationPolicyId } =
-        validation.data;
-
+      // Fetch existing monitor
       const existingMonitor = await prisma.monitor.findFirst({
         where: {
           id: monitorid,
@@ -149,19 +148,23 @@ export const PATCH = withAuth(
         );
       }
 
+      // Merge updates with existing data (only update provided fields)
+      const updateData = {
+        name: validation.data.name ?? existingMonitor.name,
+        url: validation.data.url ?? existingMonitor.url,
+        timeout: validation.data.timeout ?? existingMonitor.timeout,
+        checkInterval: validation.data.checkInterval ?? existingMonitor.checkInterval,
+        status: validation.data.status ?? existingMonitor.status,
+        expectedStatusCodes: validation.data.expectedStatusCodes ?? existingMonitor.expectedStatusCodes,
+        escalationPolicyId: validation.data.escalationPolicyId ?? existingMonitor.escalationPolicyId,
+      };
+
+      // Update monitor with merged data
       const updatedMonitor = await prisma.monitor.update({
         where: {
           id: monitorid,
         },
-        data: {
-          name,
-          url,
-          timeout,
-          checkInterval,
-          expectedStatusCodes,
-          status,
-          escalationPolicyId,
-        },
+        data: updateData,
       });
 
       return NextResponse.json(
