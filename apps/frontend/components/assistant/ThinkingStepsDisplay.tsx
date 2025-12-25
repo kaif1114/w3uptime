@@ -13,14 +13,22 @@ export function ThinkingStepsDisplay({ steps, isStreaming = false }: ThinkingSte
     return null;
   }
 
-  // Find the current step to display (in-progress step, or last step if all completed)
-  const currentStep = steps.find(s => s.status === 'in-progress') || steps[steps.length - 1];
+  // Only show thinking steps if there's an active in-progress step or still streaming
+  const currentStep = steps.find(s => s.status === 'in-progress');
 
-  if (!currentStep) {
+  // If no in-progress step and not streaming, hide the indicator
+  if (!currentStep && !isStreaming) {
     return null;
   }
 
-  const isFailed = currentStep.status === 'failed';
+  // If streaming but no in-progress step, show the last step temporarily
+  const displayStep = currentStep || steps[steps.length - 1];
+
+  if (!displayStep) {
+    return null;
+  }
+
+  const isFailed = displayStep.status === 'failed';
 
   return (
     <div className="flex items-center gap-2 mb-2 p-2 text-sm text-muted-foreground">
@@ -33,13 +41,13 @@ export function ThinkingStepsDisplay({ steps, isStreaming = false }: ThinkingSte
 
       {/* Step description */}
       <span className={isFailed ? 'text-destructive' : ''}>
-        {currentStep.description}
+        {displayStep.description}
       </span>
 
       {/* Error message if failed */}
-      {isFailed && currentStep.error && (
+      {isFailed && displayStep.error && (
         <span className="text-xs text-destructive ml-2">
-          - {currentStep.error}
+          - {displayStep.error}
         </span>
       )}
     </div>
