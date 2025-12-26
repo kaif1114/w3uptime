@@ -7,12 +7,13 @@ export interface PublicStatusPageSection {
   name: string;
   description: string | null;
   order: number;
-  type: string;
+  type: "STATUS" | "HISTORY" | "BOTH";
   monitor: {
     id: string;
     name: string;
     url: string;
     status: string;
+    lastCheckedAt: string | null;
   };
 }
 

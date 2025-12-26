@@ -1,6 +1,24 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
+// Deterministic heights for ResponseTimeChartsSkeleton (50 bars)
+// Using fixed heights prevents hydration errors from Math.random()
+const RESPONSE_TIME_SKELETON_HEIGHTS = [
+  45, 52, 48, 55, 60, 58, 62, 68, 72, 70,
+  65, 58, 54, 50, 48, 52, 58, 64, 70, 75,
+  80, 85, 90, 88, 82, 75, 68, 62, 58, 55,
+  52, 58, 65, 72, 78, 82, 85, 88, 92, 95,
+  98, 95, 90, 85, 78, 70, 62, 55, 48, 42
+] as const;
+
+// Deterministic heights for BarChartSkeleton (30 bars)
+// Using fixed heights prevents hydration errors from Math.random()
+const BAR_CHART_SKELETON_HEIGHTS = [
+  35, 42, 38, 45, 52, 58, 65, 70, 68, 62,
+  55, 48, 42, 38, 45, 52, 60, 68, 75, 82,
+  88, 85, 78, 70, 62, 55, 48, 42, 38, 35
+] as const;
+
 
 export const StatusOverviewSkeleton = () => {
   return (
@@ -80,7 +98,7 @@ export const BarChartSkeleton = () => {
               key={i}
               className="w-2"
               style={{
-                height: `${Math.random() * 120 + 20}px`
+                height: `${BAR_CHART_SKELETON_HEIGHTS[i]}px`
               }}
             />
           ))}
@@ -109,7 +127,7 @@ export const ResponseTimeChartsSkeleton = () => {
         ))}
       </div>
       
-      
+
       <div className="h-64">
         <div className="w-full h-full flex items-end justify-between px-8 pb-8">
           {Array.from({ length: 50 }).map((_, i) => (
@@ -117,7 +135,7 @@ export const ResponseTimeChartsSkeleton = () => {
               <Skeleton
                 className="w-1"
                 style={{
-                  height: `${Math.random() * 150 + 20}px`
+                  height: `${RESPONSE_TIME_SKELETON_HEIGHTS[i]}px`
                 }}
               />
               {i % 10 === 0 && <Skeleton className="h-2 w-8" />}

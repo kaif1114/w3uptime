@@ -219,24 +219,3 @@ export interface MonitorTimeSeriesResponse {
   data: TimeSeriesDataPoint[];
   generatedAt: string;
 }
-
-
-export type DailyStatus = 'up' | 'down' | 'partial' | 'maintenance' | 'unknown';
-
-export interface DailyStatusData {
-  date: string; 
-  status: DailyStatus;
-  uptime: number; 
-  totalChecks: number;
-  successfulChecks: number;
-  averageResponseTime?: number; 
-  incidents?: number;
-  downtimeMinutes?: number;
-}
-
-export interface DailyStatusHistoryResponse {
-  monitorId: string;
-  period: string; 
-  data: DailyStatusData[];
-  generatedAt: string;
-}

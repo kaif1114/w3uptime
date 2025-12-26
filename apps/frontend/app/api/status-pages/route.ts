@@ -16,6 +16,7 @@ const createSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string().min(1),
+        widgetType: z.enum(["current", "with_history", "with_history_chart"]).optional(),
         resources: z.array(
           z.object({ type: z.literal("monitor"), monitorId: z.string() })
         ),
@@ -48,6 +49,20 @@ const createSchema = z.object({
     .optional()
     .default([]),
 });
+
+// Helper function to convert frontend widgetType to database type
+function widgetTypeToDbType(widgetType?: string): "STATUS" | "HISTORY" | "BOTH" {
+  switch (widgetType) {
+    case "current":
+      return "STATUS";
+    case "with_history":
+      return "HISTORY";
+    case "with_history_chart":
+      return "BOTH";
+    default:
+      return "BOTH"; // fallback
+  }
+}
 
 export const GET = withAuth(async (_req: NextRequest, user) => {
   try {
@@ -114,15 +129,15 @@ export const POST = withAuth(async (req: NextRequest, user) => {
       },
     });
 
-    
+
     if (parsed.data.sections && parsed.data.sections.length > 0) {
       await prisma.statusPageSection.createMany({
         data: parsed.data.sections.map((section, index) => ({
           name: section.name,
           description: null,
           order: index + 1,
-          type: "BOTH", 
-          monitorId: section.resources[0]?.monitorId || "", 
+          type: widgetTypeToDbType(section.widgetType),
+          monitorId: section.resources[0]?.monitorId || "",
           statusPageId: statusPage.id,
         })),
       });
