@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Ellipsis, Plus, Search } from "lucide-react";
+import { Copy, Ellipsis, Plus, Search } from "lucide-react";
 import { useStatusPages } from "@/hooks/useStatusPages";
+import { toast } from "sonner";
 
 type StatusValue = "operational" | "degraded" | "down";
 
@@ -37,6 +38,18 @@ function getStatusStyles(status: StatusValue) {
 export default function StatusPagesList() {
   const [query, setQuery] = useState("");
   const { data, isLoading } = useStatusPages();
+
+  const copyStatusPageLink = async (id: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
+    const link = `${baseUrl}/status/${id}`;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied to clipboard");
+    } catch (error) {
+      toast.error("Failed to copy link");
+    }
+  };
 
   const filteredPages = useMemo(() => {
     const list = (data?.statusPages || []).map((p) => ({
@@ -115,6 +128,12 @@ export default function StatusPagesList() {
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem>Configure</DropdownMenuItem>
                         <DropdownMenuItem>Select</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => copyStatusPageLink(page.id)}
+                        >
+                          Copy Link
+                          <Copy className="ml-2 h-4 w-4" />
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Create group</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive">

@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { useState } from "react";
 import { format } from "date-fns";
 
-import { useDailyStatus } from "@/hooks/useDailyStatus";
 import { usePublicStatusPageData } from "@/hooks/usePublicStatusPage";
 import { PublicTimeSeriesChart } from "./PublicTimeSeriesChart";
 import { UptimeStatusBars } from "@/components/status/UptimeStatusBars";
@@ -43,16 +42,7 @@ const PublicPage = ({ id }: { id: string }) => {
     error: statusPageError,
   } = usePublicStatusPageData(id);
 
-  
-  const { data: dailyStatusData, isLoading: isDailyStatusLoading } =
-    useDailyStatus({
-      monitorId: id,
-      period: "30d",
-      isPublic: true,
-      enabled: !!id,
-    });
 
-  
   if (isStatusPageLoading) {
     return (
       <div className="min-h-screen bg-background p-8">
