@@ -81,16 +81,6 @@ const PublicPage = ({ id }: { id: string }) => {
     })
   );
 
-  
-  const shouldShowHistory = statusPageData.sections.some(
-    (section) => section.type === "HISTORY" || section.type === "BOTH"
-  );
-  const shouldShowStatus = statusPageData.sections.some(
-    (section) => section.type === "STATUS" || section.type === "BOTH"
-  );
-
-  
-  const monitorId = statusPageData.sections[0]?.monitor.id;
 
   
   const allOperational = transformedSections.every((section) =>
@@ -131,10 +121,10 @@ const PublicPage = ({ id }: { id: string }) => {
                 </div>
               </div>
 
-              
+
               {section.monitors.map((monitor) => (
                 <div key={monitor.id} className="space-y-2">
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="w-5 h-5 text-green-500" />
@@ -147,33 +137,35 @@ const PublicPage = ({ id }: { id: string }) => {
                     </span>
                   </div>
 
-                  
-                  <div className="w-full">
-                    <UptimeStatusBars monitorId={monitor.id} period="30d" />
-                  </div>
+                  {/* Uptime bars - ONLY for HISTORY and BOTH types */}
+                  {(section.type === "HISTORY" || section.type === "BOTH") && (
+                    <div className="w-full">
+                      <UptimeStatusBars monitorId={monitor.id} period="30d" />
+                    </div>
+                  )}
+
+                  {/* Chart - ONLY for BOTH type */}
+                  {section.type === "BOTH" && (
+                    <div className="w-full mt-4">
+                      <PublicTimeSeriesChart
+                        monitorId={monitor.id}
+                        period={
+                          selectedPeriod === "24h"
+                            ? "day"
+                            : selectedPeriod === "7d"
+                              ? "week"
+                              : "month"
+                        }
+                        type="latency"
+                        selectedPeriod={selectedPeriod}
+                        onPeriodChange={setSelectedPeriod}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           ))}
-
-          
-          {shouldShowHistory && monitorId && (
-            <div className="mt-6">
-              <PublicTimeSeriesChart
-                monitorId={monitorId}
-                period={
-                  selectedPeriod === "24h"
-                    ? "day"
-                    : selectedPeriod === "7d"
-                      ? "week"
-                      : "month"
-                }
-                type="latency"
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={setSelectedPeriod}
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
