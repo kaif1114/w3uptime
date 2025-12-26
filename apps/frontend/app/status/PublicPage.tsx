@@ -27,6 +27,7 @@ interface Monitor {
 interface Section {
   id: string;
   name: string;
+  type: "STATUS" | "HISTORY" | "BOTH";
   monitors: Monitor[];
 }
 
@@ -64,6 +65,7 @@ const PublicPage = ({ id }: { id: string }) => {
     (section) => ({
       id: section.id,
       name: section.name,
+      type: section.type,
       monitors: [
         {
           id: section.monitor.id,
@@ -73,8 +75,8 @@ const PublicPage = ({ id }: { id: string }) => {
             section.monitor.status === "ACTIVE"
               ? "up"
               : ("down" as "up" | "down" | "maintenance"),
-          uptime: 99.9, 
-          responseTime: 150, 
+          uptime: 99.9,
+          responseTime: 150,
           lastChecked: new Date().toISOString(),
         },
       ],
