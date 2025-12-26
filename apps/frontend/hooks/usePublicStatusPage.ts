@@ -13,6 +13,7 @@ export interface PublicStatusPageSection {
     name: string;
     url: string;
     status: string;
+    lastCheckedAt: string | null;
   };
 }
 

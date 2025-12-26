@@ -23,6 +23,7 @@ export const GET = async (
                 name: true,
                 url: true,
                 status: true,
+                lastCheckedAt: true,
               },
             },
           },
