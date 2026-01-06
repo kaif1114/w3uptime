@@ -63,7 +63,7 @@ export function ChatWidget() {
 
       <SheetContent
         side="right"
-        className="w-full sm:w-[800px] p-0 flex flex-col h-full"
+        className="w-full sm:w-[500px] md:w-[550px] lg:w-[600px] p-0 flex flex-col h-full"
       >
         <SheetHeader className="border-b p-4 flex-row items-center justify-between space-y-0">
           <SheetTitle className="text-lg font-semibold">AI Assistant</SheetTitle>
