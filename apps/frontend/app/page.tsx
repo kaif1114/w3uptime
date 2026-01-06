@@ -247,7 +247,7 @@ export default function Home() {
       <section className="relative z-10 px-6 py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-blue-200 mb-6 leading-tight">
-            Distributed uptime monitoring Need of the hour.
+          Monitor your website&apos;s heartbeat across the globe
           </h1>
           <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
             Get 10 monitors, 10 heartbeats and a status page with 3-minute checks totally free. For the community, by the community.
