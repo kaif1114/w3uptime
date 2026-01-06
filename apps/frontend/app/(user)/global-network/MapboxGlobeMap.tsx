@@ -661,13 +661,13 @@ export function MapboxGlobeMap({}: MapboxGlobeMapProps) {
                     </div>
 
                     
-                    <div>
+                    {/* <div>
                       <h5 className="text-xs font-medium text-gray-300 uppercase tracking-wide mb-2">Coordinates</h5>
                       <div className="text-xs text-gray-400 font-mono">
                         <div>Lat: {selectedValidator.lat.toFixed(4)}°</div>
                         <div>Lng: {selectedValidator.lng.toFixed(4)}°</div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   
