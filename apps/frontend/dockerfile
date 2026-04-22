@@ -42,18 +42,23 @@ COPY . .
 RUN npx prisma generate --schema=./packages/db/prisma/schema.prisma
 
 # NEXT_PUBLIC_* vars must be available at build time — Next.js inlines them
-# into the client bundle. Source .env files are gitignored, so CI must pass
-# these via --build-arg.
+# into the client bundle. Source .env files are gitignored, so CI passes
+# these via --build-arg. We write them into apps/frontend/.env.production
+# before `next build`, because writing a file invalidates the layer cache
+# when a value changes; setting ENV alone does not reliably do that under
+# BuildKit.
 ARG NEXT_PUBLIC_URL
 ARG NEXT_PUBLIC_MAPBOX_TOKEN
 ARG NEXT_PUBLIC_CHAIN_ID
 ARG NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS
 ARG NEXT_PUBLIC_SLACK_CLIENT_ID
-ENV NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}
-ENV NEXT_PUBLIC_MAPBOX_TOKEN=${NEXT_PUBLIC_MAPBOX_TOKEN}
-ENV NEXT_PUBLIC_CHAIN_ID=${NEXT_PUBLIC_CHAIN_ID}
-ENV NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS=${NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS}
-ENV NEXT_PUBLIC_SLACK_CLIENT_ID=${NEXT_PUBLIC_SLACK_CLIENT_ID}
+RUN printf '%s\n' \
+    "NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}" \
+    "NEXT_PUBLIC_MAPBOX_TOKEN=${NEXT_PUBLIC_MAPBOX_TOKEN}" \
+    "NEXT_PUBLIC_CHAIN_ID=${NEXT_PUBLIC_CHAIN_ID}" \
+    "NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS=${NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS}" \
+    "NEXT_PUBLIC_SLACK_CLIENT_ID=${NEXT_PUBLIC_SLACK_CLIENT_ID}" \
+    > apps/frontend/.env.production
 
 # Build the frontend app - this creates the optimized standalone build
 RUN npm run build --workspace=frontend
