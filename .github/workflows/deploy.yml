@@ -118,6 +118,9 @@ jobs:
             echo "==> Restarting services"
             docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml up -d --remove-orphans
 
+            echo "==> Nginx upstream DNS refresh (recreated containers have new IPs)"
+            docker compose -f docker-compose.prod.yml restart nginx
+
             echo "==> Pruning old images"
             docker image prune -f
 
