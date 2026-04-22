@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 const publicRoutes: string[] = [
   "/",
   "/favicon.ico",
+  "/api/health",
   "/api/auth/nonce",
   "/api/auth/verify",
   "/api/auth/session",

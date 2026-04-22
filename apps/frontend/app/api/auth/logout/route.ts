@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set('sessionId', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NEXT_PUBLIC_URL?.startsWith('https://') ?? false,
       sameSite: 'strict',
       maxAge: 0, 
       path: '/'

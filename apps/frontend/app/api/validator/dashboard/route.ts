@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'db/client';
 import { ethers } from 'ethers';
 import { withAuth } from '@/lib/auth';
-import { computeReputationScore } from 'hub/src/services/reputation';
+import { computeReputationScore } from '@/lib/reputationScore';
 export const GET = withAuth(async (_request: NextRequest, user) => {
   try {
     const userId = user.id;

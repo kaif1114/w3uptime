@@ -123,6 +123,13 @@ yarn exec turbo link
 pnpm exec turbo link
 ```
 
+## Deployment
+
+W3Uptime deploys to a single AWS EC2 instance running docker-compose behind
+Nginx. Full runbook: [`deployments/aws/README.md`](./deployments/aws/README.md).
+The validator CLI ships via GitHub Releases — see
+[`deployments/aws/10-validator-github-release.md`](./deployments/aws/10-validator-github-release.md).
+
 ## On-Chain Governance
 
 W3Uptime features a fully transparent on-chain governance system where all proposals and votes are recorded on the Sepolia Ethereum testnet. Users vote directly via MetaMask transactions, ensuring complete transparency and verifiability.

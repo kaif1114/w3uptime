@@ -1,35 +1,47 @@
 name: w3uptime-prod
+
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg17
     container_name: timescaledb-prod
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-myapp}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      # Remove POSTGRES_HOST_AUTH_METHOD=trust for security
-    ports:
-      - "${POSTGRES_PORT:-5432}:5444"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./docker/init-scripts:/docker-entrypoint-initdb.d
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-myapp}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    command: 
+    command:
       - postgres
       - -c
       - max_worker_processes=24
-      - -c  
+      - -c
       - timescaledb.max_background_workers=16
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    restart: unless-stopped
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   data-ingestion:
-    image: w3uptime-data-ingestion:latest
+    image: ${DATA_INGESTION_IMAGE:-w3uptime-data-ingestion:latest}
     container_name: data-ingestion-prod
     restart: unless-stopped
     env_file:
@@ -37,25 +49,23 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       FRONTEND_URL: http://frontend:8000
       HUB_URL: http://hub:8080
-    ports:
-      - "4001:4001"
     networks:
       - app-network
     depends_on:
       timescaledb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4001/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4001/ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   hub:
-    image: w3uptime-hub:latest
+    image: ${HUB_IMAGE:-w3uptime-hub:latest}
     container_name: hub-prod
     restart: unless-stopped
     env_file:
@@ -63,24 +73,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       DATA_INGESTION_URL: http://data-ingestion:4001
-    ports:
-      - "8080:8080"
     networks:
       - app-network
     depends_on:
       data-ingestion:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   frontend:
-    image: w3uptime-frontend:latest
+    image: ${FRONTEND_IMAGE:-w3uptime-frontend:latest}
     container_name: frontend-prod
     restart: unless-stopped
     env_file:
@@ -88,24 +96,48 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@timescaledb-prod:5432/${POSTGRES_DB:-myapp}
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       HUB_URL: http://hub:8080
-    ports:
-      - "8000:8000"
+      HUB_SERVER_URL: http://hub:8080
+      DATA_INGESTION_URL: http://data-ingestion:4001
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - app-network
     depends_on:
       timescaledb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - app-network
+    depends_on:
+      frontend:
+        condition: service_healthy
+      hub:
+        condition: service_healthy
 
 volumes:
   timescaledb_data:
+  redis_data:
 
 networks:
   app-network:

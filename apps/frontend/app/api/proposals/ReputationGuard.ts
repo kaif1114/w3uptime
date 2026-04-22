@@ -1,6 +1,6 @@
 // apps/frontend/app/api/proposals/ReputationGuard.ts
 import { prisma } from "db/client";
-import { computeReputationScore } from "hub/src/services/reputation";
+import { computeReputationScore } from "@/lib/reputationScore";
 
 export const MIN_REP_FOR_PROPOSAL = 500;
 export const MIN_REP_FOR_COMMENT = 100;

@@ -10,14 +10,20 @@ RUN corepack enable
 
 # Install dependencies for building
 FROM base AS deps
-# Copy package files for workspace dependencies
+# Copy package files for ALL workspaces so `npm ci` replays the lockfile exactly.
+# Omitting any workspace causes npm to fall back to a resolver that can silently
+# misplace packages (e.g. un-hoisting zod), which breaks Next.js webpack
+# resolution for peer-imported modules like @hookform/resolvers/zod.
 COPY package.json package-lock.json* ./
-COPY apps/frontend/package.json ./apps/frontend/
-COPY packages/db/package.json ./packages/db/
-COPY packages/common/package.json ./packages/common/
-COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY apps/frontend/package.json       ./apps/frontend/
+COPY apps/hub/package.json            ./apps/hub/
+COPY apps/data-ingestion/package.json ./apps/data-ingestion/
+COPY apps/validator/package.json      ./apps/validator/
+COPY packages/db/package.json               ./packages/db/
+COPY packages/common/package.json           ./packages/common/
+COPY packages/eslint-config/package.json    ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
-COPY packages/ui/package.json ./packages/ui/
+COPY packages/ui/package.json               ./packages/ui/
 
 # Install all dependencies needed for building
 RUN npm ci
@@ -26,6 +32,8 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# Workspace-local node_modules (npm doesn't always hoist every package — zod, etc.)
+COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
 # Copy all source code
 COPY . .
