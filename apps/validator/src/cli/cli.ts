@@ -329,6 +329,15 @@ configCmd
 
 
 async function promptPassword(message: string): Promise<string> {
+  // Allow non-interactive runs (CI, headless deploy) to provide the password
+  // via env var. Must still meet the length requirement below.
+  const envPassword = process.env.W3UPTIME_WALLET_PASSWORD;
+  if (envPassword !== undefined) {
+    if (envPassword.length < 8) {
+      throw new Error('W3UPTIME_WALLET_PASSWORD must be at least 8 characters long');
+    }
+    return envPassword;
+  }
   const { password } = await inquirer.default.prompt([
     {
       type: 'password',

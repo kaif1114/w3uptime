@@ -324,6 +324,10 @@ export class ValidatorService extends EventEmitter {
 
   
   private async promptPassword(message: string): Promise<string> {
+    const envPassword = process.env.W3UPTIME_WALLET_PASSWORD;
+    if (envPassword !== undefined) {
+      return envPassword;
+    }
     const { password } = await inquirer.default.prompt([
       {
         type: 'password',
