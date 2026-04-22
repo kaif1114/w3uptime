@@ -34,7 +34,7 @@ jobs:
         run: npm run build --workspace=common --if-present
 
       - name: Build validator
-        run: npm run build --workspace=validator
+        run: npm run build --workspace=w3uptime-validator
 
       - name: Pack validator
         id: pack
