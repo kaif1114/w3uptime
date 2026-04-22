@@ -351,7 +351,7 @@ export class ValidatorWebSocketClient extends EventEmitter {
       
       const response = await fetch('https://api.ipify.org?format=json');
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { ip: string };
 
         return data.ip;
       }
