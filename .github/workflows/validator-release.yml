@@ -1,0 +1,78 @@
+name: Validator release
+
+on:
+  push:
+    tags:
+      - "validator-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag (e.g. validator-v1.0.0) — used when triggering manually"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & publish validator tarball
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps (workspace root)
+        run: npm ci
+
+      - name: Build common package (validator depends on it)
+        run: npm run build --workspace=common --if-present
+
+      - name: Build validator
+        run: npm run build --workspace=validator
+
+      - name: Pack validator
+        id: pack
+        working-directory: apps/validator
+        run: |
+          TARBALL=$(npm pack --silent)
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "tarball_path=apps/validator/$TARBALL" >> "$GITHUB_OUTPUT"
+          sha256sum "$TARBALL" > "$TARBALL.sha256"
+
+      - name: Compute release name
+        id: relname
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release + upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.relname.outputs.name }}
+          name: ${{ steps.relname.outputs.name }}
+          body: |
+            W3Uptime Validator CLI release.
+
+            ## Install
+            ```bash
+            npm i -g https://github.com/${{ github.repository }}/releases/download/${{ steps.relname.outputs.name }}/${{ steps.pack.outputs.tarball }}
+            ```
+
+            ## First-time setup
+            ```bash
+            w3uptime-validator init --private-key 0x... --wallet-name my-validator
+            w3uptime-validator config set hub.url ws://<your-hub-host>/ws
+            w3uptime-validator start
+            ```
+          files: |
+            ${{ steps.pack.outputs.tarball_path }}
+            ${{ steps.pack.outputs.tarball_path }}.sha256

@@ -1,11 +1,18 @@
 {
-  "name": "validator",
+  "name": "w3uptime-validator",
   "version": "1.0.0",
   "description": "W3Uptime decentralized validator CLI application",
   "type": "module",
   "main": "build/main.js",
   "bin": {
     "w3uptime-validator": "./build/main.js"
+  },
+  "files": [
+    "build",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "nodemon src/main.ts",
