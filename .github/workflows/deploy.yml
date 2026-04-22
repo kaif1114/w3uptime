@@ -115,10 +115,20 @@ jobs:
             echo "==> Pulling new images"
             docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml pull frontend hub data-ingestion
 
-            echo "==> Restarting services"
-            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml up -d --remove-orphans
+            echo "==> Recreating app services (don't fail on compose's dep-wait timeout — we re-verify below)"
+            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml up -d --no-deps data-ingestion hub frontend || true
 
-            echo "==> Nginx upstream DNS refresh (recreated containers have new IPs)"
+            echo "==> Waiting for containers to report healthy (max 180s)"
+            for svc in data-ingestion-prod hub-prod frontend-prod; do
+              for i in $(seq 1 36); do
+                s=$(docker inspect -f '{{.State.Health.Status}}' "$svc" 2>/dev/null || echo missing)
+                if [ "$s" = "healthy" ]; then echo "  $svc healthy"; break; fi
+                if [ "$i" = "36" ]; then echo "  $svc did NOT become healthy (last: $s)"; exit 1; fi
+                sleep 5
+              done
+            done
+
+            echo "==> Restarting nginx so upstream DNS re-resolves for new container IPs"
             docker compose -f docker-compose.prod.yml restart nginx
 
             echo "==> Pruning old images"
