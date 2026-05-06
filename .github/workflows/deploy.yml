@@ -82,18 +82,6 @@ jobs:
           cache-from: type=gha,scope=data-ingestion
           cache-to: type=gha,mode=max,scope=data-ingestion
 
-      - name: Build & push validator
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/validator/dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/w3uptime-validator:${{ steps.meta.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/w3uptime-validator:latest
-          cache-from: type=gha,scope=validator
-          cache-to: type=gha,mode=max,scope=validator
-
   deploy:
     name: Deploy to EC2
     needs: build-and-push
@@ -124,7 +112,6 @@ jobs:
             FRONTEND_IMAGE=ghcr.io/$NS/w3uptime-frontend:$IMG_TAG
             HUB_IMAGE=ghcr.io/$NS/w3uptime-hub:$IMG_TAG
             DATA_INGESTION_IMAGE=ghcr.io/$NS/w3uptime-data-ingestion:$IMG_TAG
-            VALIDATOR_IMAGE=ghcr.io/$NS/w3uptime-validator:$IMG_TAG
             EOF
 
             echo "==> git pull (for compose / nginx config updates)"
@@ -132,10 +119,10 @@ jobs:
             git reset --hard origin/main
 
             echo "==> Pulling new images"
-            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml pull frontend hub data-ingestion validator
+            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml pull frontend hub data-ingestion
 
             echo "==> Recreating app services (don't fail on compose's dep-wait timeout — we re-verify below)"
-            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml up -d --no-deps data-ingestion hub frontend validator || true
+            docker compose --env-file .env --env-file .env.images -f docker-compose.prod.yml up -d --no-deps data-ingestion hub frontend || true
 
             echo "==> Waiting for containers to report healthy (max 180s)"
             for svc in data-ingestion-prod hub-prod frontend-prod; do

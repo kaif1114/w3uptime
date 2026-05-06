@@ -117,22 +117,6 @@ services:
       retries: 3
       start_period: 60s
 
-  validator:
-    image: ${VALIDATOR_IMAGE:-ghcr.io/kaif1114/w3uptime-validator:latest}
-    container_name: validator-prod
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      W3UPTIME_PRIVATE_KEY: ${VALIDATOR_PRIVATE_KEY}
-      W3UPTIME_WALLET_PASSWORD: ${VALIDATOR_WALLET_PASSWORD}
-    volumes:
-      - validator_data:/root/.w3uptime
-    networks:
-      - app-network
-    depends_on:
-      hub:
-        condition: service_healthy
-
   nginx:
     image: nginx:1.27-alpine
     container_name: nginx-prod
@@ -154,7 +138,6 @@ services:
 volumes:
   timescaledb_data:
   redis_data:
-  validator_data:
 
 networks:
   app-network:

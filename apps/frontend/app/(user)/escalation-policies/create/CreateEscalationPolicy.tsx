@@ -384,7 +384,7 @@ export function CreateEscalationPolicyForm() {
               <Button
                 type="submit"
                 onClick={(e) => {
-                  console.log("🚀 Create Policy button clicked!");
+                  console.log(" Create Policy button clicked!");
                   e.preventDefault();
                   onSubmit();
                 }}

@@ -30,7 +30,7 @@ program
   .option('--hub-url <url>', 'Hub WebSocket URL', 'ws://localhost:8080')
   .action(async (options) => {
     try {
-      console.log(chalk.blue('🚀 Initializing W3Uptime Validator'));
+      console.log(chalk.blue(' Initializing W3Uptime Validator'));
       
       
       if (!options.privateKey) {
@@ -129,7 +129,7 @@ program
       
       const config = configManager.getConfig();
       
-      console.log(chalk.blue('📊 W3Uptime Validator Status'));
+      console.log(chalk.blue(' W3Uptime Validator Status'));
       console.log(chalk.gray('═'.repeat(50)));
       
       

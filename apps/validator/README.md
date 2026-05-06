@@ -18,7 +18,7 @@ A secure, decentralized validator CLI application for the W3Uptime monitoring ne
 - **WebSocket Communication**: Real-time communication with the hub
 - **Connection Monitoring**: Heartbeat/ping mechanism for connection health
 
-### 📊 Advanced Monitoring
+###  Advanced Monitoring
 - **HTTP/HTTPS Support**: Monitor websites with various protocols
 - **Latency Measurement**: High-precision latency tracking
 - **Content Validation**: Optional content and regex matching

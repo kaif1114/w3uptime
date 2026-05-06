@@ -73,7 +73,7 @@ export class ValidatorService extends EventEmitter {
       await this.initializeWebSocketClient();
       
       console.log(chalk.green('Connected to hub'))
-      console.log(chalk.blue('📝 Registering as validator...'));
+      console.log(chalk.blue(' Registering as validator...'));
       
   
       await this.websocketClient!.signup();
@@ -81,8 +81,8 @@ export class ValidatorService extends EventEmitter {
       this.isRunning = true;
       this.stats.startTime = new Date();
       
-      console.log(chalk.green('🚀 Validator service started successfully'));
-      console.log(chalk.cyan(`📊 Wallet Address: ${this.signer.getAddress()}`));
+      console.log(chalk.green(' Validator service started successfully'));
+      console.log(chalk.cyan(` Wallet Address: ${this.signer.getAddress()}`));
       console.log(chalk.cyan(` Hub URL: ${this.configManager.getHubConfig().url}`));
       console.log(chalk.yellow('Press Ctrl+C to stop'));
       
@@ -292,7 +292,7 @@ export class ValidatorService extends EventEmitter {
         
         if (status.stats.uptime % (5 * 60 * 1000) < 1000) {
           chalk.gray(
-            `📊 Uptime: ${this.formatUptime(status.stats.uptime)} | ` +
+            ` Uptime: ${this.formatUptime(status.stats.uptime)} | ` +
             `Validations: ${this.stats.totalValidations} | ` +
             `Success Rate: ${this.getSuccessRate()}%`
           );

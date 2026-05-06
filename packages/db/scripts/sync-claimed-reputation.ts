@@ -10,7 +10,7 @@ import { prisma } from 'db/client';
  * After this migration, both systems will use User.claimedReputation as single source of truth.
  */
 async function syncClaimedReputation() {
-  console.log('🚀 Starting claimed reputation sync...\n');
+  console.log(' Starting claimed reputation sync...\n');
 
   const users = await prisma.user.findMany({
     select: { id: true, walletAddress: true, claimedReputation: true }
@@ -63,7 +63,7 @@ async function syncClaimedReputation() {
   }
 
   console.log('\n' + '='.repeat(60));
-  console.log('📊 Migration Summary:');
+  console.log(' Migration Summary:');
   console.log('='.repeat(60));
   console.log(`Total users:     ${users.length}`);
   console.log(`✅ Synced:        ${syncedCount}`);
